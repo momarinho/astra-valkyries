@@ -1,0 +1,279 @@
+import 'dart:math' as math;
+import 'package:flame/components.dart';
+import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
+import 'package:asteroids/constants.dart';
+import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/glow.dart';
+import 'drop.dart';
+import 'xp_orb.dart';
+
+class AsteroidComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final double radius;
+  final Vector2 velocity;
+  
+  late final int numPoints;
+  late final List<double> pointsOffsets;
+  late final double rotationSpeed;
+
+  late double maxHp;
+  late double hp;
+  double hitFlashTimer = 0.0;
+
+  /// Pontuação calibrada para a Feira de Ciências:
+  /// Meteoros menores são mais velozes, têm hitbox menor e pontuam mais!
+  int get scoreValue {
+    if (radius <= GameConstants.asteroidMinRadius * 1.25) {
+      return 300; // Pequeno: alvo ágil e desafiador (+300 pts)
+    } else if (radius <= GameConstants.asteroidMinRadius * 2.2) {
+      return 150; // Médio: fragmento intermediário (+150 pts)
+    } else {
+      return 50;  // Grande: fácil de acertar, abertura (+50 pts)
+    }
+  }
+
+  AsteroidComponent({
+    required this.radius,
+    required Vector2 position,
+    required this.velocity,
+  }) {
+    this.position = position;
+    anchor = Anchor.center;
+    size = Vector2.all(radius * 2);
+    
+    // Scale HP with asteroid size
+    if (radius > GameConstants.asteroidMinRadius * 2.2) {
+      maxHp = 90.0; // Large
+    } else if (radius > GameConstants.asteroidMinRadius * 1.2) {
+      maxHp = 50.0; // Medium
+    } else {
+      maxHp = 25.0; // Small
+    }
+    hp = maxHp;
+
+    final random = math.Random();
+    numPoints = random.nextInt(7) + 8; // 8 to 14 points
+    pointsOffsets = List.generate(
+      numPoints,
+      (_) => 0.75 + random.nextDouble() * 0.5, // 0.75 to 1.25
+    );
+    
+    // rotation speed in radians per second
+    rotationSpeed = (-40.0 + random.nextDouble() * 80.0) * math.pi / 180.0;
+    angle = random.nextDouble() * 2 * math.pi;
+  }
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    // Add circular hitbox for collision detection
+    add(CircleHitbox());
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (hitFlashTimer > 0) {
+      hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
+    }
+    position += velocity * dt;
+    angle += rotationSpeed * dt;
+    wrapAround();
+  }
+
+  bool takeDamage(double damage, Vector2 hitPos) {
+    hp -= damage;
+    hitFlashTimer = 0.12;
+
+    // Small rock sparks on hit
+    game.spawnExplosionParticles(
+      position: hitPos,
+      colorChoices: [Colors.orangeAccent, Colors.white, Colors.grey],
+      count: 4,
+      minSize: 1.5,
+      maxSize: 3.0,
+      minSpeed: 30.0,
+      maxSpeed: 90.0,
+    );
+
+    if (hp <= 0) {
+      split();
+      return true; // Destroyed
+    } else {
+      // Small damage number popup
+      game.spawnFloatingText(
+        hitPos,
+        '-${damage.toInt()}',
+        color: Colors.orangeAccent,
+        fontSize: 11.5,
+      );
+      return false; // Still alive
+    }
+  }
+
+  void wrapAround() {
+    final sizeX = GameConstants.screenWidth;
+    final sizeY = GameConstants.screenHeight;
+
+    if (position.x < -radius) {
+      position.x = sizeX + radius;
+    } else if (position.x > sizeX + radius) {
+      position.x = -radius;
+    }
+
+    if (position.y < -radius) {
+      position.y = sizeY + radius;
+    } else if (position.y > sizeY + radius) {
+      position.y = -radius;
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.translate(radius, radius);
+
+    final isFlashing = hitFlashTimer > 0;
+
+    if (isFlashing) {
+      final fillPaint = Paint()
+        ..color = Colors.redAccent.withOpacity(0.2)
+        ..style = PaintingStyle.fill;
+      final fillPath = Path();
+      for (var i = 0; i < numPoints; i++) {
+        final pointAngle = (2 * math.pi * i) / numPoints;
+        final r = radius * pointsOffsets[i];
+        final x = r * math.cos(pointAngle);
+        final y = r * math.sin(pointAngle);
+        if (i == 0) {
+          fillPath.moveTo(x, y);
+        } else {
+          fillPath.lineTo(x, y);
+        }
+      }
+      fillPath.close();
+      canvas.drawPath(fillPath, fillPaint);
+    }
+
+    final path = Path();
+    for (var i = 0; i < numPoints; i++) {
+      final pointAngle = (2 * math.pi * i) / numPoints;
+      final r = radius * pointsOffsets[i];
+      final x = r * math.cos(pointAngle);
+      final y = r * math.sin(pointAngle);
+      
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    // Contorno neon: branco-azulado frio normalmente, vermelho ao tomar dano.
+    Glow.strokePath(
+      canvas,
+      path,
+      isFlashing ? Colors.redAccent : const Color(0xFFDDEBFF),
+      width: isFlashing ? GameConstants.lineWidth * 1.8 : GameConstants.lineWidth,
+      intensity: isFlashing ? 1.6 : 0.9,
+    );
+  }
+
+  void split() {
+    removeFromParent();
+
+    // Spawn explosion particles
+    final numParticles = math.max(8, (radius * 0.8).toInt());
+    game.spawnExplosionParticles(
+      position: position,
+      colorChoices: [Colors.white, Colors.orange, Colors.yellow, Colors.grey],
+      count: numParticles,
+      minSize: 2.0,
+      maxSize: 4.0,
+      minSpeed: 40.0,
+      maxSpeed: 180.0,
+    );
+    
+    // Proportional screen shake
+    final shakeIntensity = radius * 0.15;
+    game.triggerScreenShake(duration: 0.15, intensity: shakeIntensity);
+
+    // Roguelike: Drop de Poeira Cósmica (XP)
+    final XpOrbType orbType;
+    if (radius > GameConstants.asteroidMinRadius * 2.2) {
+      orbType = XpOrbType.large;
+    } else if (radius > GameConstants.asteroidMinRadius * 1.2) {
+      orbType = XpOrbType.medium;
+    } else {
+      orbType = XpOrbType.small;
+    }
+    game.world.add(XpOrbComponent(position: position.clone(), type: orbType));
+
+    final random = math.Random();
+
+    // Cap active drops on screen to maximum 2 so space remains clean and exciting
+    final activeDrops = game.world.children.whereType<DropComponent>().length;
+
+    // Science Fair: Calibrated rare drop chances based on asteroid size
+    double dropChance = 0.05; // 5% chance on small asteroids
+    if (radius >= 50.0) {
+      dropChance = 0.25; // 25% chance on large asteroids
+    } else if (radius >= 30.0) {
+      dropChance = 0.12; // 12% chance on medium asteroids
+    }
+
+    if (activeDrops < 2 && random.nextDouble() < dropChance) {
+      final roll = random.nextDouble();
+      DropType dropType;
+      if (roll < 0.50) {
+        dropType = DropType.lunarSample; // 50% Lunar Sample (+100 pts)
+      } else if (roll < 0.75) {
+        dropType = DropType.rareHelium;  // 25% Rare Helium-3 (+250 pts)
+      } else if (roll < 0.85) {
+        dropType = DropType.shield;      // 10% Photonic Shield (4s)
+      } else if (roll < 0.93) {
+        dropType = DropType.darkMatter;  // 8% Dark Matter (+500 pts, Legendary)
+      } else {
+        dropType = DropType.health;      // 7% Life Repair Fragment (+1 Life)
+      }
+
+      final driftAngle = random.nextDouble() * 2 * math.pi;
+      final dropVel = Vector2(math.cos(driftAngle), math.sin(driftAngle)) * 25.0;
+
+      game.world.add(
+        DropComponent(
+          position: position.clone(),
+          type: dropType,
+          initialVelocity: dropVel,
+        ),
+      );
+    }
+
+    if (radius <= GameConstants.asteroidMinRadius) {
+      return;
+    }
+
+    // Split into two smaller asteroids
+    final splitAngle = 20.0 + random.nextDouble() * 30.0; // 20 to 50 degrees
+    final radAngle = splitAngle * math.pi / 180.0;
+
+    final velocityA = velocity.clone()..rotate(radAngle);
+    final velocityB = velocity.clone()..rotate(-radAngle);
+    final newRadius = radius - GameConstants.asteroidMinRadius;
+
+    final asteroidA = AsteroidComponent(
+      radius: newRadius,
+      position: position.clone(),
+      velocity: velocityA * 1.2,
+    );
+    
+    final asteroidB = AsteroidComponent(
+      radius: newRadius,
+      position: position.clone(),
+      velocity: velocityB * 1.2,
+    );
+
+    game.world.add(asteroidA);
+    game.world.add(asteroidB);
+  }
+}
