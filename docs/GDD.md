@@ -162,19 +162,38 @@ Uma sensação progressiva que vai da vulnerabilidade inicial cautelosa até se 
 - **Meta-Jogo:** Sucata Estelar (moeda para árvore de atributos), Fragmentos de Memória (para destravar arte e histórias) e Insígnias de Batalha (para skins e novas armas iniciais).
 
 ## ⇒ 6.3 Quais são os seus inimigos e desafios no jogo?
-- **Asteroides & Cometas:** Obstáculos naturais que fragmentam ao serem atingidos; alguns tipos deixam poças de radiação ou repelem disparos.
-- **Sondas Kamikaze:** Rápidas, avançam em linha reta em trajetórias suicidas.
-- **Naves de Apoio:** Curam ou geram escudos de proteção em torno dos chefes.
-- **Nave-Mãe Titânica (Boss):** Padrões de tiros em espiral (*Danmaku/Bullet Hell*), invocações de frotas e lasers orbitais gigantescos.
+Baseado na taxonomia de sucesso do gênero *Bullet Heaven* (*Vampire Survivors*, *Brotato*), as ameaças dividem-se em 3 pilares complementares:
+
+### 1. Variantes de Asteroides (Perigos Ambientais Vetoriais):
+- **Asteroide Padrão:** Rocha cinza clássica que fragmenta em pedaços médios e pequenos ao ser destruída.
+- **Prisma Cristalino:** Rocha facetada brilhante neon que não se divide, mas explode em 16 fragmentos e libera uma **chuva massiva de Stardust XP**.
+- **Asteroide de Magma:** Rocha incandescente que cria uma onda de calor e poça de fogo estelar ao morrer, incinerando naves próximas.
+- **Asteroide Iônico / Magnético:** Gera um campo gravitacional que curva disparos e atrai naves descuidadas.
+
+### 2. Frota Biomecânica / Pirata (Inimigos com IA Ativa):
+- **Scout Drone (Enxame / Fodder):** Naves triangulares ágeis e frágeis (1 a 2 tiros) que surgem em bandos de 10 a 20 unidades. Servem como a fonte primária e prazerosa de coleta contínua de XP.
+- **Phantom Raider (Charger / Kamikaze):** Caça veloz que projeta uma linha de mira laser telegrafada por 0.8s e dispara em investida supersônica. Exige o uso do **Dash** para evasão.
+- **Corvette Sniper (Atirador à Distância):** Mantém distância de segurança e cospe esferas lentas de plasma luminoso a cada 2.5s, forçando movimentação ativa.
+- **Bastion Cruiser (Tanque Pesado):** Hexágono blindado resistente a repulsões (*knockback*), aglomerando hordas atrás de sua couraça.
+
+### 3. Ameaças de Elite e Chefes de Setor:
+- **Void Commander (Elite Miniboss):** Surge com sirene de alerta (`⚠️ ELITE TARGET DETECTED`), aura pulsante e barra de vida sobre o casco. Ao ser destruído, garante o drop do **Baú Cósmico (Jackpot)**.
+- **Dreadnought Leviathan (Chefe de Setor):** Combate monumental em múltiplas fases (torpedos teleguiados, lasers orbitais giratórios e invocações de frotas).
 
 ## ⇒ 6.4 Qual o tipo de fluxo do seu jogo?
-Fluxo dinâmico de intensidade crescente (*Flow State de Mihaly Csikszentmihalyi*):
+O ritmo do jogo abandona o spawn puramente aleatório e adota o **Timeline Script Cronometrado (Clock-Driven Wave Design)** consagrado por *Vampire Survivors*:
+
 ```mermaid
-graph LR
-    A["Minutos 0-3: Acalmia e Coleta Inicial"] --> B["Minutos 3-7: Ondas de Pressão Média"]
-    B --> C["Minuto 10: Mini-Boss & Recompensa Alta"]
-    C --> D["Minutos 11-14: Caos & Sinergia Total da Build"]
-    D --> E["Minuto 15: Boss Final do Setor"]
+graph TD
+    W1["[00:00 - 01:00] Fase 1: Onboarding (Drones Leves & Primeiros Níveis)"] --> W2["[01:00 - 03:00] Fase 2: Enxames (Teste de DPS em Área)"]
+    W2 --> E1["[03:00] MARCO 1: Primeiro Elite Miniboss (Drop de Baú 1-3x)"]
+    E1 --> W3["[03:00 - 05:00] Fase 3: Chargers & Meteoros de Magma (Exigência de Agilidade)"]
+    W3 --> E2["[05:00] MARCO 2: Segundo Elite (Baú Dourado & Sinergias)"]
+    E2 --> W4["[05:00 - 08:00] Fase 4: Snipers & Danmaku (Projéteis Hostis Ativos)"]
+    W4 --> W5["[08:00 - 10:00] Fase 5: Cercos Circulares 360° (Ring Waves / DPS Check)"]
+    W5 --> EV["[10:00] MARCO 3: Desbloqueio de Super-Evoluções de Armas (Baús Evoluem MK MAX)"]
+    EV --> W6["[10:00 - 14:00] Fase 6: Caos Cósmico & Catarse da Build Suprema"]
+    W6 --> BOSS["[15:00] CLÍMAX: Dreadnought Leviathan (Chefe Final de Setor)"]
 ```
 
 ---
@@ -211,13 +230,17 @@ O jogador controla uma nave espacial em um plano 2D com gravidade zero e inérci
 
 ## ⇒ 8.2 Liste 3 regras do seu jogo
 1. **Morte Permanente na Run:** Se os pontos de vida da nave chegarem a zero, a run termina imediatamente; toda a XP do setor é perdida, mas toda a Sucata e Fragmentos coletados são mantidos para a Oficina.
-2. **Limite de Slots de Arsenal:** Cada nave suporta no máximo 6 Armas Ativas e 6 Itens Passivos simultâneos, forçando decisões estratégicas de build.
-3. **Regra de Evolução de Super-Arma:** Uma arma no nível máximo (nível 8) combinada com seu respectivo acessório passivo (nível 1+) evolui em uma versão Lendária ao abrir o próximo Baú de Elite.
+2. **Limite de Slots de Arsenal (Padrão Vampire Survivors):** Cada nave suporta no máximo 6 Armas Ativas e 6 Itens Passivos simultâneos, forçando decisões estratégicas de build e sinergias de combate.
+3. **Regra de Evolução de Super-Arma & Baús de Dopamina:**
+   - Para evoluir uma arma, ela deve atingir o **Nível Máximo (MK MAX / Lv 8)** e a piloto deve possuir o **Acessório Passivo de Sinergia** correspondente no inventário (ao menos Lv 1).
+   - A evolução só é liberada a partir da coleta de um **Baú Cósmico** derrubado por um Inimigo Elite ou Chefe após o marco de tempo de evolução.
+   - **Mecânica de Sorte (Sequential Roll):** Ao abrir um baú, o jogo testa sequencialmente a chance de 5 itens (Jackpot), depois 3 itens e por fim 1 item, multiplicado pelo atributo de Sorte (*Luck*) da piloto.
+   - **Regra de Beginner's Luck:** Nos primeiros 6 baús abertos de um novo jogador, o sistema garante a sequência fixa `[1, 1, 3, 1, 1, 5]` para introduzir a dopamina do Jackpot.
 
 ## ⇒ 8.3 Liste 3 parâmetros que você vai utilizar na sua mecânica principal
 1. `inertia_drag` (Coeficiente de atrito no vácuo / amortecimento linear da nave, ex: 0.94).
 2. `magnet_radius` (Raio em pixels de atração dos orbes de plasma, expansível via atributos).
-3. `bullet_penetration_count` (Número de alvos que um projétil perfura antes de se dissipar).
+3. `xp_orb_consolidation_cap` (Teto de 60 orbes de XP simultâneos no canvas mobile. O excesso de XP é acumulado em um único **Orbe Vermelho / Hiper-Stardust** distante, garantindo 60 FPS cravados sem engasgos).
 
 ---
 
@@ -263,13 +286,23 @@ O jogador controla uma nave espacial em um plano 2D com gravidade zero e inérci
 ---
 
 ## ⇒ 11.1 Liste o comportamento de todos os inimigos
-1. **Asteroide Rochoso Comum:** Flutua em trajetória inercial fixa; ao receber dano letal, quebra em 2 pedaços médios; estes quebram em 2 pedaços pequenos.
-2. **Geodo Cristalino:** Resistente a tiros normais; reflete lasers leves; dropa o dobro de XP ao ser quebrado com armas de impacto/explosão.
-3. **Sonda Vanguarda (Kamikaze Drone):** Spawna em grupos de 5 a 10 nas bordas da tela; acelera em linha reta na direção do jogador e explode ao toque.
-4. **Interceptador Pirata:** Mantém distância média (órbita circular ao redor do jogador) e dispara salvas de 3 tiros de laser verde.
-5. **Cruzador Blindado:** Move-se lentamente; possui alto ponto de vida; dispara barragens de mísseis teleguiados lentos que podem ser abatidos pelos tiros do jogador.
-6. **Manta Cósmica (Criatura Espacial Biológica):** Move-se em padrões ondulatórios de alta velocidade; imune a empurrões (*knockback*).
-7. **Chefe de Setor - Leviatã Mecânico:** Possui 3 fases de combate (Canhões frontais -> Feixe de laser orbital varrendo a tela -> Modo desespero com colapso de buracos negros menores).
+A taxonomia de inimigos segue os papéis de gameplay consagrados em *Vampire Survivors*, garantindo dinamismo e exigência tática:
+
+### 1. Perigos Ambientais (Variantes de Asteroides):
+1. **Asteroide Rochoso Comum:** Flutua em trajetória inercial fixa; ao receber dano letal, quebra em 2 pedaços médios; estes quebram em 2 pedaços pequenos. Fonte estável de Stardust.
+2. **Prisma Cristalino:** Rocha geométrica ciano/violeta com casca reflexiva; não se fragmenta, mas implode em 16 estilhaços afiados e libera uma **chuva torrencial de Stardust XP**.
+3. **Asteroide de Magma:** Rocha vulcânica preta com veias incandescentes. Ao ser destruída, cria uma poça de plasma térmico que causa dano em área contínuo por 3.5 segundos em naves e outros meteoros.
+4. **Asteroide Iônico:** Emite arcos magnéticos que distorcem trajetórias de tiros e atraem o caça em direção ao seu epicentro.
+
+### 2. Frota Biomecânica Hostil (IA Ativa de Combate):
+5. **Scout Drone (Swarmer / Fodder):** Spawna em bandos contínuos de 10 a 20 naves leves nas bordas. Acelera em perseguição direta; morre com 1 ou 2 disparos, criando a sensação viciante de "ceifar multidões" e garantindo fluxo constante de XP.
+6. **Phantom Raider (Charger / Kamikaze):** Caça stealth vermelho. Trava a mira no caça da jogadora com uma linha laser telegrafada por 0.8s e dispara uma investida a 250% da velocidade base. Exige o uso do **Dash** para evasão.
+7. **Corvette Sniper (Atirador à Distância):** Permanece na meia-distância (fora do alcance do auto-fire de curto alcance) e dispara orbes lentos de plasma a cada 2.5s.
+8. **Bastion Cruiser (Tanque Pesado de Bloqueio):** Casco hexagonal massivo, imune a empurrões (*knockback*). Absorve fogo concentrado e cria uma barreira física que bloqueia as rotas de fuga da piloto.
+
+### 3. Elites e Chefes de Setor:
+9. **Void Commander (Elite Miniboss):** Spawna nos marcos de 3:00 e 5:00. Possui aura neon pulsante, barra de vida destacada no topo e dispara leques de projéteis em espiral. **Drop Garantido:** Baú Cósmico de Dopamina (Jackpot com 1 a 3 upgrades).
+10. **Dreadnought Leviathan (Chefe Final de Setor):** Confronto culminante aos 15:00. Possui 3 fases com padrões telegrafados de Danmaku, feixes de laser orbital que cortam o canvas e invocações de frotas de apoio. Vitória garante a conclusão da Sortie e Baú Dourado Lendário.
 
 ---
 
@@ -278,10 +311,21 @@ O jogador controla uma nave espacial em um plano 2D com gravidade zero e inérci
 ---
 
 ## ⇒ 12.1 Liste os sistemas de mecânicas que poderão receber balanceamento durante o jogo
-1. **Curva de Exigência de XP:** Fórmula matemática de XP por nível ($XP_{req} = Base \times 1.25^{Level}$) para manter a sensação de recompensa constante sem inflação desmedida.
-2. **Valores de DPS das Armas:** Ajuste fino entre armas de alvo único com alto dano versus armas de área com DPS disperso para que nenhuma build torne as outras obsoletas.
-3. **Tamanho das Hitboxes:** Manter a caixa de colisão da nave do jogador menor que o sprite visual para permitir evasões precisas em momentos de bullet hell.
-4. **Preço dos Upgrades na Loja:** Escalonamento do custo das melhorias permanentes para garantir que o jogador sempre consiga comprar pelo menos 1 upgrade a cada 2 ou 3 runs.
+1. **Curva de Exigência de XP (Progressão Exponencial Suave):**
+   Fórmula de XP por nível calibrada para subidas rápidas no início (níveis 1 a 5 em menos de 2 minutos) e espaçamento estratégico no mid-game:
+   $$XP_{req}(N) = 24 + (N - 1) \times 28 + (N^2 \times 6)$$
+2. **Matemática do Baú Cósmico & Atributo de Sorte (Luck):**
+   - Chance Base de 5 Itens (Super Baú): $5\% \times \text{Luck}$
+   - Chance Base de 3 Itens (Baú Ouro): $20\% \times \text{Luck}$
+   - Fallback: 1 Item (Baú Prata)
+   - *Beginner's Luck:* Primeiros 6 baús forçam a sequência `1, 1, 3, 1, 1, 5`.
+3. **Teto de Otimização Mobile & Consolidação de XP (Red Gem Siphon):**
+   - Limite de 38 a 45 inimigos simultâneos na tela para manter 60 FPS cravados em processadores intermediários móveis.
+   - Limite de 60 orbes de XP no canvas. Quando atingido, o orbe mais distante absorve silenciosamente todo o XP excedente e transforma-se no **Orbe Hiper-Stardust Vermelho**, garantindo zero perda de progressão.
+4. **DPS e Sinergias de Super-Armas:**
+   Atingir o nível 8 (MK MAX) de uma arma e possuir o acessório passivo correspondente desbloqueia a evolução no próximo baú, elevando o DPS em até 350% para compensar a escalada de HP dos inimigos do final da fase.
+5. **Hitbox Reduzida e Tolerância de Colisão:**
+   A hitbox da nave é calibrada com 45% do diâmetro visual do caça, permitindo que a jogadora "costure" por entre frentes densas de tiros e meteoros sem frustração.
 
 ---
 
