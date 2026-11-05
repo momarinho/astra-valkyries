@@ -31,17 +31,17 @@ class XpOrbComponent extends PositionComponent with HasGameReference<AsteroidsGa
 
     switch (type) {
       case XpOrbType.small:
-        value = 10;
+        value = 2;
         primaryColor = const Color(0xFF00E5FF); // Cyan
         radius = 4.5;
         break;
       case XpOrbType.medium:
-        value = 25;
+        value = 6;
         primaryColor = const Color(0xFFE040FB); // Magenta / Neon Purple
         radius = 6.0;
         break;
       case XpOrbType.large:
-        value = 75;
+        value = 14;
         primaryColor = const Color(0xFFFFD700); // Gold
         radius = 8.0;
         break;

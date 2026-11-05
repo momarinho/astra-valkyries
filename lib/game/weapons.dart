@@ -45,10 +45,10 @@ class Blaster extends Weapon {
       : super(
           id: 'blaster',
           name: "Pulse Blaster",
-          cooldown: 0.26,
-          recoil: 14.0,
+          cooldown: 0.70,
+          recoil: 12.0,
           muzzleFlashSize: 8.0,
-          damage: 55.0,
+          damage: 60.0,
         );
 
   @override
@@ -88,14 +88,14 @@ class Blaster extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.19;
-      recoil = 9.0;
-      damage = 70.0;
+      cooldown = 0.50;
+      recoil = 8.0;
+      damage = 75.0;
       muzzleFlashSize = 10.0;
     } else if (level >= 3) {
-      cooldown = 0.14;
+      cooldown = 0.35;
       recoil = 5.0;
-      damage = 95.0;
+      damage = 100.0;
       muzzleFlashSize = 12.0;
     }
   }
@@ -106,10 +106,10 @@ class SpreadShot extends Weapon {
       : super(
           id: 'spread_shot',
           name: "Spread Cannon",
-          cooldown: 0.30,
-          recoil: 16.0,
+          cooldown: 0.95,
+          recoil: 14.0,
           muzzleFlashSize: 11.0,
-          damage: 26.0,
+          damage: 32.0,
         );
 
   @override
@@ -149,14 +149,14 @@ class SpreadShot extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.24;
-      recoil = 11.0;
-      damage = 32.0;
+      cooldown = 0.72;
+      recoil = 10.0;
+      damage = 42.0;
       muzzleFlashSize = 13.0;
     } else if (level >= 3) {
-      cooldown = 0.18;
-      recoil = 7.0;
-      damage = 38.0;
+      cooldown = 0.52;
+      recoil = 6.0;
+      damage = 55.0;
       muzzleFlashSize = 15.0;
     }
   }
@@ -167,10 +167,10 @@ class RapidFire extends Weapon {
       : super(
           id: 'rapid_fire',
           name: "Phase Laser",
-          cooldown: 0.11,
-          recoil: 5.0,
+          cooldown: 0.32,
+          recoil: 4.0,
           muzzleFlashSize: 6.0,
-          damage: 16.0,
+          damage: 20.0,
         );
 
   @override
@@ -192,14 +192,14 @@ class RapidFire extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.08;
-      recoil = 3.0;
-      damage = 20.0;
+      cooldown = 0.22;
+      recoil = 2.5;
+      damage = 26.0;
       muzzleFlashSize = 8.0;
     } else if (level >= 3) {
-      cooldown = 0.055;
+      cooldown = 0.14;
       recoil = 1.5;
-      damage = 25.0;
+      damage = 34.0;
       muzzleFlashSize = 9.0;
     }
   }
@@ -210,10 +210,10 @@ class BombLauncher extends Weapon {
       : super(
           id: 'bomb_launcher',
           name: "Antimatter Torpedo",
-          cooldown: 0.65,
-          recoil: 28.0,
+          cooldown: 1.80,
+          recoil: 22.0,
           muzzleFlashSize: 18.0,
-          damage: 130.0,
+          damage: 180.0,
         );
 
   @override
@@ -258,14 +258,14 @@ class BombLauncher extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.50;
-      recoil = 18.0;
-      damage = 165.0;
+      cooldown = 1.40;
+      recoil = 16.0;
+      damage = 240.0;
       muzzleFlashSize = 22.0;
     } else if (level >= 3) {
-      cooldown = 0.38;
+      cooldown = 1.00;
       recoil = 10.0;
-      damage = 200.0;
+      damage = 320.0;
       muzzleFlashSize = 26.0;
     }
   }

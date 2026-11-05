@@ -40,21 +40,21 @@ void main() {
 
       // Check initial level 1 stats
       expect(blaster.level, equals(1));
-      expect(blaster.damage, equals(55.0));
-      expect(blaster.cooldown, equals(0.26));
+      expect(blaster.damage, equals(60.0));
+      expect(blaster.cooldown, equals(0.70));
 
       expect(spread.level, equals(1));
-      expect(spread.damage, equals(26.0));
-      expect(spread.cooldown, equals(0.30));
-      expect(spread.recoil, equals(16.0)); // Reduced recoil
+      expect(spread.damage, equals(32.0));
+      expect(spread.cooldown, equals(0.95));
+      expect(spread.recoil, equals(14.0));
 
       expect(rapid.level, equals(1));
-      expect(rapid.cooldown, equals(0.11));
-      expect(rapid.damage, equals(16.0));
+      expect(rapid.cooldown, equals(0.32));
+      expect(rapid.damage, equals(20.0));
 
       expect(bomb.level, equals(1));
-      expect(bomb.cooldown, equals(0.65)); // Balanced from 1.45s
-      expect(bomb.recoil, equals(28.0)); // Balanced from 135.0
+      expect(bomb.cooldown, equals(1.80));
+      expect(bomb.recoil, equals(22.0));
 
       // Test Upgrade to Level 2
       expect(blaster.upgrade(), isTrue);
@@ -63,13 +63,13 @@ void main() {
       expect(bomb.upgrade(), isTrue);
 
       expect(blaster.level, equals(2));
-      expect(blaster.damage, equals(70.0));
+      expect(blaster.damage, equals(75.0));
       expect(spread.level, equals(2));
-      expect(spread.damage, equals(32.0));
+      expect(spread.damage, equals(42.0));
       expect(rapid.level, equals(2));
-      expect(rapid.damage, equals(20.0));
+      expect(rapid.damage, equals(26.0));
       expect(bomb.level, equals(2));
-      expect(bomb.damage, equals(165.0));
+      expect(bomb.damage, equals(240.0));
 
       // Test Upgrade to Level 3 (Max)
       expect(blaster.upgrade(), isTrue);

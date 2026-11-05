@@ -16,9 +16,9 @@ void main() {
       final medium = XpOrbComponent(position: Vector2.zero(), type: XpOrbType.medium);
       final large = XpOrbComponent(position: Vector2.zero(), type: XpOrbType.large);
 
-      expect(small.value, equals(10));
-      expect(medium.value, equals(25));
-      expect(large.value, equals(75));
+      expect(small.value, equals(2));
+      expect(medium.value, equals(6));
+      expect(large.value, equals(14));
 
       expect(small.radius, equals(4.5));
       expect(medium.radius, equals(6.0));
@@ -31,9 +31,9 @@ void main() {
       final xpLevel3 = AsteroidsGame.calculateNextLevelXp(3);
       final xpLevel5 = AsteroidsGame.calculateNextLevelXp(5);
 
-      expect(xpLevel1, equals(45));
-      expect(xpLevel2, equals(95));
-      expect(xpLevel3, equals(155));
+      expect(xpLevel1, equals(30));
+      expect(xpLevel2, equals(76));
+      expect(xpLevel3, equals(134));
       expect(xpLevel5, greaterThan(xpLevel3));
     });
 

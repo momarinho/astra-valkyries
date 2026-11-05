@@ -99,11 +99,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   // Roguelike In-Run Progression (XP & Escolha de Cartas)
   int runLevel = 1;
   int runXp = 0;
-  int runXpNextLevel = 40;
+  int runXpNextLevel = 30;
   List<RoguePerk> currentLevelUpChoices = [];
 
   static int calculateNextLevelXp(int level) {
-    return 40 + (level - 1) * 35 + (level * level * 5);
+    return 24 + (level - 1) * 28 + (level * level * 6);
   }
 
   void addXp(int amount) {
@@ -413,7 +413,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     halfTimeRechargeTriggered = false;
     runLevel = 1;
     runXp = 0;
-    runXpNextLevel = 40;
+    runXpNextLevel = calculateNextLevelXp(1);
     currentLevelUpChoices = [];
     player.resetRoguelikeStats();
     topRecordBeaten = false;
@@ -980,7 +980,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     halfTimeRechargeTriggered = false;
     runLevel = 1;
     runXp = 0;
-    runXpNextLevel = 40;
+    runXpNextLevel = calculateNextLevelXp(1);
     currentLevelUpChoices = [];
     player.resetRoguelikeStats();
     topRecordBeaten = false;
