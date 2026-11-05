@@ -10,6 +10,7 @@ import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/scientist.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'asteroid.dart';
+import 'joystick.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   Vector2 velocity = Vector2.zero();
@@ -19,16 +20,29 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double movementFriction = GameConstants.playerFriction;
   
   double radius = GameConstants.playerRadius;
-  double shootTimer = 0.0;
   double invulnerableTimer = GameConstants.playerInvulnerableSeconds;
   double dashCooldownTimer = 0.0;
   double dashActiveTimer = 0.0;
   Vector2 dashDirection = Vector2.zero();
   double muzzleFlashTimer = 0.0;
   double muzzleFlashSize = 0.0;
+  double _soundCooldownTimer = 0.0;
 
-  late Weapon weapon;
-  late final Map<String, Weapon> unlockedWeapons;
+  final List<Weapon> activeWeapons = [];
+  final Map<String, Weapon> unlockedWeapons = {};
+
+  Weapon get weapon => activeWeapons.isNotEmpty ? activeWeapons.first : Blaster();
+  set weapon(Weapon w) {
+    setWeapon(w);
+  }
+
+  double get shootTimer => activeWeapons.isNotEmpty ? activeWeapons.first.currentCooldown : 0.0;
+  set shootTimer(double val) {
+    if (activeWeapons.isNotEmpty) {
+      activeWeapons.first.currentCooldown = val;
+    }
+  }
+
   Scientist? scientist;
   Valkyrie? valkyrie;
   bool isThrusting = false;
@@ -57,15 +71,30 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     angle = 0.0;
     anchor = Anchor.center;
     size = Vector2.all(radius * 2);
-    weapon = Blaster();
-    unlockedWeapons = {'blaster': weapon};
+    setWeapon(Blaster());
   }
 
   void configureScientist(Scientist newScientist) {
     scientist = newScientist;
-    weapon = newScientist.createWeapon();
+    setWeapon(newScientist.createWeapon());
+  }
+
+  void setWeapon(Weapon startingWeapon) {
+    activeWeapons.clear();
     unlockedWeapons.clear();
-    unlockedWeapons[newScientist.weaponId] = weapon;
+    activeWeapons.add(startingWeapon);
+    unlockedWeapons[startingWeapon.id] = startingWeapon;
+    startingWeapon.currentCooldown = 0.0;
+  }
+
+  void addWeapon(Weapon newWeapon) {
+    if (!unlockedWeapons.containsKey(newWeapon.id)) {
+      unlockedWeapons[newWeapon.id] = newWeapon;
+      activeWeapons.add(newWeapon);
+      newWeapon.currentCooldown = 0.0;
+    } else {
+      unlockedWeapons[newWeapon.id]!.upgrade();
+    }
   }
 
   @override
@@ -153,10 +182,32 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     super.update(dt);
     if (game.state != GameState.playing) return;
 
-    shootTimer = math.max(0.0, shootTimer - dt);
     invulnerableTimer = math.max(0.0, invulnerableTimer - dt);
     dashCooldownTimer = math.max(0.0, dashCooldownTimer - dt);
     muzzleFlashTimer = math.max(0.0, muzzleFlashTimer - dt);
+    _soundCooldownTimer = math.max(0.0, _soundCooldownTimer - dt);
+
+    // Auto-fire routine for all active weapons (Vampire Survivors style)
+    for (final w in activeWeapons) {
+      w.currentCooldown = math.max(0.0, w.currentCooldown - dt);
+      if (w.currentCooldown <= 0) {
+        if (w.fire(this)) {
+          final effectiveCooldown = w.cooldown * game.rogueFireRateMultiplier;
+          w.currentCooldown = effectiveCooldown;
+
+          // Micro-recoil (subtle physical kickback without impeding steering)
+          velocity -= forward * (w.recoil * 0.15);
+
+          muzzleFlashTimer = 0.07;
+          muzzleFlashSize = math.max(muzzleFlashSize, w.muzzleFlashSize);
+
+          if (_soundCooldownTimer <= 0) {
+            game.playSfx('shoot.wav');
+            _soundCooldownTimer = 0.055;
+          }
+        }
+      }
+    }
 
     final keys = game.keysPressed;
 
@@ -179,8 +230,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
 
     // Input Handling
-    final stick = game.joystick.stickInput;
-    if (stick.length > 0.15 && game.joystick.isDragging) {
+    GameJoystick? joy;
+    try {
+      joy = game.joystick;
+    } catch (_) {}
+    final stick = joy?.stickInput ?? Vector2.zero();
+    if (stick.length > 0.15 && (joy?.isDragging ?? false)) {
       // Joystick drag steering & thrust
       final targetAngle = math.atan2(stick.y, stick.x) + math.pi / 2;
       double diff = targetAngle - angle;
@@ -290,41 +345,15 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       game.triggerSpecial();
     }
 
-    // Weapon switching controls
-    if (keys.contains(LogicalKeyboardKey.digit1) && unlockedWeapons.containsKey('blaster')) {
-      setWeapon(unlockedWeapons['blaster']!);
-    }
-    if (keys.contains(LogicalKeyboardKey.digit2) && unlockedWeapons.containsKey('spread_shot')) {
-      setWeapon(unlockedWeapons['spread_shot']!);
-    }
-    if (keys.contains(LogicalKeyboardKey.digit3) && unlockedWeapons.containsKey('rapid_fire')) {
-      setWeapon(unlockedWeapons['rapid_fire']!);
-    }
-    if (keys.contains(LogicalKeyboardKey.digit4) && unlockedWeapons.containsKey('bomb_launcher')) {
-      setWeapon(unlockedWeapons['bomb_launcher']!);
-    }
   }
 
   void shoot() {
-    if (shootTimer > 0) return;
-
-    if (weapon.fire(this)) {
-      shootTimer = weapon.cooldown;
-      // Apply physical recoil pushing the player backwards
-      velocity -= forward * weapon.recoil;
-
-      // Set muzzle flash visual effect
-      muzzleFlashTimer = 0.08;
-      muzzleFlashSize = weapon.muzzleFlashSize;
-
-      game.playSfx('shoot.wav');
+    // Manual shoot input (Spacebar / Click) triggers any ready or nearly ready weapons
+    for (final w in activeWeapons) {
+      if (w.currentCooldown <= 0.06) {
+        w.currentCooldown = 0.0;
+      }
     }
-  }
-
-  void setWeapon(Weapon newWeapon) {
-    weapon = newWeapon;
-    final key = newWeapon.name.toLowerCase().replaceAll(' ', '_');
-    unlockedWeapons[key] = newWeapon;
   }
 
   void wrapAround() {

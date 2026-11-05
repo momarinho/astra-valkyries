@@ -4,8 +4,10 @@ import 'package:asteroids/constants.dart';
 import 'components/player.dart';
 import 'components/bullet.dart';
 import 'components/bomb.dart';
+import 'components/asteroid.dart';
 
 abstract class Weapon {
+  final String id;
   final String name;
   double cooldown;
   double recoil;
@@ -13,8 +15,10 @@ abstract class Weapon {
   double damage;
   int level = 1;
   final int maxLevel = 3;
+  double currentCooldown = 0.0;
 
   Weapon({
+    required this.id,
     required this.name,
     required this.cooldown,
     required this.recoil,
@@ -39,7 +43,8 @@ abstract class Weapon {
 class Blaster extends Weapon {
   Blaster()
       : super(
-          name: "Laser Fotônico",
+          id: 'blaster',
+          name: "Pulse Blaster",
           cooldown: 0.26,
           recoil: 14.0,
           muzzleFlashSize: 8.0,
@@ -50,7 +55,7 @@ class Blaster extends Weapon {
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
     if (level >= 3) {
-      // Nível 3: Disparo duplo paralelo com alta potência telescópica
+      // Level 3: Dual parallel high-density plasma bolts
       final right = Vector2(-player.forward.y, player.forward.x);
       for (final offset in [-6.0, 6.0]) {
         final spawnPos = player.position + player.forward * player.radius + right * offset;
@@ -99,7 +104,8 @@ class Blaster extends Weapon {
 class SpreadShot extends Weapon {
   SpreadShot()
       : super(
-          name: "Tiro Dispersor",
+          id: 'spread_shot',
+          name: "Spread Cannon",
           cooldown: 0.30,
           recoil: 16.0,
           muzzleFlashSize: 11.0,
@@ -109,7 +115,7 @@ class SpreadShot extends Weapon {
   @override
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
-    // Nível 3 dispara 5 projéteis em arco amplo; Nível 1 e 2 disparam 3
+    // Level 3 fires a 5-way spread; Levels 1 and 2 fire 3-way
     final List<double> angles = level >= 3
         ? [-24.0, -12.0, 0.0, 12.0, 24.0]
         : [-14.0, 0.0, 14.0];
@@ -159,7 +165,8 @@ class SpreadShot extends Weapon {
 class RapidFire extends Weapon {
   RapidFire()
       : super(
-          name: "Laser Veloz",
+          id: 'rapid_fire',
+          name: "Phase Laser",
           cooldown: 0.11,
           recoil: 5.0,
           muzzleFlashSize: 6.0,
@@ -201,7 +208,8 @@ class RapidFire extends Weapon {
 class BombLauncher extends Weapon {
   BombLauncher()
       : super(
-          name: "Lança-Bombas",
+          id: 'bomb_launcher',
+          name: "Antimatter Torpedo",
           cooldown: 0.65,
           recoil: 28.0,
           muzzleFlashSize: 18.0,
@@ -212,11 +220,33 @@ class BombLauncher extends Weapon {
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
     final speed = 280.0 + (level - 1) * 40.0;
-    final velocity = player.forward * speed;
+
+    // Smart torpedo targeting: seeks the nearest asteroid within 550px, otherwise launches forward
+    Vector2 fireDir = player.forward;
+    final asteroids = player.game.world.children.whereType<AsteroidComponent>();
+    if (asteroids.isNotEmpty) {
+      AsteroidComponent? closest;
+      double closestDistSq = double.infinity;
+      for (final ast in asteroids) {
+        final dSq = player.position.distanceToSquared(ast.position);
+        if (dSq < closestDistSq) {
+          closestDistSq = dSq;
+          closest = ast;
+        }
+      }
+      if (closest != null && closestDistSq <= 550.0 * 550.0) {
+        final toTarget = closest.position - player.position;
+        if (toTarget.length2 > 0.01) {
+          fireDir = toTarget.normalized();
+        }
+      }
+    }
+
+    final velocity = fireDir * speed;
     final explosionRadius = 95.0 + (level - 1) * 20.0;
 
     final bomb = BombComponent(
-      position: player.position + player.forward * player.radius,
+      position: player.position + fireDir * player.radius,
       velocity: velocity,
       damage: effectiveDamage,
       explosionRadius: explosionRadius,

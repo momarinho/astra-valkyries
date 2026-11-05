@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
+import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/ui/valkyrie_selection_overlay.dart';
 import 'package:asteroids/ui/hud_overlay.dart';
@@ -117,6 +118,7 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();
       game.selectedValkyrie = Valkyrie.findById('vesper');
+      game.player = PlayerComponent(position: Vector2.zero());
       game.score = 3400;
 
       await tester.pumpWidget(
@@ -132,6 +134,69 @@ void main() {
       expect(find.text('VESPER // DREAD RENEGADE'), findsOneWidget);
       expect(find.text('► RESUME SORTIE'), findsOneWidget);
       expect(find.text('RETURN TO HANGAR'), findsOneWidget);
+    });
+  });
+
+  group('Vampire Survivors Multi-Weapon Stacking & Auto-Fire Tests', () {
+    test('PlayerComponent stacks new weapons without discarding previous weapons', () {
+      final player = PlayerComponent(position: Vector2.zero());
+      final blaster = Blaster();
+      player.setWeapon(blaster);
+
+      expect(player.activeWeapons.length, equals(1));
+      expect(player.activeWeapons.first.id, equals('blaster'));
+
+      // Add SpreadShot
+      final spread = SpreadShot();
+      player.addWeapon(spread);
+
+      expect(player.activeWeapons.length, equals(2));
+      expect(player.activeWeapons.map((w) => w.id), containsAll(['blaster', 'spread_shot']));
+
+      // Add RapidFire
+      final rapid = RapidFire();
+      player.addWeapon(rapid);
+
+      expect(player.activeWeapons.length, equals(3));
+      expect(player.activeWeapons.map((w) => w.id), containsAll(['blaster', 'spread_shot', 'rapid_fire']));
+
+      // Upgrading blaster does not alter other weapons
+      expect(blaster.level, equals(1));
+      expect(spread.level, equals(1));
+      expect(rapid.level, equals(1));
+
+      player.addWeapon(Blaster()); // adding already unlocked weapon upgrades it
+      expect(blaster.level, equals(2));
+      expect(spread.level, equals(1));
+      expect(player.activeWeapons.length, equals(3));
+    });
+
+    test('Each equipped weapon fires automatically on its independent cooldown timer', () {
+      final game = AsteroidsGame();
+      game.state = GameState.playing;
+
+      final player = PlayerComponent(position: Vector2(100, 100));
+      player.game = game;
+      game.player = player;
+
+      final blaster = Blaster();
+      final rapid = RapidFire();
+      player.setWeapon(blaster);
+      player.addWeapon(rapid);
+
+      // Initially both weapons ready
+      expect(blaster.currentCooldown, equals(0.0));
+      expect(rapid.currentCooldown, equals(0.0));
+
+      // Simulate a physics tick
+      player.update(0.02);
+
+      // Both weapons should have fired and set their individual cooldowns
+      expect(blaster.currentCooldown, greaterThan(0.0));
+      expect(rapid.currentCooldown, greaterThan(0.0));
+
+      // RapidFire has a shorter cooldown than Blaster
+      expect(rapid.cooldown, lessThan(blaster.cooldown));
     });
   });
 }

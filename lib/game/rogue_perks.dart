@@ -87,9 +87,7 @@ class RoguePerkGenerator {
           icon: Icons.flash_on,
           accentColor: const Color(0xFFFF5722),
           onSelect: (g) {
-            final w = Blaster();
-            g.player.unlockedWeapons['blaster'] = w;
-            g.player.setWeapon(w);
+            g.player.addWeapon(Blaster());
           },
         ),
       );
@@ -106,9 +104,7 @@ class RoguePerkGenerator {
           icon: Icons.grain,
           accentColor: const Color(0xFF00E676),
           onSelect: (g) {
-            final w = SpreadShot();
-            g.player.unlockedWeapons['spread_shot'] = w;
-            g.player.setWeapon(w);
+            g.player.addWeapon(SpreadShot());
           },
         ),
       );
@@ -125,9 +121,7 @@ class RoguePerkGenerator {
           icon: Icons.fast_forward,
           accentColor: const Color(0xFF2979FF),
           onSelect: (g) {
-            final w = RapidFire();
-            g.player.unlockedWeapons['rapid_fire'] = w;
-            g.player.setWeapon(w);
+            g.player.addWeapon(RapidFire());
           },
         ),
       );
@@ -144,9 +138,7 @@ class RoguePerkGenerator {
           icon: Icons.gps_fixed,
           accentColor: const Color(0xFFFF6D00),
           onSelect: (g) {
-            final w = BombLauncher();
-            g.player.unlockedWeapons['bomb_launcher'] = w;
-            g.player.setWeapon(w);
+            g.player.addWeapon(BombLauncher());
           },
         ),
       );

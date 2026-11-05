@@ -278,6 +278,37 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 ),
                               ],
                             ),
+
+                            const Divider(height: 20, color: Colors.white12),
+
+                            // Equipped Arsenal Badges
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              alignment: WrapAlignment.center,
+                              children: game.player.activeWeapons.map((w) {
+                                final isMax = w.level >= w.maxLevel;
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white10,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isMax ? const Color(0xFFFFD700) : valkyrie.primaryColor.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${w.name.toUpperCase()} (MK ${w.level})',
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 9.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: isMax ? const Color(0xFFFFD700) : Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                           ],
                         ),
                       ),

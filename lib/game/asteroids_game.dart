@@ -441,15 +441,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
     _removeAllAsteroidsAndProjectiles();
 
-    // Reset player states, stats, and unlocked weapons
+    // Reset player states, stats, and initialize chosen Valkyrie's starting weapon
     player.respawn(GameConstants.screenWidth / 2, GameConstants.screenHeight / 2);
     player.valkyrie = selectedValkyrie;
-    player.unlockedWeapons.clear();
     
     // Set starting weapon based on chosen Valkyrie
     final startingWeapon = selectedValkyrie.createStartingWeapon();
-    final weaponKey = startingWeapon.name.toLowerCase().replaceAll(' ', '_');
-    player.unlockedWeapons[weaponKey] = startingWeapon;
     player.setWeapon(startingWeapon);
 
     // Apply movement stats based on pilot speed multiplier

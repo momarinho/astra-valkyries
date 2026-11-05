@@ -401,7 +401,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       ),
                       const SizedBox(height: 3),
 
-                      // Vessel Info & Active MK
+                      // Vessel Info & Active Arsenal Size
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -415,28 +415,22 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: currentWeapon.level >= 3
-                                  ? const Color(0xFFFFD700).withOpacity(0.2)
-                                  : valkyrie.primaryColor.withOpacity(0.2),
+                              color: valkyrie.primaryColor.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: currentWeapon.level >= 3
-                                    ? const Color(0xFFFFD700)
-                                    : valkyrie.primaryColor.withOpacity(0.6),
+                                color: valkyrie.primaryColor.withOpacity(0.6),
                                 width: 0.8,
                               ),
                             ),
                             child: Text(
-                              currentWeapon.level >= 3 ? 'MK MAX ★' : 'MK ${currentWeapon.level}',
+                              'ARSENAL: ${player.activeWeapons.length} GUNS',
                               style: TextStyle(
                                 fontFamily: 'Orbitron',
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.bold,
-                                color: currentWeapon.level >= 3
-                                    ? const Color(0xFFFFD700)
-                                    : valkyrie.accentColor,
+                                color: valkyrie.accentColor,
                               ),
                             ),
                           ),
@@ -559,70 +553,102 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // Active Weapon Card
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.75),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              currentWeapon.name.toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontVariations: [FontVariation('wght', 700)],
-                                fontSize: 11.5,
-                                letterSpacing: 0.8,
-                                color: Colors.white,
+                      // Active Arsenal (Vampire Survivors Multi-Weapon Cards)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: player.activeWeapons.map((w) {
+                          final isReady = w.currentCooldown <= 0;
+                          final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
+                          final progress = (1.0 - (w.currentCooldown / maxCd)).clamp(0.0, 1.0);
+                          final isMax = w.level >= w.maxLevel;
+
+                          return Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: isMax
+                                    ? const Color(0xFFFFD700).withOpacity(0.8)
+                                    : (isReady ? valkyrie.accentColor.withOpacity(0.6) : Colors.white24),
+                                width: isMax ? 1.4 : 1.0,
                               ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'CADENCE COOLDOWN',
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                color: valkyrie.accentColor,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            // Weapon Cooldown Bar
-                            Container(
-                              width: 80,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                color: Colors.white12,
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  width: shootCooldown <= 0
-                                      ? 80
-                                      : (80 * (1 - (shootCooldown / currentWeapon.cooldown))).clamp(0.0, 80.0),
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: shootCooldown <= 0 ? Colors.greenAccent : Colors.orangeAccent,
-                                    borderRadius: BorderRadius.circular(3),
-                                    boxShadow: [
+                              boxShadow: isMax
+                                  ? [
                                       BoxShadow(
-                                        color: (shootCooldown <= 0 ? Colors.greenAccent : Colors.orangeAccent)
-                                            .withOpacity(0.5),
-                                        blurRadius: 4,
+                                        color: const Color(0xFFFFD700).withOpacity(0.25),
+                                        blurRadius: 6,
                                       ),
-                                    ],
+                                    ]
+                                  : null,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      w.name.toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 10.0,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.6,
+                                        color: isMax ? const Color(0xFFFFD700) : Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: isMax
+                                            ? const Color(0xFFFFD700).withOpacity(0.25)
+                                            : valkyrie.primaryColor.withOpacity(0.25),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(
+                                        isMax ? 'MAX' : 'MK ${w.level}',
+                                        style: TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 7.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: isMax ? const Color(0xFFFFD700) : valkyrie.accentColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                // Weapon Cooldown Bar
+                                Container(
+                                  width: 60,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white12,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: FractionallySizedBox(
+                                      widthFactor: progress,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: isReady
+                                              ? (isMax ? const Color(0xFFFFD700) : Colors.greenAccent)
+                                              : Colors.orangeAccent,
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        }).toList(),
                       ),
                       const SizedBox(width: 12),
 
@@ -1013,7 +1039,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '🎮 WASD/ARROWS: Steer | SPACE/Z: Fire | SHIFT: Dash | E: Special',
+                                    '🎮 WASD/ARROWS: Steer | AUTO-FIRE ARSENAL | SHIFT: Dash | E: Special',
                                     style: TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 10.5,
