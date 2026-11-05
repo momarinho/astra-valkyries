@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
 import 'package:asteroids/game/components/asteroid.dart';
+import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 
@@ -90,6 +91,23 @@ void main() {
       final game = AsteroidsGame();
       expect(game.fairRunEvolutionLevel, equals(1));
       expect(game.halfTimeRechargeTriggered, isFalse);
+    });
+
+    test('Weapons DO NOT upgrade automatically on score milestones; only through roguelike perks', () {
+      final game = AsteroidsGame();
+      game.player = PlayerComponent(position: Vector2.zero());
+      game.state = GameState.playing;
+      final startingWeapon = game.player.weapon;
+      expect(startingWeapon.level, equals(1));
+
+      // Destroy asteroids pushing score beyond 1200 and 3000
+      game.onAsteroidDestroyed(Vector2.zero(), 1500);
+      expect(game.score, equals(1500));
+      expect(game.player.weapon.level, equals(1), reason: 'Weapon must NOT auto-upgrade at 1200 points');
+
+      game.onAsteroidDestroyed(Vector2.zero(), 2000);
+      expect(game.score, equals(3500));
+      expect(game.player.weapon.level, equals(1), reason: 'Weapon must NOT auto-upgrade at 3000 points');
     });
   });
 }

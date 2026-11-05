@@ -734,60 +734,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void checkRunEvolution() {
-    if (state != GameState.playing) return;
-
-    // Evolução Nível 2: 1.200 pontos OU 3 amostras coletadas
-    if (fairRunEvolutionLevel == 1 && (score >= 1200 || samplesCollected >= 3)) {
-      fairRunEvolutionLevel = 2;
-      player.weapon.upgrade();
-      player.invulnerableTimer = math.max(player.invulnerableTimer, 2.0);
-      playSfx('powerup.wav');
-      triggerScreenShake(duration: 0.35, intensity: 7.0);
-
-      spawnFloatingText(
-        player.position + Vector2(0, -45),
-        '⚡ EVOLUÇÃO CIENTÍFICA NÍVEL 2! (${player.weapon.name})',
-        color: Colors.cyanAccent,
-        fontSize: 18.0,
-        velocity: Vector2(0, -35),
-      );
-
-      spawnExplosionParticles(
-        position: player.position,
-        colorChoices: [Colors.cyanAccent, selectedValkyrie.primaryColor, Colors.white],
-        count: 24,
-        minSize: 2.0,
-        maxSize: 5.0,
-        minSpeed: 60.0,
-        maxSpeed: 180.0,
-      );
-    }
-    // Evolução Nível 3 (Máxima): 3.000 pontos OU 6 amostras coletadas
-    else if (fairRunEvolutionLevel == 2 && (score >= 3000 || samplesCollected >= 6)) {
-      fairRunEvolutionLevel = 3;
-      player.weapon.upgrade();
-      player.invulnerableTimer = math.max(player.invulnerableTimer, 3.0);
-      playSfx('powerup.wav');
-      triggerScreenShake(duration: 0.5, intensity: 10.0);
-
-      spawnFloatingText(
-        player.position + Vector2(0, -45),
-        '🌟 EVOLUÇÃO MÁXIMA NÍVEL 3! POTÊNCIA CÓSMICA!',
-        color: Colors.amberAccent,
-        fontSize: 20.0,
-        velocity: Vector2(0, -40),
-      );
-
-      spawnExplosionParticles(
-        position: player.position,
-        colorChoices: [Colors.amberAccent, Colors.yellow, Colors.white, selectedValkyrie.primaryColor],
-        count: 36,
-        minSize: 3.0,
-        maxSize: 6.0,
-        minSpeed: 80.0,
-        maxSpeed: 220.0,
-      );
-    }
+    // Weapons evolve strictly via roguelike perk selections (MK II / MK MAX).
+    // Legacy auto-upgrade based on score/time thresholds is disabled for true Roguelike progression.
   }
 
   void onAsteroidDestroyed(Vector2 pos, int basePoints) {
