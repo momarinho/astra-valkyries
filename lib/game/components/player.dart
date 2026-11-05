@@ -11,6 +11,7 @@ import 'package:asteroids/game/scientist.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'asteroid.dart';
 import 'joystick.dart';
+import 'cosmic_nebula.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   Vector2 velocity = Vector2.zero();
@@ -60,6 +61,13 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   bool isNearBoundary = false;
   double boundaryDistance = double.infinity;
 
+  // Interactive Environmental Zones & Modifiers
+  String? activeNebulaName;
+  String? activeNebulaModifier;
+  double speedModifier = 1.0;
+  double bonusCritChance = 0.0;
+  bool isShieldSuppressed = false;
+
   void resetRoguelikeStats() {
     magnetRadius = 140.0;
     pierceCount = 0;
@@ -68,6 +76,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     hasChainLightning = false;
     hasFieryDash = false;
     hasClusterBombs = false;
+
+    activeNebulaName = null;
+    activeNebulaModifier = null;
+    speedModifier = 1.0;
+    bonusCritChance = 0.0;
+    isShieldSuppressed = false;
   }
 
   PlayerComponent({required Vector2 position}) {
@@ -153,9 +167,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void clampSpeed() {
-    if (velocity.length > movementMaxSpeed) {
+    final effectiveMaxSpeed = movementMaxSpeed * speedModifier;
+    if (velocity.length > effectiveMaxSpeed) {
       velocity.normalize();
-      velocity.scale(movementMaxSpeed);
+      velocity.scale(effectiveMaxSpeed);
     }
   }
 
@@ -179,12 +194,14 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     invulnerableTimer = GameConstants.playerInvulnerableSeconds;
   }
 
-  bool isInvulnerable() => invulnerableTimer > 0;
+  bool isInvulnerable() => !isShieldSuppressed && invulnerableTimer > 0;
 
   @override
   void update(double dt) {
     super.update(dt);
     if (game.state != GameState.playing) return;
+
+    _updateNebulaModifiers();
 
     invulnerableTimer = math.max(0.0, invulnerableTimer - dt);
     dashCooldownTimer = math.max(0.0, dashCooldownTimer - dt);
@@ -196,7 +213,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       w.currentCooldown = math.max(0.0, w.currentCooldown - dt);
       if (w.currentCooldown <= 0) {
         if (w.fire(this)) {
-          final effectiveCooldown = w.cooldown * game.rogueFireRateMultiplier;
+          final cooldownMultiplier = (activeNebulaName == 'ION NEBULA') ? 0.70 : 1.0;
+          final effectiveCooldown = w.cooldown * game.rogueFireRateMultiplier * cooldownMultiplier;
           w.currentCooldown = effectiveCooldown;
 
           // Micro-recoil (subtle physical kickback without impeding steering)
@@ -402,6 +420,30 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void wrapAround() => enforceSectorBounds(0.016);
+
+  void _updateNebulaModifiers() {
+    activeNebulaName = null;
+    activeNebulaModifier = null;
+    speedModifier = 1.0;
+    bonusCritChance = 0.0;
+    isShieldSuppressed = false;
+
+    try {
+      for (final nebula in game.world.children.whereType<CosmicNebulaComponent>()) {
+        if (nebula.containsPoint(position)) {
+          activeNebulaName = nebula.name;
+          activeNebulaModifier = nebula.modifierText;
+          if (nebula.type == NebulaType.ionCloud) {
+            isShieldSuppressed = true;
+          } else if (nebula.type == NebulaType.darkMatter) {
+            speedModifier = 0.70;
+            bonusCritChance = 0.50;
+          }
+          break;
+        }
+      }
+    } catch (_) {}
+  }
 
   @override
   void render(Canvas canvas) {

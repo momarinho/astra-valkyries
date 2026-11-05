@@ -20,6 +20,9 @@ import 'components/joystick.dart';
 import 'components/drop.dart';
 import 'components/floating_text.dart';
 import 'components/xp_orb.dart';
+import 'components/space_station.dart';
+import 'components/cargo_wreck.dart';
+import 'components/cosmic_nebula.dart';
 import 'weapons.dart';
 import 'level_manager.dart';
 import 'scientist.dart';
@@ -197,9 +200,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     initSfxPlayers();
 
-    // Add StarfieldComponent and SectorBoundaryComponent first
+    // Add StarfieldComponent, SectorBoundaryComponent, and Sector POIs first
     world.add(StarfieldComponent());
     world.add(SectorBoundaryComponent());
+    _initSectorPois();
 
     // Add PlayerComponent (starts in center of the large sector)
     player = PlayerComponent(
@@ -476,6 +480,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     asteroidField = AsteroidField();
     world.add(asteroidField!);
 
+    _initSectorPois();
+
     changeState(GameState.playing);
   }
 
@@ -504,6 +510,36 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     for (final child in List.from(childrenToRemove)) {
       child.removeFromParent();
     }
+  }
+
+  void _initSectorPois() {
+    // 1. Remove previous POIs to prevent duplicates on run restart
+    final existingPois = world.children.where((child) =>
+        child is SpaceStationComponent ||
+        child is CargoWreckComponent ||
+        child is CosmicNebulaComponent);
+    for (final poi in List.from(existingPois)) {
+      poi.removeFromParent();
+    }
+
+    // 2. Interactive Research Relay Station (North-West Quadrant)
+    world.add(SpaceStationComponent(position: Vector2(1500, 1500)));
+
+    // 3. Derelict Cargo Containers (Points of Interest with loot)
+    world.add(CargoWreckComponent(position: Vector2(3400, 1300)));
+    world.add(CargoWreckComponent(position: Vector2(1300, 3500)));
+
+    // 4. Cosmic Nebulae (Environmental Hazard & Combat Modifier Zones)
+    world.add(CosmicNebulaComponent(
+      position: Vector2(3400, 3300),
+      type: NebulaType.ionCloud,
+      radius: 460.0,
+    ));
+    world.add(CosmicNebulaComponent(
+      position: Vector2(1400, 3200),
+      type: NebulaType.darkMatter,
+      radius: 460.0,
+    ));
   }
 
   @override
@@ -752,16 +788,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Legacy auto-upgrade based on score/time thresholds is disabled for true Roguelike progression.
   }
 
-  void onAsteroidDestroyed(Vector2 pos, int basePoints) {
+  void addScore(int points) {
     if (state != GameState.playing) return;
-
-    score += basePoints;
-    spawnFloatingText(pos, '+$basePoints', color: Colors.white, fontSize: 13.5);
-
-    // Verifica marcos de evolução científica das armas
-    checkRunEvolution();
-
-    // Check if player just beat top leader score
+    score += points;
     if (!topRecordBeaten && topLeaderScore > 0 && score > topLeaderScore) {
       topRecordBeaten = true;
       playSfx('powerup.wav');
@@ -774,6 +803,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         velocity: Vector2(0, -40),
       );
     }
+  }
+
+  void onAsteroidDestroyed(Vector2 pos, int basePoints) {
+    if (state != GameState.playing) return;
+
+    addScore(basePoints);
+    spawnFloatingText(pos, '+$basePoints', color: Colors.white, fontSize: 13.5);
+
+    // Verifica marcos de evolução científica das armas
+    checkRunEvolution();
   }
 
   void spawnComet() {

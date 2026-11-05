@@ -6,6 +6,7 @@ import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
+import 'cargo_wreck.dart';
 
 class BombComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final Vector2 velocity;
@@ -74,7 +75,7 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
     super.onCollisionStart(intersectionPoints, other);
     if (_hasExploded) return;
 
-    if (other is AsteroidComponent) {
+    if (other is AsteroidComponent || other is CargoWreckComponent) {
       explode();
     }
   }
@@ -139,6 +140,14 @@ class BombExplosionComponent extends PositionComponent with HasGameReference<Ast
           destroyedCount++;
           game.onAsteroidDestroyed(asteroid.position, asteroid.scoreValue);
         }
+      }
+    }
+
+    final wrecks = game.world.children.whereType<CargoWreckComponent>();
+    for (final wreck in List<CargoWreckComponent>.from(wrecks)) {
+      final distance = position.distanceTo(wreck.position);
+      if (distance <= maxRadius + 25.0) {
+        wreck.takeDamage(damage, wreck.position);
       }
     }
 

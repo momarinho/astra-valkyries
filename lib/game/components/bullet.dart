@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
+import 'cargo_wreck.dart';
 
 class BulletComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius;
@@ -59,7 +61,25 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is AsteroidComponent) {
-      final destroyed = other.takeDamage(damage, position);
+      double dealtDamage = damage;
+      bool isCrit = false;
+      try {
+        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
+        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
+          dealtDamage *= 2.0;
+          isCrit = true;
+        }
+      } catch (_) {}
+
+      final destroyed = other.takeDamage(dealtDamage, position);
+      if (isCrit) {
+        game.spawnFloatingText(
+          position + Vector2(0, -18),
+          'CRIT!',
+          color: const Color(0xFFFF5252),
+          fontSize: 13.0,
+        );
+      }
       if (destroyed) {
         game.playSfx('asteroid_split.wav');
         game.onAsteroidDestroyed(other.position, other.scoreValue);
@@ -79,6 +99,21 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
           minSpeed: 40.0,
           maxSpeed: 90.0,
         );
+      } else {
+        removeFromParent();
+      }
+    } else if (other is CargoWreckComponent) {
+      double dealtDamage = damage;
+      try {
+        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
+        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
+          dealtDamage *= 2.0;
+        }
+      } catch (_) {}
+
+      other.takeDamage(dealtDamage, position);
+      if (piercesLeft > 0) {
+        piercesLeft--;
       } else {
         removeFromParent();
       }

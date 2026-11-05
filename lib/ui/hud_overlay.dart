@@ -8,6 +8,9 @@ import 'package:asteroids/game/valkyrie.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/comet.dart';
+import 'package:asteroids/game/components/space_station.dart';
+import 'package:asteroids/game/components/cargo_wreck.dart';
+import 'package:asteroids/game/components/cosmic_nebula.dart';
 
 class HudOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -594,6 +597,131 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
               ),
             ),
 
+          // Environmental Nebula Modifier Banner
+          if (player.activeNebulaName != null)
+            Positioned(
+              top: player.isNearBoundary ? 94 : 54,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF070B14).withOpacity(0.90),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: player.activeNebulaName == 'ION NEBULA'
+                          ? const Color(0xFFE040FB)
+                          : const Color(0xFF00E5FF),
+                      width: 1.4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (player.activeNebulaName == 'ION NEBULA'
+                                ? const Color(0xFFE040FB)
+                                : const Color(0xFF00E5FF))
+                            .withOpacity(0.35),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        player.activeNebulaName == 'ION NEBULA'
+                            ? Icons.bolt_rounded
+                            : Icons.auto_awesome_rounded,
+                        color: player.activeNebulaName == 'ION NEBULA'
+                            ? const Color(0xFFE040FB)
+                            : const Color(0xFF00E5FF),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${player.activeNebulaName} // ${player.activeNebulaModifier}',
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                          color: player.activeNebulaName == 'ION NEBULA'
+                              ? const Color(0xFFE040FB)
+                              : const Color(0xFF00E5FF),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Space Station Uplink Progress Banner
+          Builder(
+            builder: (context) {
+              SpaceStationComponent? station;
+              try {
+                final stations = widget.game.world.children.whereType<SpaceStationComponent>();
+                if (stations.isNotEmpty) station = stations.first;
+              } catch (_) {}
+
+              if (station == null || (!station.isPlayerInZone && station.uploadProgress <= 0)) {
+                return const SizedBox.shrink();
+              }
+
+              final progressPct = (station.uploadProgress / SpaceStationComponent.targetUploadTime * 100).toInt();
+              final topOffset = (player.isNearBoundary ? 94.0 : 54.0) + (player.activeNebulaName != null ? 36.0 : 0.0);
+
+              return Positioned(
+                top: topOffset,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0B1426).withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
+                        width: 1.4,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700)).withOpacity(0.35),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          station.isSecured ? Icons.check_circle_outline_rounded : Icons.cell_tower_rounded,
+                          color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          station.isSecured
+                              ? 'RELAY ARCHIVES SECURED (+1500 PTS)'
+                              : 'RELAY UPLINK IN PROGRESS: $progressPct%',
+                          style: TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.4,
+                            color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
           // Bottom Left: Active Arsenal Card, Thruster Dash & Valkyrie Special Ability
           Positioned(
             bottom: 0,
@@ -1150,6 +1278,44 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       }
     } catch (_) {}
 
+    Offset? stationOffset;
+    bool stationSecured = false;
+    try {
+      final stations = widget.game.world.children.whereType<SpaceStationComponent>();
+      if (stations.isNotEmpty) {
+        final s = stations.first;
+        final offset = s.position - playerPos;
+        stationOffset = Offset(offset.x, offset.y);
+        stationSecured = s.isSecured;
+      }
+    } catch (_) {}
+
+    final cargoBlips = <Offset>[];
+    try {
+      final wrecks = widget.game.world.children.whereType<CargoWreckComponent>();
+      for (final w in wrecks) {
+        final offset = w.position - playerPos;
+        if (offset.length <= GameConstants.radarRange) {
+          cargoBlips.add(Offset(offset.x, offset.y));
+        }
+      }
+    } catch (_) {}
+
+    final nebulaBlips = <({Offset offset, Color color, double radius})>[];
+    try {
+      final nebulae = widget.game.world.children.whereType<CosmicNebulaComponent>();
+      for (final n in nebulae) {
+        final offset = n.position - playerPos;
+        if (offset.length <= GameConstants.radarRange + n.radius) {
+          nebulaBlips.add((
+            offset: Offset(offset.x, offset.y),
+            color: n.primaryColor,
+            radius: n.radius,
+          ));
+        }
+      }
+    } catch (_) {}
+
     return Container(
       width: 104,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -1180,6 +1346,10 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 playerColor: valkyrie.primaryColor,
                 asteroidBlips: asteroidBlips,
                 cometBlip: cometBlip,
+                stationOffset: stationOffset,
+                stationSecured: stationSecured,
+                cargoBlips: cargoBlips,
+                nebulaBlips: nebulaBlips,
                 sweepTimer: _radarSweepTimer,
                 isNearBoundary: player.isNearBoundary,
               ),
@@ -1208,6 +1378,10 @@ class _RadarScopePainter extends CustomPainter {
   final Color playerColor;
   final List<Offset> asteroidBlips;
   final Offset? cometBlip;
+  final Offset? stationOffset;
+  final bool stationSecured;
+  final List<Offset> cargoBlips;
+  final List<({Offset offset, Color color, double radius})> nebulaBlips;
   final double sweepTimer;
   final bool isNearBoundary;
 
@@ -1216,6 +1390,10 @@ class _RadarScopePainter extends CustomPainter {
     required this.playerColor,
     required this.asteroidBlips,
     required this.cometBlip,
+    required this.stationOffset,
+    required this.stationSecured,
+    required this.cargoBlips,
+    required this.nebulaBlips,
     required this.sweepTimer,
     required this.isNearBoundary,
   });
@@ -1224,12 +1402,25 @@ class _RadarScopePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
+    const maxRange = GameConstants.radarRange;
 
     // Background circle
     final bgPaint = Paint()
       ..color = const Color(0xFF060B16).withOpacity(0.92)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius, bgPaint);
+
+    // Cosmic Nebulae background zones
+    for (final neb in nebulaBlips) {
+      final normX = (neb.offset.dx / maxRange) * (radius * 0.88);
+      final normY = (neb.offset.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      final scaledRad = (neb.radius / maxRange) * (radius * 0.88);
+      final nebPaint = Paint()
+        ..color = neb.color.withOpacity(0.18)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(blipPos, scaledRad, nebPaint);
+    }
 
     // Range Rings
     final ringPaint = Paint()
@@ -1262,13 +1453,76 @@ class _RadarScopePainter extends CustomPainter {
     final astPaint = Paint()
       ..color = const Color(0xFF64D2FF).withOpacity(0.8)
       ..style = PaintingStyle.fill;
-    const maxRange = GameConstants.radarRange;
     for (final offset in asteroidBlips) {
       final normX = (offset.dx / maxRange) * (radius * 0.88);
       final normY = (offset.dy / maxRange) * (radius * 0.88);
       final blipPos = center + Offset(normX, normY);
       if ((blipPos - center).distance <= radius * 0.95) {
         canvas.drawCircle(blipPos, 1.8, astPaint);
+      }
+    }
+
+    // Cargo Container blips (small amber squares)
+    final cargoPaint = Paint()
+      ..color = const Color(0xFFFFB300)
+      ..style = PaintingStyle.fill;
+    for (final offset in cargoBlips) {
+      final normX = (offset.dx / maxRange) * (radius * 0.88);
+      final normY = (offset.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      if ((blipPos - center).distance <= radius * 0.95) {
+        canvas.drawRect(Rect.fromCenter(center: blipPos, width: 3.5, height: 3.5), cargoPaint);
+      }
+    }
+
+    // Research Relay Station blip / Waypoint Arrow
+    if (stationOffset != null) {
+      final stationDist = stationOffset!.distance;
+      final stColor = stationSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700);
+
+      if (stationDist <= maxRange) {
+        // Station is inside radar range - golden diamond with pulsing beacon
+        final normX = (stationOffset!.dx / maxRange) * (radius * 0.88);
+        final normY = (stationOffset!.dy / maxRange) * (radius * 0.88);
+        final blipPos = center + Offset(normX, normY);
+
+        final dPath = Path()
+          ..moveTo(blipPos.dx, blipPos.dy - 4.0)
+          ..lineTo(blipPos.dx + 4.0, blipPos.dy)
+          ..lineTo(blipPos.dx, blipPos.dy + 4.0)
+          ..lineTo(blipPos.dx - 4.0, blipPos.dy)
+          ..close();
+        final stationPaint = Paint()
+          ..color = stColor
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(dPath, stationPaint);
+
+        // Beacon pulse ring
+        final beaconRadius = 4.0 + 3.0 * ((1.0 + math.sin(sweepTimer * 4.0)) / 2.0);
+        final beaconPaint = Paint()
+          ..color = stColor.withOpacity(0.55)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+        canvas.drawCircle(blipPos, beaconRadius, beaconPaint);
+      } else {
+        // Station is outside radar range - draw perimeter waypoint arrow on the rim
+        final angleToStation = math.atan2(stationOffset!.dy, stationOffset!.dx);
+        final arrowPos = center + Offset(math.cos(angleToStation), math.sin(angleToStation)) * (radius * 0.90);
+
+        canvas.save();
+        canvas.translate(arrowPos.dx, arrowPos.dy);
+        canvas.rotate(angleToStation + math.pi / 2);
+
+        final arrowPath = Path()
+          ..moveTo(0, -5.0)
+          ..lineTo(4.0, 3.5)
+          ..lineTo(-4.0, 3.5)
+          ..close();
+        final arrowPaint = Paint()
+          ..color = stColor
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(arrowPath, arrowPaint);
+        canvas.restore();
       }
     }
 

@@ -61,27 +61,58 @@ Para manter o jogo leve e sem travamentos em celulares com processadores interme
 
 ---
 
-### 2.4 Mini-Radar Tático no HUD
+### 2.4 Mini-Radar Tático & Navegação Espacial no HUD
 Em [`lib/ui/hud_overlay.dart`](file:///home/mateus/Projects/astra-valkyries/lib/ui/hud_overlay.dart), um radar circular de tecnologia militar foi integrado no canto superior direito:
 - **Alcance Operacional**: Escala de `1.400 metros` (1.400 px ao redor do caça).
 - **Varredura Animada**: Feixe de radar rotativo sincronizado a `60 FPS` via `Ticker`.
 - **Pontos de Contato (Blips)**:
-  - *Pontos Ciano/Prata*: Asteroides próximos.
+  - *Pontos Ciano*: Asteroides nas proximidades.
+  - *Quadrados Âmbar/Dourados*: Containers de Carga Derelict ([`CargoWreckComponent`](file:///home/mateus/Projects/astra-valkyries/lib/game/components/cargo_wreck.dart)).
+  - *Losango Dourado com Pulso de Baliza*: Estação Científica de Transmissão ([`SpaceStationComponent`](file:///home/mateus/Projects/astra-valkyries/lib/game/components/space_station.dart)).
+  - *Seta Indicadora de Borda (Waypoint)*: Quando a Estação de Pesquisa estiver fora do alcance do radar (> 1.400 px), uma seta dourada na borda do radar aponta ininterruptamente sua direção vetorial.
+  - *Círculos Translúcidos Coloridos*: Zonas de Nebulosas Cósmicas Ionizadas (Magenta) e Matéria Escura (Ciano/Índigo).
   - *Ponto Dourado Pulsante*: Cometa Halley ou eventos cósmicos de elite.
   - *Seta Central*: Direção e orientação exatas do caça da jogadora.
 - **Telemetria de Coordenadas**: Exibe o quadrante espacial em tempo real (`SEC [X:24, Y:24]`).
 
 ---
 
-### 2.5 Parallax Estelar e Nebulosas
-O [`StarfieldComponent`](file:///home/mateus/Projects/astra-valkyries/lib/game/components/starfield.dart) foi adaptado para ancorar seu desenho sempre nas coordenadas do viewport da câmera (`camPos.x - width / 2`), movimentando três camadas de estrelas com velocidades proporcionais à velocidade do caça. O resultado é uma sensação contínua de imensidão cósmica sem costuras visíveis.
+### 2.5 Elementos de Cenário e Pontos de Interesse (POIs)
+
+Para que o vácuo espacial não seja monótono e encoraje exploração tática roguelike, o setor agora conta com 3 classes de entidades vetoriais procedurais:
+
+1. **Estação Espacial / Relay de Pesquisa Abandonado ([`SpaceStationComponent`](file:///home/mateus/Projects/astra-valkyries/lib/game/components/space_station.dart))**:
+   - **Localização**: Quadrante Noroeste `(1500, 1500)`.
+   - **Mecânica de Transmissão**: Ao entrar no perímetro de transmissão (240 px), inicia-se o uplink de dados durante 15 segundos. Se a nave sair da área, o progresso decai lentamente.
+   - **Recompensa**: Ao completar o upload (100%), a estação é marcada como `isSecured`, recompensa +1500 pontos, ativa escudo restaurador e ejeta 5 Orbes Grandes de Stardust XP.
+   - **HUD**: Barra de progresso de upload em tempo real no topo da tela.
+
+2. **Containers de Carga Espacial Derelict ([`CargoWreckComponent`](file:///home/mateus/Projects/astra-valkyries/lib/game/components/cargo_wreck.dart))**:
+   - **Localizações**: `(3400, 1300)` e `(1300, 3500)`.
+   - **Resistência & Dano**: Blindagem reforçada com 180 HP, flash de impacto e números de dano flutuantes. Destrutível por tiros normais ou explosões de bombas/mísseis.
+   - **Loot de Ruptura**: Ao quebrar, concede +450 pontos e libera 3 Orbes de Stardust Médias + 1 Drop Raro garantido (Escudo Fotônico, Nanites de Reparo ou Hélio-3 Raro).
+
+3. **Nebulosas Cósmicas com Modificadores de Combate ([`CosmicNebulaComponent`](file:///home/mateus/Projects/astra-valkyries/lib/game/components/cosmic_nebula.dart))**:
+   - **Nuvem de Íons (`NebulaType.ionCloud`) em `(3400, 3300)`**:
+     - *Bônus*: +30% na cadência de disparos (recharge acelerado em 0.7x).
+     - *Risco*: Escudos desativados enquanto permanecer na nuvem (dano imediato ao tocar em meteoros).
+   - **Bolsão de Matéria Escura (`NebulaType.darkMatter`) em `(1400, 3200)`**:
+     - *Bônus*: +50% de taxa de acerto crítico (dano dobrado).
+     - *Risco*: Gravidade densa que reduz a velocidade máxima em 30%.
+   - **HUD**: Badge luminoso e estilizado identifica a nebulosa atual e os bônus ativos.
 
 ---
 
-## 3. Próximos Passos de Expansão Procedural
+### 2.6 Parallax Estelar e Otimização 100% Vetorial
+O jogo utiliza **100% de computação gráfica vetorial procedural** (`Canvas` nativo Flutter/Flame). Não depende de pacotes de sprites externos para entidades de jogo, garantindo:
+- **Tamanho Mínimo de Download**: APK leve (< 25 MB).
+- **Escala de Resolução Infinita**: Não borra nem perde nitidez em telas 4K, tablets ou monitores ultrawide.
+- **Liberação Comercial Total**: Licenças permissivas (MIT / BSD-3 / OFL), zero risco de copyright de terceiros.
 
-1. **Pontos de Interesse (POIs) Estáticos**:
-   - Estações de Transmissão Desativadas no quadrante noroeste que liberam baús de Stardust ao serem defendidas.
-   - Campos de Matéria Escura que reduzem a velocidade da nave mas aumentam o dano crítico em 50%.
-2. **Sondas de Patrulha / Inimigos de Elite**:
-   - Drones autônomos que patrulham perímetros e perseguem o jogador quando detectados pelo radar.
+---
+
+## 3. Próximos Passos de Expansão
+1. **Sondas Autônomas e Drones Hostis**:
+   - Patrulhas robóticas que guardam os arredores dos containers de carga.
+2. **Eventos Climáticos Espaciais**:
+   - Tempestades solares repentinas e anomalias de fenda quântica com portais de transporte rápido.

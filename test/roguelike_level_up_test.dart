@@ -5,7 +5,6 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/rogue_perks.dart';
 import 'package:asteroids/game/components/xp_orb.dart';
 import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/weapons.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
