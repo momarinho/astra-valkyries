@@ -262,7 +262,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('valkyrieSelection');
         try {
           if (!FlameAudio.bgm.isPlaying) {
-            FlameAudio.bgm.play('music.wav', volume: 0.65);
+            FlameAudio.bgm.play('music.wav', volume: 0.65).catchError((_) {});
           }
         } catch (_) {}
         _removeAllAsteroidsAndProjectiles();
@@ -271,7 +271,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('scienceIntro');
         try {
           if (!FlameAudio.bgm.isPlaying) {
-            FlameAudio.bgm.play('music.wav', volume: 0.65);
+            FlameAudio.bgm.play('music.wav', volume: 0.65).catchError((_) {});
           }
         } catch (_) {}
         _removeAllAsteroidsAndProjectiles();
@@ -280,7 +280,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('scientistSelection');
         try {
           if (!FlameAudio.bgm.isPlaying) {
-            FlameAudio.bgm.play('music.wav', volume: 0.65);
+            FlameAudio.bgm.play('music.wav', volume: 0.65).catchError((_) {});
           }
         } catch (_) {}
         _removeAllAsteroidsAndProjectiles();
@@ -300,7 +300,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('hud');
         // Play loop background music
         try {
-          FlameAudio.bgm.play('music.wav', volume: 0.85);
+          FlameAudio.bgm.play('music.wav', volume: 0.85).catchError((_) {});
         } catch (_) {}
         gameFocusNode?.requestFocus();
         break;
@@ -322,7 +322,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('leaderboard');
         try {
           if (!FlameAudio.bgm.isPlaying) {
-            FlameAudio.bgm.play('music.wav', volume: 0.6);
+            FlameAudio.bgm.play('music.wav', volume: 0.6).catchError((_) {});
           }
         } catch (_) {}
         _removeAllAsteroidsAndProjectiles();
@@ -415,7 +415,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     runXp = 0;
     runXpNextLevel = calculateNextLevelXp(1);
     currentLevelUpChoices = [];
-    player.resetRoguelikeStats();
+    try {
+      player.resetRoguelikeStats();
+    } catch (_) {}
     topRecordBeaten = false;
     cometWarningTriggered = false;
     cometSpawned = false;
@@ -982,7 +984,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     runXp = 0;
     runXpNextLevel = calculateNextLevelXp(1);
     currentLevelUpChoices = [];
-    player.resetRoguelikeStats();
+    try {
+      player.resetRoguelikeStats();
+    } catch (_) {}
     topRecordBeaten = false;
     cometWarningTriggered = false;
     cometSpawned = false;

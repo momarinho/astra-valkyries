@@ -182,11 +182,28 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 10,
-                                      height: 10,
+                                      width: 26,
+                                      height: 26,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: isSelected ? v.primaryColor : Colors.grey,
+                                        border: Border.all(
+                                          color: isSelected ? v.primaryColor : Colors.white24,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: ClipOval(
+                                        child: Image.asset(
+                                          v.hudNeutralAsset,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => Container(
+                                            color: isSelected ? v.primaryColor : Colors.grey[800],
+                                            child: Icon(
+                                              Icons.person,
+                                              size: 16,
+                                              color: isSelected ? Colors.black : Colors.white54,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 10),
@@ -324,13 +341,14 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
   Widget _buildPilotVisualCard(Valkyrie v) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: const Color(0xFF131A26),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: v.primaryColor.withOpacity(0.35)),
       ),
       child: Stack(
-        alignment: Alignment.center,
+        alignment: Alignment.bottomCenter,
         children: [
           // Background Cyber Pattern
           Positioned.fill(
@@ -342,33 +360,59 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             ),
           ),
 
-          // Pilot Avatar / Hologram Box
+          // Pilot Illustration / Artwork (Fullbody)
+          Positioned.fill(
+            child: Image.asset(
+              v.hangarFullBodyAsset,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback icon when illustration is not present
+                return Center(
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: v.primaryColor.withOpacity(0.12),
+                      border: Border.all(color: v.primaryColor, width: 2.5),
+                    ),
+                    child: Icon(
+                      Icons.person_pin,
+                      size: 70,
+                      color: v.primaryColor,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Gradient shadow overlay for text legibility at bottom
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.40, 0.75, 1.0],
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.10),
+                    Colors.black.withOpacity(0.85),
+                    Colors.black.withOpacity(0.96),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Pilot Details (Name, Title, Quote)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: v.primaryColor.withOpacity(0.12),
-                    border: Border.all(color: v.primaryColor, width: 2.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: v.primaryColor.withOpacity(0.3),
-                        blurRadius: 20,
-                      )
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.person_pin,
-                    size: 80,
-                    color: v.primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Text(
                   v.name,
                   style: const TextStyle(
@@ -389,9 +433,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     color: v.primaryColor,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Text(
                     v.quote,
                     textAlign: TextAlign.center,
@@ -399,7 +443,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       fontFamily: 'Rajdhani',
                       fontSize: 13,
                       fontStyle: FontStyle.italic,
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ),

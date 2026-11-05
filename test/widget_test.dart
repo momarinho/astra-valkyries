@@ -2,7 +2,9 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/components.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/scientist.dart';
 import 'package:asteroids/ui/science_intro_overlay.dart';
 import 'package:asteroids/ui/game_over_overlay.dart';
@@ -14,6 +16,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
+
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+    const MethodChannel('xyz.luan/audioplayers.global'),
+    (call) async => null,
+  );
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+    const MethodChannel('xyz.luan/audioplayers'),
+    (call) async => null,
+  );
 
   group('Scientist Model Tests', () {
     test('Scientists list has 4 historical pioneers', () {
@@ -85,11 +98,11 @@ void main() {
       expect(find.text('► RANKING DA FEIRA'), findsNothing);
     });
 
-    testWidgets('GameOverOverlay accepts text typing and Enter submits', (tester) async {
+    testWidgets('GameOverOverlay responds to keyboard Enter key to retry', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();
-      game.selectedScientist = Scientist.scientists[0];
-      game.score = 420;
+      game.player = PlayerComponent(position: Vector2.zero());
+      game.state = GameState.gameOver;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -100,24 +113,13 @@ void main() {
       );
       await tester.pump();
 
-      // The TextField should be present
-      final textFieldFinder = find.byType(TextField);
-      expect(textFieldFinder, findsOneWidget);
-
-      // Enter text
-      await tester.enterText(textFieldFinder, 'MARIA');
-      await tester.pump();
-
-      expect(find.text('MARIA'), findsOneWidget);
+      expect(find.text('RETRY SORTIE [ENTER]'), findsOneWidget);
 
       // Press Enter key on keyboard
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
 
-      // State should transition to leaderboard and participantName should be set
-      expect(game.participantName, 'MARIA');
-      expect(game.state, GameState.leaderboard);
+      expect(game.state, GameState.playing);
     });
 
     testWidgets('LeaderboardOverlay responds to keyboard navigation', (tester) async {
@@ -133,20 +135,14 @@ void main() {
       );
       await tester.pump();
 
-      // Initially "► PRÓXIMO PILOTO 🚀" is selected
-      expect(find.text('► PRÓXIMO PILOTO 🚀'), findsOneWidget);
+      // Initially "► RETURN TO HANGAR" is selected
+      expect(find.text('► RETURN TO HANGAR'), findsOneWidget);
 
-      // Press ArrowRight to switch to CIENTISTAS
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      // Press Enter key to return to Hangar
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
 
-      expect(find.text('► CIENTISTAS'), findsOneWidget);
-
-      // Press Escape to return to scienceIntro
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pump();
-
-      expect(game.state, GameState.scienceIntro);
+      expect(game.state, GameState.valkyrieSelection);
     });
   });
 

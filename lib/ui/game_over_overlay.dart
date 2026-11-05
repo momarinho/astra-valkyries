@@ -104,9 +104,12 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
     final valkyrie = game.selectedValkyrie;
     final score = game.score;
 
-    return GestureDetector(
-      onTap: () => _nameFocusNode.requestFocus(),
-      child: Scaffold(
+    return Focus(
+      focusNode: _nameFocusNode,
+      autofocus: true,
+      child: GestureDetector(
+        onTap: () => _nameFocusNode.requestFocus(),
+        child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Center(
           child: SingleChildScrollView(
@@ -474,6 +477,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
