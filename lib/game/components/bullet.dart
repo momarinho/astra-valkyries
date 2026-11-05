@@ -97,8 +97,8 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
   void render(Canvas canvas) {
     canvas.translate(radius, radius);
 
-    // Sem cor explícita, o tiro assume a cor-tema da cientista escolhida.
-    final tint = color ?? game.selectedScientist.primaryColor;
+    // Sem cor explícita, o tiro assume a cor-tema da valquíria piloto.
+    final tint = color ?? game.selectedValkyrie.primaryColor;
     Glow.orb(canvas, Offset.zero, radius * 0.85, tint);
   }
 }

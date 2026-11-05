@@ -8,6 +8,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/scientist.dart';
+import 'package:asteroids/game/valkyrie.dart';
 import 'asteroid.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
@@ -29,6 +30,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   late Weapon weapon;
   late final Map<String, Weapon> unlockedWeapons;
   Scientist? scientist;
+  Valkyrie? valkyrie;
   bool isThrusting = false;
 
   // Atributos Roguelike & Sinergias de Partida
@@ -363,9 +365,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void _renderShip(Canvas canvas) {
-    final design = scientist?.shipDesign ?? ShipDesign.deltaJet;
-    final primary = scientist?.primaryColor ?? Colors.white;
-    final accent = scientist?.accentColor ?? Colors.cyanAccent;
+    final primary = valkyrie?.primaryColor ?? scientist?.primaryColor ?? Colors.white;
+    final accent = valkyrie?.accentColor ?? scientist?.accentColor ?? Colors.cyanAccent;
 
     final accentPaint = Paint()
       ..color = accent
@@ -395,6 +396,80 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       Glow.strokePath(canvas, corePath, Glow.mix(accent, Colors.white, 0.8), width: 1.5, intensity: 0.8);
     }
 
+    if (valkyrie != null) {
+      switch (valkyrie!.shipDesign) {
+        case ValkyrieShipDesign.solBlaze:
+          // Lyra: High-speed swept interceptor with aggressive forward canards
+          final path = Path()
+            ..moveTo(0, -radius * 1.15) // Needle tip
+            ..lineTo(-radius * 0.85, radius * 0.75) // Wingtip L
+            ..lineTo(-radius * 0.45, radius * 0.4) // Notch L
+            ..lineTo(-radius * 0.25, radius * 0.85) // Engine L
+            ..lineTo(0, radius * 0.5) // Aft center
+            ..lineTo(radius * 0.25, radius * 0.85) // Engine R
+            ..lineTo(radius * 0.45, radius * 0.4) // Notch R
+            ..lineTo(radius * 0.85, radius * 0.75) // Wingtip R
+            ..close();
+          canvas.drawPath(path, fillPaint);
+          Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+
+          // Cockpit canopy
+          final canopy = Path()
+            ..moveTo(0, -radius * 0.6)
+            ..lineTo(-radius * 0.18, -radius * 0.05)
+            ..lineTo(0, radius * 0.2)
+            ..lineTo(radius * 0.18, -radius * 0.05)
+            ..close();
+          canvas.drawPath(canopy, accentPaint);
+          return;
+
+        case ValkyrieShipDesign.aegisPrism:
+          // Selene: Angular crystalline prism with geometric shield stabilizers
+          final path = Path()
+            ..moveTo(0, -radius * 1.05)
+            ..lineTo(-radius * 0.7, radius * 0.2)
+            ..lineTo(-radius * 0.9, radius * 0.85)
+            ..lineTo(-radius * 0.35, radius * 0.65)
+            ..lineTo(0, radius * 0.8)
+            ..lineTo(radius * 0.35, radius * 0.65)
+            ..lineTo(radius * 0.9, radius * 0.85)
+            ..lineTo(radius * 0.7, radius * 0.2)
+            ..close();
+          canvas.drawPath(path, fillPaint);
+          Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+
+          // Crystalline core
+          final core = Path()
+            ..moveTo(0, -radius * 0.45)
+            ..lineTo(-radius * 0.25, 0)
+            ..lineTo(0, radius * 0.35)
+            ..lineTo(radius * 0.25, 0)
+            ..close();
+          canvas.drawPath(core, accentPaint);
+          return;
+
+        case ValkyrieShipDesign.eclipseFang:
+          // Vesper: Forward-swept wing heavy stealth fighter with aggressive fangs
+          final path = Path()
+            ..moveTo(0, -radius * 0.65)
+            ..lineTo(-radius * 0.45, -radius * 0.95) // Forward Fang L
+            ..lineTo(-radius * 0.85, radius * 0.35) // Outer wing
+            ..lineTo(-radius * 0.55, radius * 0.85) // Aft fin
+            ..lineTo(0, radius * 0.45) // Central engine bay
+            ..lineTo(radius * 0.55, radius * 0.85)
+            ..lineTo(radius * 0.85, radius * 0.35)
+            ..lineTo(radius * 0.45, -radius * 0.95) // Forward Fang R
+            ..close();
+          canvas.drawPath(path, fillPaint);
+          Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+
+          // Dark matter reactor ring
+          canvas.drawCircle(Offset(0, radius * 0.05), radius * 0.22, accentPaint);
+          return;
+      }
+    }
+
+    final design = scientist?.shipDesign ?? ShipDesign.deltaJet;
     switch (design) {
       case ShipDesign.deltaJet:
         // Mae Jemison: Endeavour Bio-Jet (Aerodynamic delta wings)

@@ -2,8 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game/asteroids_game.dart';
-import 'ui/science_intro_overlay.dart';
-import 'ui/scientist_selection_overlay.dart';
+import 'ui/valkyrie_selection_overlay.dart';
 import 'ui/menu_overlay.dart';
 import 'ui/settings_overlay.dart';
 import 'ui/hud_overlay.dart';
@@ -30,11 +29,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Asteroids: Mulheres na Ciência',
+      title: 'Astra Valkyries: Void Protocol',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepPurple,
       ),
       home: const GameScreen(),
     );
@@ -74,8 +73,7 @@ class _GameScreenState extends State<GameScreen> {
         focusNode: _focusNode,
         autofocus: true,
         overlayBuilderMap: {
-          'scienceIntro': (context, game) => ScienceIntroOverlay(game: game),
-          'scientistSelection': (context, game) => ScientistSelectionOverlay(game: game),
+          'valkyrieSelection': (context, game) => ValkyrieSelectionOverlay(game: game),
           'menu': (context, game) => MenuOverlay(game: game),
           'settings': (context, game) => SettingsOverlay(game: game),
           'hud': (context, game) => HudOverlay(game: game),
@@ -87,7 +85,7 @@ class _GameScreenState extends State<GameScreen> {
           'pause': (context, game) => PauseOverlay(game: game),
           'levelUp': (context, game) => LevelUpOverlay(game: game),
         },
-        initialActiveOverlays: const ['scienceIntro'],
+        initialActiveOverlays: const ['valkyrieSelection'],
       ),
     );
   }

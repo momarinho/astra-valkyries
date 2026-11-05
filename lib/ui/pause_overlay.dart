@@ -14,7 +14,7 @@ class PauseOverlay extends StatefulWidget {
 
 class _PauseOverlayState extends State<PauseOverlay> {
   final FocusNode _focusNode = FocusNode();
-  int _selectedButtonIndex = 0; // 0 = Continuar Partida, 1 = Voltar ao Menu
+  int _selectedButtonIndex = 0; // 0 = Resume Sortie, 1 = Return to Hangar
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
           widget.game.resumeGame();
         } else {
           widget.game.resumeGame();
-          widget.game.changeState(GameState.scientistSelection);
+          widget.game.changeState(GameState.valkyrieSelection);
         }
         return KeyEventResult.handled;
       }
@@ -73,12 +73,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
   @override
   Widget build(BuildContext context) {
     final game = widget.game;
-    final scientist = game.selectedScientist;
+    final valkyrie = game.selectedValkyrie;
     final score = game.score;
-    final timeRemaining = game.timeRemaining;
-
-    final minutes = (timeRemaining ~/ 60).toString().padLeft(2, '0');
-    final seconds = (timeRemaining.toInt() % 60).toString().padLeft(2, '0');
 
     return Focus(
       focusNode: _focusNode,
@@ -92,18 +88,18 @@ class _PauseOverlayState extends State<PauseOverlay> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
                 child: Container(
-                  width: 440,
+                  width: 460,
                   padding: const EdgeInsets.symmetric(vertical: 28.0, horizontal: 28.0),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.88),
+                    color: Colors.black.withOpacity(0.90),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: scientist.primaryColor.withOpacity(0.6),
+                      color: valkyrie.primaryColor.withOpacity(0.6),
                       width: 1.8,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: scientist.primaryColor.withOpacity(0.2),
+                        color: valkyrie.primaryColor.withOpacity(0.2),
                         blurRadius: 24.0,
                       ),
                     ],
@@ -115,13 +111,13 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.pause_circle_filled, color: scientist.primaryColor, size: 28),
+                          Icon(Icons.pause_circle_filled, color: valkyrie.primaryColor, size: 28),
                           const SizedBox(width: 8),
                           const Text(
-                            'JOGO PAUSADO',
+                            'SORTIE PAUSED',
                             style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 26,
+                              fontFamily: 'Orbitron',
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 2.5,
                               color: Colors.white,
@@ -131,7 +127,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'ESC / P: Continuar  •  ▲/▼: Selecionar  •  ENTER: Confirmar',
+                        'ESC / P: Resume  •  ▲/▼: Select  •  ENTER: Confirm',
                         style: TextStyle(
                           fontFamily: 'Rajdhani',
                           fontSize: 11,
@@ -152,41 +148,47 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         ),
                         child: Column(
                           children: [
-                            // Scientist info
+                            // Pilot info
                             Row(
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    scientist.imagePath,
-                                    width: 44,
-                                    height: 44,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Icon(
-                                      Icons.person,
-                                      color: scientist.primaryColor,
-                                      size: 32,
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: valkyrie.accentColor, width: 1.5),
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      valkyrie.hudNeutralAsset,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(
+                                        Icons.rocket_launch,
+                                        color: valkyrie.primaryColor,
+                                        size: 28,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        scientist.name,
+                                        '${valkyrie.name.toUpperCase()} // ${valkyrie.callsign.toUpperCase()}',
                                         style: TextStyle(
-                                          fontFamily: 'Rajdhani',
-                                          fontSize: 16,
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 13,
                                           fontWeight: FontWeight.bold,
-                                          color: scientist.primaryColor,
+                                          color: valkyrie.primaryColor,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'NAVE: ${scientist.shipName}',
+                                        'VESSEL: ${valkyrie.shipName}',
                                         style: const TextStyle(
+                                          fontFamily: 'Rajdhani',
                                           fontSize: 12,
                                           color: Colors.white70,
                                         ),
@@ -199,14 +201,14 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                             const Divider(height: 22, color: Colors.white12),
 
-                            // Stats: Score, Samples & Time Remaining
+                            // Stats: Score, Sector Level & Stardust
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Column(
                                   children: [
                                     const Text(
-                                      'PONTOS',
+                                      'SCORE',
                                       style: TextStyle(
                                         fontFamily: 'Rajdhani',
                                         fontSize: 11,
@@ -218,8 +220,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     Text(
                                       '$score',
                                       style: const TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 22,
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                       ),
@@ -230,7 +232,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 Column(
                                   children: [
                                     const Text(
-                                      'AMOSTRAS',
+                                      'RUN LEVEL',
                                       style: TextStyle(
                                         fontFamily: 'Rajdhani',
                                         fontSize: 11,
@@ -240,12 +242,12 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
-                                      '${game.samplesCollected}',
-                                      style: const TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 22,
+                                      'LV ${game.runLevel}',
+                                      style: TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.cyanAccent,
+                                        color: valkyrie.accentColor,
                                       ),
                                     ),
                                   ],
@@ -254,7 +256,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 Column(
                                   children: [
                                     const Text(
-                                      'TEMPO RESTANTE',
+                                      'STARDUST',
                                       style: TextStyle(
                                         fontFamily: 'Rajdhani',
                                         fontSize: 11,
@@ -264,12 +266,12 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
-                                      '$minutes:$seconds',
-                                      style: TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 22,
+                                      '${game.runXp}',
+                                      style: const TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: timeRemaining <= 30 ? Colors.redAccent : Colors.cyanAccent,
+                                        color: Color(0xFF00E5FF),
                                       ),
                                     ),
                                   ],
@@ -282,7 +284,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                       const SizedBox(height: 24),
 
-                      // Action Button 1: Continuar
+                      // Action Button 1: Resume Sortie
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -294,7 +296,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           boxShadow: _selectedButtonIndex == 0
                               ? [
                                   BoxShadow(
-                                    color: scientist.primaryColor.withOpacity(0.6),
+                                    color: valkyrie.primaryColor.withOpacity(0.6),
                                     blurRadius: 12,
                                   ),
                                 ]
@@ -306,16 +308,16 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           },
                           icon: const Icon(Icons.play_arrow, size: 22),
                           label: Text(
-                            _selectedButtonIndex == 0 ? '► CONTINUAR PARTIDA' : 'CONTINUAR PARTIDA',
+                            _selectedButtonIndex == 0 ? '► RESUME SORTIE' : 'RESUME SORTIE',
                             style: const TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 15,
+                              fontFamily: 'Orbitron',
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: scientist.primaryColor,
+                            backgroundColor: valkyrie.primaryColor,
                             foregroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -328,7 +330,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                       const SizedBox(height: 12),
 
-                      // Action Button 2: Voltar ao Menu
+                      // Action Button 2: Abort Sortie (Return to Hangar)
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -349,14 +351,14 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             game.resumeGame();
-                            game.changeState(GameState.scientistSelection);
+                            game.changeState(GameState.valkyrieSelection);
                           },
-                          icon: const Icon(Icons.arrow_back, size: 18),
+                          icon: const Icon(Icons.home, size: 18),
                           label: Text(
-                            _selectedButtonIndex == 1 ? '► VOLTAR AO MENU' : 'VOLTAR AO MENU',
+                            _selectedButtonIndex == 1 ? '► RETURN TO HANGAR' : 'RETURN TO HANGAR',
                             style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 13,
+                              fontFamily: 'Orbitron',
+                              fontSize: 12.5,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.1,
                               color: _selectedButtonIndex == 1 ? Colors.white : Colors.white70,

@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+# Auto-detect Chromium / Chrome if CHROME_EXECUTABLE is not set
+if [ -z "$CHROME_EXECUTABLE" ]; then
+    if command -v chromium &> /dev/null; then
+        export CHROME_EXECUTABLE="$(command -v chromium)"
+    elif command -v google-chrome-stable &> /dev/null; then
+        export CHROME_EXECUTABLE="$(command -v google-chrome-stable)"
+    elif command -v google-chrome &> /dev/null; then
+        export CHROME_EXECUTABLE="$(command -v google-chrome)"
+    fi
+fi
+
 # Auto-detect NixOS and re-run inside nix-shell if not already in one
 if [ -z "$IN_NIX_SHELL" ] && [ -f shell.nix ] && command -v nix-shell &> /dev/null; then
     echo "-> Nix environment detected. Relaunching inside nix-shell..."
@@ -10,7 +21,7 @@ fi
 LOG_FILE="go-backend.log"
 
 echo "==========================================="
-echo "   ASTEROIDS MULTIPLATFORM LAUNCHER        "
+echo "   ASTRA VALKYRIES: VOID PROTOCOL LAUNCHER "
 echo "==========================================="
 
 # Ensure clean exit: stop backend when launcher script ends

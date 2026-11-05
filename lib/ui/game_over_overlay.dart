@@ -24,11 +24,15 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
     _nameFocusNode.onKeyEvent = (node, event) {
       if (event is KeyDownEvent) {
         if (event.logicalKey == LogicalKeyboardKey.escape) {
-          widget.game.changeState(GameState.scienceIntro);
+          widget.game.changeState(GameState.valkyrieSelection);
           return KeyEventResult.handled;
         } else if (event.logicalKey == LogicalKeyboardKey.enter ||
             event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-          _submitAndShowLeaderboard();
+          if (_nameController.text.trim().isNotEmpty) {
+            _submitAndShowLeaderboard();
+          } else {
+            widget.game.startGame();
+          }
           return KeyEventResult.handled;
         }
       }
@@ -50,545 +54,426 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
 
   Future<void> _submitAndShowLeaderboard() async {
     if (_isSaving) return;
-    final name = _nameController.text.trim().isEmpty ? 'Astronauta' : _nameController.text.trim();
+    final name = _nameController.text.trim().isEmpty ? 'Commander' : _nameController.text.trim();
     setState(() {
       _isSaving = true;
     });
 
     widget.game.participantName = name;
-    await ApiService.saveFairScore(
-      playerName: name,
-      scientistName: widget.game.selectedScientist.name,
-      score: widget.game.score,
-    );
+    try {
+      await ApiService.saveFairScore(
+        playerName: name,
+        scientistName: widget.game.selectedValkyrie.name,
+        score: widget.game.score,
+      );
+    } catch (_) {}
 
     if (mounted) {
       widget.game.changeState(GameState.leaderboard);
     }
   }
 
+  String _getCombatRating(int score, int level) {
+    if (score >= 25000 || level >= 10) {
+      return 'S-RANK // VOID APEX PILOT 👑';
+    } else if (score >= 12000 || level >= 6) {
+      return 'A-RANK // ELITE VANGUARD ACE 🌟';
+    } else if (score >= 5000 || level >= 3) {
+      return 'B-RANK // COMBAT SPECIALIST 🚀';
+    } else {
+      return 'C-RANK // CADET SORTIE 🛸';
+    }
+  }
+
+  String _getAfterActionQuote(String pilotId) {
+    switch (pilotId) {
+      case 'lyra':
+        return '"We\'ll come back with hotter thrusters next time, Commander! Don\'t count us out yet!"';
+      case 'selene':
+        return '"Tactical anomalies detected in void density. Recalibrating barrier matrix for next deployment."';
+      case 'vesper':
+        return '"Tch, they got lucky with that hit. Give me another hull and watch me blow this whole sector to dust!"';
+      default:
+        return '"Void Protocol aborted. Repair systems standing by in the Hangar."';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final game = widget.game;
-    final scientist = game.selectedScientist;
+    final valkyrie = game.selectedValkyrie;
     final score = game.score;
-    final survived = game.missionSurvived;
 
     return GestureDetector(
       onTap: () => _nameFocusNode.requestFocus(),
       child: Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-              child: Container(
-                width: 580,
-                padding: const EdgeInsets.symmetric(vertical: 26.0, horizontal: 26.0),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: survived ? Colors.greenAccent.withOpacity(0.5) : Colors.orangeAccent.withOpacity(0.5),
-                    width: 1.8,
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                child: Container(
+                  width: 580,
+                  padding: const EdgeInsets.symmetric(vertical: 26.0, horizontal: 26.0),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.90),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: valkyrie.primaryColor.withOpacity(0.6),
+                      width: 1.8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: valkyrie.primaryColor.withOpacity(0.2),
+                        blurRadius: 26.0,
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (survived ? Colors.greenAccent : Colors.orangeAccent).withOpacity(0.15),
-                      blurRadius: 24.0,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Status Header
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        survived ? '🎉 MISSÃO CONCLUÍDA! 🚀' : 'MISSÃO FINALIZADA',
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontVariations: const [FontVariation('wght', 800)],
-                          fontSize: 26,
-                          letterSpacing: 2,
-                          color: survived ? Colors.greenAccent : Colors.orangeAccent,
-                          shadows: [
-                            Shadow(
-                              color: survived ? Colors.green : Colors.orange,
-                              blurRadius: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      survived
-                          ? 'Parabéns! Você sobreviveu aos 3 minutos completos no espaço!'
-                          : 'Sua nave foi abatida pelos asteroides.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: survived ? FontWeight.bold : FontWeight.normal,
-                        color: survived ? Colors.greenAccent.shade100 : Colors.white70,
-                      ),
-                    ),
-
-                    if (survived) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFFFFD700).withOpacity(0.25),
-                              Colors.greenAccent.withOpacity(0.25),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Status Header
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'HULL COMPROMISED // SORTIE TERMINATED',
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontVariations: const [FontVariation('wght', 800)],
+                            fontSize: 22,
+                            letterSpacing: 2,
+                            color: valkyrie.primaryColor,
+                            shadows: [
+                              Shadow(
+                                color: valkyrie.primaryColor.withOpacity(0.8),
+                                blurRadius: 16,
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Vessel hull integrity collapsed under heavy asteroid bombardment.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Score & Stats Display
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  const Text(
+                                    'FINAL SCORE',
+                                    style: TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 11,
+                                      color: Colors.white54,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$score pts',
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontVariations: [FontVariation('wght', 800)],
+                                      fontSize: 22,
+                                      color: Colors.white,
+                                      shadows: [Shadow(color: Color(0x8800E5FF), blurRadius: 10)],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 24),
+                              Container(width: 1, height: 36, color: Colors.white24),
+                              const SizedBox(width: 24),
+                              Column(
+                                children: [
+                                  const Text(
+                                    'LEVEL REACHED',
+                                    style: TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 11,
+                                      color: Colors.white54,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'LV ${game.runLevel}',
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: valkyrie.accentColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 24),
+                              Container(width: 1, height: 36, color: Colors.white24),
+                              const SizedBox(width: 24),
+                              Column(
+                                children: [
+                                  const Text(
+                                    'PILOT',
+                                    style: TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 11,
+                                      color: Colors.white54,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    valkyrie.name.toUpperCase(),
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: valkyrie.primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Rank Evaluation Badge
+                      Container(
+                        margin: const EdgeInsets.only(top: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.65),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: valkyrie.accentColor.withOpacity(0.5), width: 1.2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.amber.withOpacity(0.3),
-                              blurRadius: 12,
+                              color: valkyrie.accentColor.withOpacity(0.15),
+                              blurRadius: 10,
                             ),
                           ],
                         ),
-                        child: const FittedBox(
+                        child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.workspace_premium, color: Color(0xFFFFD700), size: 20),
-                              SizedBox(width: 8),
+                              Icon(Icons.military_tech, color: valkyrie.accentColor, size: 18),
+                              const SizedBox(width: 8),
                               Text(
-                                '🏅 MEDALHA DE HONRA: SOBREVIVENTE ESPACIAL (+1000 PTS BÔNUS!)',
+                                'COMBAT RATING: ${_getCombatRating(score, game.runLevel)}',
                                 style: TextStyle(
-                                  fontFamily: 'Rajdhani',
-                                  fontSize: 12.5,
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11.5,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFFD700),
-                                  letterSpacing: 1.0,
+                                  color: valkyrie.accentColor,
+                                  letterSpacing: 1.1,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ],
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 18),
 
-                    // Score Display
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
+                      // Pilot Debrief / After-Action Dialogue Card
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              valkyrie.primaryColor.withOpacity(0.18),
+                              valkyrie.accentColor.withOpacity(0.08),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: valkyrie.primaryColor.withOpacity(0.6),
+                            width: 1.8,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: valkyrie.primaryColor.withOpacity(0.2),
+                              blurRadius: 18.0,
+                            ),
+                          ],
+                        ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Column(
-                              children: [
-                                const Text(
-                                  'DADOS TRANSMITIDOS',
-                                  style: TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 11,
-                                    color: Colors.white54,
-                                    letterSpacing: 1.1,
-                                  ),
+                            // Pilot Portrait Frame
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: valkyrie.primaryColor,
+                                  width: 2.0,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$score pts',
-                                  style: const TextStyle(
-                                    fontFamily: 'Orbitron',
-                                    fontVariations: [FontVariation('wght', 800)],
-                                    fontSize: 22,
-                                    color: Colors.white,
-                                    shadows: [Shadow(color: Color(0x8800E5FF), blurRadius: 10)],
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: valkyrie.primaryColor.withOpacity(0.4),
+                                    blurRadius: 12.0,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 24),
-                            Container(width: 1, height: 36, color: Colors.white24),
-                            const SizedBox(width: 24),
-                            Column(
-                              children: [
-                                const Text(
-                                  'AMOSTRAS',
-                                  style: TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 12,
-                                    color: Colors.white54,
-                                    letterSpacing: 1.1,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${game.samplesCollected}',
-                                  style: const TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.cyanAccent,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 24),
-                            Container(width: 1, height: 36, color: Colors.white24),
-                            const SizedBox(width: 24),
-                            Column(
-                              children: [
-                                const Text(
-                                  'CIENTISTA',
-                                  style: TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 12,
-                                    color: Colors.white54,
-                                    letterSpacing: 1.1,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  scientist.name,
-                                  style: TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: scientist.primaryColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Patent / Scientific Rank Badge
-                    Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.65),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.cyanAccent.withOpacity(0.5), width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.cyanAccent.withOpacity(0.15),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.military_tech, color: Colors.cyanAccent, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'PATENTE ATRIBUÍDA: ${_getScientificRank(score, survived)}',
-                              style: const TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.cyanAccent,
-                                letterSpacing: 1.1,
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // Educational Fun Fact Card with Prominent Hero Portrait
-                    Container(
-                      padding: const EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            scientist.primaryColor.withOpacity(0.18),
-                            scientist.accentColor.withOpacity(0.08),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: scientist.primaryColor.withOpacity(0.6),
-                          width: 1.8,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: scientist.primaryColor.withOpacity(0.2),
-                            blurRadius: 18.0,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Prominent Hero Portrait Frame (115x115)
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: scientist.primaryColor,
-                                width: 2.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: scientist.primaryColor.withOpacity(0.45),
-                                  blurRadius: 16.0,
-                                  spreadRadius: 1.0,
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: Image.asset(
-                                scientist.imagePath,
-                                width: 115,
-                                height: 115,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 115,
-                                  height: 115,
-                                  decoration: BoxDecoration(
-                                    color: scientist.primaryColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Center(
-                                    child: Icon(Icons.school, color: scientist.primaryColor, size: 48),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.asset(
+                                  valkyrie.hudDamagedAsset,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: Colors.black54,
+                                    child: Icon(Icons.person, color: valkyrie.primaryColor, size: 36),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 18),
-                          // Curiosity Text
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.auto_awesome, color: scientist.accentColor, size: 20),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        'LEGADO • ${scientist.name.toUpperCase()}',
-                                        style: TextStyle(
-                                          fontFamily: 'Rajdhani',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: scientist.accentColor,
-                                          letterSpacing: 1.2,
+                            const SizedBox(width: 16),
+                            // Debrief Text
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.record_voice_over, color: valkyrie.accentColor, size: 18),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'AFTER-ACTION DEBRIEF // ${valkyrie.name.toUpperCase()}',
+                                          style: TextStyle(
+                                            fontFamily: 'Orbitron',
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: valkyrie.accentColor,
+                                            letterSpacing: 1.1,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  scientist.funFact,
-                                  style: const TextStyle(
-                                    fontSize: 14.5,
-                                    height: 1.45,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w400,
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Name Input Field
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'DIGITE SEU NOME PARA O RANKING DA FEIRA:',
-                        style: TextStyle(
-                          fontFamily: 'Rajdhani',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white70,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _nameController,
-                      focusNode: _nameFocusNode,
-                      autofocus: true,
-                      textCapitalization: TextCapitalization.characters,
-                      maxLength: 14,
-                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                      style: const TextStyle(
-                        fontFamily: 'Rajdhani',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'SEU NOME / APELIDO',
-                        hintStyle: const TextStyle(
-                          fontFamily: 'Rajdhani',
-                          fontSize: 15,
-                          color: Colors.white24,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.07),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.white24),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.cyanAccent, width: 2.0),
-                        ),
-                      ),
-                      onSubmitted: (_) => _submitAndShowLeaderboard(),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Buttons
-                    Row(
-                      children: [
-                        // Leaderboard submit button
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton.icon(
-                            focusNode: FocusNode(canRequestFocus: false),
-                            onPressed: _isSaving ? null : _submitAndShowLeaderboard,
-                            icon: const Icon(Icons.emoji_events, size: 20),
-                            label: Text(
-                              _isSaving ? 'SALVANDO...' : 'SALVAR NO RANKING [ENTER]',
-                              style: const TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.cyanAccent,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 6,
-                              shadowColor: Colors.cyanAccent.withOpacity(0.5),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        // Skip / Retry button
-                        Expanded(
-                          flex: 1,
-                          child: OutlinedButton(
-                            focusNode: FocusNode(canRequestFocus: false),
-                            onPressed: () {
-                              game.changeState(GameState.scienceIntro);
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white70,
-                              side: const BorderSide(color: Colors.white24),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'PULAR [ESC]',
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 14,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // Keyboard prompt
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.keyboard, color: Colors.cyanAccent, size: 16),
-                            SizedBox(width: 8),
-                            Text(
-                              '[DIGITE SEU NOME]   •   [ENTER]: SALVAR NO RANKING   •   [ESC]: PULAR',
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white70,
-                                letterSpacing: 1.1,
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _getAfterActionQuote(valkyrie.id),
+                                    style: const TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 14.0,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.35,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 20),
+
+                      // Action Buttons
+                      Row(
+                        children: [
+                          // Retry Button
+                          Expanded(
+                            flex: 1,
+                            child: ElevatedButton.icon(
+                              focusNode: FocusNode(canRequestFocus: false),
+                              onPressed: () {
+                                game.startGame();
+                              },
+                              icon: const Icon(Icons.refresh, size: 20),
+                              label: const Text(
+                                'RETRY SORTIE [ENTER]',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: valkyrie.primaryColor,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 6,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          // Return to Hangar Button
+                          Expanded(
+                            flex: 1,
+                            child: OutlinedButton.icon(
+                              focusNode: FocusNode(canRequestFocus: false),
+                              onPressed: () {
+                                game.changeState(GameState.valkyrieSelection);
+                              },
+                              icon: const Icon(Icons.home, size: 18),
+                              label: const Text(
+                                'HANGAR [ESC]',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 13,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white70,
+                                side: const BorderSide(color: Colors.white24),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
-
-  String _getScientificRank(int score, bool survived) {
-    if (survived || score >= 20000) {
-      return 'COMANDANTE DA FROTA CÓSMICA 👑';
-    } else if (score >= 10000) {
-      return 'PESQUISADOR(A) SENIOR DO ESPAÇO 🪐';
-    } else {
-      return 'CADETE ESPACIAL DA FEIRA 🚀';
-    }
+    );
   }
 }

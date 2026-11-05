@@ -39,22 +39,22 @@ class RoguePerk {
   String get typeLabel {
     switch (type) {
       case PerkType.newWeapon:
-        return 'NOVA ARMA';
+        return 'NEW WEAPON';
       case PerkType.upgradeWeapon:
         return 'UPGRADE';
       case PerkType.passive:
-        return 'MÓDULO PASSIVO';
+        return 'PASSIVE MODULE';
     }
   }
 
   String get rarityLabel {
     switch (rarity) {
       case PerkRarity.common:
-        return 'COMUM';
+        return 'COMMON';
       case PerkRarity.rare:
-        return 'RARO';
+        return 'RARE';
       case PerkRarity.epic:
-        return 'ÉPICO';
+        return 'EPIC';
     }
   }
 
@@ -75,13 +75,32 @@ class RoguePerkGenerator {
     final player = game.player;
     final List<RoguePerk> availablePool = [];
 
-    // 1. Armas Novas (que o jogador ainda não desbloqueou na run)
+    // 1. New Arsenal Weapons (if not yet unlocked in current run)
+    if (!player.unlockedWeapons.containsKey('blaster')) {
+      availablePool.add(
+        RoguePerk(
+          id: 'new_blaster',
+          title: 'Pulse Blaster',
+          description: 'Precision twin-bolt plasma cannon with high projectile speed and balanced power.',
+          type: PerkType.newWeapon,
+          rarity: PerkRarity.common,
+          icon: Icons.flash_on,
+          accentColor: const Color(0xFFFF5722),
+          onSelect: (g) {
+            final w = Blaster();
+            g.player.unlockedWeapons['blaster'] = w;
+            g.player.setWeapon(w);
+          },
+        ),
+      );
+    }
+
     if (!player.unlockedWeapons.containsKey('spread_shot')) {
       availablePool.add(
         RoguePerk(
           id: 'new_spread_shot',
-          title: 'Tiro Dispersor',
-          description: 'Disparo em leque de 3 projéteis cobrindo ampla área frontal.',
+          title: 'Spread Cannon',
+          description: 'Fires a 3-way fan of plasma projectiles covering a wide frontal arc.',
           type: PerkType.newWeapon,
           rarity: PerkRarity.rare,
           icon: Icons.grain,
@@ -99,8 +118,8 @@ class RoguePerkGenerator {
       availablePool.add(
         RoguePerk(
           id: 'new_rapid_fire',
-          title: 'Laser Veloz',
-          description: 'Metralhadora contínua de feixes laser ultrarrápidos.',
+          title: 'Phase Laser',
+          description: 'High-frequency photon beam with blazing fire rate and line piercing.',
           type: PerkType.newWeapon,
           rarity: PerkRarity.rare,
           icon: Icons.fast_forward,
@@ -118,8 +137,8 @@ class RoguePerkGenerator {
       availablePool.add(
         RoguePerk(
           id: 'new_bomb_launcher',
-          title: 'Lança-Bombas',
-          description: 'Orbes de plasma pesado que explodem limpando grandes áreas.',
+          title: 'Antimatter Torpedo',
+          description: 'Heavy explosive warheads detonating in a massive destructive shockwave.',
           type: PerkType.newWeapon,
           rarity: PerkRarity.epic,
           icon: Icons.gps_fixed,
@@ -133,7 +152,7 @@ class RoguePerkGenerator {
       );
     }
 
-    // 2. Upgrades de Armas Existentes (caso ainda não estejam no nível máximo)
+    // 2. Weapon Upgrades (for currently equipped/unlocked weapons)
     for (final entry in player.unlockedWeapons.entries) {
       final key = entry.key;
       final weapon = entry.value;
@@ -142,116 +161,103 @@ class RoguePerkGenerator {
         availablePool.add(
           RoguePerk(
             id: 'upgrade_${key}_$nextLvl',
-            title: '${weapon.name} NV $nextLvl',
+            title: '${weapon.name.toUpperCase()} MK $nextLvl',
             description: nextLvl == 3
-                ? 'Potência máxima estelar! Projéteis aprimorados e super cadência.'
-                : 'Aumenta o dano, cadência e velocidade dos disparos.',
+                ? 'Maximum overdrive! Amplified damage, projectile velocity, and extreme fire rate.'
+                : 'Upgrades weapon damage, projectile velocity, and fire rate.',
             type: PerkType.upgradeWeapon,
             rarity: nextLvl == 3 ? PerkRarity.epic : PerkRarity.rare,
-            icon: Icons.upgrade,
+            icon: Icons.keyboard_double_arrow_up,
             accentColor: nextLvl == 3 ? const Color(0xFFFFD700) : const Color(0xFF00E5FF),
             onSelect: (g) {
               weapon.upgrade();
+              g.playSfx('powerup.wav');
             },
           ),
         );
       }
     }
 
-    // 3. Módulos Passivos & Sinergias (Sempre disponíveis com acúmulo)
+    // 3. Passive Ship & Combat Modules
     availablePool.add(
       RoguePerk(
-        id: 'perk_pierce',
-        title: 'Tiros Perfurantes',
-        description: 'Seus projéteis atravessam +1 asteroide adicional antes de se dissipar.',
-        type: PerkType.passive,
-        rarity: PerkRarity.rare,
-        icon: Icons.double_arrow,
-        accentColor: const Color(0xFFFFD54F),
-        onSelect: (g) {
-          g.player.pierceCount += 1;
-        },
-      ),
-    );
-
-    availablePool.add(
-      RoguePerk(
-        id: 'perk_magnet',
-        title: 'Ímã Gravitacional',
-        description: 'Aumenta o raio de atração magnética de XP e créditos em +60%.',
+        id: 'passive_magnet',
+        title: 'Magnetic Harvester',
+        description: 'Expands Stardust attraction radius by +40% for effortless XP collection.',
         type: PerkType.passive,
         rarity: PerkRarity.common,
-        icon: Icons.attractions,
+        icon: Icons.all_inclusive,
         accentColor: const Color(0xFF00E5FF),
         onSelect: (g) {
-          g.player.magnetRadius *= 1.6;
+          g.rogueMagnetRadius += 60.0;
         },
       ),
     );
 
     availablePool.add(
       RoguePerk(
-        id: 'perk_damage',
-        title: 'Foco de Antimatéria',
-        description: 'Amplifica o dano de todas as armas da nave em +20%.',
+        id: 'passive_thrust',
+        title: 'Quantum Thrusters',
+        description: 'Boosts ship acceleration by +20% and increases top cruising speed.',
+        type: PerkType.passive,
+        rarity: PerkRarity.common,
+        icon: Icons.flight_takeoff,
+        accentColor: const Color(0xFF76FF03),
+        onSelect: (g) {
+          g.player.movementAcceleration += 120.0;
+          g.player.movementMaxSpeed += 50.0;
+        },
+      ),
+    );
+
+    availablePool.add(
+      RoguePerk(
+        id: 'passive_shield_recharge',
+        title: 'Aegis Capacitor',
+        description: 'Restores +1 Ship Life and grants immediate temporary invulnerability.',
         type: PerkType.passive,
         rarity: PerkRarity.rare,
-        icon: Icons.local_fire_department,
-        accentColor: const Color(0xFFFF5252),
+        icon: Icons.shield,
+        accentColor: const Color(0xFF00B0FF),
         onSelect: (g) {
-          g.player.damageMultiplier += 0.20;
+          g.lives = math.min(g.lives + 1, 6);
+          g.player.invulnerableTimer = 3.0;
         },
       ),
     );
 
     availablePool.add(
       RoguePerk(
-        id: 'perk_cooldown',
-        title: 'Condensador de Pulso',
-        description: 'Reduz o intervalo de recarga de disparo de todas as armas em -15%.',
+        id: 'passive_fire_rate',
+        title: 'Overclocked Emitters',
+        description: 'Reduces cooldown of all weapons by 15%, unleashing a continuous storm of fire.',
         type: PerkType.passive,
         rarity: PerkRarity.rare,
         icon: Icons.bolt,
-        accentColor: const Color(0xFF7C4DFF),
+        accentColor: const Color(0xFFFFD600),
         onSelect: (g) {
-          g.player.cooldownMultiplier = math.max(0.35, g.player.cooldownMultiplier * 0.85);
+          g.rogueFireRateMultiplier *= 0.85;
         },
       ),
     );
 
     availablePool.add(
       RoguePerk(
-        id: 'perk_engine',
-        title: 'Pós-Combustão',
-        description: 'Aumenta a velocidade máxima e a aceleração dos propulsores em +18%.',
-        type: PerkType.passive,
-        rarity: PerkRarity.common,
-        icon: Icons.speed,
-        accentColor: const Color(0xFF69F0AE),
-        onSelect: (g) {
-          g.player.movementMaxSpeed *= 1.18;
-          g.player.movementAcceleration *= 1.18;
-        },
-      ),
-    );
-
-    availablePool.add(
-      RoguePerk(
-        id: 'perk_shield_life',
-        title: 'Blindagem Reativa',
-        description: 'Concede +1 Vida de reserva e ativa um escudo protetor por 4 segundos.',
+        id: 'passive_overdrive',
+        title: 'Void Catalyst',
+        description: 'Passive Stardust generation over time and +10% bonus damage to all weapons.',
         type: PerkType.passive,
         rarity: PerkRarity.epic,
-        icon: Icons.shield,
-        accentColor: const Color(0xFF40C4FF),
+        icon: Icons.auto_awesome,
+        accentColor: const Color(0xFFFF1744),
         onSelect: (g) {
-          g.lives += 1;
-          g.player.invulnerableTimer = 4.0;
+          g.rogueDamageMultiplier += 0.25;
+          g.addStardust(50);
         },
       ),
     );
 
-    // Embaralha o pool e seleciona [count] opções distintas
+    // Shuffle and pick unique choices
     availablePool.shuffle();
     return availablePool.take(count).toList();
   }

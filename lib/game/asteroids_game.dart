@@ -22,6 +22,7 @@ import 'components/xp_orb.dart';
 import 'weapons.dart';
 import 'level_manager.dart';
 import 'scientist.dart';
+import 'valkyrie.dart';
 import 'rogue_perks.dart';
 import 'package:asteroids/services/api_service.dart';
 import 'dart:io' as io;
@@ -29,6 +30,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 enum GameState {
   menu,
+  valkyrieSelection,
   settings,
   scienceIntro,
   scientistSelection,
@@ -57,7 +59,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   GameState state = GameState.scienceIntro;
   String activeMode = 'arcade'; // 'arcade', 'classic' or 'campaign'
   
-  // Science Fair mode properties
+  // Astra Valkyrie Pilot
+  Valkyrie selectedValkyrie = Valkyrie.defaultValkyrie;
+  double rogueCritChance = 0.05;
+  double rogueFireRateMultiplier = 1.0;
+  double rogueDamageMultiplier = 1.0;
+  double rogueMagnetRadius = 150.0;
+
+  void addStardust(int amount) => addXp(amount);
+
+  // Science Fair mode properties (legacy compatibility)
   Scientist selectedScientist = Scientist.defaultScientist;
   static const double fairRoundDuration = 180.0; // 3 minutes
   double timeRemaining = fairRoundDuration;
@@ -208,8 +219,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Register global hardware keyboard handler for instant pause detection
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
 
-    // Initial state set for Science Fair
-    changeState(GameState.scienceIntro);
+    // Initial state set for Astra Valkyries (Hangar Bay)
+    changeState(GameState.valkyrieSelection);
   }
 
   DateTime? _lastPauseToggleTime;
@@ -247,6 +258,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     } catch (_) {}
 
     switch (newState) {
+      case GameState.valkyrieSelection:
+        _safeAddOverlay('valkyrieSelection');
+        try {
+          if (!FlameAudio.bgm.isPlaying) {
+            FlameAudio.bgm.play('music.wav', volume: 0.65);
+          }
+        } catch (_) {}
+        _removeAllAsteroidsAndProjectiles();
+        break;
       case GameState.scienceIntro:
         _safeAddOverlay('scienceIntro');
         try {
@@ -405,6 +425,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     launchTransmissionTimer = 5.0;
     fetchTopLeaderRecord();
 
+    // Roguelike run stats from selected Valkyrie
+    rogueCritChance = selectedValkyrie.critChance;
+    rogueDamageMultiplier = 1.0;
+    rogueFireRateMultiplier = 1.0;
+    rogueMagnetRadius = 150.0 * selectedValkyrie.magnetRadiusMultiplier;
+
     // Remove any running level manager or asteroid field
     if (levelManager != null) {
       levelManager = null;
@@ -413,58 +439,29 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       asteroidField!.removeFromParent();
       asteroidField = null;
     }
+    _removeAllAsteroidsAndProjectiles();
 
     // Reset player states, stats, and unlocked weapons
     player.respawn(GameConstants.screenWidth / 2, GameConstants.screenHeight / 2);
+    player.valkyrie = selectedValkyrie;
     player.unlockedWeapons.clear();
     
-    // Set starting weapon
-    Weapon startingWeapon;
-    if (activeMode == 'campaign') {
-      player.unlockedWeapons['blaster'] = Blaster();
-      if (selectedWeaponIndex == 1) {
-        startingWeapon = SpreadShot();
-      } else if (selectedWeaponIndex == 2) {
-        startingWeapon = RapidFire();
-      } else if (selectedWeaponIndex == 3) {
-        startingWeapon = BombLauncher();
-      } else {
-        startingWeapon = player.unlockedWeapons['blaster']!;
-      }
-      final key = startingWeapon.name.toLowerCase().replaceAll(' ', '_');
-      player.unlockedWeapons[key] = startingWeapon;
-    } else {
-      // Classic Mode: Unlock ALL weapons by default so they can switch at will!
-      player.unlockedWeapons['blaster'] = Blaster();
-      player.unlockedWeapons['spread_shot'] = SpreadShot();
-      player.unlockedWeapons['rapid_fire'] = RapidFire();
-      player.unlockedWeapons['bomb_launcher'] = BombLauncher();
-
-      if (selectedWeaponIndex == 1) {
-        startingWeapon = player.unlockedWeapons['spread_shot']!;
-      } else if (selectedWeaponIndex == 2) {
-        startingWeapon = player.unlockedWeapons['rapid_fire']!;
-      } else if (selectedWeaponIndex == 3) {
-        startingWeapon = player.unlockedWeapons['bomb_launcher']!;
-      } else {
-        startingWeapon = player.unlockedWeapons['blaster']!;
-      }
-    }
+    // Set starting weapon based on chosen Valkyrie
+    final startingWeapon = selectedValkyrie.createStartingWeapon();
+    final weaponKey = startingWeapon.name.toLowerCase().replaceAll(' ', '_');
+    player.unlockedWeapons[weaponKey] = startingWeapon;
     player.setWeapon(startingWeapon);
 
-    // Apply movement preset
+    // Apply movement stats based on pilot speed multiplier
     final preset = movementPresets[selectedMovementPresetIndex];
-    player.movementAcceleration = preset.acceleration;
-    player.movementMaxSpeed = preset.maxSpeed;
+    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier;
+    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier;
     player.movementFriction = preset.friction;
+    player.magnetRadius = rogueMagnetRadius;
 
-    // Setup Spawning Mode
-    if (activeMode == 'campaign') {
-      levelManager = LevelManager(this);
-    } else {
-      asteroidField = AsteroidField();
-      world.add(asteroidField!);
-    }
+    // Setup Spawning Mode (Continuous void field for roguelike protocol)
+    asteroidField = AsteroidField();
+    world.add(asteroidField!);
 
     changeState(GameState.playing);
   }
@@ -758,7 +755,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
       spawnExplosionParticles(
         position: player.position,
-        colorChoices: [Colors.cyanAccent, selectedScientist.primaryColor, Colors.white],
+        colorChoices: [Colors.cyanAccent, selectedValkyrie.primaryColor, Colors.white],
         count: 24,
         minSize: 2.0,
         maxSize: 5.0,
@@ -784,7 +781,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
       spawnExplosionParticles(
         position: player.position,
-        colorChoices: [Colors.amberAccent, Colors.yellow, Colors.white, selectedScientist.primaryColor],
+        colorChoices: [Colors.amberAccent, Colors.yellow, Colors.white, selectedValkyrie.primaryColor],
         count: 36,
         minSize: 3.0,
         maxSize: 6.0,
@@ -878,12 +875,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     playSfx('powerup.wav');
     triggerScreenShake(duration: 0.6, intensity: 16.0);
 
+    final primaryColor = selectedValkyrie.primaryColor;
+    final accentColor = selectedValkyrie.accentColor;
+    final abilityName = selectedValkyrie.specialAbilityName;
+
     // Visual shockwave particles
     spawnExplosionParticles(
       position: player.position,
       colorChoices: [
-        selectedScientist.primaryColor,
-        selectedScientist.accentColor,
+        primaryColor,
+        accentColor,
         Colors.white,
         Colors.amberAccent,
       ],
@@ -897,105 +898,74 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Floating text indicator
     spawnFloatingText(
       player.position + Vector2(0, -35),
-      '★ ESPECIAL ATIVADO! ★',
-      color: selectedScientist.primaryColor,
+      '★ ${abilityName.toUpperCase()}! ★',
+      color: primaryColor,
       fontSize: 18,
     );
 
-    switch (selectedScientist.id) {
-      case 'mae_jemison':
-        // Super Dispersor 360°: 3 ondas concêntricas de projéteis (12 por onda = 36 projéteis) + 3.0s de escudo
-        player.invulnerableTimer = 3.0;
-
-        // Configuração das 3 fileiras/anéis concêntricos (rápida, média e curta)
+    switch (selectedValkyrie.id) {
+      case 'lyra':
+        // Hyper-Overdrive Dash: 300% thrust boost, 3.5s invulnerability, fires blazing plasma spread trail
+        player.invulnerableTimer = 3.5;
+        player.velocity += player.forward * 450.0;
         final waves = [
-          (speed: 560.0, angleOffset: 0.0, color: const Color(0xFF00E676)),
-          (speed: 480.0, angleOffset: math.pi / 12, color: const Color(0xFF00E5FF)),
-          (speed: 400.0, angleOffset: 0.0, color: Colors.greenAccent),
+          (speed: 600.0, angleOffset: 0.0, color: const Color(0xFFFF5722)),
+          (speed: 520.0, angleOffset: math.pi / 10, color: const Color(0xFFFF9800)),
+          (speed: 440.0, angleOffset: -math.pi / 10, color: const Color(0xFFFFEB3B)),
         ];
-
-        const bulletsPerWave = 12;
+        const bulletsPerWave = 10;
         const step = (2 * math.pi) / bulletsPerWave;
-
         for (final wave in waves) {
           for (int i = 0; i < bulletsPerWave; i++) {
             final ang = (i * step) + wave.angleOffset;
             final dir = Vector2(math.cos(ang), math.sin(ang));
             final bullet = BulletComponent(
               position: player.position + dir * (player.radius + 2.0),
-              radius: 2.8,
+              radius: 3.0,
               velocity: dir * wave.speed,
-              lifeTimer: 0.60,
-              damage: 12.0,
+              lifeTimer: 0.65,
+              damage: 22.0,
               color: wave.color,
             );
             world.add(bullet);
           }
         }
-
-        // Explosão de partículas temáticas nas cores da Dra. Mae Jemison
-        spawnExplosionParticles(
-          position: player.position,
-          colorChoices: [
-            const Color(0xFF00E676),
-            const Color(0xFF00E5FF),
-            Colors.white,
-          ],
-          count: 36,
-          minSize: 3.0,
-          maxSize: 6.0,
-          minSpeed: 80.0,
-          maxSpeed: 240.0,
-        );
         break;
 
-      case 'margaret_hamilton':
-        // Overclock Quântico: 16 disparos de laser em círculo 360° ao redor da nave + 3.0s de escudo
-        player.invulnerableTimer = 3.0;
-        final step = (2 * math.pi) / 16;
-        for (int i = 0; i < 16; i++) {
-          final ang = i * step;
+      case 'selene':
+        // Singularity Barrier: 5.0s impenetrable barrier + 20 piercing photon beams
+        player.invulnerableTimer = 5.0;
+        const beamCount = 20;
+        final stepSelene = (2 * math.pi) / beamCount;
+        for (int i = 0; i < beamCount; i++) {
+          final ang = i * stepSelene;
           final dir = Vector2(math.cos(ang), math.sin(ang));
           final bullet = BulletComponent(
             position: player.position + dir * player.radius,
             radius: 3.5,
-            velocity: dir * 550.0,
-            lifeTimer: 0.8,
-            damage: 25.0,
+            velocity: dir * 520.0,
+            lifeTimer: 0.9,
+            damage: 28.0,
+            color: const Color(0xFF00E5FF),
           );
           world.add(bullet);
         }
         break;
 
-      case 'nancy_roman':
-        // Varredura do Hubble: Destrói meteoros na linha de visada frontal e traseira + 3.0s de escudo
-        player.invulnerableTimer = 3.0;
-        final fwd = player.forward.normalized();
-        final asteroidsNancy = List<AsteroidComponent>.from(world.children.whereType<AsteroidComponent>());
-        for (final ast in asteroidsNancy) {
-          final toAst = ast.position - player.position;
-          final proj = toAst.dot(fwd);
-          // Distance from line: length of projection perpendicular
-          final perpDist = (toAst - (fwd * proj)).length;
-          if (perpDist <= ast.radius + 45.0) {
-            final destroyed = ast.takeDamage(100.0, ast.position);
-            if (destroyed) {
-              onAsteroidDestroyed(ast.position, ast.scoreValue);
-            }
-          }
-        }
-        break;
-
-      case 'peggy_whitson':
-        // Pulso de Plasma Orbital: Super explosão de 160px de raio ao redor da nave + 3.0s de escudo
-        player.invulnerableTimer = 3.0;
+      case 'vesper':
+        // Void Nova Detonation: Massive 320px radius bomb explosion doing 350 damage + 2.5s shield
+        player.invulnerableTimer = 2.5;
         world.add(
           BombExplosionComponent(
             position: player.position.clone(),
-            maxRadius: 160.0,
-            damage: 150.0,
+            maxRadius: 320.0,
+            damage: 350.0,
           ),
         );
+        break;
+
+      default:
+        player.invulnerableTimer = 3.0;
         break;
     }
   }

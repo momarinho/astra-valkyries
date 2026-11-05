@@ -158,7 +158,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                                   const Icon(Icons.bolt, color: Colors.black, size: 20),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'LEVEL UP! • NÍVEL $level',
+                                    'LEVEL UP! • LEVEL $level',
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
                                       fontSize: 16,
@@ -176,7 +176,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                         const SizedBox(height: 10),
 
                         Text(
-                          'ESCOLHA 1 MÓDULO DE EXPANSÃO TÁTICA',
+                          'CHOOSE 1 TACTICAL EXPANSION MODULE',
                           style: TextStyle(
                             fontFamily: 'Rajdhani',
                             fontSize: 14,
@@ -424,7 +424,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  isSelected ? 'ESCOLHER [${index + 1}]' : 'SELECIONAR',
+                  isSelected ? 'CHOOSE [${index + 1}]' : 'SELECT',
                   style: TextStyle(
                     fontFamily: 'Rajdhani',
                     fontSize: 12,

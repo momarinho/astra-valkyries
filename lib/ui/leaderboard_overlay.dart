@@ -79,16 +79,16 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
               event.logicalKey == LogicalKeyboardKey.numpadEnter) {
             if (_selectedButtonIndex == 0) {
               game.participantName = null;
-              game.changeState(GameState.scienceIntro);
+              game.changeState(GameState.valkyrieSelection);
             } else {
-              game.changeState(GameState.scientistSelection);
+              game.changeState(GameState.valkyrieSelection);
             }
             return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-            game.changeState(GameState.scienceIntro);
+            game.changeState(GameState.valkyrieSelection);
             return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.keyC) {
-            game.changeState(GameState.scientistSelection);
+            game.changeState(GameState.valkyrieSelection);
             return KeyEventResult.handled;
           } else if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
               event.logicalKey == LogicalKeyboardKey.keyS ||
@@ -179,10 +179,10 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                       IconButton(
                         focusNode: FocusNode(canRequestFocus: false),
                         onPressed: () {
-                          game.changeState(GameState.scienceIntro);
+                          game.changeState(GameState.valkyrieSelection);
                         },
                         icon: const Icon(Icons.close, color: Colors.white60),
-                        tooltip: 'Fechar',
+                        tooltip: 'Close',
                       ),
                     ],
                   ),
@@ -381,21 +381,20 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                   // Bottom Action Buttons for the Booth Loop
                   Row(
                     children: [
-                      // Next Participant Button (Returns to Intro for the next kid in line)
+                      // Return to Hangar Button
                       Expanded(
-                        flex: 2,
                         child: ElevatedButton.icon(
                           focusNode: FocusNode(canRequestFocus: false),
                           onPressed: () {
                             game.participantName = null;
-                            game.changeState(GameState.scienceIntro);
+                            game.changeState(GameState.valkyrieSelection);
                           },
-                          icon: const Icon(Icons.person_add, size: 20),
+                          icon: const Icon(Icons.rocket_launch, size: 20),
                           label: Text(
-                            _selectedButtonIndex == 0 ? '► PRÓXIMO PILOTO 🚀' : 'PRÓXIMO PILOTO 🚀',
+                            _selectedButtonIndex == 0 ? '► RETURN TO HANGAR' : 'RETURN TO HANGAR',
                             style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 15,
+                              fontFamily: 'Orbitron',
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                               color: _selectedButtonIndex == 0 ? Colors.black : Colors.cyanAccent,
@@ -416,42 +415,6 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                             ),
                             elevation: _selectedButtonIndex == 0 ? 8 : 0,
                             shadowColor: Colors.cyanAccent.withOpacity(0.6),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      // Select another scientist / retry
-                      Expanded(
-                        flex: 1,
-                        child: OutlinedButton(
-                          focusNode: FocusNode(canRequestFocus: false),
-                          onPressed: () {
-                            game.changeState(GameState.scientistSelection);
-                          },
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: _selectedButtonIndex == 1
-                                ? Colors.cyanAccent.withOpacity(0.2)
-                                : Colors.transparent,
-                            foregroundColor: _selectedButtonIndex == 1 ? Colors.white : Colors.white70,
-                            side: BorderSide(
-                              color: _selectedButtonIndex == 1 ? Colors.cyanAccent : Colors.white24,
-                              width: _selectedButtonIndex == 1 ? 2.0 : 1.0,
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            _selectedButtonIndex == 1 ? '► CIENTISTAS' : 'CIENTISTAS',
-                            style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 14,
-                              fontWeight: _selectedButtonIndex == 1 ? FontWeight.bold : FontWeight.normal,
-                              letterSpacing: 1,
-                            ),
                           ),
                         ),
                       ),
