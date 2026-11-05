@@ -70,8 +70,8 @@ class CometComponent extends AsteroidComponent {
 
   @override
   void wrapAround() {
-    final sizeX = GameConstants.screenWidth;
-    final sizeY = GameConstants.screenHeight;
+    final sizeX = GameConstants.sectorWidth;
+    final sizeY = GameConstants.sectorHeight;
 
     bool didWrap = false;
     if (position.x < -radius * 2) {

@@ -15,6 +15,7 @@ import 'components/comet.dart';
 import 'components/bullet.dart';
 import 'components/bomb.dart';
 import 'components/starfield.dart';
+import 'components/sector_boundary.dart';
 import 'components/joystick.dart';
 import 'components/drop.dart';
 import 'components/floating_text.dart';
@@ -184,7 +185,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Lock camera resolution to 1280x720 (matching Pygame coordinates)
     camera.viewport = FixedResolutionViewport(resolution: Vector2(1280, 720));
-    camera.viewfinder.position = Vector2(1280 / 2, 720 / 2);
+    camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
     camera.viewfinder.anchor = Anchor.center;
 
     // Setup FlameAudio asset folder configuration and silence native warning spam on Linux
@@ -196,12 +197,13 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     initSfxPlayers();
 
-    // Add StarfieldComponent first so it is rendered behind the player
+    // Add StarfieldComponent and SectorBoundaryComponent first
     world.add(StarfieldComponent());
+    world.add(SectorBoundaryComponent());
 
-    // Add PlayerComponent (starts off-screen or invisible in menu)
+    // Add PlayerComponent (starts in center of the large sector)
     player = PlayerComponent(
-      position: Vector2(1280 / 2, 720 / 2),
+      position: Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2),
     );
     world.add(player);
 
@@ -261,6 +263,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       case GameState.valkyrieSelection:
         _safeAddOverlay('valkyrieSelection');
         try {
+          camera.stop();
+          camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+        } catch (_) {}
+        try {
           if (!FlameAudio.bgm.isPlaying) {
             FlameAudio.bgm.play('music.wav', volume: 0.65).catchError((_) {});
           }
@@ -287,6 +293,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         break;
       case GameState.menu:
         _safeAddOverlay('menu');
+        try {
+          camera.stop();
+          camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+        } catch (_) {}
         try {
           FlameAudio.bgm.stop();
         } catch (_) {}
@@ -443,8 +453,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
     _removeAllAsteroidsAndProjectiles();
 
-    // Reset player states, stats, and initialize chosen Valkyrie's starting weapon
-    player.respawn(GameConstants.screenWidth / 2, GameConstants.screenHeight / 2);
+    // Reset player states, stats, and initialize chosen Valkyrie's starting weapon at Sector Center
+    player.respawn(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    try {
+      camera.viewfinder.position = player.position;
+      camera.follow(player);
+    } catch (_) {}
     player.valkyrie = selectedValkyrie;
     
     // Set starting weapon based on chosen Valkyrie

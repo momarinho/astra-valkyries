@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
+import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'player.dart';
 
@@ -68,12 +69,8 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
   }
 
   void _wrapAround() {
-    const sizeX = 1280.0;
-    const sizeY = 720.0;
-    if (position.x < -radius) position.x = sizeX + radius;
-    if (position.x > sizeX + radius) position.x = -radius;
-    if (position.y < -radius) position.y = sizeY + radius;
-    if (position.y > sizeY + radius) position.y = -radius;
+    position.x = position.x.clamp(radius, GameConstants.sectorWidth - radius).toDouble();
+    position.y = position.y.clamp(radius, GameConstants.sectorHeight - radius).toDouble();
   }
 
   @override

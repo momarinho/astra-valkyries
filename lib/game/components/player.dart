@@ -56,6 +56,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   bool hasFieryDash = false;
   bool hasClusterBombs = false;
 
+  // Sector Navigation & Boundary Status
+  bool isNearBoundary = false;
+  double boundaryDistance = double.infinity;
+
   void resetRoguelikeStats() {
     magnetRadius = 140.0;
     pierceCount = 0;
@@ -216,7 +220,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       dashActiveTimer = math.max(0.0, dashActiveTimer - dt);
       velocity = dashDirection * GameConstants.playerDashSpeed;
       position += velocity * dt;
-      wrapAround();
+      enforceSectorBounds(dt);
 
       // Spawn dash ghost trail
       game.world.add(
@@ -310,7 +314,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     clampSpeed();
     applyFriction(dt);
     position += velocity * dt;
-    wrapAround();
+    enforceSectorBounds(dt);
 
     // Disparo multi-tecla: Espaço, Z, X, C, Ctrl, Numpad 0 ou Enter
     // Isso resolve completamente qualquer conflito de ghosting em teclados escolares
@@ -356,22 +360,48 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
   }
 
-  void wrapAround() {
-    final sizeX = GameConstants.screenWidth;
-    final sizeY = GameConstants.screenHeight;
+  void enforceSectorBounds(double dt) {
+    const maxX = GameConstants.sectorWidth;
+    const maxY = GameConstants.sectorHeight;
+    const warnDist = GameConstants.sectorWarningDistance;
 
-    if (position.x < -radius) {
-      position.x = sizeX + radius;
-    } else if (position.x > sizeX + radius) {
-      position.x = -radius;
+    // Minimum distance to the 4 outer boundary edges
+    final distLeft = position.x;
+    final distRight = maxX - position.x;
+    final distTop = position.y;
+    final distBottom = maxY - position.y;
+
+    boundaryDistance = math.min(math.min(distLeft, distRight), math.min(distTop, distBottom));
+    isNearBoundary = boundaryDistance < warnDist;
+
+    // Repulsive acceleration towards center when venturing into hazard perimeter
+    if (isNearBoundary) {
+      final centerX = maxX / 2;
+      final centerY = maxY / 2;
+      final toCenter = Vector2(centerX - position.x, centerY - position.y).normalized();
+      final pushFactor = (1.0 - (boundaryDistance / warnDist).clamp(0.0, 1.0));
+      velocity += toCenter * (pushFactor * 320.0 * dt);
     }
 
-    if (position.y < -radius) {
-      position.y = sizeY + radius;
-    } else if (position.y > sizeY + radius) {
-      position.y = -radius;
+    // Hard boundary collision with elastic deflection
+    if (position.x < radius) {
+      position.x = radius;
+      if (velocity.x < 0) velocity.x = -velocity.x * 0.45;
+    } else if (position.x > maxX - radius) {
+      position.x = maxX - radius;
+      if (velocity.x > 0) velocity.x = -velocity.x * 0.45;
+    }
+
+    if (position.y < radius) {
+      position.y = radius;
+      if (velocity.y < 0) velocity.y = -velocity.y * 0.45;
+    } else if (position.y > maxY - radius) {
+      position.y = maxY - radius;
+      if (velocity.y > 0) velocity.y = -velocity.y * 0.45;
     }
   }
+
+  void wrapAround() => enforceSectorBounds(0.016);
 
   @override
   void render(Canvas canvas) {

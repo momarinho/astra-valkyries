@@ -167,6 +167,16 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
     final width = GameConstants.screenWidth;
     final height = GameConstants.screenHeight;
 
+    Vector2 camPos;
+    try {
+      camPos = game.camera.viewfinder.position;
+    } catch (_) {
+      camPos = Vector2(width / 2, height / 2);
+    }
+
+    canvas.save();
+    canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
+
     // 1. Gradiente base: azul-marinho quase preto → preto
     canvas.drawRect(
       Rect.fromLTWH(0, 0, width, height),
@@ -239,5 +249,7 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
       _starPaint.color = star.tint.withValues(alpha: alpha.clamp(0.0, 1.0));
       canvas.drawCircle(center, size, _starPaint);
     }
+
+    canvas.restore();
   }
 }

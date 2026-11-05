@@ -126,20 +126,8 @@ class XpOrbComponent extends PositionComponent with HasGameReference<AsteroidsGa
   }
 
   void wrapAround() {
-    final sizeX = GameConstants.screenWidth;
-    final sizeY = GameConstants.screenHeight;
-
-    if (position.x < -radius) {
-      position.x = sizeX + radius;
-    } else if (position.x > sizeX + radius) {
-      position.x = -radius;
-    }
-
-    if (position.y < -radius) {
-      position.y = sizeY + radius;
-    } else if (position.y > sizeY + radius) {
-      position.y = -radius;
-    }
+    position.x = position.x.clamp(radius, GameConstants.sectorWidth - radius).toDouble();
+    position.y = position.y.clamp(radius, GameConstants.sectorHeight - radius).toDouble();
   }
 
   @override

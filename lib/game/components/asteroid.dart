@@ -9,6 +9,7 @@ import 'drop.dart';
 import 'xp_orb.dart';
 
 class AsteroidComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  AsteroidsGame? testGame;
   final double radius;
   final Vector2 velocity;
   
@@ -70,6 +71,10 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     add(CircleHitbox());
   }
 
+  bool shouldPrune(Vector2 playerPosition) {
+    return position.distanceTo(playerPosition) > GameConstants.proximityDespawnRadius;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -78,7 +83,19 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     }
     position += velocity * dt;
     angle += rotationSpeed * dt;
-    wrapAround();
+
+    // Prune distant asteroids in open sector to recycle capacity around player
+    try {
+      final g = testGame ?? (findGame() as AsteroidsGame?) ?? (isMounted ? game : null);
+      if (g != null && g.state == GameState.playing) {
+        if (shouldPrune(g.player.position)) {
+          removeFromParent();
+          return;
+        }
+      }
+    } catch (_) {}
+
+    enforceSectorBounds();
   }
 
   bool takeDamage(double damage, Vector2 hitPos) {
@@ -111,22 +128,28 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     }
   }
 
-  void wrapAround() {
-    final sizeX = GameConstants.screenWidth;
-    final sizeY = GameConstants.screenHeight;
+  void enforceSectorBounds() {
+    const maxX = GameConstants.sectorWidth;
+    const maxY = GameConstants.sectorHeight;
 
-    if (position.x < -radius) {
-      position.x = sizeX + radius;
-    } else if (position.x > sizeX + radius) {
-      position.x = -radius;
+    if (position.x < radius && velocity.x < 0) {
+      position.x = radius;
+      velocity.x = -velocity.x;
+    } else if (position.x > maxX - radius && velocity.x > 0) {
+      position.x = maxX - radius;
+      velocity.x = -velocity.x;
     }
 
-    if (position.y < -radius) {
-      position.y = sizeY + radius;
-    } else if (position.y > sizeY + radius) {
-      position.y = -radius;
+    if (position.y < radius && velocity.y < 0) {
+      position.y = radius;
+      velocity.y = -velocity.y;
+    } else if (position.y > maxY - radius && velocity.y > 0) {
+      position.y = maxY - radius;
+      velocity.y = -velocity.y;
     }
   }
+
+  void wrapAround() => enforceSectorBounds();
 
   @override
   void render(Canvas canvas) {

@@ -87,4 +87,9 @@ $$\text{XP}(L) = 24 + (L - 1) \times 28 + (L^2 \times 6)$$
 - [x] Calibrate weapon cadences in `lib/game/weapons.dart`.
 - [x] Calibrate Stardust XP orb values in `lib/game/components/xp_orb.dart`.
 - [x] Implement smooth polynomial XP curve in `lib/game/asteroids_game.dart`.
-- [x] Update test suites to verify balanced pacing and weapon metrics.
+- [x] Disable legacy science-fair automatic weapon evolutions; enforce strict roguelike perks.
+- [x] Expand world into a 4800x4800 procedural space sector with smooth camera follow.
+- [x] Implement dynamic proximity asteroid spawning and memory culling for 60 FPS mobile performance.
+- [x] Add tactical mini-radar, coordinate telemetry, and boundary hazard perimeter.
+- [x] Document sector architecture in [`docs/PROCEDURAL_SECTOR_MAP.md`](file:///home/mateus/Projects/astra-valkyries/docs/PROCEDURAL_SECTOR_MAP.md).
+- [x] Maintain 100% passing test suite across all subsystems (35/35 tests passing).

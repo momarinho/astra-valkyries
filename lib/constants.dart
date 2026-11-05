@@ -3,6 +3,15 @@ class GameConstants {
   static const double screenWidth = 1280.0;
   static const double screenHeight = 720.0;
 
+  // Sector Map Bounds (Large Procedural Space Map)
+  static const double sectorWidth = 4800.0;
+  static const double sectorHeight = 4800.0;
+  static const double sectorWarningDistance = 450.0;
+  static const double proximitySpawnMinRadius = 780.0;
+  static const double proximitySpawnMaxRadius = 1100.0;
+  static const double proximityDespawnRadius = 1850.0;
+  static const double radarRange = 1400.0;
+
   static const double playerRadius = 20.0;
   static const double playerSpeed = 200.0;
   static const double playerAcceleration = 400.0;

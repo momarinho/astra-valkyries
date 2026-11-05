@@ -47,19 +47,11 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void wrapAround() {
-    final sizeX = GameConstants.screenWidth;
-    final sizeY = GameConstants.screenHeight;
-
-    if (position.x < -radius) {
-      position.x = sizeX + radius;
-    } else if (position.x > sizeX + radius) {
-      position.x = -radius;
-    }
-
-    if (position.y < -radius) {
-      position.y = sizeY + radius;
-    } else if (position.y > sizeY + radius) {
-      position.y = -radius;
+    if (position.x < -radius ||
+        position.x > GameConstants.sectorWidth + radius ||
+        position.y < -radius ||
+        position.y > GameConstants.sectorHeight + radius) {
+      removeFromParent();
     }
   }
 

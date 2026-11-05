@@ -69,43 +69,31 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     if (game.world.children.whereType<AsteroidComponent>().length >= 38) return;
 
     final random = math.Random();
-    final screenWidth = GameConstants.screenWidth;
-    final screenHeight = GameConstants.screenHeight;
-    final maxRadius = GameConstants.asteroidMaxRadius;
-
-    // Pick a random edge: 0 = Left, 1 = Right, 2 = Top, 3 = Bottom
-    final edgeIndex = random.nextInt(4);
-    Vector2 direction;
-    Vector2 position;
-
-    final t = random.nextDouble(); // relative position along the edge (0 to 1)
-
-    switch (edgeIndex) {
-      case 0: // Left edge spawning, moving right
-        direction = Vector2(1, 0);
-        position = Vector2(-maxRadius, t * screenHeight);
-        break;
-      case 1: // Right edge spawning, moving left
-        direction = Vector2(-1, 0);
-        position = Vector2(screenWidth + maxRadius, t * screenHeight);
-        break;
-      case 2: // Top edge spawning, moving down
-        direction = Vector2(0, 1);
-        position = Vector2(t * screenWidth, -maxRadius);
-        break;
-      case 3: // Bottom edge spawning, moving up
-      default:
-        direction = Vector2(0, -1);
-        position = Vector2(t * screenWidth, screenHeight + maxRadius);
-        break;
+    Vector2 playerPos;
+    try {
+      playerPos = game.player.position;
+    } catch (_) {
+      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
     }
+
+    // Dynamic proximity spawn radius: just outside the camera viewport (780px to 1100px)
+    final spawnDist = GameConstants.proximitySpawnMinRadius +
+        random.nextDouble() * (GameConstants.proximitySpawnMaxRadius - GameConstants.proximitySpawnMinRadius);
+    final spawnAngle = random.nextDouble() * 2 * math.pi;
+    final spawnOffset = Vector2(math.cos(spawnAngle), math.sin(spawnAngle))..scale(spawnDist);
+    final position = playerPos + spawnOffset;
+
+    // Clamp within sector coordinates
+    position.x = position.x.clamp(60.0, GameConstants.sectorWidth - 60.0);
+    position.y = position.y.clamp(60.0, GameConstants.sectorHeight - 60.0);
 
     // Speed starts slow at ~20-40 px/s, scaling up to ~100-200 px/s in storm
     final speed = (35.0 + random.nextDouble() * 45.0) * speedMultiplier;
     
-    // Rotate direction randomly by -30 to +30 degrees
-    final deviationAngle = (-30.0 + random.nextDouble() * 60.0) * math.pi / 180.0;
-    final velocity = direction.clone()..rotate(deviationAngle);
+    // Trajectory aims towards player vicinity with random angular deviation (-45 to +45 deg)
+    final toPlayer = (playerPos - position).normalized();
+    final deviationAngle = (-45.0 + random.nextDouble() * 90.0) * math.pi / 180.0;
+    final velocity = toPlayer.clone()..rotate(deviationAngle);
     velocity.scale(speed);
 
     // Kind/Size: In phase 1, spawn large asteroids (kind 2 or 3) for easy target practice

@@ -5,6 +5,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
+import 'package:asteroids/game/components/player.dart';
+import 'package:asteroids/game/components/asteroid.dart';
+import 'package:asteroids/game/components/comet.dart';
 
 class HudOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -22,6 +25,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
   double _displayScore = 0.0;
   int _lastScore = 0;
   double _scorePulse = 0.0;
+  double _radarSweepTimer = 0.0;
   Duration _lastElapsed = Duration.zero;
 
   @override
@@ -33,6 +37,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       final dt = ((elapsed - _lastElapsed).inMicroseconds / 1000000.0).clamp(0.0, 0.1);
       _lastElapsed = elapsed;
       _tickScore(dt);
+      _radarSweepTimer = (_radarSweepTimer + dt * 2.5) % (2 * math.pi);
       if (mounted) {
         setState(() {});
       }
@@ -538,9 +543,56 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       ),
                     ),
                   ),
+
+                const SizedBox(height: 10),
+
+                // Tactical Mini-Radar & Spatial Navigation
+                _buildTacticalRadar(player, valkyrie),
               ],
             ),
           ),
+
+          // Sector Hazard Warning Banner
+          if (player.isNearBoundary)
+            Positioned(
+              top: 54,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.redAccent.withOpacity(0.8),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'WARNING: SECTOR BOUNDARY // HAZARD PERIMETER',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           // Bottom Left: Active Arsenal Card, Thruster Dash & Valkyrie Special Ability
           Positioned(
@@ -1073,4 +1125,184 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       ),
     );
   }
+
+  Widget _buildTacticalRadar(PlayerComponent player, Valkyrie valkyrie) {
+    final playerPos = player.position;
+    final asteroidBlips = <Offset>[];
+    try {
+      final asteroids = widget.game.world.children.whereType<AsteroidComponent>();
+      for (final a in asteroids) {
+        final offset = a.position - playerPos;
+        if (offset.length <= GameConstants.radarRange) {
+          asteroidBlips.add(Offset(offset.x, offset.y));
+        }
+      }
+    } catch (_) {}
+
+    Offset? cometBlip;
+    try {
+      final comets = widget.game.world.children.whereType<CometComponent>();
+      if (comets.isNotEmpty) {
+        final offset = comets.first.position - playerPos;
+        if (offset.length <= GameConstants.radarRange) {
+          cometBlip = Offset(offset.x, offset.y);
+        }
+      }
+    } catch (_) {}
+
+    return Container(
+      width: 104,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF070B14).withOpacity(0.88),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: player.isNearBoundary ? Colors.redAccent : Colors.cyanAccent.withOpacity(0.4),
+          width: player.isNearBoundary ? 1.8 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (player.isNearBoundary ? Colors.redAccent : Colors.cyanAccent).withOpacity(0.18),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Radar Scope Canvas
+          SizedBox(
+            width: 86,
+            height: 86,
+            child: CustomPaint(
+              painter: _RadarScopePainter(
+                playerAngle: player.angle,
+                playerColor: valkyrie.primaryColor,
+                asteroidBlips: asteroidBlips,
+                cometBlip: cometBlip,
+                sweepTimer: _radarSweepTimer,
+                isNearBoundary: player.isNearBoundary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Coordinate Telemetry
+          Text(
+            'SEC [${(player.position.x / 100).toStringAsFixed(0)} : ${(player.position.y / 100).toStringAsFixed(0)}]',
+            style: TextStyle(
+              fontFamily: 'Rajdhani',
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: player.isNearBoundary ? Colors.redAccent : Colors.cyanAccent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RadarScopePainter extends CustomPainter {
+  final double playerAngle;
+  final Color playerColor;
+  final List<Offset> asteroidBlips;
+  final Offset? cometBlip;
+  final double sweepTimer;
+  final bool isNearBoundary;
+
+  _RadarScopePainter({
+    required this.playerAngle,
+    required this.playerColor,
+    required this.asteroidBlips,
+    required this.cometBlip,
+    required this.sweepTimer,
+    required this.isNearBoundary,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Background circle
+    final bgPaint = Paint()
+      ..color = const Color(0xFF060B16).withOpacity(0.92)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Range Rings
+    final ringPaint = Paint()
+      ..color = (isNearBoundary ? Colors.redAccent : const Color(0xFF00E5FF)).withOpacity(0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawCircle(center, radius * 0.5, ringPaint);
+    canvas.drawCircle(center, radius * 0.95, ringPaint);
+
+    // Crosshairs
+    final crossPaint = Paint()
+      ..color = const Color(0xFF00E5FF).withOpacity(0.12)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(Offset(center.dx, 0), Offset(center.dx, size.height), crossPaint);
+    canvas.drawLine(Offset(0, center.dy), Offset(size.width, center.dy), crossPaint);
+
+    // Animated Rotating Radar Sweep Line
+    final sweepDir = Offset(math.cos(sweepTimer), math.sin(sweepTimer));
+    final sweepPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          (isNearBoundary ? Colors.redAccent : const Color(0xFF00E5FF)).withOpacity(0.8),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..strokeWidth = 1.5;
+    canvas.drawLine(center, center + sweepDir * (radius * 0.95), sweepPaint);
+
+    // Asteroid blips
+    final astPaint = Paint()
+      ..color = const Color(0xFF64D2FF).withOpacity(0.8)
+      ..style = PaintingStyle.fill;
+    const maxRange = GameConstants.radarRange;
+    for (final offset in asteroidBlips) {
+      final normX = (offset.dx / maxRange) * (radius * 0.88);
+      final normY = (offset.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      if ((blipPos - center).distance <= radius * 0.95) {
+        canvas.drawCircle(blipPos, 1.8, astPaint);
+      }
+    }
+
+    // Comet blip
+    if (cometBlip != null) {
+      final normX = (cometBlip!.dx / maxRange) * (radius * 0.88);
+      final normY = (cometBlip!.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      final cometPaint = Paint()
+        ..color = const Color(0xFFFFD700)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(blipPos, 3.5, cometPaint);
+    }
+
+    // Center Valkyrie ship icon (small triangle pointing in ship angle)
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(playerAngle);
+
+    final shipPath = Path()
+      ..moveTo(0, -6)
+      ..lineTo(4, 5)
+      ..lineTo(0, 2.5)
+      ..lineTo(-4, 5)
+      ..close();
+
+    final shipPaint = Paint()
+      ..color = playerColor
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(shipPath, shipPaint);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _RadarScopePainter oldDelegate) => true;
 }
