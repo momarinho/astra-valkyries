@@ -29,7 +29,6 @@ class GameJoystick extends PositionComponent with HasGameReference<AsteroidsGame
   @override
   void render(Canvas canvas) {
     if (game.state != GameState.playing) return;
-    if (!game.isMobile) return;
     
     super.render(canvas);
     

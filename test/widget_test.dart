@@ -113,7 +113,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('RETRY SORTIE [ENTER]'), findsOneWidget);
+      expect(find.textContaining('RETRY SORTIE'), findsOneWidget);
 
       // Press Enter key on keyboard
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);

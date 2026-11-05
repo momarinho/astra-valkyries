@@ -97,6 +97,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     final dashCooldown = player.dashCooldownTimer;
     final currentWeapon = player.weapon;
 
+    // Station uplink telemetry
+    SpaceStationComponent? station;
+    try {
+      final stations = game.world.children.whereType<SpaceStationComponent>();
+      if (stations.isNotEmpty) station = stations.first;
+    } catch (_) {}
+    final showStationBanner = station != null && (station.isPlayerInZone || station.uploadProgress > 0);
+
     // Reactive mini-avatar state detection
     String currentAvatarAsset;
     Color avatarGlowColor;
@@ -657,381 +665,224 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             ),
 
           // Space Station Uplink Progress Banner
-          Builder(
-            builder: (context) {
-              SpaceStationComponent? station;
-              try {
-                final stations = widget.game.world.children.whereType<SpaceStationComponent>();
-                if (stations.isNotEmpty) station = stations.first;
-              } catch (_) {}
-
-              if (station == null || (!station.isPlayerInZone && station.uploadProgress <= 0)) {
-                return const SizedBox.shrink();
-              }
-
-              final progressPct = (station.uploadProgress / SpaceStationComponent.targetUploadTime * 100).toInt();
-              final topOffset = (player.isNearBoundary ? 94.0 : 54.0) + (player.activeNebulaName != null ? 36.0 : 0.0);
-
-              return Positioned(
-                top: topOffset,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0B1426).withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
-                        width: 1.4,
+          if (showStationBanner)
+            Positioned(
+              top: (player.isNearBoundary ? 94.0 : 54.0) + (player.activeNebulaName != null ? 36.0 : 0.0),
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0B1426).withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
+                      width: 1.4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700)).withOpacity(0.35),
+                        blurRadius: 10,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700)).withOpacity(0.35),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          station.isSecured ? Icons.check_circle_outline_rounded : Icons.cell_tower_rounded,
-                          color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          station.isSecured
-                              ? 'RELAY ARCHIVES SECURED (+1500 PTS)'
-                              : 'RELAY UPLINK IN PROGRESS: $progressPct%',
-                          style: TextStyle(
-                            fontFamily: 'Rajdhani',
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.4,
-                            color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                ),
-              );
-            },
-          ),
-
-          // Bottom Left: Active Arsenal Card, Thruster Dash & Valkyrie Special Ability
-          Positioned(
-            bottom: 0,
-            left: 0,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                IgnorePointer(
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Active Arsenal (Vampire Survivors Multi-Weapon Cards)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: player.activeWeapons.map((w) {
-                          final isReady = w.currentCooldown <= 0;
-                          final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
-                          final progress = (1.0 - (w.currentCooldown / maxCd)).clamp(0.0, 1.0);
-                          final isMax = w.level >= w.maxLevel;
-
-                          return Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.8),
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(
-                                color: isMax
-                                    ? const Color(0xFFFFD700).withOpacity(0.8)
-                                    : (isReady ? valkyrie.accentColor.withOpacity(0.6) : Colors.white24),
-                                width: isMax ? 1.4 : 1.0,
-                              ),
-                              boxShadow: isMax
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.25),
-                                        blurRadius: 6,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      w.name.toUpperCase(),
-                                      style: TextStyle(
-                                        fontFamily: 'Orbitron',
-                                        fontSize: 10.0,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.6,
-                                        color: isMax ? const Color(0xFFFFD700) : Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: isMax
-                                            ? const Color(0xFFFFD700).withOpacity(0.25)
-                                            : valkyrie.primaryColor.withOpacity(0.25),
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
-                                      child: Text(
-                                        isMax ? 'MAX' : 'MK ${w.level}',
-                                        style: TextStyle(
-                                          fontFamily: 'Orbitron',
-                                          fontSize: 7.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: isMax ? const Color(0xFFFFD700) : valkyrie.accentColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                // Weapon Cooldown Bar
-                                Container(
-                                  width: 60,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white12,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: FractionallySizedBox(
-                                      widthFactor: progress,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: isReady
-                                              ? (isMax ? const Color(0xFFFFD700) : Colors.greenAccent)
-                                              : Colors.orangeAccent,
-                                          borderRadius: BorderRadius.circular(2),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                      Icon(
+                        station.isSecured ? Icons.check_circle_outline_rounded : Icons.cell_tower_rounded,
+                        color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
+                        size: 16,
                       ),
-                      const SizedBox(width: 12),
-
-                      // Thruster Dash Cooldown Ring
-                      Builder(
-                        builder: (context) {
-                          final isReady = dashCooldown <= 0;
-                          final progress = isReady
-                              ? 1.0
-                              : (1.0 - (dashCooldown / GameConstants.playerDashCooldownSeconds)).clamp(0.0, 1.0);
-                          final dashPulse = isReady
-                              ? (math.sin(DateTime.now().millisecondsSinceEpoch / 250) + 1) / 2
-                              : 0.0;
-
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.75),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isReady
-                                    ? valkyrie.accentColor.withOpacity(0.55 + dashPulse * 0.35)
-                                    : Colors.white24,
-                                width: isReady ? 1.4 : 1.0,
-                              ),
-                              boxShadow: isReady
-                                  ? [
-                                      BoxShadow(
-                                        color: valkyrie.accentColor.withOpacity(0.25 + dashPulse * 0.25),
-                                        blurRadius: 8 + dashPulse * 4,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 26,
-                                  height: 26,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      CircularProgressIndicator(
-                                        value: progress,
-                                        strokeWidth: 2.5,
-                                        backgroundColor: Colors.white12,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          isReady ? valkyrie.accentColor : Colors.white38,
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.bolt,
-                                        size: 15,
-                                        color: isReady ? valkyrie.accentColor : Colors.white38,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'DASH',
-                                      style: TextStyle(
-                                        fontFamily: 'Orbitron',
-                                        fontVariations: const [FontVariation('wght', 700)],
-                                        fontSize: 10,
-                                        letterSpacing: 1.0,
-                                        color: isReady ? valkyrie.accentColor : Colors.white60,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      isReady ? 'READY [SHIFT]' : '${dashCooldown.toStringAsFixed(1)}s',
-                                      style: TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: isReady ? valkyrie.accentColor : Colors.white38,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                      const SizedBox(width: 8),
+                      Text(
+                        station.isSecured
+                            ? 'RELAY ARCHIVES SECURED (+1500 PTS)'
+                            : 'RELAY UPLINK IN PROGRESS: ${(station.uploadProgress / SpaceStationComponent.targetUploadTime * 100).toInt()}%',
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.4,
+                          color: station.isSecured ? const Color(0xFF64FFDA) : const Color(0xFFFFD700),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+              ),
+            ),
 
-                // Valkyrie Special Ability Trigger Card
+          // Top-Left (Sub-Dossier): Active Arsenal Cards (Vampire Survivors Multi-Weapon Stack)
+          Positioned(
+            top: 86,
+            left: 0,
+            child: IgnorePointer(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: player.activeWeapons.map((w) {
+                  final isReady = w.currentCooldown <= 0;
+                  final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
+                  final progress = (1.0 - (w.currentCooldown / maxCd)).clamp(0.0, 1.0);
+                  final isMax = w.level >= w.maxLevel;
+
+                  return Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isMax
+                            ? const Color(0xFFFFD700).withOpacity(0.8)
+                            : (isReady ? valkyrie.accentColor.withOpacity(0.6) : Colors.white24),
+                        width: isMax ? 1.4 : 1.0,
+                      ),
+                      boxShadow: isMax
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFFFD700).withOpacity(0.25),
+                                blurRadius: 6,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              w.name.toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 9.0,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                color: isMax ? const Color(0xFFFFD700) : Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: isMax
+                                    ? const Color(0xFFFFD700).withOpacity(0.25)
+                                    : valkyrie.primaryColor.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                isMax ? 'MAX' : 'MK ${w.level}',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 7.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: isMax ? const Color(0xFFFFD700) : valkyrie.accentColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        // Weapon Cooldown Bar
+                        Container(
+                          width: 52,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.white12,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: progress,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isReady
+                                      ? (isMax ? const Color(0xFFFFD700) : Colors.greenAccent)
+                                      : Colors.orangeAccent,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
+          // Bottom Right: Mobile-First Thumb Action Cluster (Dash, Overdrive, Manual Shoot)
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Thruster Dash Button
                 GestureDetector(
                   onTap: () {
-                    game.triggerSpecial();
+                    player.dash();
+                    widget.game.playSfx('dash.wav');
                   },
                   child: Builder(
                     builder: (context) {
-                      final isReady = game.specialAvailable;
-                      final specialPulse = isReady
-                          ? (math.sin(DateTime.now().millisecondsSinceEpoch / 180) + 1) / 2
-                          : 0.0;
-                      final glowColor = isReady ? valkyrie.primaryColor : Colors.white24;
-
+                      final isReady = dashCooldown <= 0;
+                      final progress = isReady
+                          ? 1.0
+                          : (1.0 - (dashCooldown / GameConstants.playerDashCooldownSeconds)).clamp(0.0, 1.0);
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        width: 58,
+                        height: 58,
                         decoration: BoxDecoration(
-                          color: isReady
-                              ? valkyrie.primaryColor.withOpacity(0.18 + specialPulse * 0.12)
-                              : Colors.black.withOpacity(0.75),
-                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFF070B14).withOpacity(0.88),
+                          shape: BoxShape.circle,
                           border: Border.all(
-                            color: isReady
-                                ? valkyrie.primaryColor.withOpacity(0.7 + specialPulse * 0.3)
-                                : Colors.white24,
-                            width: isReady ? 1.6 : 1.0,
+                            color: isReady ? Colors.cyanAccent : Colors.white24,
+                            width: isReady ? 2.0 : 1.2,
                           ),
                           boxShadow: isReady
                               ? [
                                   BoxShadow(
-                                    color: valkyrie.primaryColor.withOpacity(0.35 + specialPulse * 0.35),
-                                    blurRadius: 10 + specialPulse * 8,
-                                    spreadRadius: 1,
+                                    color: Colors.cyanAccent.withOpacity(0.35),
+                                    blurRadius: 10,
                                   ),
                                 ]
-                              : null,
+                              : [],
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isReady
-                                    ? valkyrie.primaryColor.withOpacity(0.3)
-                                    : Colors.white10,
-                                border: Border.all(
-                                  color: glowColor,
-                                  width: 1.5,
-                                ),
+                            CircularProgressIndicator(
+                              value: progress,
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isReady ? Colors.cyanAccent : Colors.orangeAccent,
                               ),
-                              child: Icon(
-                                isReady ? Icons.auto_awesome : Icons.lock_outline,
-                                color: isReady ? const Color(0xFFFFD700) : Colors.white38,
-                                size: 16,
-                              ),
+                              backgroundColor: Colors.transparent,
                             ),
-                            const SizedBox(width: 10),
                             Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      valkyrie.specialAbilityName.toUpperCase(),
-                                      style: TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 12.0,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.8,
-                                        color: isReady ? Colors.white : Colors.white38,
-                                      ),
-                                    ),
-                                    if (isReady) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                        decoration: BoxDecoration(
-                                          color: Colors.amber.withOpacity(0.3),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: Colors.amberAccent, width: 0.8),
-                                        ),
-                                        child: const Text(
-                                          '[E]',
-                                          style: TextStyle(
-                                            fontFamily: 'Orbitron',
-                                            fontSize: 9.0,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.amberAccent,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  color: isReady ? Colors.cyanAccent : Colors.white38,
+                                  size: 24,
                                 ),
-                                const SizedBox(height: 2),
                                 Text(
-                                  isReady ? 'OVERDRIVE ARMED' : 'RECHARGING PROTOCOL',
+                                  isReady ? 'DASH' : '${dashCooldown.toStringAsFixed(1)}s',
                                   style: TextStyle(
                                     fontFamily: 'Rajdhani',
-                                    fontSize: 9.5,
+                                    fontSize: 9.0,
                                     fontWeight: FontWeight.bold,
-                                    color: isReady ? const Color(0xFFFFD700) : Colors.white24,
-                                    letterSpacing: 0.8,
+                                    color: isReady ? Colors.cyanAccent : Colors.white38,
                                   ),
                                 ),
                               ],
@@ -1042,65 +893,119 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                     },
                   ),
                 ),
+
+                const SizedBox(width: 14),
+
+                // 2. Overdrive / Special Ultimate Button
+                GestureDetector(
+                  onTap: () {
+                    widget.game.triggerSpecial();
+                  },
+                  child: Builder(
+                    builder: (context) {
+                      final isReady = widget.game.specialAvailable;
+                      final pulse = isReady
+                          ? (math.sin(DateTime.now().millisecondsSinceEpoch / 180) + 1) / 2
+                          : 0.0;
+
+                      return Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: isReady
+                              ? valkyrie.primaryColor.withOpacity(0.28 + pulse * 0.15)
+                              : const Color(0xFF070B14).withOpacity(0.88),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isReady
+                                ? valkyrie.primaryColor.withOpacity(0.9 + pulse * 0.1)
+                                : Colors.white24,
+                            width: isReady ? 2.8 : 1.5,
+                          ),
+                          boxShadow: isReady
+                              ? [
+                                  BoxShadow(
+                                    color: valkyrie.primaryColor.withOpacity(0.5 + pulse * 0.3),
+                                    blurRadius: 14 + pulse * 6,
+                                    spreadRadius: 1.5,
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isReady ? Icons.auto_awesome : Icons.lock_outline,
+                              color: isReady ? const Color(0xFFFFD700) : Colors.white30,
+                              size: 28,
+                            ),
+                            Text(
+                              isReady ? 'SPECIAL' : 'RECHARGE',
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 8.0,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.8,
+                                color: isReady ? const Color(0xFFFFD700) : Colors.white30,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                // 3. Manual Shoot / Focus Burst Button
+                GestureDetector(
+                  onTap: () {
+                    player.shoot();
+                  },
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF070B14).withOpacity(0.88),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.amberAccent.withOpacity(0.8),
+                        width: 1.8,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.amberAccent.withOpacity(0.25),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.gps_fixed_rounded,
+                          color: Colors.amberAccent,
+                          size: 24,
+                        ),
+                        Text(
+                          'FIRE',
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.6,
+                            color: Colors.amberAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-
-          // Bottom Right: Mobile touch action controls
-          if (game.isMobile)
-            Positioned(
-              bottom: 10,
-              right: 10,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      game.triggerSpecial();
-                    },
-                    child: Builder(
-                      builder: (context) {
-                        final isReady = game.specialAvailable;
-                        final pulse = isReady
-                            ? (math.sin(DateTime.now().millisecondsSinceEpoch / 180) + 1) / 2
-                            : 0.0;
-
-                        return Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: isReady
-                                ? valkyrie.primaryColor.withOpacity(0.24 + pulse * 0.12)
-                                : Colors.white10,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isReady
-                                  ? valkyrie.primaryColor.withOpacity(0.8 + pulse * 0.2)
-                                  : Colors.white24,
-                              width: isReady ? 2.5 : 1.5,
-                            ),
-                            boxShadow: isReady
-                                ? [
-                                    BoxShadow(
-                                      color: valkyrie.primaryColor.withOpacity(0.4 + pulse * 0.3),
-                                      blurRadius: 10 + pulse * 6,
-                                      spreadRadius: 1,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Icon(
-                            isReady ? Icons.auto_awesome : Icons.lock_outline,
-                            color: isReady ? const Color(0xFFFFD700) : Colors.white24,
-                            size: 26,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
           // Layer 2: Comms Radio Holographic Dialogue Transmission Box at Sortie Launch
           if (game.showLaunchTransmission)

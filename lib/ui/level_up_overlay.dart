@@ -220,27 +220,27 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
 
                         const SizedBox(height: 18),
 
-                        // Atalhos de Teclado
+                        // Mobile / Touch Interaction Prompt
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.04),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: Colors.white12),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.keyboard, color: Colors.cyanAccent, size: 16),
+                              const Icon(Icons.touch_app_rounded, color: Colors.cyanAccent, size: 16),
                               const SizedBox(width: 8),
                               Text(
-                                '[1, 2, 3] ou ◄ / ► + [ESPAÇO / ENTER] para escolher • Clique com o mouse',
+                                'TOQUE EM UMA CARTA PARA INSTALAR NO SEU CAÇA',
                                 style: TextStyle(
                                   fontFamily: 'Rajdhani',
-                                  fontSize: 11.5,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white.withOpacity(0.7),
-                                  letterSpacing: 1.0,
+                                  color: Colors.white.withOpacity(0.8),
+                                  letterSpacing: 1.2,
                                 ),
                               ),
                             ],

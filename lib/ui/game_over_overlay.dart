@@ -38,11 +38,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
       }
       return KeyEventResult.ignored;
     };
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _nameFocusNode.requestFocus();
-      }
-    });
+    // Mobile: Do not automatically focus textfield to prevent intrusive virtual keyboard popup
   }
 
   @override
@@ -418,7 +414,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               },
                               icon: const Icon(Icons.refresh, size: 20),
                               label: const Text(
-                                'RETRY SORTIE [ENTER]',
+                                'RETRY SORTIE',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 13,
@@ -450,7 +446,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               },
                               icon: const Icon(Icons.home, size: 18),
                               label: const Text(
-                                'HANGAR [ESC]',
+                                'RETURN TO HANGAR',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 13,

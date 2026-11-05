@@ -134,11 +134,27 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           ],
                         ),
 
-                        // Back Button
-                        IconButton(
-                          onPressed: () => widget.game.changeState(GameState.menu),
-                          icon: const Icon(Icons.close, color: Colors.white70),
-                          tooltip: 'Back to Main Menu [ESC]',
+                        // Action Buttons: Global Leaderboard & Settings
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                widget.game.playSfx('menu_select.wav');
+                                widget.game.changeState(GameState.leaderboard);
+                              },
+                              icon: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFFD700)),
+                              tooltip: 'Global Leaderboards',
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              onPressed: () {
+                                widget.game.playSfx('menu_select.wav');
+                                widget.game.changeState(GameState.settings);
+                              },
+                              icon: const Icon(Icons.settings, color: Colors.cyanAccent),
+                              tooltip: 'Game Settings',
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -245,37 +261,56 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
                     // Main Dossier Area (Pilot Hologram & Combat Specs)
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(22.0),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0C1017).withOpacity(0.92),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: current.primaryColor.withOpacity(0.4), width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: current.primaryColor.withOpacity(0.12),
-                              blurRadius: 28,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Left Column: Pilot Visual Preview Slot (Avatar / Placeholder Hologram)
-                            Expanded(
-                              flex: 4,
-                              child: _buildPilotVisualCard(current),
-                            ),
+                      child: GestureDetector(
+                        onHorizontalDragEnd: (details) {
+                          if (details.primaryVelocity != null) {
+                            if (details.primaryVelocity! < -150) {
+                              // Swipe Left -> Next
+                              setState(() {
+                                _selectedIndex = (_selectedIndex + 1) % _valkyries.length;
+                              });
+                              widget.game.playSfx('menu_select.wav');
+                            } else if (details.primaryVelocity! > 150) {
+                              // Swipe Right -> Previous
+                              setState(() {
+                                _selectedIndex = (_selectedIndex - 1 + _valkyries.length) % _valkyries.length;
+                              });
+                              widget.game.playSfx('menu_select.wav');
+                            }
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(22.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0C1017).withOpacity(0.92),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: current.primaryColor.withOpacity(0.4), width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: current.primaryColor.withOpacity(0.12),
+                                blurRadius: 28,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Left Column: Pilot Visual Preview Slot (Avatar / Placeholder Hologram)
+                              Expanded(
+                                flex: 4,
+                                child: _buildPilotVisualCard(current),
+                              ),
 
-                            const SizedBox(width: 24),
+                              const SizedBox(width: 24),
 
-                            // Right Column: Tactical Specs, Weaponry & Lore
-                            Expanded(
-                              flex: 6,
-                              child: _buildTacticalSpecs(current),
-                            ),
-                          ],
+                              // Right Column: Tactical Specs, Weaponry & Lore
+                              Expanded(
+                                flex: 6,
+                                child: _buildTacticalSpecs(current),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -286,14 +321,21 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            'USE [A / D] OR [ARROWS] TO BROWSE ROSTER • [ENTER] TO LAUNCH',
-                            style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 12,
-                              letterSpacing: 1.5,
-                              color: Colors.white.withOpacity(0.5),
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.touch_app_rounded, color: current.accentColor, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                'SWIPE OR TAP PILOT • READY FOR DEPLOYMENT',
+                                style: TextStyle(
+                                  fontFamily: 'Rajdhani',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 1.5,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -302,9 +344,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: current.primaryColor,
                             foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 15),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 12,
                             shadowColor: current.primaryColor.withOpacity(0.6),
@@ -312,10 +354,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.bolt, size: 22, color: Colors.black),
+                              Icon(Icons.rocket_launch_rounded, size: 20, color: Colors.black),
                               SizedBox(width: 8),
                               Text(
-                                'DEPLOY INTO THE VOID',
+                                'DEPLOY // DECOLAR',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 14,

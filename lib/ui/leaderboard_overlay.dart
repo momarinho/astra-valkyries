@@ -423,7 +423,7 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
 
                   const SizedBox(height: 12),
 
-                  // Keyboard arcade guide
+                  // Touch navigation hint
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
@@ -436,10 +436,10 @@ class _LeaderboardOverlayState extends State<LeaderboardOverlay> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.keyboard, color: Colors.cyanAccent, size: 16),
+                          Icon(Icons.touch_app_rounded, color: Colors.cyanAccent, size: 16),
                           SizedBox(width: 8),
                           Text(
-                            '◄ / ►: ESCOLHER BOTÃO  •  [ENTER / ESPAÇO]: CONFIRMAR  •  [TAB]: HOJE / GERAL  •  ▲ / ▼: ROLAR  •  [ESC]: VOLTAR',
+                            'TOQUE NAS ABAS PARA ALTERAR PERÍODO  •  DESLIZE PARA ROLAR O RANKING',
                             style: TextStyle(
                               fontFamily: 'Rajdhani',
                               fontSize: 12,

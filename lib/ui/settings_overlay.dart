@@ -124,7 +124,7 @@ class SettingsOverlay extends StatelessWidget {
                   // Save Button
                   ElevatedButton(
                     onPressed: () {
-                      game.changeState(GameState.menu);
+                      game.changeState(GameState.valkyrieSelection);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.cyan,
@@ -135,9 +135,10 @@ class SettingsOverlay extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'SAVE & BACK TO MENU',
+                      'SAVE & RETURN TO HANGAR',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontFamily: 'Orbitron',
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.5,
                       ),
