@@ -12,10 +12,16 @@ import 'package:asteroids/game/valkyrie.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
 import 'enemy_bullet.dart';
+import 'dreadnought_leviathan.dart';
 import 'joystick.dart';
 import 'cosmic_nebula.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  AsteroidsGame? customGame;
+
+  @override
+  AsteroidsGame get game => customGame ?? super.game;
+
   Vector2 velocity = Vector2.zero();
   
   double movementAcceleration = GameConstants.playerAcceleration;
@@ -127,7 +133,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollisionStart(intersectionPoints, other);
     if (game.state != GameState.playing) return;
-    if (other is AsteroidComponent || other is EnemyShipComponent) {
+    if (other is AsteroidComponent || other is EnemyShipComponent || other is DreadnoughtLeviathanComponent) {
       takeHit();
     }
   }

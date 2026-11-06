@@ -5,6 +5,7 @@ import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
+import 'dreadnought_leviathan.dart';
 
 class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   final String mode;
@@ -16,6 +17,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
   bool elite1Spawned = false;
   bool elite2Spawned = false;
+  bool leviathanSpawned = false;
 
   AsteroidField({this.mode = 'classic'});
 
@@ -34,12 +36,18 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
     // Timeline Script do Vampire Survivors:
     // 1. Spawns cronometrados de Elites (Void Commander)
-    if (difficultyTimer >= 180.0 && !elite1Spawned) {
+    if (difficultyTimer >= 90.0 && !elite1Spawned) {
       elite1Spawned = true;
       _spawnEliteCommander(1);
-    } else if (difficultyTimer >= 300.0 && !elite2Spawned) {
+    } else if (difficultyTimer >= 140.0 && !elite2Spawned) {
       elite2Spawned = true;
       _spawnEliteCommander(2);
+    }
+
+    // 2. Climax Boss: Titanic Dreadnought Leviathan (Minuto 2:40 / 160s ou 600s)
+    if (difficultyTimer >= 160.0 && !leviathanSpawned) {
+      leviathanSpawned = true;
+      _spawnLeviathanBoss();
     }
 
     // 2. Intervalo de Asteroides
@@ -89,6 +97,37 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
         _spawnEnemyWave();
       }
     }
+  }
+
+  void _spawnLeviathanBoss() {
+    Vector2 playerPos;
+    try {
+      playerPos = game.player.position;
+    } catch (_) {
+      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    }
+
+    try {
+      game.playSfx('powerup.wav');
+      game.triggerScreenShake(duration: 0.9, intensity: 22.0);
+      game.spawnFloatingText(
+        playerPos + Vector2(0, -60),
+        '🚨 TITANIC DREADNOUGHT LEVIATHAN DETECTED! (SECTOR CLIMAX)',
+        color: const Color(0xFFFF1744),
+        fontSize: 18.0,
+      );
+    } catch (_) {}
+
+    final random = math.Random();
+    final angle = random.nextDouble() * 2 * math.pi;
+    final spawnDist = 850.0;
+    final spawnPos = playerPos + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
+
+    spawnPos.x = spawnPos.x.clamp(120.0, GameConstants.sectorWidth - 120.0);
+    spawnPos.y = spawnPos.y.clamp(120.0, GameConstants.sectorHeight - 120.0);
+
+    final boss = DreadnoughtLeviathanComponent(position: spawnPos);
+    game.world.add(boss);
   }
 
   void _spawnEliteCommander(int count) {

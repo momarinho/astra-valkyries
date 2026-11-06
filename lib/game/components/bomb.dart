@@ -8,6 +8,8 @@ import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
 import 'enemy_ship.dart';
+import 'singularity_rift.dart';
+import 'dreadnought_leviathan.dart';
 
 class BombComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final Vector2 velocity;
@@ -15,6 +17,7 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
   double fuseTimer = 1.1; // Max flight time if no asteroid is hit
   final double explosionRadius;
   final double radius = 10.0;
+  final bool isSingularity;
   bool _hasExploded = false;
 
   BombComponent({
@@ -22,6 +25,7 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
     required this.velocity,
     this.damage = 130.0,
     this.explosionRadius = 95.0,
+    this.isSingularity = false,
   }) {
     this.position = position;
     anchor = Anchor.center;
@@ -61,13 +65,22 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
     if (_hasExploded) return;
     _hasExploded = true;
 
-    game.world.add(
-      BombExplosionComponent(
-        position: position.clone(),
-        maxRadius: explosionRadius,
-        damage: damage,
-      ),
-    );
+    if (isSingularity) {
+      game.world.add(
+        SingularityRiftComponent(
+          position: position.clone(),
+          damage: damage,
+        ),
+      );
+    } else {
+      game.world.add(
+        BombExplosionComponent(
+          position: position.clone(),
+          maxRadius: explosionRadius,
+          damage: damage,
+        ),
+      );
+    }
     removeFromParent();
   }
 
@@ -76,7 +89,7 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
     super.onCollisionStart(intersectionPoints, other);
     if (_hasExploded) return;
 
-    if (other is AsteroidComponent || other is CargoWreckComponent || other is EnemyShipComponent) {
+    if (other is AsteroidComponent || other is CargoWreckComponent || other is EnemyShipComponent || other is DreadnoughtLeviathanComponent) {
       explode();
     }
   }
@@ -160,6 +173,14 @@ class BombExplosionComponent extends PositionComponent with HasGameReference<Ast
         if (destroyed) {
           destroyedCount++;
         }
+      }
+    }
+
+    final bosses = game.world.children.whereType<DreadnoughtLeviathanComponent>();
+    for (final boss in List<DreadnoughtLeviathanComponent>.from(bosses)) {
+      final distance = position.distanceTo(boss.position);
+      if (distance <= maxRadius + boss.radius) {
+        boss.takeDamage(damage, boss.position);
       }
     }
 

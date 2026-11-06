@@ -237,6 +237,82 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             ),
           ),
 
+          // Boss Health Bar (Dreadnought Leviathan Climax)
+          if (game.activeBoss != null && !game.activeBoss!.isDefeated)
+            Positioned(
+              top: 34,
+              left: MediaQuery.of(context).size.width * 0.22,
+              right: MediaQuery.of(context).size.width * 0.22,
+              child: IgnorePointer(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1744), size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'DREADNOUGHT LEVIATHAN // SECTOR TITAN',
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                                color: Color(0xFFFF1744),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${((game.activeBoss!.hp / game.activeBoss!.maxHp) * 100).toInt()}% HULL',
+                          style: const TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF5252),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFFF1744), width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF1744).withValues(alpha: 0.35),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: (game.activeBoss!.hp / game.activeBoss!.maxHp).clamp(0.0, 1.0),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFFFF1744), Color(0xFFFF8A80), Color(0xFFFFD700)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Top Left: Pilot Mini-Avatar & Tactical Cockpit Status
           Positioned(
             top: 0,
@@ -758,31 +834,38 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              w.name.toUpperCase(),
+                              (w.isEvolved ? (w.evolvedName ?? w.name) : w.name).toUpperCase(),
                               style: TextStyle(
                                 fontFamily: 'Orbitron',
-                                fontSize: 9.0,
+                                fontSize: w.isEvolved ? 8.5 : 9.0,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
-                                color: isMax ? const Color(0xFFFFD700) : Colors.white,
+                                color: w.isEvolved
+                                    ? const Color(0xFFFFD700)
+                                    : (isMax ? const Color(0xFFFFB300) : Colors.white),
                               ),
                             ),
                             const SizedBox(width: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                               decoration: BoxDecoration(
-                                color: isMax
-                                    ? const Color(0xFFFFD700).withOpacity(0.25)
-                                    : valkyrie.primaryColor.withOpacity(0.25),
+                                color: w.isEvolved
+                                    ? const Color(0xFFFFD700).withValues(alpha: 0.35)
+                                    : (isMax
+                                        ? const Color(0xFFFFB300).withValues(alpha: 0.25)
+                                        : valkyrie.primaryColor.withValues(alpha: 0.25)),
                                 borderRadius: BorderRadius.circular(3),
+                                border: w.isEvolved ? Border.all(color: const Color(0xFFFFD700), width: 0.8) : null,
                               ),
                               child: Text(
-                                isMax ? 'MAX' : 'MK ${w.level}',
+                                w.isEvolved ? 'EVO' : (isMax ? 'MAX' : 'MK ${w.level}'),
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 7.0,
                                   fontWeight: FontWeight.bold,
-                                  color: isMax ? const Color(0xFFFFD700) : valkyrie.accentColor,
+                                  color: w.isEvolved
+                                      ? const Color(0xFFFFD700)
+                                      : (isMax ? const Color(0xFFFFB300) : valkyrie.accentColor),
                                 ),
                               ),
                             ),
@@ -1248,6 +1331,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       }
     } catch (_) {}
 
+    Offset? bossOffset;
+    try {
+      final boss = widget.game.activeBoss;
+      if (boss != null && !boss.isDefeated) {
+        bossOffset = Offset(boss.position.x - playerPos.x, boss.position.y - playerPos.y);
+      }
+    } catch (_) {}
+
     return Container(
       width: 104,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -1284,6 +1375,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 nebulaBlips: nebulaBlips,
                 enemyBlips: enemyBlips,
                 chestBlips: chestBlips,
+                bossOffset: bossOffset,
                 sweepTimer: _radarSweepTimer,
                 isNearBoundary: player.isNearBoundary,
               ),
@@ -1318,6 +1410,7 @@ class _RadarScopePainter extends CustomPainter {
   final List<({Offset offset, Color color, double radius})> nebulaBlips;
   final List<({Offset offset, bool isElite})> enemyBlips;
   final List<Offset> chestBlips;
+  final Offset? bossOffset;
   final double sweepTimer;
   final bool isNearBoundary;
 
@@ -1332,6 +1425,7 @@ class _RadarScopePainter extends CustomPainter {
     required this.nebulaBlips,
     required this.enemyBlips,
     required this.chestBlips,
+    required this.bossOffset,
     required this.sweepTimer,
     required this.isNearBoundary,
   });
@@ -1449,6 +1543,45 @@ class _RadarScopePainter extends CustomPainter {
       final blipPos = center + Offset(normX, normY);
       if ((blipPos - center).distance <= radius * 0.95) {
         canvas.drawRect(Rect.fromCenter(center: blipPos, width: 4.5, height: 4.5), chestPaint);
+      }
+    }
+
+    // Titanic Dreadnought Leviathan Boss blip / Waypoint Arrow
+    if (bossOffset != null) {
+      final bossDist = bossOffset!.distance;
+      if (bossDist <= maxRange) {
+        final normX = (bossOffset!.dx / maxRange) * (radius * 0.88);
+        final normY = (bossOffset!.dy / maxRange) * (radius * 0.88);
+        final blipPos = center + Offset(normX, normY);
+
+        final bossPaint = Paint()
+          ..color = const Color(0xFFFF1744)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(blipPos, 5.0, bossPaint);
+
+        final ringPaint = Paint()
+          ..color = const Color(0xFFFFD700)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+        canvas.drawCircle(blipPos, 8.5, ringPaint);
+      } else {
+        final angleToBoss = math.atan2(bossOffset!.dy, bossOffset!.dx);
+        final arrowPos = center + Offset(math.cos(angleToBoss), math.sin(angleToBoss)) * (radius * 0.90);
+
+        canvas.save();
+        canvas.translate(arrowPos.dx, arrowPos.dy);
+        canvas.rotate(angleToBoss + math.pi / 2);
+
+        final arrowPath = Path()
+          ..moveTo(0, -6.0)
+          ..lineTo(5.0, 4.0)
+          ..lineTo(-5.0, 4.0)
+          ..close();
+        final arrowPaint = Paint()
+          ..color = const Color(0xFFFF1744)
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(arrowPath, arrowPaint);
+        canvas.restore();
       }
     }
 

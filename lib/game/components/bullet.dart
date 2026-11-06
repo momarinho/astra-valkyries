@@ -8,6 +8,7 @@ import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
 import 'enemy_ship.dart';
+import 'dreadnought_leviathan.dart';
 
 class BulletComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius;
@@ -119,6 +120,41 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         removeFromParent();
       }
     } else if (other is EnemyShipComponent) {
+      double dealtDamage = damage;
+      bool isCrit = false;
+      try {
+        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
+        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
+          dealtDamage *= 2.0;
+          isCrit = true;
+        }
+      } catch (_) {}
+
+      other.takeDamage(dealtDamage, position);
+      if (isCrit) {
+        game.spawnFloatingText(
+          position + Vector2(0, -18),
+          'CRIT!',
+          color: const Color(0xFFFF5252),
+          fontSize: 13.0,
+        );
+      }
+
+      if (piercesLeft > 0) {
+        piercesLeft--;
+        game.spawnExplosionParticles(
+          position: position,
+          colorChoices: [Colors.cyanAccent, Colors.white],
+          count: 5,
+          minSize: 1.5,
+          maxSize: 3.0,
+          minSpeed: 40.0,
+          maxSpeed: 90.0,
+        );
+      } else {
+        removeFromParent();
+      }
+    } else if (other is DreadnoughtLeviathanComponent) {
       double dealtDamage = damage;
       bool isCrit = false;
       try {

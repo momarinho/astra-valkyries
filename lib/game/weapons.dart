@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
+import 'package:flutter/material.dart';
 import 'package:asteroids/constants.dart';
 import 'components/player.dart';
 import 'components/bullet.dart';
@@ -18,6 +19,11 @@ abstract class Weapon {
   final int maxLevel = 3;
   double currentCooldown = 0.0;
 
+  bool isEvolved = false;
+  String? evolvedName;
+
+  bool get canEvolve => level >= maxLevel && !isEvolved;
+
   Weapon({
     required this.id,
     required this.name,
@@ -25,6 +31,7 @@ abstract class Weapon {
     required this.recoil,
     required this.muzzleFlashSize,
     required this.damage,
+    this.evolvedName,
   });
 
   bool fire(PlayerComponent player);
@@ -38,7 +45,15 @@ abstract class Weapon {
     return true;
   }
 
+  bool evolve() {
+    if (!canEvolve) return false;
+    isEvolved = true;
+    applyEvolution();
+    return true;
+  }
+
   void applyUpgradeStats();
+  void applyEvolution();
 }
 
 class Blaster extends Weapon {
@@ -46,6 +61,7 @@ class Blaster extends Weapon {
       : super(
           id: 'blaster',
           name: "Pulse Blaster",
+          evolvedName: "Supernova Annihilator",
           cooldown: 0.70,
           recoil: 12.0,
           muzzleFlashSize: 8.0,
@@ -55,6 +71,26 @@ class Blaster extends Weapon {
   @override
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
+
+    // Super-Evolution: Supernova Annihilator (Dual continuous gold plasma beams with infinite pierce)
+    if (isEvolved) {
+      final right = Vector2(-player.forward.y, player.forward.x);
+      for (final offset in [-8.0, 8.0]) {
+        final spawnPos = player.position + player.forward * player.radius + right * offset;
+        final bullet = BulletComponent(
+          position: spawnPos,
+          radius: 5.5,
+          velocity: player.forward * (GameConstants.playerShootSpeed + 120.0),
+          lifeTimer: GameConstants.shotLifetimeSeconds * 1.3,
+          damage: effectiveDamage,
+          color: const Color(0xFFFFD700), // Imperial Gold
+          piercesLeft: 99,
+        );
+        player.game.world.add(bullet);
+      }
+      return true;
+    }
+
     if (level >= 3) {
       // Level 3: Dual parallel high-density plasma bolts
       final right = Vector2(-player.forward.y, player.forward.x);
@@ -100,6 +136,14 @@ class Blaster extends Weapon {
       muzzleFlashSize = 12.0;
     }
   }
+
+  @override
+  void applyEvolution() {
+    cooldown = 0.16;
+    recoil = 2.0;
+    damage = 150.0;
+    muzzleFlashSize = 16.0;
+  }
 }
 
 class SpreadShot extends Weapon {
@@ -107,6 +151,7 @@ class SpreadShot extends Weapon {
       : super(
           id: 'spread_shot',
           name: "Spread Cannon",
+          evolvedName: "Hyperion Flak Storm",
           cooldown: 0.95,
           recoil: 14.0,
           muzzleFlashSize: 11.0,
@@ -116,6 +161,30 @@ class SpreadShot extends Weapon {
   @override
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
+
+    // Super-Evolution: Hyperion Flak Storm (10-way 360-degree perimeter flak ring)
+    if (isEvolved) {
+      const int flakCount = 10;
+      const double speed = GameConstants.playerShootSpeed * 1.15;
+      for (var i = 0; i < flakCount; i++) {
+        final angleRad = (i * 2 * math.pi / flakCount);
+        final direction = Vector2(math.cos(angleRad), math.sin(angleRad));
+        final spawnPos = player.position + direction * player.radius;
+
+        final bullet = BulletComponent(
+          position: spawnPos,
+          radius: 4.8,
+          velocity: direction * speed,
+          lifeTimer: 0.85,
+          damage: effectiveDamage,
+          color: const Color(0xFFFF5252), // Flak Red
+          piercesLeft: 2,
+        );
+        player.game.world.add(bullet);
+      }
+      return true;
+    }
+
     // Level 3 fires a 5-way spread; Levels 1 and 2 fire 3-way
     final List<double> angles = level >= 3
         ? [-24.0, -12.0, 0.0, 12.0, 24.0]
@@ -161,6 +230,14 @@ class SpreadShot extends Weapon {
       muzzleFlashSize = 15.0;
     }
   }
+
+  @override
+  void applyEvolution() {
+    cooldown = 0.38;
+    recoil = 3.0;
+    damage = 75.0;
+    muzzleFlashSize = 18.0;
+  }
 }
 
 class RapidFire extends Weapon {
@@ -168,6 +245,7 @@ class RapidFire extends Weapon {
       : super(
           id: 'rapid_fire',
           name: "Phase Laser",
+          evolvedName: "Absolute Zero Tachyon Beam",
           cooldown: 0.32,
           recoil: 4.0,
           muzzleFlashSize: 6.0,
@@ -177,6 +255,23 @@ class RapidFire extends Weapon {
   @override
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
+
+    // Super-Evolution: Absolute Zero Tachyon Beam (Hyper-dense piercing glacial stream)
+    if (isEvolved) {
+      final velocity = player.forward * (GameConstants.playerShootSpeed + 140.0);
+      final bullet = BulletComponent(
+        position: player.position + player.forward * player.radius,
+        radius: 4.5,
+        velocity: velocity,
+        lifeTimer: 1.1,
+        damage: effectiveDamage,
+        color: const Color(0xFF80D8FF), // Glacial Neon Ice Blue
+        piercesLeft: 99,
+      );
+      player.game.world.add(bullet);
+      return true;
+    }
+
     final velocity = player.forward * (GameConstants.playerShootSpeed + 50.0);
     final bullet = BulletComponent(
       position: player.position + player.forward * player.radius,
@@ -204,6 +299,14 @@ class RapidFire extends Weapon {
       muzzleFlashSize = 9.0;
     }
   }
+
+  @override
+  void applyEvolution() {
+    cooldown = 0.075;
+    recoil = 0.8;
+    damage = 50.0;
+    muzzleFlashSize = 12.0;
+  }
 }
 
 class BombLauncher extends Weapon {
@@ -211,6 +314,7 @@ class BombLauncher extends Weapon {
       : super(
           id: 'bomb_launcher',
           name: "Antimatter Torpedo",
+          evolvedName: "Singularity Rift Torpedo",
           cooldown: 1.80,
           recoil: 22.0,
           muzzleFlashSize: 18.0,
@@ -220,9 +324,9 @@ class BombLauncher extends Weapon {
   @override
   bool fire(PlayerComponent player) {
     final effectiveDamage = damage * player.damageMultiplier;
-    final speed = 280.0 + (level - 1) * 40.0;
+    final speed = (isEvolved ? 340.0 : 280.0) + (level - 1) * 40.0;
 
-    // Smart torpedo targeting: seeks the nearest enemy ship or asteroid within 550px, otherwise launches forward
+    // Smart torpedo targeting: seeks the nearest enemy ship or asteroid within 550px
     Vector2 fireDir = player.forward;
     PositionComponent? closestTarget;
     double closestDistSq = double.infinity;
@@ -255,13 +359,14 @@ class BombLauncher extends Weapon {
     }
 
     final velocity = fireDir * speed;
-    final explosionRadius = 95.0 + (level - 1) * 20.0;
+    final explosionRadius = (isEvolved ? 150.0 : 95.0) + (level - 1) * 20.0;
 
     final bomb = BombComponent(
       position: player.position + fireDir * player.radius,
       velocity: velocity,
       damage: effectiveDamage,
       explosionRadius: explosionRadius,
+      isSingularity: isEvolved,
     );
     player.game.world.add(bomb);
     return true;
@@ -280,5 +385,13 @@ class BombLauncher extends Weapon {
       damage = 320.0;
       muzzleFlashSize = 26.0;
     }
+  }
+
+  @override
+  void applyEvolution() {
+    cooldown = 0.85;
+    recoil = 8.0;
+    damage = 420.0;
+    muzzleFlashSize = 28.0;
   }
 }

@@ -27,6 +27,8 @@ import 'components/enemy_ship.dart';
 import 'components/enemy_bullet.dart';
 import 'components/chest.dart';
 import 'components/magma_hazard.dart';
+import 'components/singularity_rift.dart';
+import 'components/dreadnought_leviathan.dart';
 import 'weapons.dart';
 import 'level_manager.dart';
 import 'scientist.dart';
@@ -70,6 +72,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   late final PlayerComponent player;
   AsteroidField? asteroidField;
   LevelManager? levelManager;
+  DreadnoughtLeviathanComponent? activeBoss;
   late final GameJoystick joystick;
 
   FocusNode? gameFocusNode;
@@ -221,7 +224,26 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final List<ChestReward> list = [];
     final random = math.Random();
 
-    // 1. Prioritize Weapon Upgrades
+    // 1. TOP PRIORITY: SUPER-EVOLUTION of MK MAX Weapons (Vampire Survivors Super-Weapon Loop)
+    final evolvableWeapons = player.activeWeapons.where((w) => w.canEvolve).toList();
+    for (final w in evolvableWeapons) {
+      if (list.length >= count) break;
+      final targetW = w;
+      final evoName = targetW.evolvedName ?? '${targetW.name} OVERDRIVE';
+      list.add(
+        ChestReward(
+          title: 'SUPER-EVOLUTION // $evoName',
+          subtitle: 'Ultimate Tier Reached: Cataclysmic Firepower Engaged!',
+          icon: Icons.auto_awesome,
+          color: const Color(0xFFFFD700),
+          apply: () {
+            targetW.evolve();
+          },
+        ),
+      );
+    }
+
+    // 2. Regular Weapon Upgrades (MK 1 -> MK 2 -> MK 3)
     final upgradableWeapons = player.activeWeapons.where((w) => w.level < w.maxLevel).toList();
     for (final w in upgradableWeapons) {
       if (list.length >= count) break;
@@ -229,9 +251,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       list.add(
         ChestReward(
           title: '${targetW.name} MK ${targetW.level + 1}',
-          subtitle: 'Arsenal Evolution: Weapon upgraded to MK ${targetW.level + 1}',
+          subtitle: 'Arsenal Upgrade: Weapon enhanced to MK ${targetW.level + 1}',
           icon: Icons.military_tech,
-          color: const Color(0xFFFFD700),
+          color: const Color(0xFFFFB300),
           apply: () {
             targetW.upgrade();
           },
@@ -365,7 +387,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Add PlayerComponent (starts in center of the large sector)
     player = PlayerComponent(
       position: Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2),
-    );
+    )..customGame = this;
     world.add(player);
 
     // Add Joystick for mobile/touch/mouse controls
@@ -667,10 +689,13 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is EnemyShipComponent ||
         child is EnemyBulletComponent ||
         child is ChestComponent ||
-        child is MagmaHazardComponent);
+        child is MagmaHazardComponent ||
+        child is SingularityRiftComponent ||
+        child is DreadnoughtLeviathanComponent);
     for (final child in List.from(childrenToRemove)) {
       child.removeFromParent();
     }
+    activeBoss = null;
   }
 
   void _initSectorPois() {
@@ -755,8 +780,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       }
 
       if (timeRemaining <= 0) {
-        timeRemaining = 0;
-        completeMission(survived: true);
+        if (activeBoss != null && !activeBoss!.isDefeated) {
+          timeRemaining = 0; // Overtime during Boss Climax
+        } else {
+          timeRemaining = 0;
+          completeMission(survived: true);
+        }
       }
     }
 
