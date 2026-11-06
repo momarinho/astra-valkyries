@@ -87,13 +87,7 @@ void main() {
       expect(blaster.upgrade(), isFalse);
     });
 
-    test('AsteroidsGame initializes in-run evolution level and halftime recharge', () {
-      final game = AsteroidsGame();
-      expect(game.fairRunEvolutionLevel, equals(1));
-      expect(game.halfTimeRechargeTriggered, isFalse);
-    });
-
-    test('Weapons DO NOT upgrade automatically on score milestones; only through roguelike perks', () {
+    test('Weapons DO NOT upgrade automatically by time or score; progression is purely roguelike', () {
       final game = AsteroidsGame();
       game.player = PlayerComponent(position: Vector2.zero());
       game.state = GameState.playing;

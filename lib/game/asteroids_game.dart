@@ -121,10 +121,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   double cometAlertTimer = 0.0;
   String? cometAlertMessage;
 
-  // Feature 5: In-Run Evolution Progression (Níveis 1, 2 e 3)
-  int fairRunEvolutionLevel = 1;
-  bool halfTimeRechargeTriggered = false;
-
   // Roguelike In-Run Progression (XP & Escolha de Cartas)
   int runLevel = 1;
   int runXp = 0;
@@ -650,8 +646,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     currentLevel = 1;
     specialAvailable = true;
     samplesCollected = 0;
-    fairRunEvolutionLevel = 1;
-    halfTimeRechargeTriggered = false;
     runLevel = 1;
     runXp = 0;
     runXpNextLevel = calculateNextLevelXp(1);
@@ -808,23 +802,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       if (cometWarningTriggered && !cometSpawned && timeRemaining <= 101.0) {
         cometSpawned = true;
         spawnComet();
-      }
-
-      // Halftime Boost: aos 90s restantes (1m30s de jogo), recarrega o especial se já foi usado
-      if (!halfTimeRechargeTriggered && timeRemaining <= 90.0) {
-        halfTimeRechargeTriggered = true;
-        if (!specialAvailable) {
-          specialAvailable = true;
-          playSfx('powerup.wav');
-          triggerScreenShake(duration: 0.35, intensity: 6.0);
-          spawnFloatingText(
-            player.position + Vector2(0, -45),
-            '🔋 SISTEMAS RECARREGADOS: ESPECIAL DISPONÍVEL! [E]',
-            color: Colors.greenAccent,
-            fontSize: 16.0,
-            velocity: Vector2(0, -30),
-          );
-        }
       }
 
       if (timeRemaining <= 0) {
@@ -1021,11 +998,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     );
   }
 
-  void checkRunEvolution() {
-    // Weapons evolve strictly via roguelike perk selections (MK II / MK MAX).
-    // Legacy auto-upgrade based on score/time thresholds is disabled for true Roguelike progression.
-  }
-
   void addScore(int points) {
     if (state != GameState.playing) return;
     score += points;
@@ -1050,9 +1022,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final scrapReward = math.max(2, (basePoints / 16).round());
     addRunCredits(scrapReward);
     spawnFloatingText(pos, '+$basePoints', color: Colors.white, fontSize: 13.5);
-
-    // Verifica marcos de evolução científica das armas
-    checkRunEvolution();
   }
 
   void spawnComet() {
@@ -1219,8 +1188,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     missionSurvived = false;
     specialAvailable = true;
     samplesCollected = 0;
-    fairRunEvolutionLevel = 1;
-    halfTimeRechargeTriggered = false;
     runLevel = 1;
     runXp = 0;
     runXpNextLevel = calculateNextLevelXp(1);

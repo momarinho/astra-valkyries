@@ -46,7 +46,7 @@ flowchart TD
 - [x] **Corvette Sniper:** Artilharia de média distância que atira orbes lentos de plasma.
 - [x] **Variantes de Asteroides:** Prisma Cristalino (não divide, explode em chuva de 8 orbes de XP) e Asteroide de Magma (poça térmica persistente de dano em área).
 - [x] **Void Commander (Elite Miniboss):** Flagship imponente com barra de vida flutuante, tiros em espiral e drop garantido de baú.
-- [x] **Baú Cósmico & Jackpot Overlay:** Recompensa de 1x, 3x ou 5x cartas estilo caça-níquel/Vampire Survivors, aplicando upgrades automáticos de arsenal e atributos.
+- [x] **Baú Cósmico & Jackpot Overlay:** Recompensa de 1x, 3x ou 5x cartas estilo caça-níquel/Vampire Survivors, concedendo as melhorias sorteadas de arsenal e atributos.
 - [x] **Red Gem Siphon (Otimização Mobile):** Teto rígido de 60 orbes de XP em tela, concentrando excedente no orbe mais distante como Hiper-Stardust Vermelho para manter 60 FPS cravados.
 - [x] **53 Testes Automatizados** cobrindo todas as mecânicas.
 
