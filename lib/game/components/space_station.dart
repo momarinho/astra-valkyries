@@ -84,6 +84,7 @@ class SpaceStationComponent extends PositionComponent with HasGameReference<Aste
     if (isMounted) {
       try {
         game.addScore(1500);
+        game.addRunCredits(200);
         game.playSfx('powerup.wav');
         game.triggerScreenShake(duration: 0.45, intensity: 8.0);
 

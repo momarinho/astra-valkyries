@@ -2,7 +2,7 @@
 ## Agile Roadmap & Sprint Execution Plan
 
 **Projeto:** *Astra Valkyries: Void Protocol*  
-**Versão Atual:** Alpha 0.4.0  
+**Versão Atual:** Alpha 0.5.0  
 **Stack:** Flutter + Flame (Engine 2D Vetorial) & Go Backend (Central Cloud API)  
 **Data:** 06/11/2026  
 
@@ -74,20 +74,27 @@ flowchart TD
 ---
 
 ## 🛠️ SPRINT 4: Meta-Progressão, Oficina do Hangar & Economia
-- **Status:** 📅 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Fechar o loop roguelite duradouro, permitindo que cada derrota ou vitória fortaleça a jogadora para as próximas missões.
 
 ### Entregáveis:
-1. **Oficina das Valquírias (Hangar Shop):**
-   - [ ] Árvore de Meta-Upgrades permanentes comprados com Sucata Estelar (*Credits*):
+1. **Oficina das Valquírias (Hangar Workshop & Meta-Progression):**
+   - [x] Árvore de Meta-Upgrades permanentes comprados com Sucata Cósmica (*Credits*):
      - *Hull Reinforcement* (Vida inicial +1 a +3);
-     - *Ion Magnet Overdrive* (Raio de coleta +15% a +60%);
-     - *Hyper-Thrusters* (Velocidade e aceleração +10% a +35%);
-     - *Quantum Targeting* (Taxa de Crítico inicial +5% a +20%);
-     - *Lucky Star Protocol* (Chance de Baús 3x e 5x +10% a +50%).
-2. **Persistência Dual (Local Cross-Sync):**
-   - [ ] Salvamento automático local em JSON via `SharedPreferences`.
-   - [ ] Sincronização em nuvem com o backend em Go (`POST /api/player/sync`).
+     - *Ion Magnet Overdrive* (Raio de coleta +20% a +100%);
+     - *Hyper-Thrusters* (Velocidade +8% a +40% e redução do Cooldown de Dash);
+     - *Quantum Targeting* (Taxa de Crítico +4% a +20% e Dano Geral +6% a +30%);
+     - *Lucky Star Protocol* (Chance de Baús 3x e 5x +10% a +40%).
+   - [x] Botão de Reembolso Total a 100% (*Refund All*) sem penalidade.
+2. **Economia de Sucata Cósmica (Scrap Flow):**
+   - [x] Asteroides, frotas inimigas (Scout, Raider, Sniper, Elite) e POIs dropam créditos em tempo real.
+   - [x] Bônus de sobrevivência de missão (+350c) e abate do Leviathan (+500c).
+   - [x] Telemetria de sucata adicionada à HUD in-game e à tela de Game Over.
+3. **Revisão Mobile & Menu Unificado:**
+   - [x] Hangar unificado em `ValkyrieSelectionOverlay` com seletor de abas (`SORTIE` vs `OFICINA`).
+   - [x] Compatibilidade ergonômica com toque e atalhos de teclado (Tab, Q/E, A/D, Setas, Enter).
+4. **Testes Automatizados:**
+   - [x] 70 testes automatizados cobrindo progressão, economia e componentes de UI.
 
 ---
 

@@ -528,6 +528,34 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                               ),
                             ),
                           ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFB300).withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: const Color(0xFFFFB300).withOpacity(0.6),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.build_circle_rounded, color: Color(0xFFFFB300), size: 10),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${game.runCredits}c',
+                                  style: const TextStyle(
+                                    fontFamily: 'Orbitron',
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFFFB300),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ],

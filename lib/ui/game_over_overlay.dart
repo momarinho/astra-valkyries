@@ -255,6 +255,32 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(width: 24),
+                              Container(width: 1, height: 36, color: Colors.white24),
+                              const SizedBox(width: 24),
+                              Column(
+                                children: [
+                                  const Text(
+                                    'COSMIC SCRAP',
+                                    style: TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 11,
+                                      color: Colors.white54,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '+${game.runCredits}c',
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFFFB300),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),

@@ -312,6 +312,24 @@ class EnemyShipComponent extends PositionComponent
     removeFromParent();
     game.playSfx('asteroid_split.wav');
     game.addScore(scoreValue);
+
+    // Award scrap credits based on enemy tier
+    final int scrapReward;
+    switch (type) {
+      case EnemyType.scout:
+        scrapReward = 6;
+        break;
+      case EnemyType.raider:
+        scrapReward = 20;
+        break;
+      case EnemyType.sniper:
+        scrapReward = 35;
+        break;
+      case EnemyType.eliteCommander:
+        scrapReward = 120;
+        break;
+    }
+    game.addRunCredits(scrapReward);
     game.spawnFloatingText(position, '+$scoreValue', color: Colors.white, fontSize: 13.0);
 
     final isElite = type == EnemyType.eliteCommander;

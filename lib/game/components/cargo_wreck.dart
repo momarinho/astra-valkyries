@@ -92,6 +92,7 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
     if (isMounted) {
       try {
         game.addScore(450);
+        game.addRunCredits(80);
         game.playSfx('asteroid_split.wav');
         game.triggerScreenShake(duration: 0.35, intensity: 6.0);
 

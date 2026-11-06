@@ -254,6 +254,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     isDefeated = true;
     hp = 0;
     game.addScore(5000);
+    game.addRunCredits(500);
     game.playSfx('powerup.wav');
     game.triggerScreenShake(duration: 1.5, intensity: 25.0);
 

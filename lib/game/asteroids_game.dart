@@ -34,6 +34,8 @@ import 'level_manager.dart';
 import 'scientist.dart';
 import 'valkyrie.dart';
 import 'rogue_perks.dart';
+import 'meta_progression.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:asteroids/services/api_service.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -196,7 +198,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         itemCount = 5;
         break;
       case ChestTier.gold:
-        final luckBonus = (rogueCritChance * 0.5);
+        final luckBonus = (rogueCritChance * 0.5) + metaProgression.jackpotChanceBonus;
         final roll = math.Random().nextDouble();
         if (roll < 0.12 + luckBonus) {
           itemCount = 5;
@@ -206,7 +208,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         break;
       case ChestTier.silver:
         final roll = math.Random().nextDouble();
-        if (roll < 0.20) {
+        final luckBonus = metaProgression.jackpotChanceBonus;
+        if (roll < 0.20 + luckBonus) {
           itemCount = 3;
         } else {
           itemCount = 1;
@@ -333,7 +336,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   int score = 0;
   int lives = GameConstants.playerLives;
   int currentLevel = 1;
-  int credits = 0;
+  
+  // Roguelite Meta-Progression & Scrap Economy
+  final MetaProgression metaProgression = MetaProgression();
+  int totalCredits = 0; // Bank balance across runs
+  int runCredits = 0;   // Scrap collected during current sortie
+
+  int get credits => totalCredits;
+  set credits(int val) => totalCredits = val;
 
   double shakeTimer = 0.0;
   double shakeDuration = 0.0;
@@ -401,11 +411,49 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       playerUsername = profile['username'];
     }
 
+    // Load persistent meta-progression upgrades and account scrap bank
+    await metaProgression.loadFromPrefs();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      totalCredits = prefs.getInt('persistent_credits') ?? 0;
+    } catch (_) {}
+
     // Register global hardware keyboard handler for instant pause detection
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
 
     // Initial state set for Astra Valkyries (Hangar Bay)
     changeState(GameState.valkyrieSelection);
+  }
+
+  void addRunCredits(int amount) {
+    if (state != GameState.playing) return;
+    runCredits += amount;
+  }
+
+  bool purchaseMetaUpgrade(String id) {
+    final success = metaProgression.purchase(id, (cost) {
+      totalCredits -= cost;
+      savePersistentCredits();
+    });
+    if (success) {
+      playSfx('purchase.wav');
+    }
+    return success;
+  }
+
+  void refundMetaUpgrades() {
+    metaProgression.refundAll((refund) {
+      totalCredits += refund;
+      savePersistentCredits();
+    });
+    playSfx('menu_select.wav');
+  }
+
+  Future<void> savePersistentCredits() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('persistent_credits', totalCredits);
+    } catch (_) {}
   }
 
   DateTime? _lastPauseToggleTime;
@@ -597,9 +645,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void startGame() {
     score = 0;
-    lives = GameConstants.playerLives;
+    runCredits = 0;
+    lives = GameConstants.playerLives + metaProgression.hullBonusLives;
     currentLevel = 1;
-    credits = 0;
     specialAvailable = true;
     samplesCollected = 0;
     fairRunEvolutionLevel = 1;
@@ -620,11 +668,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     launchTransmissionTimer = 5.0;
     fetchTopLeaderRecord();
 
-    // Roguelike run stats from selected Valkyrie
-    rogueCritChance = selectedValkyrie.critChance;
-    rogueDamageMultiplier = 1.0;
+    // Roguelike run stats from selected Valkyrie + Meta Upgrades
+    rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus).clamp(0.0, 1.0);
+    rogueDamageMultiplier = 1.0 + metaProgression.damageBonusMultiplier;
     rogueFireRateMultiplier = 1.0;
-    rogueMagnetRadius = 150.0 * selectedValkyrie.magnetRadiusMultiplier;
+    rogueMagnetRadius = (150.0 * selectedValkyrie.magnetRadiusMultiplier) * metaProgression.magnetMultiplier;
 
     // Remove any running level manager or asteroid field
     if (levelManager != null) {
@@ -648,10 +696,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final startingWeapon = selectedValkyrie.createStartingWeapon();
     player.setWeapon(startingWeapon);
 
-    // Apply movement stats based on pilot speed multiplier
+    // Apply movement stats based on pilot speed multiplier + meta-progression thrusters
     final preset = movementPresets[selectedMovementPresetIndex];
-    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier;
-    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier;
+    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier;
+    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier;
     player.movementFriction = preset.friction;
     player.magnetRadius = rogueMagnetRadius;
 
@@ -999,6 +1047,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (state != GameState.playing) return;
 
     addScore(basePoints);
+    final scrapReward = math.max(2, (basePoints / 16).round());
+    addRunCredits(scrapReward);
     spawnFloatingText(pos, '+$basePoints', color: Colors.white, fontSize: 13.5);
 
     // Verifica marcos de evolução científica das armas
@@ -1217,6 +1267,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     missionSurvived = survived;
     if (survived) {
       score += 1000; // Bônus de sobrevivência de 3 minutos completos
+      runCredits += 350; // Survival mission scrap bounty
       if (!topRecordBeaten && topLeaderScore > 0 && score > topLeaderScore) {
         topRecordBeaten = true;
       }
@@ -1224,6 +1275,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     } else {
       playSfx('player_hit.wav');
     }
+
+    // Bank all collected scrap into persistent credits
+    totalCredits += runCredits;
+    savePersistentCredits();
 
     if (asteroidField != null) {
       asteroidField!.removeFromParent();
