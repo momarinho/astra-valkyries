@@ -35,6 +35,7 @@ import 'scientist.dart';
 import 'valkyrie.dart';
 import 'rogue_perks.dart';
 import 'meta_progression.dart';
+import 'affinity_system.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:asteroids/services/api_service.dart';
 import 'dart:io' as io;
@@ -345,6 +346,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   
   // Roguelite Meta-Progression & Scrap Economy
   final MetaProgression metaProgression = MetaProgression();
+  final AffinityManager affinityManager = AffinityManager();
   int totalCredits = 0; // Bank balance across runs
   int runCredits = 0;   // Scrap collected during current sortie
 
@@ -419,6 +421,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Load persistent meta-progression upgrades and account scrap bank
     await metaProgression.loadFromPrefs();
+    await affinityManager.loadFromPrefs();
     try {
       final prefs = await SharedPreferences.getInstance();
       totalCredits = prefs.getInt('persistent_credits') ?? 0;
@@ -701,12 +704,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final startingWeapon = selectedValkyrie.createStartingWeapon();
     player.setWeapon(startingWeapon);
 
-    // Apply movement stats based on pilot speed multiplier + meta-progression thrusters
+    // Apply movement stats based on pilot speed multiplier + meta-progression thrusters + bond bonus
     final preset = movementPresets[selectedMovementPresetIndex];
-    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier;
-    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier;
+    final affinity = affinityManager.getAffinity(selectedValkyrie.id);
+    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus);
+    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus);
     player.movementFriction = preset.friction;
     player.magnetRadius = rogueMagnetRadius;
+    rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus + affinity.bondCritBonus).clamp(0.0, 1.0);
 
     // Setup Spawning Mode (Continuous void field for roguelike protocol)
     asteroidField = AsteroidField();
@@ -1258,6 +1263,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Bank all collected scrap into persistent credits
     totalCredits += runCredits;
     savePersistentCredits();
+
+    // Bank bond affinity XP for active pilot
+    final timeSurvivedMinutes = ((fairRoundDuration - timeRemaining) / 60.0).clamp(0.0, 5.0);
+    final bondXp = (survived ? 80 : 25) + (timeSurvivedMinutes * 15).toInt();
+    affinityManager.getAffinity(selectedValkyrie.id).addXp(bondXp);
+    affinityManager.saveToPrefs();
 
     if (asteroidField != null) {
       asteroidField!.removeFromParent();

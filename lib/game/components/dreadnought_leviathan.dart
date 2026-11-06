@@ -9,6 +9,7 @@ import 'player.dart';
 import 'enemy_ship.dart';
 import 'enemy_bullet.dart';
 import 'chest.dart';
+import 'drop.dart';
 import 'xp_orb.dart';
 
 class DreadnoughtLeviathanComponent extends PositionComponent
@@ -277,6 +278,20 @@ class DreadnoughtLeviathanComponent extends PositionComponent
         ),
       );
     }
+
+    // Guaranteed Memory Cores (2x) to boost pilot bond
+    for (var i = 0; i < 2; i++) {
+      final a = (i * math.pi) + math.pi / 4;
+      final offset = Vector2(math.cos(a), math.sin(a)) * 35.0;
+      game.world.add(
+        DropComponent(
+          position: position + offset,
+          type: DropType.memoryCore,
+          initialVelocity: Vector2(math.cos(a), math.sin(a)) * 40.0,
+        ),
+      );
+    }
+    game.affinityManager.getAffinity(game.selectedValkyrie.id).addXp(150);
 
     game.spawnFloatingText(
       position + Vector2(0, -60),

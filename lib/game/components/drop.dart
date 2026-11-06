@@ -13,6 +13,7 @@ enum DropType {
   shield,      // Escudo Fotônico (4s Invulnerabilidade)
   health,      // Cápsula de Reparo (+1 Vida)
   cometDust,   // Poeira Estelar do Cometa (+1000 pts + Reparo/Escudo)
+  memoryCore,  // Núcleo de Memória Cósmico (+15 Bond XP da Valquíria)
 }
 
 class DropComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
@@ -169,6 +170,19 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         );
         particleColor = const Color(0xFF00E5FF);
         break;
+
+      case DropType.memoryCore:
+        final pilotId = game.selectedValkyrie.id;
+        final leveledUp = game.affinityManager.getAffinity(pilotId).addXp(15);
+        game.spawnFloatingText(
+          position,
+          leveledUp ? "+15 AFINIDADE! ELO SUBIU! 💖" : "+15 AFINIDADE! 💖",
+          color: const Color(0xFFFF4081),
+          fontSize: 16.5,
+          velocity: Vector2(0, -32),
+        );
+        particleColor = const Color(0xFFFF4081);
+        break;
     }
 
     // Explosion particles upon pickup
@@ -215,6 +229,9 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         break;
       case DropType.cometDust:
         mainColor = const Color(0xFF00E5FF);
+        break;
+      case DropType.memoryCore:
+        mainColor = const Color(0xFFFF4081);
         break;
     }
 
@@ -304,6 +321,15 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.3;
       canvas.drawCircle(Offset.zero, 6.5, ringPaint);
+    } else if (type == DropType.memoryCore) {
+      // Stylized Heart Gem
+      final heartPath = Path()
+        ..moveTo(0, 4.5)
+        ..lineTo(-4.5, -0.5)
+        ..cubicTo(-6.0, -3.0, -3.0, -6.0, 0, -2.5)
+        ..cubicTo(3.0, -6.0, 6.0, -3.0, 4.5, -0.5)
+        ..close();
+      canvas.drawPath(heartPath, symbolPaint);
     }
   }
 }

@@ -392,6 +392,20 @@ class EnemyShipComponent extends PositionComponent
         ),
       );
     }
+
+    // Memory Core drop: 35% on Elite Commander to foster pilot bond progression
+    if (isElite && math.Random().nextDouble() < 0.35) {
+      game.world.add(
+        DropComponent(
+          position: position.clone() + Vector2(15, 0),
+          type: DropType.memoryCore,
+          initialVelocity: Vector2(
+            (math.Random().nextDouble() - 0.5) * 40.0,
+            (math.Random().nextDouble() - 0.5) * 40.0,
+          ),
+        ),
+      );
+    }
   }
 
   @override

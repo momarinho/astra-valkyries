@@ -120,16 +120,22 @@ flowchart TD
 ---
 
 ## 💖 SPRINT 5: Galeria de Waifus, Afinidade & Micro-Balanceamento Beta
-- **Status:** 📅 **PLANEJADA**
+- **Status:** 🚀 **EM ANDAMENTO / PARCIALMENTE CONCLUÍDA**
 - **Objetivo:** O motor de engajamento do público de anime, polimento de som/vozes e calibração fina de parâmetros para o lançamento comercial.
 
 ### Entregáveis:
-1. **Sistema de Afinidade (Bond System):**
-   - [ ] Fragmentos de Memória coletados durante as runs aumentam a afinidade com a piloto em uso.
-   - [ ] Desbloqueio progressivo de diálogos secretos no Hangar.
-2. **Galeria de Memórias Secretas (CGs em Alta Resolução):**
-   - [ ] Tela de Galeria no menu principal exibindo ilustrações widescreen (1920x1080) desbloqueadas.
-   - [ ] Visualizador de arte com zoom e modo sem interface.
-3. **Micro-Balanceamento da Beta:**
+1. **Sistema de Afinidade (Bond System & Dialogues):**
+   - [x] Níveis de Elo (1 a 5) individuais para Lyra, Selene e Vesper com títulos progressivos (*Recruta* $\to$ *Votos Eternos*).
+   - [x] Drop de *Núcleos de Memória* (`DropType.memoryCore`) em Elites e Chefes Leviathan concedendo +15 a +150 XP de Elo.
+   - [x] Diálogos interativos e reativos no Hangar que mudam de tom conforme o nível de intimidade com a piloto sobe.
+   - [x] Bônus passivos de combate por Elo (+2% a +8% de Crítico e Velocidade).
+2. **Galeria de Memórias Secretas (CGs / Pinups):**
+   - [x] Terceira aba unificada no Hangar: `GALERIA // MEMÓRIAS`.
+   - [x] Catálogo de 9 ilustrações secretas desbloqueadas nos níveis 1, 3 e 5 de Elo.
+   - [x] Lightbox de tela cheia com `InteractiveViewer` (zoom e pan), modo Papel de Parede limpo e dossiê narrativo.
+3. **Micro-Balanceamento da Beta & Produção de Assets Finais:**
+   - [ ] Integração das artes finais de alta resolução das memórias de Selene e Vesper.
    - [ ] Ajuste fino do DPS de cada arma para garantir paridade estratégica.
    - [ ] Calibração da curva de dificuldade dos 10 minutos para curva de tensão perfeita.
+4. **Bateria de Testes:**
+   - [x] 94 testes automatizados passando com 100% de sucesso.

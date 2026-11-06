@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'package:asteroids/game/meta_progression.dart';
+import 'package:asteroids/game/affinity_system.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -15,11 +16,15 @@ class ValkyrieSelectionOverlay extends StatefulWidget {
 }
 
 class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
-  int _selectedTab = 0; // 0 = Sortie / Hangar, 1 = Oficina / Workshop
+  int _selectedTab = 0; // 0 = Sortie / Hangar, 1 = Oficina / Workshop, 2 = Galeria / Memórias
   int _selectedIndex = 0;
   late final FocusNode _focusNode;
 
   final List<Valkyrie> _valkyries = Valkyrie.roster;
+  String? _currentDialogueText;
+  String _selectedGalleryFilter = 'all'; // 'all', 'lyra', 'selene', 'vesper'
+  SecretMemory? _openedMemory;
+  bool _cleanMode = false;
 
   @override
   void initState() {
@@ -39,12 +44,36 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
 
-    // Tab or Q/E switches between Sortie and Workshop tabs
-    if (event.logicalKey == LogicalKeyboardKey.tab ||
-        event.logicalKey == LogicalKeyboardKey.keyQ ||
-        event.logicalKey == LogicalKeyboardKey.keyE) {
+    if (_openedMemory != null) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        setState(() => _openedMemory = null);
+        return;
+      }
+    }
+
+    // Q / E steps tabs sequentially: (0 -> 1 -> 2 -> 0)
+    if (event.logicalKey == LogicalKeyboardKey.keyQ) {
       setState(() {
-        _selectedTab = 1 - _selectedTab;
+        _selectedTab = (_selectedTab - 1 + 3) % 3;
+        _currentDialogueText = null;
+      });
+      widget.game.playSfx('menu_select.wav');
+      return;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyE) {
+      setState(() {
+        _selectedTab = (_selectedTab + 1) % 3;
+        _currentDialogueText = null;
+      });
+      widget.game.playSfx('menu_select.wav');
+      return;
+    }
+
+    // Tab toggles between Sortie and Workshop tabs
+    if (event.logicalKey == LogicalKeyboardKey.tab) {
+      setState(() {
+        _selectedTab = (_selectedTab == 0 ? 1 : 0);
+        _currentDialogueText = null;
       });
       widget.game.playSfx('menu_select.wav');
       return;
@@ -55,12 +84,14 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           event.logicalKey == LogicalKeyboardKey.keyA) {
         setState(() {
           _selectedIndex = (_selectedIndex - 1 + _valkyries.length) % _valkyries.length;
+          _currentDialogueText = null;
         });
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
           event.logicalKey == LogicalKeyboardKey.keyD) {
         setState(() {
           _selectedIndex = (_selectedIndex + 1) % _valkyries.length;
+          _currentDialogueText = null;
         });
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -118,16 +149,24 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
                     const SizedBox(height: 12),
 
-                    // Main Content Area (Sortie vs Oficina)
+                    // Main Content Area (Sortie vs Oficina vs Galeria)
                     Expanded(
                       child: _selectedTab == 0
                           ? _buildSortieView(current)
-                          : _buildWorkshopView(),
+                          : (_selectedTab == 1
+                              ? _buildWorkshopView()
+                              : _buildGalleryView(current)),
                     ),
                   ],
                 ),
               ),
             ),
+
+            // Full-Screen Memory Lightbox Modal
+            if (_openedMemory != null)
+              Positioned.fill(
+                child: _buildMemoryLightbox(_openedMemory!),
+              ),
           ],
         ),
       ),
@@ -139,51 +178,73 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Title & Logo
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: (_selectedTab == 0 ? current.primaryColor : const Color(0xFFFFB300)).withOpacity(0.18),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _selectedTab == 0 ? current.primaryColor : const Color(0xFFFFB300),
-                ),
-              ),
-              child: Icon(
-                _selectedTab == 0 ? Icons.rocket_launch : Icons.precision_manufacturing_rounded,
-                color: _selectedTab == 0 ? current.primaryColor : const Color(0xFFFFB300),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'ASTRA VALKYRIES // HANGAR BAY',
-                  style: TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 3.0,
-                    color: Colors.white,
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (_selectedTab == 0
+                          ? current.primaryColor
+                          : (_selectedTab == 1 ? const Color(0xFFFFB300) : const Color(0xFFFF4081)))
+                      .withOpacity(0.18),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _selectedTab == 0
+                        ? current.primaryColor
+                        : (_selectedTab == 1 ? const Color(0xFFFFB300) : const Color(0xFFFF4081)),
                   ),
                 ),
-                Text(
+                child: Icon(
                   _selectedTab == 0
-                      ? 'SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'
-                      : 'PERMANENT FLEET UPGRADES & WORKSHOP',
-                  style: TextStyle(
-                    fontFamily: 'Rajdhani',
-                    fontSize: 12,
-                    letterSpacing: 2.0,
-                    color: Colors.white.withOpacity(0.6),
-                  ),
+                      ? Icons.rocket_launch
+                      : (_selectedTab == 1
+                          ? Icons.precision_manufacturing_rounded
+                          : Icons.auto_awesome_motion_rounded),
+                  color: _selectedTab == 0
+                      ? current.primaryColor
+                      : (_selectedTab == 1 ? const Color(0xFFFFB300) : const Color(0xFFFF4081)),
+                  size: 20,
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'ASTRA VALKYRIES // HANGAR BAY',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      _selectedTab == 0
+                          ? 'SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'
+                          : (_selectedTab == 1
+                              ? 'PERMANENT FLEET UPGRADES & WORKSHOP'
+                              : 'SECRET MEMORIES, PINUPS & VALKYRIE BOND ARCHIVES'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12,
+                        letterSpacing: 1.5,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
 
         // Scrap Balance & Quick Actions
@@ -264,47 +325,69 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildTabBar(Valkyrie current) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: const Color(0xFF101622).withOpacity(0.95),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTabPill(
-                index: 0,
-                label: 'SORTIE // DECOLAR',
-                icon: Icons.rocket_launch_rounded,
-                activeColor: current.primaryColor,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 850;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF101622).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white12),
               ),
-              const SizedBox(width: 4),
-              _buildTabPill(
-                index: 1,
-                label: 'OFICINA // UPGRADES',
-                icon: Icons.precision_manufacturing_rounded,
-                activeColor: const Color(0xFFFFB300),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildTabPill(
+                    index: 0,
+                    label: isCompact ? 'SORTIE' : 'SORTIE // DECOLAR',
+                    icon: Icons.rocket_launch_rounded,
+                    activeColor: current.primaryColor,
+                  ),
+                  const SizedBox(width: 4),
+                  _buildTabPill(
+                    index: 1,
+                    label: isCompact ? 'OFICINA' : 'OFICINA // UPGRADES',
+                    icon: Icons.precision_manufacturing_rounded,
+                    activeColor: const Color(0xFFFFB300),
+                  ),
+                  const SizedBox(width: 4),
+                  _buildTabPill(
+                    index: 2,
+                    label: isCompact ? 'GALERIA' : 'GALERIA // MEMÓRIAS',
+                    icon: Icons.auto_awesome_motion_rounded,
+                    activeColor: const Color(0xFFFF4081),
+                  ),
+                ],
+              ),
+            ),
+            if (!isCompact) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _selectedTab == 0
+                      ? 'Pressione TAB ou Q/E para alternar abas'
+                      : (_selectedTab == 1
+                          ? 'Melhorias permanentes de Sucata Cósmica'
+                          : 'Memórias Secretas e Ilustrações de Elo'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontFamily: 'Rajdhani',
+                    fontSize: 12,
+                    letterSpacing: 1.5,
+                    color: Colors.white.withOpacity(0.4),
+                  ),
+                ),
               ),
             ],
-          ),
-        ),
-        Text(
-          _selectedTab == 0
-              ? 'Pressione TAB ou Q/E para acessar a Oficina'
-              : 'Pressione TAB ou Q/E para retornar ao Hangar',
-          style: TextStyle(
-            fontFamily: 'Rajdhani',
-            fontSize: 12,
-            letterSpacing: 1.5,
-            color: Colors.white.withOpacity(0.4),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -1008,7 +1091,14 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             ),
           ),
 
-          // Pilot Details (Name, Title, Quote)
+          // Top Left Pilot Affinity Badge
+          Positioned(
+            top: 14,
+            left: 14,
+            child: _buildPilotAffinityBadge(v),
+          ),
+
+          // Pilot Details (Name, Title, Interactive Dialogue Speech Box)
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -1034,20 +1124,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     color: v.primaryColor,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text(
-                    v.quote,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 13,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 6),
+                _buildDialogueBubble(v),
               ],
             ),
           ),
@@ -1248,6 +1326,696 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         ),
       ],
     );
+  }
+
+  Widget _buildPilotAffinityBadge(Valkyrie v) {
+    final affinity = widget.game.affinityManager.getAffinity(v.id);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101622).withOpacity(0.88),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFF4081).withOpacity(0.6), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF4081).withOpacity(0.2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.favorite, size: 13, color: Color(0xFFFF4081)),
+              const SizedBox(width: 5),
+              Text(
+                'ELO LV. ${affinity.bondLevel}',
+                style: const TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '• ${affinity.bondTitle.toUpperCase()}',
+                style: const TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFF4081),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // Progress Bar
+          SizedBox(
+            width: 130,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: affinity.progressPercent,
+                minHeight: 4,
+                backgroundColor: Colors.white12,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4081)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            affinity.bondLevel >= 5 ? 'ELO MÁXIMO' : '${affinity.currentXp} / ${affinity.xpForNext} XP',
+            style: const TextStyle(
+              fontFamily: 'Rajdhani',
+              fontSize: 9.5,
+              color: Colors.white54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogueBubble(Valkyrie v) {
+    final text = _currentDialogueText ?? widget.game.affinityManager.getRandomDialogue(v.id);
+
+    return GestureDetector(
+      onTap: () {
+        widget.game.playSfx('menu_select.wav');
+        setState(() {
+          _currentDialogueText = widget.game.affinityManager.getRandomDialogue(v.id);
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF101622).withOpacity(0.85),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: v.primaryColor.withOpacity(0.4), width: 1.0),
+        ),
+        child: Column(
+          children: [
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Rajdhani',
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                height: 1.25,
+                color: Colors.white.withOpacity(0.95),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.touch_app_rounded, size: 10, color: v.primaryColor.withOpacity(0.7)),
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    'Conversar',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 10.0,
+                      letterSpacing: 0.8,
+                      color: v.primaryColor.withOpacity(0.7),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGalleryView(Valkyrie current) {
+    final allMemories = AffinityManager.allMemories;
+    final filteredMemories = _selectedGalleryFilter == 'all'
+        ? allMemories
+        : allMemories.where((m) => m.valkyrieId == _selectedGalleryFilter).toList();
+
+    int totalUnlocked = 0;
+    for (final m in allMemories) {
+      final aff = widget.game.affinityManager.getAffinity(m.valkyrieId);
+      if (m.isUnlocked(aff.bondLevel)) totalUnlocked++;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Gallery Filter Bar & Stats
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131A26).withOpacity(0.9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Filter Buttons
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildGalleryFilterChip('all', 'TODAS'),
+                      const SizedBox(width: 8),
+                      _buildGalleryFilterChip('lyra', 'LYRA'),
+                      const SizedBox(width: 8),
+                      _buildGalleryFilterChip('selene', 'SELENE'),
+                      const SizedBox(width: 8),
+                      _buildGalleryFilterChip('vesper', 'VESPER'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Unlocked Counter Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF4081).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFF4081).withOpacity(0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.favorite, size: 14, color: Color(0xFFFF4081)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'DESBLOQUEADAS: $totalUnlocked / ${allMemories.length}',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Memories Grid
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 550 ? 2 : 1);
+              return GridView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 1.35,
+                ),
+                itemCount: filteredMemories.length,
+                itemBuilder: (context, index) {
+                  return _buildMemoryCard(filteredMemories[index]);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGalleryFilterChip(String filterId, String label) {
+    final isSelected = _selectedGalleryFilter == filterId;
+    return GestureDetector(
+      onTap: () {
+        widget.game.playSfx('menu_select.wav');
+        setState(() => _selectedGalleryFilter = filterId);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFF4081).withOpacity(0.25) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFFF4081) : Colors.white12,
+            width: 1.0,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Orbitron',
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: isSelected ? Colors.white : Colors.white60,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemoryCard(SecretMemory memory) {
+    final pilot = Valkyrie.findById(memory.valkyrieId);
+    final affinity = widget.game.affinityManager.getAffinity(memory.valkyrieId);
+    final isUnlocked = memory.isUnlocked(affinity.bondLevel);
+
+    return GestureDetector(
+      onTap: () {
+        if (isUnlocked) {
+          widget.game.playSfx('menu_select.wav');
+          setState(() {
+            _openedMemory = memory;
+            _cleanMode = false;
+          });
+        } else {
+          widget.game.playSfx('low_health.wav');
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFF131A26),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isUnlocked ? memory.themeColor.withOpacity(0.7) : Colors.white12,
+            width: isUnlocked ? 1.8 : 1.0,
+          ),
+          boxShadow: isUnlocked
+              ? [
+                  BoxShadow(
+                    color: memory.themeColor.withOpacity(0.25),
+                    blurRadius: 10,
+                  )
+                ]
+              : [],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Artwork Preview / Fallback
+            Image.asset(
+              memory.imageAsset,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (_, __, ___) => Container(
+                color: const Color(0xFF1A2232),
+                child: Center(
+                  child: Icon(
+                    isUnlocked ? Icons.image_rounded : Icons.lock_outline_rounded,
+                    size: 44,
+                    color: isUnlocked ? memory.themeColor : Colors.white24,
+                  ),
+                ),
+              ),
+            ),
+
+            // Locked Dark Filter Overlay
+            if (!isUnlocked)
+              Container(
+                color: Colors.black.withOpacity(0.85),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.08),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Icon(Icons.lock_rounded, size: 26, color: Colors.white54),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'MEMÓRIA CONFIDENCIAL',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: Colors.white60,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Requer Elo Lv. ${memory.requiredBondLevel} com ${pilot.name}',
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: memory.themeColor.withOpacity(0.9),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Elo Atual: Nível ${affinity.bondLevel} / ${memory.requiredBondLevel}',
+                        style: const TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 11,
+                          color: Colors.white38,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Gradient at bottom for text legibility (when unlocked)
+            if (isUnlocked)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.35, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.92),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Card Bottom Info (when unlocked)
+            if (isUnlocked)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 10,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          pilot.name.toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            color: memory.themeColor,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: memory.themeColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: memory.themeColor.withOpacity(0.6), width: 0.8),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.zoom_in, size: 12, color: Colors.white),
+                              SizedBox(width: 2),
+                              Text(
+                                'AMPLIAR',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      memory.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      memory.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemoryLightbox(SecretMemory memory) {
+    final pilot = Valkyrie.findById(memory.valkyrieId);
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (_cleanMode) {
+            setState(() => _cleanMode = false);
+          }
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Black Blur Backdrop
+            Container(
+              color: Colors.black.withOpacity(0.96),
+            ),
+
+          // High Resolution Image with Interactive Viewer (Zoom & Pan)
+          Center(
+            child: InteractiveViewer(
+              minScale: 0.8,
+              maxScale: 3.5,
+              child: Image.asset(
+                memory.imageAsset,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.image_rounded, size: 80, color: memory.themeColor),
+                      const SizedBox(height: 12),
+                      Text(
+                        memory.title,
+                        style: const TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Header Controls (when not in clean mode)
+          if (!_cleanMode)
+            Positioned(
+              top: 24,
+              left: 24,
+              right: 24,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Pilot & Memory Title
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: memory.themeColor.withOpacity(0.2),
+                            border: Border.all(color: memory.themeColor),
+                          ),
+                          child: const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${pilot.name.toUpperCase()} // ${memory.title.toUpperCase()}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2.0,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Actions: Clean mode toggle & Close
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.12),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        ),
+                        icon: const Icon(Icons.visibility_off, size: 16),
+                        label: const Text(
+                          'MODO PAPEL DE PAREDE',
+                          style: TextStyle(fontFamily: 'Orbitron', fontSize: 10),
+                        ),
+                        onPressed: () => setState(() => _cleanMode = true),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        key: const Key('lightbox_close_button'),
+                        tooltip: 'Fechar Memória',
+                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                        onPressed: () => setState(() => _openedMemory = null),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          // Bottom Lore Card (when not in clean mode)
+          if (!_cleanMode)
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 24,
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 820),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101622).withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: memory.themeColor.withOpacity(0.5), width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.7),
+                        blurRadius: 20,
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            memory.title,
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                              color: memory.themeColor,
+                            ),
+                          ),
+                          Text(
+                            'ELO NÍVEL ${memory.requiredBondLevel} DESBLOQUEADO',
+                            style: TextStyle(
+                              fontFamily: 'Rajdhani',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                              color: Colors.white.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        memory.description,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 13.5,
+                          height: 1.35,
+                          color: Colors.white.withOpacity(0.88),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Hint in clean mode
+          if (_cleanMode)
+            Positioned(
+              bottom: 20,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Text(
+                    'Toque na tela para restaurar a interface',
+                    style: TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 12,
+                      letterSpacing: 1.2,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
   }
 }
 
