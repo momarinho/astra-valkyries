@@ -53,22 +53,23 @@ flowchart TD
 ---
 
 ## ⚡ SPRINT 3: Super-Evoluções de Armas & Chefe Final de Setor
-- **Status:** ⏳ **EM PROGRESSO**
+- **Status:** ✅ **CONCLUÍDA** (Commit `c5a925d`)
 - **Objetivo:** Implementar o auge da catarse do combate (armas evoluídas devastadoras) e o clímax da partida (batalha em fases contra o Dreadnought Leviathan).
 
 ### Entregáveis:
 1. **As 4 Super-Evoluções de Arsenal (Evoluídas via Baú Cósmico no Nível Máximo):**
-   - [ ] **Supernova Annihilator** (Evolução do *Pulse Blaster*): Feixe duplo acelerado de plasma ultra-denso com micro-detonações em cadeia ao atravessar inimigos.
-   - [ ] **Hyperion Flak Storm** (Evolução do *Spread Cannon*): Barreira circular 360° contínua de fragmentos de flak, desintegrando projéteis hostis e enxames próximos.
-   - [ ] **Absolute Zero Tachyon Beam** (Evolução do *Phase Laser*): Raio contínuo perfurante criogênico que congela e desacelera alvos em 50%.
-   - [ ] **Singularity Rift Torpedo** (Evolução do *Antimatter Torpedo*): Torpedo teleguiado que, ao impactar, abre um mini buraco negro que atrai inimigos e asteroides antes do colapso gravitacional.
-2. **Chefe Final de Setor: Dreadnought Leviathan (Minuto 10:00):**
-   - [ ] Spawna com alarme geral do setor (`🚨 TITANIC DREADNOUGHT DETECTED`) e fechamento da zona de fuga.
-   - [ ] **Fase 1 (Escolta & Baterias):** Casco blindado com 4 torres de laser orbitais e invocação de Scouts de proteção.
-   - [ ] **Fase 2 (Núcleo Exposto & Danmaku):** O núcleo brilha em roxo incandescente, disparando anéis concêntricos de plasma denso.
-   - [ ] **Fase 3 (Colapso Hiperbólico):** Modo desespero com investidas pesadas e rajadas contínuas de laser.
-3. **Condição de Vitória da Sortie:**
-   - [ ] Ao destruir o Leviathan, a run conclui como **"SECTOR SECURED // MISSION COMPLETE"**, concedendo o Baú Dourado Lendário e multiplicador de Sucata Estelar.
+   - [x] **Supernova Annihilator** (Evolução do *Pulse Blaster*): Feixe duplo acelerado de plasma ultra-denso com micro-detonações em cadeia ao atravessar inimigos (`piercesLeft = 99`, 150 dmg, 0.16s cooldown).
+   - [x] **Hyperion Flak Storm** (Evolução do *Spread Cannon*): Barreira circular 360° contínua de fragmentos de flak em 10 direções, desintegrando projéteis e enxames (75 dmg/fragmento, 0.38s cooldown).
+   - [x] **Absolute Zero Tachyon Beam** (Evolução do *Phase Laser*): Raio contínuo perfurante criogênico em altíssima cadência (50 dmg, 0.075s cooldown).
+   - [x] **Singularity Rift Torpedo** (Evolução do *Antimatter Torpedo*): Torpedo teleguiado de 420 dmg que, ao detonar, invoca um vórtex negro (`SingularityRiftComponent`) com atração gravitacional e colapso estelar.
+2. **Chefe Final de Setor: Dreadnought Leviathan:**
+   - [x] Spawna com 3.500 HP, raio 72px e telemetria de barra de vida de setor no topo da HUD.
+   - [x] **Fase 1 (Escolta & Baterias):** Casco blindado com disparo alternado de torretas duplas de plasma.
+   - [x] **Fase 2 (Núcleo Exposto & Danmaku):** Espirais rotativas de 12 projéteis densos em 360°.
+   - [x] **Fase 3 (Colapso Hiperbólico):** Disparo telegrafado de feixe de Railgun pesado e invocação de drones de escolta.
+3. **Condição de Vitória da Sortie & Jackpots:**
+   - [x] Ao destruir o Leviathan, dropa Baú Cósmico Lendário de 5 cartas de Jackpot + 5 gemas gigantes de Stardust, acionando a vitória do setor.
+   - [x] 62 testes unitários e de integração passando 100%.
 
 ---
 
