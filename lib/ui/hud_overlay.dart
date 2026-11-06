@@ -11,6 +11,8 @@ import 'package:asteroids/game/components/comet.dart';
 import 'package:asteroids/game/components/space_station.dart';
 import 'package:asteroids/game/components/cargo_wreck.dart';
 import 'package:asteroids/game/components/cosmic_nebula.dart';
+import 'package:asteroids/game/components/enemy_ship.dart';
+import 'package:asteroids/game/components/chest.dart';
 
 class HudOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -1221,6 +1223,31 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       }
     } catch (_) {}
 
+    final enemyBlips = <({Offset offset, bool isElite})>[];
+    try {
+      final enemies = widget.game.world.children.whereType<EnemyShipComponent>();
+      for (final e in enemies) {
+        final offset = e.position - playerPos;
+        if (offset.length <= GameConstants.radarRange) {
+          enemyBlips.add((
+            offset: Offset(offset.x, offset.y),
+            isElite: e.type == EnemyType.eliteCommander,
+          ));
+        }
+      }
+    } catch (_) {}
+
+    final chestBlips = <Offset>[];
+    try {
+      final chests = widget.game.world.children.whereType<ChestComponent>();
+      for (final c in chests) {
+        final offset = c.position - playerPos;
+        if (offset.length <= GameConstants.radarRange) {
+          chestBlips.add(Offset(offset.x, offset.y));
+        }
+      }
+    } catch (_) {}
+
     return Container(
       width: 104,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -1255,6 +1282,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 stationSecured: stationSecured,
                 cargoBlips: cargoBlips,
                 nebulaBlips: nebulaBlips,
+                enemyBlips: enemyBlips,
+                chestBlips: chestBlips,
                 sweepTimer: _radarSweepTimer,
                 isNearBoundary: player.isNearBoundary,
               ),
@@ -1287,6 +1316,8 @@ class _RadarScopePainter extends CustomPainter {
   final bool stationSecured;
   final List<Offset> cargoBlips;
   final List<({Offset offset, Color color, double radius})> nebulaBlips;
+  final List<({Offset offset, bool isElite})> enemyBlips;
+  final List<Offset> chestBlips;
   final double sweepTimer;
   final bool isNearBoundary;
 
@@ -1299,6 +1330,8 @@ class _RadarScopePainter extends CustomPainter {
     required this.stationSecured,
     required this.cargoBlips,
     required this.nebulaBlips,
+    required this.enemyBlips,
+    required this.chestBlips,
     required this.sweepTimer,
     required this.isNearBoundary,
   });
@@ -1377,6 +1410,45 @@ class _RadarScopePainter extends CustomPainter {
       final blipPos = center + Offset(normX, normY);
       if ((blipPos - center).distance <= radius * 0.95) {
         canvas.drawRect(Rect.fromCenter(center: blipPos, width: 3.5, height: 3.5), cargoPaint);
+      }
+    }
+
+    // Hostile Enemy Fleet blips (crimson triangles / gold diamond for elite)
+    final enemyPaint = Paint()
+      ..color = const Color(0xFFFF1744)
+      ..style = PaintingStyle.fill;
+    final elitePaint = Paint()
+      ..color = const Color(0xFFFFD700)
+      ..style = PaintingStyle.fill;
+
+    for (final e in enemyBlips) {
+      final normX = (e.offset.dx / maxRange) * (radius * 0.88);
+      final normY = (e.offset.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      if ((blipPos - center).distance <= radius * 0.95) {
+        if (e.isElite) {
+          canvas.drawCircle(blipPos, 4.0, elitePaint);
+          final ringPaint = Paint()
+            ..color = const Color(0xFFD500F9)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2;
+          canvas.drawCircle(blipPos, 6.0, ringPaint);
+        } else {
+          canvas.drawCircle(blipPos, 2.2, enemyPaint);
+        }
+      }
+    }
+
+    // Cosmic Chest blips (pulsing golden diamonds)
+    final chestPaint = Paint()
+      ..color = const Color(0xFFFFD700)
+      ..style = PaintingStyle.fill;
+    for (final offset in chestBlips) {
+      final normX = (offset.dx / maxRange) * (radius * 0.88);
+      final normY = (offset.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      if ((blipPos - center).distance <= radius * 0.95) {
+        canvas.drawRect(Rect.fromCenter(center: blipPos, width: 4.5, height: 4.5), chestPaint);
       }
     }
 

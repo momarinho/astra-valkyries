@@ -13,6 +13,7 @@ import 'ui/leaderboard_overlay.dart';
 import 'ui/weapon_selection_overlay.dart';
 import 'ui/pause_overlay.dart';
 import 'ui/level_up_overlay.dart';
+import 'ui/chest_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,6 +86,7 @@ class _GameScreenState extends State<GameScreen> {
           'weaponSelection': (context, game) => WeaponSelectionOverlay(game: game),
           'pause': (context, game) => PauseOverlay(game: game),
           'levelUp': (context, game) => LevelUpOverlay(game: game),
+          'chest': (context, game) => ChestOverlay(game: game),
         },
         initialActiveOverlays: const ['valkyrieSelection'],
       ),

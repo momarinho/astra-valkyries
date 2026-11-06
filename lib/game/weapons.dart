@@ -5,6 +5,7 @@ import 'components/player.dart';
 import 'components/bullet.dart';
 import 'components/bomb.dart';
 import 'components/asteroid.dart';
+import 'components/enemy_ship.dart';
 
 abstract class Weapon {
   final String id;
@@ -221,24 +222,35 @@ class BombLauncher extends Weapon {
     final effectiveDamage = damage * player.damageMultiplier;
     final speed = 280.0 + (level - 1) * 40.0;
 
-    // Smart torpedo targeting: seeks the nearest asteroid within 550px, otherwise launches forward
+    // Smart torpedo targeting: seeks the nearest enemy ship or asteroid within 550px, otherwise launches forward
     Vector2 fireDir = player.forward;
-    final asteroids = player.game.world.children.whereType<AsteroidComponent>();
-    if (asteroids.isNotEmpty) {
-      AsteroidComponent? closest;
-      double closestDistSq = double.infinity;
+    PositionComponent? closestTarget;
+    double closestDistSq = double.infinity;
+
+    final enemies = player.game.world.children.whereType<EnemyShipComponent>();
+    for (final e in enemies) {
+      final dSq = player.position.distanceToSquared(e.position);
+      if (dSq < closestDistSq) {
+        closestDistSq = dSq;
+        closestTarget = e;
+      }
+    }
+
+    if (closestTarget == null || closestDistSq > 400.0 * 400.0) {
+      final asteroids = player.game.world.children.whereType<AsteroidComponent>();
       for (final ast in asteroids) {
         final dSq = player.position.distanceToSquared(ast.position);
         if (dSq < closestDistSq) {
           closestDistSq = dSq;
-          closest = ast;
+          closestTarget = ast;
         }
       }
-      if (closest != null && closestDistSq <= 550.0 * 550.0) {
-        final toTarget = closest.position - player.position;
-        if (toTarget.length2 > 0.01) {
-          fireDir = toTarget.normalized();
-        }
+    }
+
+    if (closestTarget != null && closestDistSq <= 550.0 * 550.0) {
+      final toTarget = closestTarget.position - player.position;
+      if (toTarget.length2 > 0.01) {
+        fireDir = toTarget.normalized();
       }
     }
 

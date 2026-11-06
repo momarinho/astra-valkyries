@@ -7,6 +7,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
+import 'enemy_ship.dart';
 
 class BombComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final Vector2 velocity;
@@ -75,7 +76,7 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
     super.onCollisionStart(intersectionPoints, other);
     if (_hasExploded) return;
 
-    if (other is AsteroidComponent || other is CargoWreckComponent) {
+    if (other is AsteroidComponent || other is CargoWreckComponent || other is EnemyShipComponent) {
       explode();
     }
   }
@@ -148,6 +149,17 @@ class BombExplosionComponent extends PositionComponent with HasGameReference<Ast
       final distance = position.distanceTo(wreck.position);
       if (distance <= maxRadius + 25.0) {
         wreck.takeDamage(damage, wreck.position);
+      }
+    }
+
+    final enemies = game.world.children.whereType<EnemyShipComponent>();
+    for (final enemy in List<EnemyShipComponent>.from(enemies)) {
+      final distance = position.distanceTo(enemy.position);
+      if (distance <= maxRadius + enemy.radius) {
+        final destroyed = enemy.takeDamage(damage, enemy.position);
+        if (destroyed) {
+          destroyedCount++;
+        }
       }
     }
 

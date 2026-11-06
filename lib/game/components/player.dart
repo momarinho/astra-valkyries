@@ -10,6 +10,8 @@ import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/scientist.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'asteroid.dart';
+import 'enemy_ship.dart';
+import 'enemy_bullet.dart';
 import 'joystick.dart';
 import 'cosmic_nebula.dart';
 
@@ -125,31 +127,34 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollisionStart(intersectionPoints, other);
     if (game.state != GameState.playing) return;
-    if (other is AsteroidComponent) {
-      if (!isInvulnerable()) {
-        game.playSfx('player_hit.wav');
-        game.triggerScreenShake(duration: 0.4, intensity: 12.0);
+    if (other is AsteroidComponent || other is EnemyShipComponent) {
+      takeHit();
+    }
+  }
 
-        final pColor = scientist?.primaryColor ?? Colors.cyan;
-        final aColor = scientist?.accentColor ?? Colors.white;
+  void takeHit([double damage = 1.0]) {
+    if (isInvulnerable() || game.state != GameState.playing) return;
+    game.playSfx('player_hit.wav');
+    game.triggerScreenShake(duration: 0.4, intensity: 12.0);
 
-        game.spawnExplosionParticles(
-          position: position,
-          colorChoices: [pColor, aColor, Colors.white, Colors.grey],
-          count: 30,
-          minSize: 2.5,
-          maxSize: 5.0,
-          minSpeed: 80.0,
-          maxSpeed: 250.0,
-        );
+    final pColor = scientist?.primaryColor ?? valkyrie?.primaryColor ?? Colors.cyan;
+    final aColor = scientist?.accentColor ?? valkyrie?.accentColor ?? Colors.white;
 
-        game.lives -= 1;
-        if (game.lives <= 0) {
-          game.completeMission(survived: false);
-        } else {
-          respawn(game.size.x / 2, game.size.y / 2);
-        }
-      }
+    game.spawnExplosionParticles(
+      position: position,
+      colorChoices: [pColor, aColor, Colors.white, Colors.grey],
+      count: 30,
+      minSize: 2.5,
+      maxSize: 5.0,
+      minSpeed: 80.0,
+      maxSpeed: 250.0,
+    );
+
+    game.lives -= 1;
+    if (game.lives <= 0) {
+      game.completeMission(survived: false);
+    } else {
+      respawn(game.size.x / 2, game.size.y / 2);
     }
   }
 

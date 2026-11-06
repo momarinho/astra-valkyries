@@ -23,6 +23,10 @@ import 'components/xp_orb.dart';
 import 'components/space_station.dart';
 import 'components/cargo_wreck.dart';
 import 'components/cosmic_nebula.dart';
+import 'components/enemy_ship.dart';
+import 'components/enemy_bullet.dart';
+import 'components/chest.dart';
+import 'components/magma_hazard.dart';
 import 'weapons.dart';
 import 'level_manager.dart';
 import 'scientist.dart';
@@ -44,6 +48,22 @@ enum GameState {
   shop,
   leaderboard,
   levelUp,
+}
+
+class ChestReward {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback apply;
+
+  ChestReward({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.apply,
+  });
 }
 
 class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents, TapCallbacks {
@@ -121,6 +141,27 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
   }
 
+  // Vampire Survivors Red Gem Siphon (Max 60 XP orbs on screen)
+  void spawnXpOrb(Vector2 position, XpOrbType type, [int? customValue]) {
+    final existingOrbs = world.children.whereType<XpOrbComponent>().toList();
+    if (existingOrbs.length >= 60) {
+      XpOrbComponent furthest = existingOrbs.first;
+      double maxDistSq = -1.0;
+      for (final o in existingOrbs) {
+        final dSq = o.position.distanceToSquared(player.position);
+        if (dSq > maxDistSq) {
+          maxDistSq = dSq;
+          furthest = o;
+        }
+      }
+      final incomingValue = customValue ?? (type == XpOrbType.large ? 14 : (type == XpOrbType.medium ? 6 : 2));
+      furthest.absorbXp(incomingValue);
+      return;
+    }
+
+    world.add(XpOrbComponent(position: position, type: type, customValue: customValue));
+  }
+
   void triggerLevelUp() {
     currentLevelUpChoices = RoguePerkGenerator.generateChoices(this, count: 3);
     playSfx('powerup.wav');
@@ -136,6 +177,122 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     overlays.remove('levelUp');
     state = GameState.playing;
     resumeEngine();
+    gameFocusNode?.requestFocus();
+  }
+
+  // Vampire Survivors Dopamine Chest & Jackpot Rewards
+  List<ChestReward> currentChestRewards = [];
+
+  void onChestCollected(ChestTier tier) {
+    currentChestRewards.clear();
+
+    // Roll count of items using Vampire Survivors math & luck
+    int itemCount;
+    switch (tier) {
+      case ChestTier.cosmic:
+        itemCount = 5;
+        break;
+      case ChestTier.gold:
+        final luckBonus = (rogueCritChance * 0.5);
+        final roll = math.Random().nextDouble();
+        if (roll < 0.12 + luckBonus) {
+          itemCount = 5;
+        } else {
+          itemCount = 3;
+        }
+        break;
+      case ChestTier.silver:
+        final roll = math.Random().nextDouble();
+        if (roll < 0.20) {
+          itemCount = 3;
+        } else {
+          itemCount = 1;
+        }
+        break;
+    }
+
+    currentChestRewards = _generateChestRewards(itemCount);
+
+    pauseEngine();
+    _safeAddOverlay('chest');
+  }
+
+  List<ChestReward> _generateChestRewards(int count) {
+    final List<ChestReward> list = [];
+    final random = math.Random();
+
+    // 1. Prioritize Weapon Upgrades
+    final upgradableWeapons = player.activeWeapons.where((w) => w.level < w.maxLevel).toList();
+    for (final w in upgradableWeapons) {
+      if (list.length >= count) break;
+      final targetW = w;
+      list.add(
+        ChestReward(
+          title: '${targetW.name} MK ${targetW.level + 1}',
+          subtitle: 'Arsenal Evolution: Weapon upgraded to MK ${targetW.level + 1}',
+          icon: Icons.military_tech,
+          color: const Color(0xFFFFD700),
+          apply: () {
+            targetW.upgrade();
+          },
+        ),
+      );
+    }
+
+    // 2. Extra Stat Overchargers and XP Bounties
+    while (list.length < count) {
+      final roll = random.nextDouble();
+      if (roll < 0.35) {
+        list.add(
+          ChestReward(
+            title: 'Stardust Bounty',
+            subtitle: '+60 Instant Stardust XP',
+            icon: Icons.bolt,
+            color: const Color(0xFF00E5FF),
+            apply: () {
+              addXp(60);
+            },
+          ),
+        );
+      } else if (roll < 0.65) {
+        list.add(
+          ChestReward(
+            title: 'Hull Overcharge',
+            subtitle: '+1 Pilot Life restored',
+            icon: Icons.favorite,
+            color: const Color(0xFFFF1744),
+            apply: () {
+              lives = math.min(GameConstants.playerLives + 1, lives + 1);
+            },
+          ),
+        );
+      } else {
+        list.add(
+          ChestReward(
+            title: 'Photonic Core Amp',
+            subtitle: '+15% Global Fire Rate & +10% Crit',
+            icon: Icons.speed,
+            color: const Color(0xFFE040FB),
+            apply: () {
+              rogueFireRateMultiplier *= 0.88;
+              rogueCritChance = (rogueCritChance + 0.10).clamp(0.0, 1.0);
+            },
+          ),
+        );
+      }
+    }
+
+    return list;
+  }
+
+  void claimChestRewards() {
+    for (final reward in currentChestRewards) {
+      reward.apply();
+    }
+    currentChestRewards.clear();
+    overlays.remove('chest');
+    resumeEngine();
+    playSfx('menu_select.wav');
     gameFocusNode?.requestFocus();
   }
 
@@ -506,7 +663,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is ParticleComponent ||
         child is FloatingTextComponent ||
         child is DropComponent ||
-        child is XpOrbComponent);
+        child is XpOrbComponent ||
+        child is EnemyShipComponent ||
+        child is EnemyBulletComponent ||
+        child is ChestComponent ||
+        child is MagmaHazardComponent);
     for (final child in List.from(childrenToRemove)) {
       child.removeFromParent();
     }

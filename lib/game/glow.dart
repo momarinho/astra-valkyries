@@ -88,6 +88,15 @@ class Glow {
     strokePath(canvas, path, color, width: width, intensity: intensity);
   }
 
+  static void drawGlowCircle(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    Color color, {
+    double strokeWidth = 2.0,
+    double intensity = 1.0,
+  }) => strokeCircle(canvas, center, radius, color, width: strokeWidth, intensity: intensity);
+
   /// Esfera luminosa: halo aditivo em camadas + núcleo quase branco.
   static void orb(
     Canvas canvas,

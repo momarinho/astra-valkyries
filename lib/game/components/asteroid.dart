@@ -7,11 +7,19 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'drop.dart';
 import 'xp_orb.dart';
+import 'magma_hazard.dart';
+
+enum AsteroidVariant {
+  standard,    // Rocha cinza-azulada que divide em menores
+  crystalline, // Prisma de cristal que explode em chuva torrencial de XP
+  magma,       // Rocha incandescente que cria poça de plasma térmico ao morrer
+}
 
 class AsteroidComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? testGame;
   final double radius;
   final Vector2 velocity;
+  final AsteroidVariant variant;
   
   late final int numPoints;
   late final List<double> pointsOffsets;
@@ -21,22 +29,21 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   late double hp;
   double hitFlashTimer = 0.0;
 
-  /// Pontuação calibrada para a Feira de Ciências:
-  /// Meteoros menores são mais velozes, têm hitbox menor e pontuam mais!
   int get scoreValue {
-    if (radius <= GameConstants.asteroidMinRadius * 1.25) {
-      return 300; // Pequeno: alvo ágil e desafiador (+300 pts)
-    } else if (radius <= GameConstants.asteroidMinRadius * 2.2) {
-      return 150; // Médio: fragmento intermediário (+150 pts)
-    } else {
-      return 50;  // Grande: fácil de acertar, abertura (+50 pts)
-    }
+    final base = (radius <= GameConstants.asteroidMinRadius * 1.25)
+        ? 300
+        : (radius <= GameConstants.asteroidMinRadius * 2.2 ? 150 : 50);
+
+    if (variant == AsteroidVariant.crystalline) return (base * 1.5).toInt();
+    if (variant == AsteroidVariant.magma) return (base * 1.3).toInt();
+    return base;
   }
 
   AsteroidComponent({
     required this.radius,
     required Vector2 position,
     required this.velocity,
+    this.variant = AsteroidVariant.standard,
   }) {
     this.position = position;
     anchor = Anchor.center;
@@ -44,22 +51,30 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     
     // Scale HP with asteroid size
     if (radius > GameConstants.asteroidMinRadius * 2.2) {
-      maxHp = 90.0; // Large
+      maxHp = 90.0;
     } else if (radius > GameConstants.asteroidMinRadius * 1.2) {
-      maxHp = 50.0; // Medium
+      maxHp = 50.0;
     } else {
-      maxHp = 25.0; // Small
+      maxHp = 25.0;
     }
+
+    if (variant == AsteroidVariant.magma) {
+      maxHp *= 1.35; // Magma asteroids are more durable
+    } else if (variant == AsteroidVariant.crystalline) {
+      maxHp *= 0.85; // Crystalline asteroids are more brittle
+    }
+
     hp = maxHp;
 
     final random = math.Random();
-    numPoints = random.nextInt(7) + 8; // 8 to 14 points
+    numPoints = variant == AsteroidVariant.crystalline
+        ? (random.nextInt(3) + 6) // Geometric 6 to 8 facets
+        : (random.nextInt(7) + 8); // 8 to 14 points
     pointsOffsets = List.generate(
       numPoints,
-      (_) => 0.75 + random.nextDouble() * 0.5, // 0.75 to 1.25
+      (_) => 0.75 + random.nextDouble() * 0.5,
     );
     
-    // rotation speed in radians per second
     rotationSpeed = (-40.0 + random.nextDouble() * 80.0) * math.pi / 180.0;
     angle = random.nextDouble() * 2 * math.pi;
   }
@@ -67,7 +82,6 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    // Add circular hitbox for collision detection
     add(CircleHitbox());
   }
 
@@ -84,7 +98,6 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     position += velocity * dt;
     angle += rotationSpeed * dt;
 
-    // Prune distant asteroids in open sector to recycle capacity around player
     try {
       final g = testGame ?? (findGame() as AsteroidsGame?) ?? (isMounted ? game : null);
       if (g != null && g.state == GameState.playing) {
@@ -102,10 +115,15 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     hp -= damage;
     hitFlashTimer = 0.12;
 
-    // Small rock sparks on hit
+    final List<Color> sparkColors = variant == AsteroidVariant.crystalline
+        ? [Colors.cyanAccent, const Color(0xFFE040FB), Colors.white]
+        : (variant == AsteroidVariant.magma
+            ? [Colors.deepOrangeAccent, Colors.amberAccent, Colors.yellow]
+            : [Colors.orangeAccent, Colors.white, Colors.grey]);
+
     game.spawnExplosionParticles(
       position: hitPos,
-      colorChoices: [Colors.orangeAccent, Colors.white, Colors.grey],
+      colorChoices: sparkColors,
       count: 4,
       minSize: 1.5,
       maxSize: 3.0,
@@ -117,11 +135,10 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       split();
       return true; // Destroyed
     } else {
-      // Small damage number popup
       game.spawnFloatingText(
         hitPos,
         '-${damage.toInt()}',
-        color: Colors.orangeAccent,
+        color: variant == AsteroidVariant.magma ? Colors.deepOrangeAccent : Colors.orangeAccent,
         fontSize: 11.5,
       );
       return false; // Still alive
@@ -157,33 +174,13 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
     final isFlashing = hitFlashTimer > 0;
 
-    if (isFlashing) {
-      final fillPaint = Paint()
-        ..color = Colors.redAccent.withOpacity(0.2)
-        ..style = PaintingStyle.fill;
-      final fillPath = Path();
-      for (var i = 0; i < numPoints; i++) {
-        final pointAngle = (2 * math.pi * i) / numPoints;
-        final r = radius * pointsOffsets[i];
-        final x = r * math.cos(pointAngle);
-        final y = r * math.sin(pointAngle);
-        if (i == 0) {
-          fillPath.moveTo(x, y);
-        } else {
-          fillPath.lineTo(x, y);
-        }
-      }
-      fillPath.close();
-      canvas.drawPath(fillPath, fillPaint);
-    }
-
+    // Build the outer perimeter path
     final path = Path();
     for (var i = 0; i < numPoints; i++) {
       final pointAngle = (2 * math.pi * i) / numPoints;
       final r = radius * pointsOffsets[i];
       final x = r * math.cos(pointAngle);
       final y = r * math.sin(pointAngle);
-      
       if (i == 0) {
         path.moveTo(x, y);
       } else {
@@ -192,36 +189,160 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     }
     path.close();
 
-    // Contorno neon: branco-azulado frio normalmente, vermelho ao tomar dano.
-    Glow.strokePath(
-      canvas,
-      path,
-      isFlashing ? Colors.redAccent : const Color(0xFFDDEBFF),
-      width: isFlashing ? GameConstants.lineWidth * 1.8 : GameConstants.lineWidth,
-      intensity: isFlashing ? 1.6 : 0.9,
-    );
+    // Interior shading based on variant
+    if (variant == AsteroidVariant.crystalline) {
+      final fillPaint = Paint()
+        ..color = const Color(0xFF00E5FF).withValues(alpha: isFlashing ? 0.45 : 0.15)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+
+      // Facet interior crystal lines
+      final facetPaint = Paint()
+        ..color = const Color(0xFFE040FB).withValues(alpha: isFlashing ? 0.8 : 0.4)
+        ..strokeWidth = 1.0
+        ..style = PaintingStyle.stroke;
+      for (var i = 0; i < numPoints; i += 2) {
+        final pointAngle = (2 * math.pi * i) / numPoints;
+        final r = radius * pointsOffsets[i];
+        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), facetPaint);
+      }
+
+      Glow.strokePath(
+        canvas,
+        path,
+        isFlashing ? Colors.white : const Color(0xFF00E5FF),
+        width: isFlashing ? GameConstants.lineWidth * 2.0 : GameConstants.lineWidth * 1.3,
+        intensity: isFlashing ? 1.8 : 1.2,
+      );
+    } else if (variant == AsteroidVariant.magma) {
+      final fillPaint = Paint()
+        ..color = const Color(0xFF260C05).withValues(alpha: 0.95)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+
+      // Molten veins
+      final veinPaint = Paint()
+        ..color = isFlashing ? Colors.white : const Color(0xFFFF5722)
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke;
+      for (var i = 0; i < numPoints; i += 3) {
+        final pointAngle = (2 * math.pi * i) / numPoints;
+        final r = radius * pointsOffsets[i] * 0.7;
+        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), veinPaint);
+      }
+
+      Glow.strokePath(
+        canvas,
+        path,
+        isFlashing ? Colors.white : const Color(0xFFFF3D00),
+        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.4,
+        intensity: isFlashing ? 1.9 : 1.3,
+      );
+    } else {
+      // Standard rock
+      if (isFlashing) {
+        final fillPaint = Paint()
+          ..color = Colors.redAccent.withValues(alpha: 0.2)
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(path, fillPaint);
+      }
+
+      Glow.strokePath(
+        canvas,
+        path,
+        isFlashing ? Colors.redAccent : const Color(0xFFDDEBFF),
+        width: isFlashing ? GameConstants.lineWidth * 1.8 : GameConstants.lineWidth,
+        intensity: isFlashing ? 1.6 : 0.9,
+      );
+    }
   }
 
   void split() {
     removeFromParent();
 
-    // Spawn explosion particles
-    final numParticles = math.max(8, (radius * 0.8).toInt());
-    game.spawnExplosionParticles(
-      position: position,
-      colorChoices: [Colors.white, Colors.orange, Colors.yellow, Colors.grey],
-      count: numParticles,
-      minSize: 2.0,
-      maxSize: 4.0,
-      minSpeed: 40.0,
-      maxSpeed: 180.0,
-    );
-    
-    // Proportional screen shake
-    final shakeIntensity = radius * 0.15;
-    game.triggerScreenShake(duration: 0.15, intensity: shakeIntensity);
+    // 1. Crystal Variant: Shower of XP and crystal shatter
+    if (variant == AsteroidVariant.crystalline) {
+      game.playSfx('asteroid_split.wav');
+      game.triggerScreenShake(duration: 0.25, intensity: radius * 0.2);
 
-    // Roguelike: Drop de Poeira Cósmica (XP)
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [const Color(0xFF00E5FF), const Color(0xFFE040FB), Colors.white, Colors.cyanAccent],
+        count: 24,
+        minSize: 2.0,
+        maxSize: 4.5,
+        minSpeed: 60.0,
+        maxSpeed: 220.0,
+      );
+
+      // Stardust Rain: spawns 7 to 9 XP orbs!
+      const int xpCount = 8;
+      for (var i = 0; i < xpCount; i++) {
+        final angle = (2 * math.pi * i) / xpCount;
+        final offset = Vector2(math.cos(angle), math.sin(angle)) * (12.0 + math.Random().nextDouble() * 15.0);
+        game.world.add(
+          XpOrbComponent(
+            position: position + offset,
+            type: (i % 3 == 0) ? XpOrbType.medium : XpOrbType.small,
+          ),
+        );
+      }
+
+      game.spawnFloatingText(
+        position + Vector2(0, -20),
+        'CRYSTAL SHATTER! (+XP)',
+        color: const Color(0xFF00E5FF),
+        fontSize: 12.5,
+      );
+      return; // Crystalline asteroids don't divide
+    }
+
+    // 2. Magma Variant: Thermal pool eruption
+    if (variant == AsteroidVariant.magma) {
+      game.playSfx('bomb_explode.wav');
+      game.triggerScreenShake(duration: 0.3, intensity: radius * 0.25);
+
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [Colors.deepOrangeAccent, Colors.orange, Colors.amberAccent, Colors.yellow],
+        count: 28,
+        minSize: 2.5,
+        maxSize: 5.0,
+        minSpeed: 70.0,
+        maxSpeed: 240.0,
+      );
+
+      // Spawns persistent thermal magma pool hazard
+      game.world.add(
+        MagmaHazardComponent(
+          position: position.clone(),
+          radius: math.max(60.0, radius * 1.4),
+          duration: 3.5,
+        ),
+      );
+
+      game.spawnFloatingText(
+        position + Vector2(0, -20),
+        'THERMAL ERUPTION!',
+        color: const Color(0xFFFF5722),
+        fontSize: 12.5,
+      );
+    } else {
+      // Standard explosion particles & screen shake
+      final numParticles = math.max(8, (radius * 0.8).toInt());
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [Colors.white, Colors.orange, Colors.yellow, Colors.grey],
+        count: numParticles,
+        minSize: 2.0,
+        maxSize: 4.0,
+        minSpeed: 40.0,
+        maxSpeed: 180.0,
+      );
+      game.triggerScreenShake(duration: 0.15, intensity: radius * 0.15);
+    }
+
+    // Standard XP drop
     final XpOrbType orbType;
     if (radius > GameConstants.asteroidMinRadius * 2.2) {
       orbType = XpOrbType.large;
@@ -233,31 +354,27 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     game.world.add(XpOrbComponent(position: position.clone(), type: orbType));
 
     final random = math.Random();
-
-    // Cap active drops on screen to maximum 2 so space remains clean and exciting
     final activeDrops = game.world.children.whereType<DropComponent>().length;
-
-    // Science Fair: Calibrated rare drop chances based on asteroid size
-    double dropChance = 0.05; // 5% chance on small asteroids
+    double dropChance = 0.05;
     if (radius >= 50.0) {
-      dropChance = 0.25; // 25% chance on large asteroids
+      dropChance = 0.25;
     } else if (radius >= 30.0) {
-      dropChance = 0.12; // 12% chance on medium asteroids
+      dropChance = 0.12;
     }
 
     if (activeDrops < 2 && random.nextDouble() < dropChance) {
       final roll = random.nextDouble();
       DropType dropType;
       if (roll < 0.50) {
-        dropType = DropType.lunarSample; // 50% Lunar Sample (+100 pts)
+        dropType = DropType.lunarSample;
       } else if (roll < 0.75) {
-        dropType = DropType.rareHelium;  // 25% Rare Helium-3 (+250 pts)
+        dropType = DropType.rareHelium;
       } else if (roll < 0.85) {
-        dropType = DropType.shield;      // 10% Photonic Shield (4s)
+        dropType = DropType.shield;
       } else if (roll < 0.93) {
-        dropType = DropType.darkMatter;  // 8% Dark Matter (+500 pts, Legendary)
+        dropType = DropType.darkMatter;
       } else {
-        dropType = DropType.health;      // 7% Life Repair Fragment (+1 Life)
+        dropType = DropType.health;
       }
 
       final driftAngle = random.nextDouble() * 2 * math.pi;
@@ -276,8 +393,8 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       return;
     }
 
-    // Split into two smaller asteroids
-    final splitAngle = 20.0 + random.nextDouble() * 30.0; // 20 to 50 degrees
+    // Split into two smaller asteroids of the same variant
+    final splitAngle = 20.0 + random.nextDouble() * 30.0;
     final radAngle = splitAngle * math.pi / 180.0;
 
     final velocityA = velocity.clone()..rotate(radAngle);
@@ -288,12 +405,14 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       radius: newRadius,
       position: position.clone(),
       velocity: velocityA * 1.2,
+      variant: variant,
     );
     
     final asteroidB = AsteroidComponent(
       radius: newRadius,
       position: position.clone(),
       velocity: velocityB * 1.2,
+      variant: variant,
     );
 
     game.world.add(asteroidA);
