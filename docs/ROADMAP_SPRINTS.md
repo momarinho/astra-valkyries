@@ -98,6 +98,27 @@ flowchart TD
 
 ---
 
+## 🛡️ PATCH 0.5.5 / SPRINT 4.5: Sistema de Casco (HP Bar), Reparos Nanotecnológicos & HUD Responsiva Universal
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Substituir as 3 vidas discretas por uma barra contínua de Integridade do Casco (Hull HP), calibrar danos e imunidade sem interrupção de fluxo, adicionar drops de cura aleatórios com mecânica de piedade e blindar a HUD contra quebras em qualquer resolução de tela (mobile e desktop).
+
+### Entregáveis:
+1. **Barra de Integridade de Casco (Hull HP Continuous Gauge):**
+   - [x] Substituição dos 3 corações discretos por medidor cibernético proporcional (`hp / maxHp`).
+   - [x] HP base escalonado por arquétipo de Valquíria (Lyra: 100 HP, Selene: 120 HP blindada, Vesper: 90 HP ágil) + bônus de Meta-Progresso (+25 HP por nível de *Hull Reinforcement*).
+   - [x] Danos por colisão calibrados: Asteroides Pequenos (14 HP), Médios (24 HP), Grandes (35 HP); Frotas Inimigas (16 a 45 HP); Projéteis de Plasma (18 a 22 HP).
+   - [x] Janela de invulnerabilidade com i-frames (0.85s) e screen shake, sem teleportar a jogadora para o centro da tela em danos não-letais.
+2. **Cápsulas de Reparo Nanotecnológico (Health Drops) & Mecânica de Piedade (Pity):**
+   - [x] `DropType.health` restaura de +25 a +45 HP com efeito sonoro e texto flutuante verde esmeralda `+XX HP REPARO! 💚`.
+   - [x] Taxa de drop base em asteroides (7%) e inimigos (8%), dobrando com *Pity Rate* (15% e 16%) quando a integridade da jogadora está abaixo de 50%. Drop garantido de 100% ao abater Elites.
+3. **Correção Definitiva da HUD Multi-Resolução:**
+   - [x] Eliminação de todos os estouros de `RenderFlex` em resoluções ultra-widescreen, desktop padrão e smartphones compactos (667x375, 844x390, 1920x1080).
+   - [x] Medidores de HP, XP e Chefe Leviathan com larguras responsivas auto-ajustáveis e textos com truncamento inteligente (`TextOverflow.ellipsis`).
+4. **Bateria de Testes:**
+   - [x] 84 testes automatizados cobrindo dano contínuo, mecânica de cura, pity drops e validação em 8 resoluções distintas.
+
+---
+
 ## 💖 SPRINT 5: Galeria de Waifus, Afinidade & Micro-Balanceamento Beta
 - **Status:** 📅 **PLANEJADA**
 - **Objetivo:** O motor de engajamento do público de anime, polimento de som/vozes e calibração fina de parâmetros para o lançamento comercial.

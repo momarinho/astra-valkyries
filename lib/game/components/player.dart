@@ -19,8 +19,22 @@ import 'cosmic_nebula.dart';
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? customGame;
 
+  set game(AsteroidsGame? g) {
+    customGame = g;
+    try {
+      super.game = g;
+    } catch (_) {}
+  }
+
   @override
-  AsteroidsGame get game => customGame ?? super.game;
+  AsteroidsGame get game {
+    if (customGame != null) return customGame!;
+    try {
+      return super.game;
+    } catch (_) {
+      return AsteroidsGame();
+    }
+  }
 
   Vector2 velocity = Vector2.zero();
   
@@ -36,6 +50,28 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double muzzleFlashTimer = 0.0;
   double muzzleFlashSize = 0.0;
   double _soundCooldownTimer = 0.0;
+
+  // Hull Points (HP) & Damage System
+  double maxHp = 100.0;
+  double hp = 100.0;
+  double get hpPercent => (hp / math.max(1.0, maxHp)).clamp(0.0, 1.0);
+
+  void initHp() {
+    final baseHull = valkyrie?.baseHull ?? 100.0;
+    double bonusHp = 0.0;
+    try {
+      bonusHp = game.metaProgression.hullBonusHp;
+    } catch (_) {
+      bonusHp = 0.0;
+    }
+    maxHp = baseHull + bonusHp;
+    hp = maxHp;
+  }
+
+  void heal(double amount) {
+    if (hp <= 0) return;
+    hp = (hp + amount).clamp(0.0, maxHp);
+  }
 
   final List<Weapon> activeWeapons = [];
   final Map<String, Weapon> unlockedWeapons = {};
@@ -133,34 +169,73 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollisionStart(intersectionPoints, other);
     if (game.state != GameState.playing) return;
-    if (other is AsteroidComponent || other is EnemyShipComponent || other is DreadnoughtLeviathanComponent) {
-      takeHit();
+    if (other is AsteroidComponent) {
+      final double dmg;
+      if (other.radius >= 40.0) {
+        dmg = 35.0; // Large asteroid collision
+      } else if (other.radius >= 25.0) {
+        dmg = 24.0; // Medium asteroid collision
+      } else {
+        dmg = 14.0; // Small asteroid collision
+      }
+      takeHit(dmg);
+    } else if (other is EnemyShipComponent) {
+      final double dmg;
+      switch (other.type) {
+        case EnemyType.scout:
+          dmg = 16.0;
+          break;
+        case EnemyType.raider:
+          dmg = 32.0;
+          break;
+        case EnemyType.sniper:
+          dmg = 22.0;
+          break;
+        case EnemyType.eliteCommander:
+          dmg = 45.0;
+          break;
+      }
+      takeHit(dmg);
+    } else if (other is DreadnoughtLeviathanComponent) {
+      takeHit(45.0);
     }
   }
 
-  void takeHit([double damage = 1.0]) {
+  void takeHit([double damage = 20.0]) {
     if (isInvulnerable() || game.state != GameState.playing) return;
     game.playSfx('player_hit.wav');
-    game.triggerScreenShake(duration: 0.4, intensity: 12.0);
+
+    final actualDamage = damage.clamp(5.0, 999.0);
+    hp = math.max(0.0, hp - actualDamage);
+
+    game.triggerScreenShake(duration: 0.35, intensity: math.min(18.0, 8.0 + actualDamage * 0.25));
+    game.spawnFloatingText(
+      position + Vector2(0, -28),
+      '-${actualDamage.toInt()} HP',
+      color: const Color(0xFFFF1744),
+      fontSize: 16.0,
+      velocity: Vector2(0, -35),
+    );
 
     final pColor = scientist?.primaryColor ?? valkyrie?.primaryColor ?? Colors.cyan;
     final aColor = scientist?.accentColor ?? valkyrie?.accentColor ?? Colors.white;
 
     game.spawnExplosionParticles(
       position: position,
-      colorChoices: [pColor, aColor, Colors.white, Colors.grey],
-      count: 30,
+      colorChoices: [pColor, aColor, Colors.white, Colors.redAccent],
+      count: 24,
       minSize: 2.5,
       maxSize: 5.0,
       minSpeed: 80.0,
-      maxSpeed: 250.0,
+      maxSpeed: 220.0,
     );
 
-    game.lives -= 1;
-    if (game.lives <= 0) {
+    // Brief invulnerability window (i-frames)
+    invulnerableTimer = 0.85;
+
+    if (hp <= 0) {
+      hp = 0.0;
       game.completeMission(survived: false);
-    } else {
-      respawn(game.size.x / 2, game.size.y / 2);
     }
   }
 
@@ -203,6 +278,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     angle = 0.0;
     velocity.setZero();
     invulnerableTimer = GameConstants.playerInvulnerableSeconds;
+    initHp();
   }
 
   bool isInvulnerable() => !isShieldSuppressed && invulnerableTimer > 0;

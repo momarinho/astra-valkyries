@@ -9,6 +9,7 @@ import 'player.dart';
 import 'enemy_bullet.dart';
 import 'xp_orb.dart';
 import 'chest.dart';
+import 'drop.dart';
 
 enum EnemyType {
   scout,          // Swarmer / Fodder: direct fast pursuit
@@ -375,13 +376,44 @@ class EnemyShipComponent extends PositionComponent
     } else {
       game.world.add(XpOrbComponent(position: position.clone(), type: XpOrbType.small));
     }
+
+    // Health capsule drop: 100% on Elite, 8% on standard enemies (16% if player HP < 50%)
+    final hpRatio = game.player.hpPercent;
+    final healthChance = isElite ? 1.0 : (hpRatio < 0.5 ? 0.16 : 0.08);
+    if (math.Random().nextDouble() < healthChance) {
+      game.world.add(
+        DropComponent(
+          position: position.clone(),
+          type: DropType.health,
+          initialVelocity: Vector2(
+            (math.Random().nextDouble() - 0.5) * 30.0,
+            (math.Random().nextDouble() - 0.5) * 30.0,
+          ),
+        ),
+      );
+    }
   }
 
   @override
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerComponent) {
-      other.takeHit(1.0);
+      final double dmg;
+      switch (type) {
+        case EnemyType.scout:
+          dmg = 16.0;
+          break;
+        case EnemyType.raider:
+          dmg = 32.0;
+          break;
+        case EnemyType.sniper:
+          dmg = 22.0;
+          break;
+        case EnemyType.eliteCommander:
+          dmg = 45.0;
+          break;
+      }
+      other.takeHit(dmg);
       // Small bounce/recoil away from player
       final push = (position - other.position).normalized();
       velocity = push * (baseSpeed * 1.5);

@@ -20,7 +20,7 @@ class EnemyBulletComponent extends PositionComponent
     required this.radius,
     required this.velocity,
     this.lifeTimer = 4.0,
-    this.damage = 1.0,
+    this.damage = 18.0,
     this.bulletColor = const Color(0xFFFF1744), // Vivid Crimson Neon
   }) {
     this.position = position;

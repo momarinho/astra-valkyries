@@ -330,7 +330,17 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   int selectedWeaponIndex = 0; // 0 = Blaster
 
   int score = 0;
-  int lives = GameConstants.playerLives;
+  int _lives = GameConstants.playerLives;
+  int get lives {
+    try {
+      if (player.hp <= 0) return 0;
+      final maxLives = GameConstants.playerLives + metaProgression.hullBonusLives;
+      return (player.hp / math.max(1.0, player.maxHp) * maxLives).ceil().clamp(1, maxLives);
+    } catch (_) {
+      return _lives;
+    }
+  }
+  set lives(int val) => _lives = val;
   int currentLevel = 1;
   
   // Roguelite Meta-Progression & Scrap Economy
@@ -642,7 +652,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void startGame() {
     score = 0;
     runCredits = 0;
-    lives = GameConstants.playerLives + metaProgression.hullBonusLives;
     currentLevel = 1;
     specialAvailable = true;
     samplesCollected = 0;
@@ -679,12 +688,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     _removeAllAsteroidsAndProjectiles();
 
     // Reset player states, stats, and initialize chosen Valkyrie's starting weapon at Sector Center
+    player.customGame ??= this;
+    player.valkyrie = selectedValkyrie;
     player.respawn(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    player.initHp();
     try {
       camera.viewfinder.position = player.position;
       camera.follow(player);
     } catch (_) {}
-    player.valkyrie = selectedValkyrie;
     
     // Set starting weapon based on chosen Valkyrie
     final startingWeapon = selectedValkyrie.createStartingWeapon();
@@ -1214,6 +1225,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     _removeAllAsteroidsAndProjectiles();
 
+    player.customGame ??= this;
     player.respawn(GameConstants.screenWidth / 2, GameConstants.screenHeight / 2);
     player.configureScientist(scientist);
 

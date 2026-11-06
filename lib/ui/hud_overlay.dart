@@ -107,12 +107,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     } catch (_) {}
     final showStationBanner = station != null && (station.isPlayerInZone || station.uploadProgress > 0);
 
-    // Reactive mini-avatar state detection
+    // Reactive mini-avatar state detection & Health status
     String currentAvatarAsset;
     Color avatarGlowColor;
     String statusExpression;
 
-    if (livesLeft <= 1 || isInvulnerable) {
+    final hpRatio = player.hpPercent;
+
+    if (hpRatio <= 0.30 || isInvulnerable) {
       currentAvatarAsset = valkyrie.hudDamagedAsset;
       avatarGlowColor = Colors.redAccent;
       statusExpression = 'CRITICAL ALERT';
@@ -130,8 +132,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(18.0),
       child: Stack(
         children: [
-          // Low Hull / Last Life Dramatic Red Pulsing Vignette
-          if (livesLeft == 1)
+          // Low Hull Dramatic Red Pulsing Vignette (< 25% HP)
+          if (hpRatio <= 0.25)
             Positioned.fill(
               child: IgnorePointer(
                 child: Builder(
@@ -163,21 +165,25 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
           // Top Center: Roguelike XP / Stardust Level-Up Bar
           Positioned(
             top: 4,
-            left: MediaQuery.of(context).size.width * 0.28,
-            right: MediaQuery.of(context).size.width * 0.28,
+            left: 0,
+            right: 0,
             child: IgnorePointer(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.bolt, color: valkyrie.accentColor, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.bolt, color: valkyrie.accentColor, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
                             'LEVEL ${game.runLevel}',
                             style: TextStyle(
                               fontFamily: 'Orbitron',
@@ -236,36 +242,50 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
               ),
             ),
           ),
+        ),
+      ),
 
           // Boss Health Bar (Dreadnought Leviathan Climax)
           if (game.activeBoss != null && !game.activeBoss!.isDefeated)
             Positioned(
-              top: 34,
-              left: MediaQuery.of(context).size.width * 0.22,
-              right: MediaQuery.of(context).size.width * 0.22,
+              top: 32,
+              left: 0,
+              right: 0,
               child: IgnorePointer(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1744), size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'DREADNOUGHT LEVIATHAN // SECTOR TITAN',
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                                color: Color(0xFFFF1744),
+                        Flexible(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1744), size: 14),
+                              SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'DREADNOUGHT LEVIATHAN // SECTOR TITAN',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    fontFamily: 'Orbitron',
+                                    fontSize: 10.0,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                    color: Color(0xFFFF1744),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 6),
                         Text(
                           '${((game.activeBoss!.hp / game.activeBoss!.maxHp) * 100).toInt()}% HULL',
                           style: const TextStyle(
@@ -312,6 +332,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 ),
               ),
             ),
+          ),
+        ),
 
           // Top Left: Pilot Mini-Avatar & Tactical Cockpit Status
           Positioned(
@@ -565,7 +587,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             ),
           ),
 
-          // Top Right: Pilot Hull Integrity (Hearts/Icons), Shield Gauge & Pause
+          // Top Right: Pilot Hull Integrity (HP Bar), Shield Gauge & Pause
           Positioned(
             top: 0,
             right: 0,
@@ -575,29 +597,9 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Hull / Life Hearts
-                    Row(
-                      children: List.generate(GameConstants.playerLives, (index) {
-                        final isActive = index < livesLeft;
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 6.0),
-                          child: Icon(
-                            Icons.favorite,
-                            color: isActive ? valkyrie.primaryColor : Colors.white24,
-                            size: 22,
-                            shadows: isActive
-                                ? [
-                                    Shadow(
-                                      color: valkyrie.primaryColor.withOpacity(0.8),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 14),
+                    // Hull / Life Bar
+                    _buildHullHpBar(player, valkyrie),
+                    const SizedBox(width: 10),
 
                     // Pause Button
                     GestureDetector(
@@ -1236,16 +1238,21 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    '🎮 WASD/ARROWS: Steer | AUTO-FIRE ARSENAL | SHIFT: Dash | E: Special',
-                                    style: TextStyle(
-                                      fontFamily: 'Rajdhani',
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: valkyrie.primaryColor,
-                                      letterSpacing: 0.8,
+                                  Expanded(
+                                    child: Text(
+                                      '🎮 WASD/ARROWS: Steer | AUTO-FIRE ARSENAL | SHIFT: Dash | E: Special',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Rajdhani',
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: valkyrie.primaryColor,
+                                        letterSpacing: 0.8,
+                                      ),
                                     ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     'Click or press any key ▶',
                                     style: TextStyle(
@@ -1267,6 +1274,108 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHullHpBar(PlayerComponent player, Valkyrie valkyrie) {
+    final hp = player.hp;
+    final maxHp = player.maxHp;
+    final hpRatio = (hp / math.max(1.0, maxHp)).clamp(0.0, 1.0);
+
+    final Color hpColor;
+    if (hpRatio > 0.50) {
+      hpColor = const Color(0xFF00E676); // Emerald Green
+    } else if (hpRatio > 0.25) {
+      hpColor = const Color(0xFFFFB300); // Amber Warning
+    } else {
+      hpColor = const Color(0xFFFF1744); // Crimson Alert
+    }
+
+    return Container(
+      width: 190,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: hpColor.withOpacity(0.7),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: hpColor.withOpacity(0.25),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.shield_outlined, size: 12, color: hpColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    'HULL',
+                    style: TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 10.0,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${hp.toInt()}/${maxHp.toInt()} HP',
+                style: TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.bold,
+                  color: hpColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          // Progress bar
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: hpRatio,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [hpColor, hpColor.withOpacity(0.8)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: hpColor.withOpacity(0.8),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -362,19 +362,22 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       dropChance = 0.12;
     }
 
-    if (activeDrops < 2 && random.nextDouble() < dropChance) {
+    if (activeDrops < 3 && random.nextDouble() < dropChance) {
       final roll = random.nextDouble();
+      final hpRatio = game.player.hpPercent;
+      final healthThreshold = hpRatio < 0.5 ? 0.65 : 0.85;
+
       DropType dropType;
-      if (roll < 0.50) {
-        dropType = DropType.lunarSample;
-      } else if (roll < 0.75) {
-        dropType = DropType.rareHelium;
-      } else if (roll < 0.85) {
-        dropType = DropType.shield;
-      } else if (roll < 0.93) {
-        dropType = DropType.darkMatter;
-      } else {
+      if (roll >= healthThreshold) {
         dropType = DropType.health;
+      } else if (roll < 0.40) {
+        dropType = DropType.lunarSample;
+      } else if (roll < 0.65) {
+        dropType = DropType.rareHelium;
+      } else if (roll < 0.80) {
+        dropType = DropType.shield;
+      } else {
+        dropType = DropType.darkMatter;
       }
 
       final driftAngle = random.nextDouble() * 2 * math.pi;

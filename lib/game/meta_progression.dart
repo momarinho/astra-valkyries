@@ -35,7 +35,7 @@ class MetaProgression {
     MetaUpgradeDef(
       id: 'hull',
       title: 'HULL REINFORCEMENT',
-      subtitle: 'Titanium plating grants extra Pilot Life integrity',
+      subtitle: 'Titanium plating grants extra Pilot Hull Integrity (HP)',
       icon: Icons.shield_outlined,
       color: Color(0xFF00E676),
       maxLevel: 3,
@@ -89,8 +89,8 @@ class MetaProgression {
   ];
 
   static String _describeHull(int lvl) {
-    if (lvl == 0) return 'Standard Hull (3 Lives)';
-    return '+$lvl Extra Life (${3 + lvl} Total Lives)';
+    if (lvl == 0) return 'Standard Hull (100% Base HP)';
+    return '+${lvl * 25} Max Hull HP (${100 + lvl * 25} HP Total)';
   }
 
   static String _describeMagnet(int lvl) {
@@ -125,6 +125,7 @@ class MetaProgression {
   int getLevel(String id) => levels[id] ?? 0;
 
   int get hullBonusLives => getLevel('hull');
+  double get hullBonusHp => getLevel('hull') * 25.0;
   double get magnetMultiplier => 1.0 + (getLevel('magnet') * 0.20);
   double get speedMultiplier => 1.0 + (getLevel('thrusters') * 0.08);
   double get dashCooldownReduction => getLevel('thrusters') * 0.08;

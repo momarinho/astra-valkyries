@@ -16,6 +16,11 @@ enum DropType {
 }
 
 class DropComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  AsteroidsGame? customGame;
+
+  @override
+  AsteroidsGame get game => customGame ?? super.game;
+
   final DropType type;
   Vector2 velocity;
   double lifespan = 8.0;
@@ -138,34 +143,22 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         break;
 
       case DropType.health:
-        if (game.lives < 3) {
-          game.lives += 1;
-          game.spawnFloatingText(
-            position,
-            "+1 VIDA!",
-            color: const Color(0xFF00E676),
-            fontSize: 15.0,
-          );
-        } else {
-          game.score += 100;
-          game.spawnFloatingText(
-            position,
-            "+100 REPARO!",
-            color: const Color(0xFF00E676),
-            fontSize: 15.0,
-          );
-        }
+        final healAmount = (game.player.maxHp * 0.30).clamp(25.0, 45.0);
+        game.player.heal(healAmount);
+        game.spawnFloatingText(
+          position,
+          "+${healAmount.toInt()} HP REPARO! 💚",
+          color: const Color(0xFF00E676),
+          fontSize: 16.0,
+        );
         particleColor = const Color(0xFF00E676);
         break;
 
       case DropType.cometDust:
         game.score += 1500;
         game.samplesCollected += 2;
-        if (game.lives < 3) {
-          game.lives += 1;
-        } else {
-          game.player.invulnerableTimer = 5.0;
-        }
+        game.player.heal(40.0);
+        game.player.invulnerableTimer = math.max(game.player.invulnerableTimer, 4.0);
         game.triggerScreenShake(duration: 0.35, intensity: 8.0);
         game.spawnFloatingText(
           position,

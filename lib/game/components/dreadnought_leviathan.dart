@@ -290,7 +290,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerComponent) {
-      other.takeHit(1.0);
+      other.takeHit(45.0);
       final push = (other.position - position).normalized();
       other.velocity += push * 380.0;
     }
