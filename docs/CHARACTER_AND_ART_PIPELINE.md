@@ -70,7 +70,7 @@ graph TD
 
 | Personagem | Título | Visual / Cabelo | Personalidade / Tropo | Nave & Arma Inicial |
 | :--- | :--- | :--- | :--- | :--- |
-| **Lyra** | *Solar Vanguard* | Ruiva/Laranja, rabo de cavalo alto, olhos âmbar | Enérgica, ousada, confiante, adora velocidade | Interceptador vermelho veloz com *Dual Vulcan Blaster* |
+| **Lyra** | *Solar Vanguard* | Ruiva/coral, mechas dinâmicas, olhos âmbar, headset mecha-neko branco e exo-traje cibernético | Enérgica, ousada, confiante, adora velocidade | Interceptador veloz *AV-01 Sol Blaze* com *Twin Vulcan Plasma* |
 | **Selene** | *Void Tactician* | Prateado/Azul gelo longo, visor holográfico | Kuudere fria, analítica, fala com calma calculada | Fragata tática azul com *Phase Laser Piercing Beam* |
 | **Vesper** | *Dread Renegade* | Cabelo escuro curto com mechas magenta (Tomboy) | Rebelde, provocante, debochada, adora explosões | Caça furtivo preto com *Antimatter Spread & Bombs* |
 

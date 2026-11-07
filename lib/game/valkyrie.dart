@@ -83,7 +83,7 @@ class Valkyrie {
       name: 'Lyra',
       callsign: 'Solar Vanguard',
       title: 'High-Velocity Strike Pilot',
-      bio: 'Fearless ace pilot of the Vanguard Fleet. Relies on blazing afterburners and high-cadence vulcan blasters to shatter enemy formations before they can lock on.',
+      bio: 'Fearless ace pilot of the Vanguard Fleet. Wielding a cybernetic interceptor suit and acoustic mecha headset, she shatters enemy lines with blazing vulcan fire.',
       quote: '"Full throttle into the void! Try to keep up, Commander!"',
       shipName: 'AV-01 Sol Blaze',
       shipDesign: ValkyrieShipDesign.solBlaze,
