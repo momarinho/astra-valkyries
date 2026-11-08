@@ -48,6 +48,13 @@ class CosmicNebulaComponent extends PositionComponent with HasGameReference<Aste
 
   @override
   void render(Canvas canvas) {
+    try {
+      final camPos = game.camera.viewfinder.position;
+      final dx = (position.x - camPos.x).abs();
+      final dy = (position.y - camPos.y).abs();
+      if (dx > 750 + radius || dy > 450 + radius) return;
+    } catch (_) {}
+
     super.render(canvas);
 
     final pulse = 1.0 + 0.05 * math.sin(_pulseTimer);

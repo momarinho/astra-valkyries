@@ -201,6 +201,14 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
 
   @override
   void render(Canvas canvas) {
+    // Fast viewport frustum culling: skip rendering if off-screen
+    try {
+      final camPos = game.camera.viewfinder.position;
+      final dx = (position.x - camPos.x).abs();
+      final dy = (position.y - camPos.y).abs();
+      if (dx > 720 + radius || dy > 440 + radius) return;
+    } catch (_) {}
+
     // Blinking effect in the last 2.5 seconds of lifespan
     if (lifespan < 2.5 && (DateTime.now().millisecondsSinceEpoch % 200 < 100)) {
       return;

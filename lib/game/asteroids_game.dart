@@ -29,6 +29,16 @@ import 'components/chest.dart';
 import 'components/magma_hazard.dart';
 import 'components/singularity_rift.dart';
 import 'components/dreadnought_leviathan.dart';
+import 'components/sector_boss.dart';
+import 'components/hyperspace_gate.dart';
+import 'components/void_reaper.dart';
+import 'components/ignis_wyrm.dart';
+import 'components/proximity_mine.dart';
+import 'components/derelict_turret.dart';
+import 'components/scrap_goliath.dart';
+import 'components/void_singularity_core.dart';
+import 'map/sector_map_data.dart';
+import 'map/sector_map_generator.dart';
 import 'weapons.dart';
 import 'level_manager.dart';
 import 'scientist.dart';
@@ -36,6 +46,7 @@ import 'valkyrie.dart';
 import 'rogue_perks.dart';
 import 'meta_progression.dart';
 import 'affinity_system.dart';
+import 'sector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:asteroids/services/api_service.dart';
 import 'dart:io' as io;
@@ -75,8 +86,20 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   late final PlayerComponent player;
   AsteroidField? asteroidField;
   LevelManager? levelManager;
-  DreadnoughtLeviathanComponent? activeBoss;
+  SectorBoss? activeBoss;
   late final GameJoystick joystick;
+
+  // Real-time Engine FPS & Diagnostics
+  double currentFps = 60.0;
+  double currentFrameTimeMs = 16.6;
+  bool showDiagnostics = false;
+
+  // Vampire Survivors Climax: The Void Reaper
+  bool voidReaperSpawned = false;
+
+  // Procedural Sector Map Data (Dead Cells style exploration)
+  SectorMapData? sectorMap;
+  bool isTacticalMapOpen = false;
 
   FocusNode? gameFocusNode;
 
@@ -85,18 +108,66 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   bool get isMobile => !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
   bool mobileShootPressed = false;
   bool mobileDashPressed = false;
+  bool showTouchControls = false;
+  bool isAimLocked = false; // Trava de Mira (Strafe Lock) no Mobile/Joystick para recuar atirando
+  bool useDirectionalControls = false; // False = Propulsão Vetorial + Ré Tática (Padrão PC), True = Direcional 360°
+  int initialHangarTab = 0; // 0 = Hangar/Sortie, 1 = Loja/Oficina, 2 = Galeria
+  GameState previousMenuState = GameState.menu;
+
+  // Masterpiece Modes (Sprint 8 - 12)
+  bool isHyperMode = false;
+  bool hyperModeUnlocked = true;
+  bool isBossRushMode = false;
+  int bossRushStage = 0;
+  bool campaignCompleted = false;
+
+  // Sistema Híbrido (Vampire Survivors + Risk of Rain): Sinalizadores de Anomalia
+  int beaconsCharged = 0;
+  static const int requiredBeacons = 2;
+  bool get isBossAltarUnlocked => beaconsCharged >= requiredBeacons;
+
+  void chargeBossBeacon(String sourceLabel) {
+    if (state != GameState.playing) return;
+    beaconsCharged++;
+    if (beaconsCharged == requiredBeacons) {
+      sectorMap?.bossLairNode.isDiscovered = true;
+      playSfx('powerup.wav');
+      triggerScreenShake(duration: 0.8, intensity: 16.0);
+      spawnFloatingText(
+        player.position + Vector2(0, -65),
+        '🔓 SINALIZADORES COMPLETOS ($beaconsCharged/$requiredBeacons)! ALTAR DO TITÃ DESTRANCADO!',
+        color: const Color(0xFF00E676),
+        fontSize: 16.5,
+      );
+    } else if (beaconsCharged < requiredBeacons) {
+      spawnFloatingText(
+        player.position + Vector2(0, -55),
+        '📡 SINALIZADOR DE ANOMALIA CARREGADO ($beaconsCharged/$requiredBeacons) [$sourceLabel]',
+        color: const Color(0xFF00E5FF),
+        fontSize: 14.5,
+      );
+    }
+  }
 
   GameState state = GameState.scienceIntro;
   String activeMode = 'arcade'; // 'arcade', 'classic' or 'campaign'
   
   // Astra Valkyrie Pilot
   Valkyrie selectedValkyrie = Valkyrie.defaultValkyrie;
+  Sector currentSector = Sector.defaultSector;
+  final Set<String> activePassives = {};
   double rogueCritChance = 0.05;
   double rogueFireRateMultiplier = 1.0;
   double rogueDamageMultiplier = 1.0;
   double rogueMagnetRadius = 150.0;
 
   void addStardust(int amount) => addXp(amount);
+  void addScrap(int amount) {
+    final effective = isHyperMode ? (amount * 1.5).round() : amount;
+    runCredits += effective;
+    totalCredits += effective;
+    savePersistentCredits();
+  }
 
   // Science Fair mode properties (legacy compatibility)
   Scientist selectedScientist = Scientist.defaultScientist;
@@ -134,7 +205,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void addXp(int amount) {
     if (state != GameState.playing) return;
-    runXp += amount;
+    final effective = isHyperMode ? (amount * 1.5).round() : amount;
+    runXp += effective;
     if (runXp >= runXpNextLevel) {
       runXp -= runXpNextLevel;
       runLevel++;
@@ -225,6 +297,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final random = math.Random();
 
     // 1. TOP PRIORITY: SUPER-EVOLUTION of MK MAX Weapons (Vampire Survivors Super-Weapon Loop)
+    for (final w in player.activeWeapons) {
+      if (w.canEvolve) {
+        for (final syn in WeaponSynergy.allSynergies) {
+          if (syn.weaponId == w.id) {
+            w.evolvedName ??= syn.evolvedName;
+          }
+        }
+      }
+    }
     final evolvableWeapons = player.activeWeapons.where((w) => w.canEvolve).toList();
     for (final w in evolvableWeapons) {
       if (list.length >= count) break;
@@ -425,18 +506,27 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     try {
       final prefs = await SharedPreferences.getInstance();
       totalCredits = prefs.getInt('persistent_credits') ?? 0;
+      hyperModeUnlocked = prefs.getBool('hyper_mode_unlocked') ?? true;
     } catch (_) {}
 
     // Register global hardware keyboard handler for instant pause detection
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
 
-    // Initial state set for Astra Valkyries (Hangar Bay)
-    changeState(GameState.valkyrieSelection);
+    // Initial state set for Astra Valkyries (Bootloader + Main Title Menu)
+    changeState(GameState.menu);
+  }
+
+  Future<void> saveHyperModeState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('hyper_mode_unlocked', hyperModeUnlocked);
+    } catch (_) {}
   }
 
   void addRunCredits(int amount) {
     if (state != GameState.playing) return;
-    runCredits += amount;
+    final effective = isHyperMode ? (amount * 1.5).round() : amount;
+    runCredits += effective;
   }
 
   bool purchaseMetaUpgrade(String id) {
@@ -475,16 +565,25 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     final key = event.logicalKey;
-    final isPauseKey = key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.keyP;
+    final isPauseKey = key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.keyP ||
+        key == LogicalKeyboardKey.gameButtonStart;
 
     if (state == GameState.playing && isPauseKey) {
       togglePause();
+      return true;
+    }
+    if (state == GameState.playing && key == LogicalKeyboardKey.gameButtonSelect) {
+      toggleTacticalMap();
       return true;
     }
     return false;
   }
 
   void changeState(GameState newState) {
+    if (state == GameState.menu || state == GameState.valkyrieSelection) {
+      previousMenuState = state;
+    }
     state = newState;
     keysPressed.clear();
 
@@ -538,7 +637,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
         } catch (_) {}
         try {
-          FlameAudio.bgm.stop();
+          if (!FlameAudio.bgm.isPlaying) {
+            FlameAudio.bgm.play('music.wav', volume: 0.65).catchError((_) {});
+          }
         } catch (_) {}
         _removeAllAsteroidsAndProjectiles();
         break;
@@ -636,6 +737,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       showLaunchTransmission = false;
     }
 
+    // Mapa Tático Holográfico em Tela Cheia [Tecla M]
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.keyM) {
+      toggleTacticalMap();
+      return KeyEventResult.handled;
+    }
+
     this.keysPressed.clear();
     this.keysPressed.addAll(keysPressed);
     return KeyEventResult.handled;
@@ -662,6 +769,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     runXp = 0;
     runXpNextLevel = calculateNextLevelXp(1);
     currentLevelUpChoices = [];
+    missionSurvived = false;
+    campaignCompleted = false;
+    bossRushStage = 0;
+    beaconsCharged = 0;
+    timeRemaining = fairRoundDuration;
     try {
       player.resetRoguelikeStats();
     } catch (_) {}
@@ -675,6 +787,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     fetchTopLeaderRecord();
 
     // Roguelike run stats from selected Valkyrie + Meta Upgrades
+    activePassives.clear();
     rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus).clamp(0.0, 1.0);
     rogueDamageMultiplier = 1.0 + metaProgression.damageBonusMultiplier;
     rogueFireRateMultiplier = 1.0;
@@ -707,8 +820,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Apply movement stats based on pilot speed multiplier + meta-progression thrusters + bond bonus
     final preset = movementPresets[selectedMovementPresetIndex];
     final affinity = affinityManager.getAffinity(selectedValkyrie.id);
-    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus);
-    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus);
+    final hyperSpeedMult = isHyperMode ? 1.25 : 1.0;
+    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus) * hyperSpeedMult;
+    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus) * hyperSpeedMult;
     player.movementFriction = preset.friction;
     player.magnetRadius = rogueMagnetRadius;
     rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus + affinity.bondCritBonus).clamp(0.0, 1.0);
@@ -720,6 +834,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     _initSectorPois();
 
     changeState(GameState.playing);
+
+    if (isBossRushMode) {
+      _spawnBossRushStage(0);
+    }
   }
 
   void _removeAllAsteroidsAndProjectiles() {
@@ -749,46 +867,58 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is ChestComponent ||
         child is MagmaHazardComponent ||
         child is SingularityRiftComponent ||
-        child is DreadnoughtLeviathanComponent);
+        child is ProximityMineComponent ||
+        child is DerelictTurretComponent ||
+        child is SectorBoss ||
+        child is HyperspaceGateComponent ||
+        child is VoidReaperComponent);
     for (final child in List.from(childrenToRemove)) {
       child.removeFromParent();
     }
     activeBoss = null;
+    voidReaperSpawned = false;
   }
 
   void _initSectorPois() {
-    // 1. Remove previous POIs to prevent duplicates on run restart
-    final existingPois = world.children.where((child) =>
-        child is SpaceStationComponent ||
-        child is CargoWreckComponent ||
-        child is CosmicNebulaComponent);
-    for (final poi in List.from(existingPois)) {
-      poi.removeFromParent();
+    SectorMapGenerator.generateAndSpawn(this);
+  }
+
+  void openTacticalMap() {
+    if (state != GameState.playing || isTacticalMapOpen) return;
+    isTacticalMapOpen = true;
+    pauseEngine();
+    _safeAddOverlay('tacticalMap');
+  }
+
+  void closeTacticalMap() {
+    if (!isTacticalMapOpen) return;
+    isTacticalMapOpen = false;
+    overlays.remove('tacticalMap');
+    resumeEngine();
+    gameFocusNode?.requestFocus();
+  }
+
+  void toggleTacticalMap() {
+    if (isTacticalMapOpen) {
+      closeTacticalMap();
+    } else {
+      openTacticalMap();
     }
-
-    // 2. Interactive Research Relay Station (North-West Quadrant)
-    world.add(SpaceStationComponent(position: Vector2(1500, 1500)));
-
-    // 3. Derelict Cargo Containers (Points of Interest with loot)
-    world.add(CargoWreckComponent(position: Vector2(3400, 1300)));
-    world.add(CargoWreckComponent(position: Vector2(1300, 3500)));
-
-    // 4. Cosmic Nebulae (Environmental Hazard & Combat Modifier Zones)
-    world.add(CosmicNebulaComponent(
-      position: Vector2(3400, 3300),
-      type: NebulaType.ionCloud,
-      radius: 460.0,
-    ));
-    world.add(CosmicNebulaComponent(
-      position: Vector2(1400, 3200),
-      type: NebulaType.darkMatter,
-      radius: 460.0,
-    ));
   }
 
   @override
   void update(double dt) {
     super.update(dt);
+    if (dt > 0) {
+      final instantFps = (1.0 / dt).clamp(1.0, 240.0);
+      currentFps = currentFps * 0.92 + instantFps * 0.08;
+      currentFrameTimeMs = dt * 1000.0;
+    }
+
+    if (state == GameState.playing && sectorMap != null) {
+      sectorMap!.updateExploration(player.position, GameConstants.radarRange);
+    }
+
     if (shakeTimer > 0) {
       shakeTimer = math.max(0.0, shakeTimer - dt);
     }
@@ -825,7 +955,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           timeRemaining = 0; // Overtime during Boss Climax
         } else {
           timeRemaining = 0;
-          completeMission(survived: true);
+          if (!voidReaperSpawned) {
+            voidReaperSpawned = true;
+            spawnVoidReaper();
+          }
         }
       }
     }
@@ -863,6 +996,235 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
   }
 
+  void triggerBossEncounter() {
+    if (state != GameState.playing) return;
+    if (activeBoss != null && !activeBoss!.isDefeated) {
+      spawnFloatingText(
+        player.position + Vector2(0, -50),
+        '⚠️ CHEFE JÁ PRESENTE NO SETOR!',
+        color: const Color(0xFFFF5252),
+        fontSize: 14.0,
+      );
+      return;
+    }
+
+    final random = math.Random();
+    final angle = random.nextDouble() * 2 * math.pi;
+    const spawnDist = 650.0;
+    final spawnPos = player.position + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
+    spawnPos.x = spawnPos.x.clamp(120.0, GameConstants.sectorWidth - 120.0);
+    spawnPos.y = spawnPos.y.clamp(120.0, GameConstants.sectorHeight - 120.0);
+
+    switch (currentSector.id) {
+      case SectorId.orion:
+        final boss = IgnisWyrmComponent(position: spawnPos);
+        activeBoss = boss;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '🔥 IGNIS WYRM INVOCADO! (SOLAR LEVIATHAN)',
+          color: const Color(0xFFFF5722),
+          fontSize: 18.0,
+        );
+        break;
+      case SectorId.graveyard:
+        final boss = ScrapGoliathComponent(position: spawnPos);
+        activeBoss = boss;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '⚙️ SCRAP GOLIATH INVOCADO! (COLOSSO MAGNÉTICO)',
+          color: const Color(0xFF00E676),
+          fontSize: 18.0,
+        );
+        break;
+      case SectorId.eventHorizon:
+        final boss = VoidSingularityCoreComponent(position: spawnPos);
+        activeBoss = boss;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '🌌 VOID SINGULARITY CORE INVOCADO! (SOBERANO DO VÁCUO)',
+          color: const Color(0xFFE040FB),
+          fontSize: 18.0,
+        );
+        break;
+      case SectorId.vesta:
+        final boss = DreadnoughtLeviathanComponent(position: spawnPos);
+        activeBoss = boss;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '🚨 DREADNOUGHT LEVIATHAN INVOCADO!',
+          color: const Color(0xFFFF1744),
+          fontSize: 18.0,
+        );
+        break;
+    }
+
+    playSfx('powerup.wav');
+    triggerScreenShake(duration: 0.9, intensity: 22.0);
+  }
+
+  void _spawnBossRushStage(int stage) {
+    bossRushStage = stage;
+    final spawnPos = player.position + Vector2(0, -520);
+    spawnPos.x = spawnPos.x.clamp(160.0, GameConstants.sectorWidth - 160.0);
+    spawnPos.y = spawnPos.y.clamp(160.0, GameConstants.sectorHeight - 160.0);
+
+    final SectorBoss boss;
+    String banner;
+    Color bannerColor;
+    switch (stage) {
+      case 0:
+        boss = DreadnoughtLeviathanComponent(position: spawnPos);
+        banner = '💀 BOSS RUSH [1/4] // DREADNOUGHT LEVIATHAN!';
+        bannerColor = const Color(0xFFFF1744);
+        break;
+      case 1:
+        boss = IgnisWyrmComponent(position: spawnPos);
+        banner = '💀 BOSS RUSH [2/4] // IGNIS WYRM!';
+        bannerColor = const Color(0xFFFF5722);
+        break;
+      case 2:
+        boss = ScrapGoliathComponent(position: spawnPos);
+        banner = '💀 BOSS RUSH [3/4] // SCRAP GOLIATH!';
+        bannerColor = const Color(0xFF00E676);
+        break;
+      default:
+        boss = VoidSingularityCoreComponent(position: spawnPos);
+        banner = '💀 BOSS RUSH FINAL [4/4] // VOID SINGULARITY CORE!';
+        bannerColor = const Color(0xFFE040FB);
+        break;
+    }
+
+    activeBoss = boss;
+    world.add(boss);
+    spawnFloatingText(
+      player.position + Vector2(0, -70),
+      banner,
+      color: bannerColor,
+      fontSize: 18.0,
+    );
+  }
+
+  void onBossRushBossDefeated(Vector2 lastBossPos) {
+    final nextStage = bossRushStage + 1;
+    if (nextStage >= 4) {
+      campaignCompleted = true;
+      hyperModeUnlocked = true;
+      saveHyperModeState();
+      addScore(25000);
+      addScrap(2000);
+      completeMission(survived: true);
+      return;
+    }
+    // Restaura parte do casco da Valquíria entre titãs do Boss Rush
+    player.heal(player.maxHp * 0.35);
+    _spawnBossRushStage(nextStage);
+  }
+
+  void spawnVoidReaper() {
+    final random = math.Random();
+    final angle = random.nextDouble() * 2 * math.pi;
+    final spawnDist = 650.0;
+    final spawnPos = player.position + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
+
+    spawnPos.x = spawnPos.x.clamp(100.0, GameConstants.sectorWidth - 100.0);
+    spawnPos.y = spawnPos.y.clamp(100.0, GameConstants.sectorHeight - 100.0);
+
+    final reaper = VoidReaperComponent(position: spawnPos);
+    world.add(reaper);
+    playSfx('low_health.wav');
+    triggerScreenShake(duration: 1.8, intensity: 25.0);
+    spawnFloatingText(
+      player.position + Vector2(0, -60),
+      '⚠️ COLAPSO TEMPORAL! O CEIFADOR DO VÁCUO CHEGOU! ⚠️',
+      color: const Color(0xFFFF1744),
+      fontSize: 18.0,
+    );
+  }
+
+  void jumpToNextSector() {
+    if (currentSector.id == SectorId.eventHorizon && campaignCompleted) {
+      addScore(30000);
+      addScrap(2500);
+      completeMission(survived: true);
+      return;
+    }
+
+    SectorId nextId;
+    switch (currentSector.id) {
+      case SectorId.vesta:
+        nextId = SectorId.orion;
+        break;
+      case SectorId.orion:
+        nextId = SectorId.graveyard;
+        break;
+      case SectorId.graveyard:
+        nextId = SectorId.eventHorizon;
+        break;
+      case SectorId.eventHorizon:
+        nextId = SectorId.vesta; // Loop / Cataclismo com bônus de pontuação
+        break;
+    }
+
+    currentSector = Sector.findById(nextId);
+    timeRemaining = fairRoundDuration;
+    voidReaperSpawned = false;
+    activeBoss = null;
+    beaconsCharged = 0;
+
+    // Reseta cronômetros de ondas de Sub-Chefes do AsteroidField
+    if (asteroidField != null) {
+      asteroidField!.subBoss45Spawned = false;
+    }
+
+    // Remove entidades antigas de combate do setor anterior
+    final toRemove = world.children.where((child) =>
+        child is AsteroidComponent ||
+        child is EnemyShipComponent ||
+        child is EnemyBulletComponent ||
+        child is BulletComponent ||
+        child is ProximityMineComponent ||
+        child is DerelictTurretComponent ||
+        child is SectorBoss ||
+        child is HyperspaceGateComponent ||
+        child is VoidReaperComponent);
+    for (final child in List.from(toRemove)) {
+      child.removeFromParent();
+    }
+
+    // Re-inicializa os POIs e perigos para o novo setor
+    _initSectorPois();
+
+    // Reseta cronômetros de ondas do AsteroidField
+    if (asteroidField != null) {
+      asteroidField!.difficultyTimer = 0.0;
+      asteroidField!.elite1Spawned = false;
+      asteroidField!.elite2Spawned = false;
+      asteroidField!.leviathanSpawned = false;
+      asteroidField!.cryoPodSpawned = false;
+    }
+
+    // Recompensas do Salto de Hiperespaço
+    addScore(10000);
+    addScrap(1000);
+    addXp(350);
+    affinityManager.getAffinity(selectedValkyrie.id).addXp(200);
+
+    // Efeitos visuais e sonoros de dobra espacial
+    playSfx('powerup.wav');
+    triggerScreenShake(duration: 1.5, intensity: 22.0);
+
+    spawnFloatingText(
+      player.position + Vector2(0, -75),
+      '🚀 HIPERESPAÇO: BEM-VINDO A ${currentSector.name.toUpperCase()}!',
+      color: currentSector.primaryColor,
+      fontSize: 18.0,
+    );
+  }
+
   final Map<String, int> _lastPlayedSfxTime = {};
   final List<AudioPlayer> _sfxPlayers = [];
   List<AudioPlayer> get sfxPlayers => _sfxPlayers;
@@ -878,7 +1240,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void playSfx(String name) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final minInterval = (name == 'shoot.wav') ? 50 : 65;
+    final minInterval = (name == 'shoot.wav') ? 85 : 65;
     final lastTime = _lastPlayedSfxTime[name] ?? 0;
     if (now - lastTime < minInterval) {
       return;
@@ -891,7 +1253,17 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final player = _sfxPlayers[_currentSfxIndex];
 
     try {
-      await player.play(AssetSource(name), volume: 1.0);
+      // Dynamic volume & micro-pitch jitter to eliminate audio fatigue on automatic fire
+      final double volume;
+      if (name == 'shoot.wav') {
+        volume = 0.32; // Blended comfortably into the acoustic mix
+        final pitch = 0.93 + math.Random().nextDouble() * 0.14; // Subtle pitch jitter
+        player.setPlaybackRate(pitch);
+      } else {
+        volume = 1.0;
+        player.setPlaybackRate(1.0);
+      }
+      await player.play(AssetSource(name), volume: volume);
     } catch (_) {}
   }
 

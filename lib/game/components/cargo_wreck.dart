@@ -93,6 +93,7 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
       try {
         game.addScore(450);
         game.addRunCredits(80);
+        game.chargeBossBeacon('CARGUEIRO BRECHADO');
         game.playSfx('asteroid_split.wav');
         game.triggerScreenShake(duration: 0.35, intensity: 6.0);
 
@@ -147,6 +148,13 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
 
   @override
   void render(Canvas canvas) {
+    try {
+      final camPos = game.camera.viewfinder.position;
+      final dx = (position.x - camPos.x).abs();
+      final dy = (position.y - camPos.y).abs();
+      if (dx > 750 + size.x || dy > 450 + size.y) return;
+    } catch (_) {}
+
     super.render(canvas);
 
     canvas.save();

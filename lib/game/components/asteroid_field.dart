@@ -3,9 +3,12 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/sector.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
 import 'dreadnought_leviathan.dart';
+import 'ignis_wyrm.dart';
+import 'cryo_pod.dart';
 
 class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   final String mode;
@@ -15,9 +18,12 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   double spawnRateMultiplier = 1.0;
   double speedMultiplier = 1.0;
 
+  bool subBoss45Spawned = false;
   bool elite1Spawned = false;
   bool elite2Spawned = false;
   bool leviathanSpawned = false;
+  bool cryoPodSpawned = false;
+  bool goldenAsteroidSpawned = false;
 
   AsteroidField({this.mode = 'classic'});
 
@@ -34,20 +40,22 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     enemySpawnTimer += dt;
     difficultyTimer += dt;
 
-    // Timeline Script do Vampire Survivors:
-    // 1. Spawns cronometrados de Elites (Void Commander)
-    if (difficultyTimer >= 90.0 && !elite1Spawned) {
+    // Timeline Script do Vampire Survivors (Incursões de Sub-Chefes aos 45s, 90s e 135s):
+    if (difficultyTimer >= 45.0 && !subBoss45Spawned) {
+      subBoss45Spawned = true;
+      _spawnEliteCommander(1, label: '⚠️ SUB-CHEFE [0:45]: VANGUARDA DO VÁCUO!');
+    } else if (difficultyTimer >= 90.0 && !elite1Spawned) {
       elite1Spawned = true;
-      _spawnEliteCommander(1);
-    } else if (difficultyTimer >= 140.0 && !elite2Spawned) {
+      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [1:30]: EXECUTORES GÊMEOS!');
+    } else if (difficultyTimer >= 135.0 && !elite2Spawned) {
       elite2Spawned = true;
-      _spawnEliteCommander(2);
+      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [2:15]: GUARDA DE ELITE DO SETOR!');
     }
 
-    // 2. Climax Boss: Titanic Dreadnought Leviathan (Minuto 2:40 / 160s ou 600s)
-    if (difficultyTimer >= 160.0 && !leviathanSpawned) {
-      leviathanSpawned = true;
-      _spawnLeviathanBoss();
+    // 3. Easter Egg: Ancient Precursor Cryo-Pod Drifting Event (Minuto 1:15 / 75s)
+    if (difficultyTimer >= 75.0 && !cryoPodSpawned) {
+      cryoPodSpawned = true;
+      _spawnCryoPod();
     }
 
     // 2. Intervalo de Asteroides
@@ -107,17 +115,6 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
     }
 
-    try {
-      game.playSfx('powerup.wav');
-      game.triggerScreenShake(duration: 0.9, intensity: 22.0);
-      game.spawnFloatingText(
-        playerPos + Vector2(0, -60),
-        '🚨 TITANIC DREADNOUGHT LEVIATHAN DETECTED! (SECTOR CLIMAX)',
-        color: const Color(0xFFFF1744),
-        fontSize: 18.0,
-      );
-    } catch (_) {}
-
     final random = math.Random();
     final angle = random.nextDouble() * 2 * math.pi;
     final spawnDist = 850.0;
@@ -126,11 +123,36 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     spawnPos.x = spawnPos.x.clamp(120.0, GameConstants.sectorWidth - 120.0);
     spawnPos.y = spawnPos.y.clamp(120.0, GameConstants.sectorHeight - 120.0);
 
-    final boss = DreadnoughtLeviathanComponent(position: spawnPos);
-    game.world.add(boss);
+    if (game.currentSector.id == SectorId.orion) {
+      final boss = IgnisWyrmComponent(position: spawnPos);
+      game.world.add(boss);
+      try {
+        game.playSfx('powerup.wav');
+        game.triggerScreenShake(duration: 0.9, intensity: 22.0);
+        game.spawnFloatingText(
+          playerPos + Vector2(0, -60),
+          '🔥 IGNIS WYRM SOLAR LEVIATHAN DETECTED! (SECTOR CLIMAX)',
+          color: const Color(0xFFFF5722),
+          fontSize: 18.0,
+        );
+      } catch (_) {}
+    } else {
+      final boss = DreadnoughtLeviathanComponent(position: spawnPos);
+      game.world.add(boss);
+      try {
+        game.playSfx('powerup.wav');
+        game.triggerScreenShake(duration: 0.9, intensity: 22.0);
+        game.spawnFloatingText(
+          playerPos + Vector2(0, -60),
+          '🚨 TITANIC DREADNOUGHT LEVIATHAN DETECTED! (SECTOR CLIMAX)',
+          color: const Color(0xFFFF1744),
+          fontSize: 18.0,
+        );
+      } catch (_) {}
+    }
   }
 
-  void _spawnEliteCommander(int count) {
+  void _spawnEliteCommander(int count, {String? label}) {
     Vector2 playerPos;
     try {
       playerPos = game.player.position;
@@ -143,7 +165,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       game.triggerScreenShake(duration: 0.5, intensity: 14.0);
       game.spawnFloatingText(
         playerPos + Vector2(0, -50),
-        '⚠️ HOSTILE FLAGSHIP DETECTED! (ELITE TARGET)',
+        label ?? '⚠️ HOSTILE FLAGSHIP DETECTED! (ELITE TARGET)',
         color: const Color(0xFFFFD700),
         fontSize: 16.0,
       );
@@ -277,9 +299,16 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     }
     final radius = GameConstants.asteroidMinRadius * kind;
 
-    // Variant selection based on timeline
+    // Variant selection based on timeline, current sector & golden easter egg
     AsteroidVariant variant = AsteroidVariant.standard;
-    if (difficultyTimer >= 60.0) {
+    if (!goldenAsteroidSpawned && difficultyTimer >= 40.0) {
+      goldenAsteroidSpawned = true;
+      variant = AsteroidVariant.golden;
+    } else if (random.nextDouble() < 0.015) {
+      variant = AsteroidVariant.golden;
+    } else if (game.currentSector.id == SectorId.orion && random.nextDouble() < 0.40) {
+      variant = AsteroidVariant.magma;
+    } else if (difficultyTimer >= 60.0) {
       final roll = random.nextDouble();
       if (difficultyTimer < 120.0) {
         if (roll < 0.30) variant = AsteroidVariant.crystalline;
@@ -299,6 +328,28 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       variant: variant,
     );
     game.world.add(asteroid);
+  }
+
+  void _spawnCryoPod() {
+    Vector2 playerPos;
+    try {
+      playerPos = game.player.position;
+    } catch (_) {
+      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    }
+    final random = math.Random();
+    final a = random.nextDouble() * 2 * math.pi;
+    final spawnPos = playerPos + Vector2(math.cos(a), math.sin(a)) * 520.0;
+    spawnPos.x = spawnPos.x.clamp(200.0, GameConstants.sectorWidth - 200.0);
+    spawnPos.y = spawnPos.y.clamp(200.0, GameConstants.sectorHeight - 200.0);
+
+    game.world.add(CryoPodComponent(position: spawnPos));
+    game.spawnFloatingText(
+      playerPos + Vector2(0, -60),
+      '📡 SOS DISTRESS BEACON: ANCIENT CRYO-POD DETECTED!',
+      color: const Color(0xFF00E5FF),
+      fontSize: 16.0,
+    );
   }
 
   String dangerLevel() {

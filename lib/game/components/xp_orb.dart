@@ -149,21 +149,28 @@ class XpOrbComponent extends PositionComponent with HasGameReference<AsteroidsGa
     position.y = position.y.clamp(radius, GameConstants.sectorHeight - radius).toDouble();
   }
 
+  static final Paint _orbFillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _innerCorePaint = Paint()
+    ..style = PaintingStyle.fill
+    ..color = Colors.white;
+
   @override
   void render(Canvas canvas) {
+    // Fast viewport frustum culling: skip rendering when outside visible screen
+    try {
+      final camPos = game.camera.viewfinder.position;
+      final dx = (position.x - camPos.x).abs();
+      final dy = (position.y - camPos.y).abs();
+      if (dx > 720 || dy > 440) return;
+    } catch (_) {}
+
     canvas.translate(radius, radius);
 
     final pulseSpeed = type == XpOrbType.hyperRed ? 12.0 : 8.0;
     final pulse = 0.85 + 0.15 * math.sin(pulseTimer * pulseSpeed);
     final currentR = radius * pulse;
 
-    final fillPaint = Paint()
-      ..color = primaryColor.withValues(alpha: 0.85)
-      ..style = PaintingStyle.fill;
-
-    final innerCorePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+    _orbFillPaint.color = primaryColor.withValues(alpha: 0.85);
 
     // Diamond / Rhombus shape for gems
     final path = Path()
@@ -173,7 +180,7 @@ class XpOrbComponent extends PositionComponent with HasGameReference<AsteroidsGa
       ..lineTo(-currentR * 0.75, 0)
       ..close();
 
-    canvas.drawPath(path, fillPaint);
+    canvas.drawPath(path, _orbFillPaint);
 
     final corePath = Path()
       ..moveTo(0, -currentR * 0.45)
@@ -181,7 +188,7 @@ class XpOrbComponent extends PositionComponent with HasGameReference<AsteroidsGa
       ..lineTo(0, currentR * 0.45)
       ..lineTo(-currentR * 0.35, 0)
       ..close();
-    canvas.drawPath(corePath, innerCorePaint);
+    canvas.drawPath(corePath, _innerCorePaint);
 
     Glow.strokePath(
       canvas,

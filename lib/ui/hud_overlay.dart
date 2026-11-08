@@ -31,6 +31,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
   int _lastScore = 0;
   double _scorePulse = 0.0;
   double _radarSweepTimer = 0.0;
+  double _hudAccumulator = 0.0;
+  double _lastHp = -1.0;
   Duration _lastElapsed = Duration.zero;
 
   @override
@@ -38,13 +40,33 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     super.initState();
     _lastScore = widget.game.score;
     _displayScore = widget.game.score.toDouble();
+    try {
+      _lastHp = widget.game.player.hp;
+    } catch (_) {}
+
     _ticker = createTicker((elapsed) {
       final dt = ((elapsed - _lastElapsed).inMicroseconds / 1000000.0).clamp(0.0, 0.1);
       _lastElapsed = elapsed;
       _tickScore(dt);
       _radarSweepTimer = (_radarSweepTimer + dt * 2.5) % (2 * math.pi);
-      if (mounted) {
-        setState(() {});
+
+      double currentHp = _lastHp;
+      try {
+        currentHp = widget.game.player.hp;
+      } catch (_) {}
+      final hpChanged = currentHp != _lastHp;
+      _lastHp = currentHp;
+
+      final targetScore = widget.game.score;
+      final scoreChanged = targetScore != _lastScore;
+
+      _hudAccumulator += dt;
+      // Atualiza imediatamente se HP ou Pontuação mudou; caso contrário, sincroniza o HUD a 30 FPS
+      if (hpChanged || scoreChanged || _hudAccumulator >= 0.033) {
+        _hudAccumulator = 0.0;
+        if (mounted) {
+          setState(() {});
+        }
       }
     });
     _ticker.start();
@@ -132,13 +154,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       padding: const EdgeInsets.all(18.0),
       child: Stack(
         children: [
-          // Low Hull Dramatic Red Pulsing Vignette (< 25% HP)
-          if (hpRatio <= 0.25)
+          // Low Hull Dramatic Red Pulsing Vignette (< 25% HP) OR Void Reaper Incursion
+          if (hpRatio <= 0.25 || game.voidReaperSpawned)
             Positioned.fill(
               child: IgnorePointer(
                 child: Builder(
                   builder: (context) {
                     final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 220) + 1) / 2;
+                    final isReaper = game.voidReaperSpawned;
                     return Container(
                       decoration: BoxDecoration(
                         gradient: RadialGradient(
@@ -146,14 +169,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                           radius: 1.1,
                           colors: [
                             Colors.transparent,
-                            Colors.red.withOpacity(0.08 + pulse * 0.16),
-                            Colors.red.withOpacity(0.25 + pulse * 0.28),
+                            (isReaper ? const Color(0xFF4A148C) : Colors.red).withOpacity(0.12 + pulse * 0.18),
+                            (isReaper ? const Color(0xFFB71C1C) : Colors.red).withOpacity(0.35 + pulse * 0.35),
                           ],
-                          stops: const [0.4, 0.8, 1.0],
+                          stops: const [0.35, 0.75, 1.0],
                         ),
                         border: Border.all(
-                          color: Colors.redAccent.withOpacity(0.35 + pulse * 0.45),
-                          width: 3.5,
+                          color: (isReaper ? const Color(0xFFFF1744) : Colors.redAccent).withOpacity(0.45 + pulse * 0.55),
+                          width: 4.0,
                         ),
                       ),
                     );
@@ -265,15 +288,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                         Flexible(
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1744), size: 14),
-                              SizedBox(width: 4),
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF1744), size: 14),
+                              const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  'DREADNOUGHT LEVIATHAN // SECTOR TITAN',
+                                  game.activeBoss!.bossName,
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontFamily: 'Orbitron',
                                     fontSize: 10.0,
                                     fontWeight: FontWeight.bold,
@@ -387,7 +410,9 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                         ? Icons.local_fire_department
                                         : (valkyrie.shipDesign == ValkyrieShipDesign.aegisPrism
                                             ? Icons.shield
-                                            : Icons.all_inclusive),
+                                            : (valkyrie.shipDesign == ValkyrieShipDesign.originPrime
+                                                ? Icons.auto_awesome
+                                                : Icons.all_inclusive)),
                                     color: valkyrie.accentColor,
                                     size: 36,
                                   ),
@@ -587,7 +612,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             ),
           ),
 
-          // Top Right: Pilot Hull Integrity (HP Bar), Shield Gauge & Pause
+          // Top Right: Pilot Hull Integrity (HP Bar), Shield Gauge, FPS & Pause
           Positioned(
             top: 0,
             right: 0,
@@ -597,6 +622,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Sector Mission Countdown Timer
+                    _buildSectorTimerBadge(),
+                    const SizedBox(width: 8),
+
+                    // FPS & Engine Performance Diagnostics
+                    _buildFpsDiagnosticBadge(),
+                    const SizedBox(width: 8),
+
                     // Hull / Life Bar
                     _buildHullHpBar(player, valkyrie),
                     const SizedBox(width: 10),
@@ -665,8 +698,29 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
                 const SizedBox(height: 10),
 
-                // Tactical Mini-Radar & Spatial Navigation
-                _buildTacticalRadar(player, valkyrie),
+                // Tactical Mini-Radar & Spatial Navigation (Tap or Key M to open full Tactical Map)
+                GestureDetector(
+                  onTap: () {
+                    widget.game.openTacticalMap();
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildTacticalRadar(player, valkyrie),
+                      const SizedBox(height: 3),
+                      Text(
+                        '[M] MAPA TÁTICO',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.bold,
+                          color: valkyrie.primaryColor.withOpacity(0.85),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -933,6 +987,13 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             ),
           ),
 
+          // Bottom Left: Always-Visible Interactive Virtual Joystick (Touch, Mouse & Keyboard Feedback)
+          Positioned(
+            bottom: 12,
+            left: 12,
+            child: _buildVirtualJoystick(game, valkyrie),
+          ),
+
           // Bottom Right: Mobile-First Thumb Action Cluster (Dash, Overdrive, Manual Shoot)
           Positioned(
             bottom: 12,
@@ -949,10 +1010,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   },
                   child: Builder(
                     builder: (context) {
-                      final isReady = dashCooldown <= 0;
+                      final isVesper = player.valkyrie?.id == 'vesper';
+                      final isReady = isVesper ? (player.dashCharges > 0) : (dashCooldown <= 0);
                       final progress = isReady
                           ? 1.0
-                          : (1.0 - (dashCooldown / GameConstants.playerDashCooldownSeconds)).clamp(0.0, 1.0);
+                          : (1.0 - (dashCooldown / (isVesper ? 1.8 : GameConstants.playerDashCooldownSeconds))).clamp(0.0, 1.0);
+                      final dashLabel = isVesper
+                          ? (player.dashCharges > 0 ? '${player.dashCharges}x DASH' : '${dashCooldown.toStringAsFixed(1)}s')
+                          : (isReady ? 'DASH' : '${dashCooldown.toStringAsFixed(1)}s');
                       return Container(
                         width: 58,
                         height: 58,
@@ -992,7 +1057,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                   size: 24,
                                 ),
                                 Text(
-                                  isReady ? 'DASH' : '${dashCooldown.toStringAsFixed(1)}s',
+                                  dashLabel,
                                   style: TextStyle(
                                     fontFamily: 'Rajdhani',
                                     fontSize: 9.0,
@@ -1074,48 +1139,70 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
                 const SizedBox(width: 14),
 
-                // 3. Manual Shoot / Focus Burst Button
+                // 3. Aim Lock (Strafe Kiting) + Manual Shoot Burst Button
                 GestureDetector(
                   onTap: () {
+                    setState(() {
+                      widget.game.isAimLocked = !widget.game.isAimLocked;
+                    });
                     player.shoot();
                   },
-                  child: Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF070B14).withOpacity(0.88),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.amberAccent.withOpacity(0.8),
-                        width: 1.8,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.amberAccent.withOpacity(0.25),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.gps_fixed_rounded,
-                          color: Colors.amberAccent,
-                          size: 24,
-                        ),
-                        Text(
-                          'FIRE',
-                          style: TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.6,
-                            color: Colors.amberAccent,
+                  onLongPressStart: (_) {
+                    setState(() {
+                      widget.game.mobileShootPressed = true;
+                    });
+                    player.shoot();
+                  },
+                  onLongPressEnd: (_) {
+                    setState(() {
+                      widget.game.mobileShootPressed = false;
+                    });
+                  },
+                  child: Builder(
+                    builder: (context) {
+                      final isLocked = widget.game.isAimLocked || widget.game.mobileShootPressed;
+                      final activeColor = isLocked ? const Color(0xFFFF1744) : Colors.amberAccent;
+                      return Container(
+                        width: 62,
+                        height: 62,
+                        decoration: BoxDecoration(
+                          color: isLocked
+                              ? const Color(0xFFFF1744).withValues(alpha: 0.24)
+                              : const Color(0xFF070B14).withValues(alpha: 0.88),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: activeColor.withValues(alpha: isLocked ? 0.95 : 0.8),
+                            width: isLocked ? 2.4 : 1.8,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: activeColor.withValues(alpha: isLocked ? 0.55 : 0.25),
+                              blurRadius: isLocked ? 14 : 8,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isLocked ? Icons.lock_rounded : Icons.gps_fixed_rounded,
+                              color: activeColor,
+                              size: 23,
+                            ),
+                            Text(
+                              isLocked ? 'LOCKED' : 'LOCK/FIRE',
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.4,
+                                color: activeColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -1125,7 +1212,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
           // Layer 2: Comms Radio Holographic Dialogue Transmission Box at Sortie Launch
           if (game.showLaunchTransmission)
             Positioned(
-              bottom: game.isMobile ? 120 : 35,
+              bottom: 145,
               left: 20,
               right: 20,
               child: Center(
@@ -1275,6 +1362,270 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVirtualJoystick(AsteroidsGame game, Valkyrie valkyrie) {
+    const double baseSize = 116.0;
+    const double maxRadius = 46.0;
+    const double knobSize = 42.0;
+
+    double knobX = 0.0;
+    double knobY = 0.0;
+    bool isActive = false;
+
+    try {
+      final joy = game.joystick;
+      final scale = maxRadius / joy.backgroundRadius;
+      knobX = (joy.knobPosition.x * scale).clamp(-maxRadius, maxRadius);
+      knobY = (joy.knobPosition.y * scale).clamp(-maxRadius, maxRadius);
+      isActive = joy.isDragging || joy.stickInput.length > 0.12;
+    } catch (_) {}
+
+    void updateFromLocal(Offset localPos) {
+      try {
+        final joy = game.joystick;
+        final center = const Offset(baseSize / 2, baseSize / 2);
+        final delta = localPos - center;
+        final dist = delta.distance;
+        final clamped = dist <= maxRadius ? delta : Offset.fromDirection(delta.direction, maxRadius);
+        final scaleToJoy = joy.backgroundRadius / maxRadius;
+        joy.isDragging = true;
+        joy.knobPosition.setValues(clamped.dx * scaleToJoy, clamped.dy * scaleToJoy);
+        final norm = dist <= 0.001 ? Offset.zero : (clamped / maxRadius);
+        if (norm.distance < 0.12) {
+          joy.stickInput.setZero();
+        } else {
+          joy.stickInput.setValues(norm.dx, norm.dy);
+        }
+        setState(() {});
+      } catch (_) {}
+    }
+
+    void resetStick() {
+      try {
+        final joy = game.joystick;
+        joy.isDragging = false;
+        joy.knobPosition.setZero();
+        joy.stickInput.setZero();
+        setState(() {});
+      } catch (_) {}
+    }
+
+    return GestureDetector(
+      key: const ValueKey('hud_virtual_joystick'),
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (details) => updateFromLocal(details.localPosition),
+      onPanUpdate: (details) => updateFromLocal(details.localPosition),
+      onPanEnd: (_) => resetStick(),
+      onPanCancel: resetStick,
+      child: SizedBox(
+        width: baseSize,
+        height: baseSize,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Outer Tactical Ring
+            Container(
+              width: baseSize,
+              height: baseSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF070B14).withValues(alpha: 0.72),
+                border: Border.all(
+                  color: isActive
+                      ? valkyrie.accentColor.withValues(alpha: 0.85)
+                      : Colors.cyanAccent.withValues(alpha: 0.42),
+                  width: isActive ? 2.2 : 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isActive ? valkyrie.primaryColor : Colors.cyanAccent)
+                        .withValues(alpha: isActive ? 0.32 : 0.12),
+                    blurRadius: isActive ? 14 : 8,
+                  ),
+                ],
+              ),
+            ),
+            // Inner Crosshair Ring
+            Container(
+              width: baseSize * 0.56,
+              height: baseSize * 0.56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  width: 1.0,
+                ),
+              ),
+            ),
+            // Directional chevrons
+            const Positioned(
+              top: 6,
+              child: Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white30, size: 16),
+            ),
+            const Positioned(
+              bottom: 6,
+              child: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white30, size: 16),
+            ),
+            const Positioned(
+              left: 6,
+              child: Icon(Icons.keyboard_arrow_left_rounded, color: Colors.white30, size: 16),
+            ),
+            const Positioned(
+              right: 6,
+              child: Icon(Icons.keyboard_arrow_right_rounded, color: Colors.white30, size: 16),
+            ),
+            // Thumb Stick Knob
+            Transform.translate(
+              offset: Offset(knobX, knobY),
+              child: Container(
+                width: knobSize,
+                height: knobSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.95),
+                      isActive ? valkyrie.accentColor : Colors.cyanAccent,
+                      valkyrie.primaryColor.withValues(alpha: 0.85),
+                    ],
+                  ),
+                  border: Border.all(color: Colors.white, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isActive ? valkyrie.accentColor : Colors.cyanAccent).withValues(alpha: 0.65),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.control_camera_rounded,
+                  size: 18,
+                  color: Color(0xFF050811),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectorTimerBadge() {
+    final remaining = widget.game.timeRemaining.clamp(0.0, 9999.0);
+    final minutes = (remaining / 60).floor().toString().padLeft(2, '0');
+    final seconds = (remaining % 60).floor().toString().padLeft(2, '0');
+    final isUrgent = remaining <= 30.0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isUrgent ? const Color(0xFFFF1744) : widget.game.currentSector.primaryColor.withOpacity(0.7),
+          width: 1.2,
+        ),
+        boxShadow: isUrgent
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFF1744).withOpacity(0.4),
+                  blurRadius: 8,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isUrgent ? Icons.warning_amber_rounded : Icons.timer_outlined,
+            color: isUrgent ? const Color(0xFFFF1744) : widget.game.currentSector.primaryColor,
+            size: 13,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$minutes:$seconds',
+            style: TextStyle(
+              fontFamily: 'Orbitron',
+              fontSize: 11.0,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
+              color: isUrgent ? const Color(0xFFFF5252) : Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFpsDiagnosticBadge() {
+    final fps = widget.game.currentFps.round();
+    final ms = widget.game.currentFrameTimeMs.toStringAsFixed(1);
+    final entityCount = widget.game.world.children.length;
+
+    final fpsColor = fps >= 55
+        ? const Color(0xFF00E676)
+        : (fps >= 35 ? const Color(0xFFFFD600) : const Color(0xFFFF1744));
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          widget.game.showDiagnostics = !widget.game.showDiagnostics;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: fpsColor.withOpacity(0.6),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: fpsColor,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: fpsColor.withOpacity(0.7), blurRadius: 4),
+                ],
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '$fps FPS',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 10.0,
+                fontWeight: FontWeight.bold,
+                color: fpsColor,
+                letterSpacing: 0.5,
+              ),
+            ),
+            if (widget.game.showDiagnostics) ...[
+              const SizedBox(width: 5),
+              Text(
+                '| ${ms}ms | $entityCount ENT',
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white.withOpacity(0.75),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -1608,14 +1959,11 @@ class _RadarScopePainter extends CustomPainter {
 
     // Animated Rotating Radar Sweep Line
     final sweepDir = Offset(math.cos(sweepTimer), math.sin(sweepTimer));
+    final sweepColor = isNearBoundary ? Colors.redAccent : const Color(0xFF00E5FF);
     final sweepPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          (isNearBoundary ? Colors.redAccent : const Color(0xFF00E5FF)).withOpacity(0.8),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: radius))
-      ..strokeWidth = 1.5;
+      ..color = sweepColor.withOpacity(0.85)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
     canvas.drawLine(center, center + sweepDir * (radius * 0.95), sweepPaint);
 
     // Asteroid blips

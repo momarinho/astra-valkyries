@@ -13,6 +13,7 @@ enum AsteroidVariant {
   standard,    // Rocha cinza-azulada que divide em menores
   crystalline, // Prisma de cristal que explode em chuva torrencial de XP
   magma,       // Rocha incandescente que cria poça de plasma térmico ao morrer
+  golden,      // Asteroide dourado lendário (Easter Egg) com stardust e sucata
 }
 
 class AsteroidComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
@@ -24,6 +25,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   late final int numPoints;
   late final List<double> pointsOffsets;
   late final double rotationSpeed;
+  late final Path cachedPath;
 
   late double maxHp;
   late double hp;
@@ -36,6 +38,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
     if (variant == AsteroidVariant.crystalline) return (base * 1.5).toInt();
     if (variant == AsteroidVariant.magma) return (base * 1.3).toInt();
+    if (variant == AsteroidVariant.golden) return base * 5;
     return base;
   }
 
@@ -77,6 +80,22 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     
     rotationSpeed = (-40.0 + random.nextDouble() * 80.0) * math.pi / 180.0;
     angle = random.nextDouble() * 2 * math.pi;
+
+    // Pre-bake the asteroid's outer perimeter path to avoid reallocations on every frame
+    final p = Path();
+    for (var i = 0; i < numPoints; i++) {
+      final pointAngle = (2 * math.pi * i) / numPoints;
+      final r = radius * pointsOffsets[i];
+      final x = r * math.cos(pointAngle);
+      final y = r * math.sin(pointAngle);
+      if (i == 0) {
+        p.moveTo(x, y);
+      } else {
+        p.lineTo(x, y);
+      }
+    }
+    p.close();
+    cachedPath = p;
   }
 
   @override
@@ -170,24 +189,18 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
   @override
   void render(Canvas canvas) {
+    // Fast viewport culling: discard rendering if completely off the screen
+    try {
+      final camPos = (testGame ?? game).camera.viewfinder.position;
+      final dx = (position.x - camPos.x).abs();
+      final dy = (position.y - camPos.y).abs();
+      if (dx > 760 + radius || dy > 460 + radius) return;
+    } catch (_) {}
+
     canvas.translate(radius, radius);
 
     final isFlashing = hitFlashTimer > 0;
-
-    // Build the outer perimeter path
-    final path = Path();
-    for (var i = 0; i < numPoints; i++) {
-      final pointAngle = (2 * math.pi * i) / numPoints;
-      final r = radius * pointsOffsets[i];
-      final x = r * math.cos(pointAngle);
-      final y = r * math.sin(pointAngle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
+    final path = cachedPath;
 
     // Interior shading based on variant
     if (variant == AsteroidVariant.crystalline) {
@@ -238,6 +251,21 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.4,
         intensity: isFlashing ? 1.9 : 1.3,
       );
+    } else if (variant == AsteroidVariant.golden) {
+      // Golden Asteroid: Radiant metallic gold hull with bright solar glow
+      final fillPaint = Paint()
+        ..color = const Color(0xFFFFD700).withValues(alpha: isFlashing ? 0.6 : 0.25)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+
+      final strokeColor = isFlashing ? Colors.white : const Color(0xFFFFD700);
+      Glow.strokePath(
+        canvas,
+        path,
+        strokeColor,
+        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.5,
+        intensity: 2.0,
+      );
     } else {
       // Standard rock
       if (isFlashing) {
@@ -259,6 +287,35 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
   void split() {
     removeFromParent();
+
+    // 0. Golden Asteroid Variant (Easter Egg)
+    if (variant == AsteroidVariant.golden) {
+      game.playSfx('powerup.wav');
+      game.triggerScreenShake(duration: 0.35, intensity: radius * 0.25);
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [const Color(0xFFFFD700), Colors.white, const Color(0xFFFFF176)],
+        count: 36,
+        minSize: 3.0,
+        maxSize: 6.0,
+        minSpeed: 80.0,
+        maxSpeed: 280.0,
+      );
+      game.addScrap(100);
+      game.spawnFloatingText(
+        position + Vector2(0, -25),
+        '🌟 GOLDEN ASTEROID SHATTERED! +100 SCRAP!',
+        color: const Color(0xFFFFD700),
+        fontSize: 16.0,
+      );
+      // Spawns 5 large XP orbs
+      for (var i = 0; i < 5; i++) {
+        final a = (i * 2 * math.pi / 5);
+        final offset = Vector2(math.cos(a), math.sin(a)) * (radius * 0.5);
+        game.world.add(XpOrbComponent(position: position + offset, type: XpOrbType.large));
+      }
+      return;
+    }
 
     // 1. Crystal Variant: Shower of XP and crystal shatter
     if (variant == AsteroidVariant.crystalline) {

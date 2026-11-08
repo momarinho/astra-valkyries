@@ -5,6 +5,7 @@ enum ValkyrieShipDesign {
   solBlaze,     // Lyra: Aerodynamic twin-engine vanguard interceptor (Orange/Crimson)
   aegisPrism,   // Selene: High-tech crystalline prism with shield pylons (Cyan/Silver)
   eclipseFang,  // Vesper: Forward-swept wing stealth heavy fighter (Black/Magenta)
+  originPrime,  // Astraea: Mythical precursor starframe (Gold/White)
 }
 
 class Valkyrie {
@@ -16,6 +17,7 @@ class Valkyrie {
   final String quote;
   final String shipName;
   final ValkyrieShipDesign shipDesign;
+  final bool isSecret;
   
   // Base Pilot Combat Stats
   final double baseHull;
@@ -74,6 +76,7 @@ class Valkyrie {
     required this.hudUltimateAsset,
     required this.hangarFullBodyAsset,
     required this.shipAsset,
+    this.isSecret = false,
   });
 
   static final List<Valkyrie> roster = [
@@ -174,10 +177,50 @@ class Valkyrie {
     ),
   ];
 
+  // Secret 4th Valkyrie (Unlocked via Konami Code / Ancient Cryo-Pod)
+  static final Valkyrie secretValkyrie = Valkyrie(
+    id: 'astraea',
+    name: 'Astraea',
+    callsign: 'Origin Matriarch',
+    title: 'Ancient Precursor Valkyrie',
+    bio: 'The legendary progenitor Valkyrie awakened from millennial stasis. Radiates sovereign celestial energy, channeling ancient hyper-advanced alien tech.',
+    quote: '"The stars have called my name once more. Behold the origin of cosmic power."',
+    shipName: 'AV-00 Origin Prime',
+    shipDesign: ValkyrieShipDesign.originPrime,
+    baseHull: 150.0,
+    baseShield: 120.0,
+    speedMultiplier: 1.30,
+    magnetRadiusMultiplier: 1.8,
+    critChance: 0.35,
+    startingWeaponName: 'Supernova Annihilator',
+    startingWeaponDesc: 'Twin golden beams of concentrated starfire with infinite line penetration.',
+    specialAbilityName: 'Genesis Nova',
+    specialAbilityDesc: 'Releases the primordial light of creation, vaporizing all hostiles.',
+    createStartingWeapon: () {
+      final b = Blaster();
+      b.level = 3;
+      b.evolve();
+      return b;
+    },
+    speedRating: 5,
+    defenseRating: 5,
+    firepowerRating: 5,
+    primaryColor: const Color(0xFFFFD700), // Imperial Gold
+    accentColor: const Color(0xFFFFFFFF),  // Pure Stellar White
+    hudNeutralAsset: 'assets/art/valkyries/lyra/hud_neutral.png',
+    hudDamagedAsset: 'assets/art/valkyries/lyra/hud_damaged.png',
+    hudUltimateAsset: 'assets/art/valkyries/lyra/hud_ultimate.png',
+    hangarFullBodyAsset: 'assets/art/valkyries/lyra/hangar_fullbody.png',
+    shipAsset: 'assets/art/valkyries/lyra/ship_topdown.png',
+    isSecret: true,
+  );
+
+  static List<Valkyrie> get allValkyries => [...roster, secretValkyrie];
+
   static Valkyrie get defaultValkyrie => roster.first;
 
   static Valkyrie findById(String id) {
-    return roster.firstWhere(
+    return allValkyries.firstWhere(
       (v) => v.id == id,
       orElse: () => defaultValkyrie,
     );

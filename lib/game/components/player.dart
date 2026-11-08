@@ -12,7 +12,7 @@ import 'package:asteroids/game/valkyrie.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
 import 'enemy_bullet.dart';
-import 'dreadnought_leviathan.dart';
+import 'sector_boss.dart';
 import 'joystick.dart';
 import 'cosmic_nebula.dart';
 
@@ -51,6 +51,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double muzzleFlashSize = 0.0;
   double _soundCooldownTimer = 0.0;
 
+  // Balanced Dash System: charges and recharge (Vesper has 2 charges)
+  int dashCharges = 1;
+  int get maxDashCharges => (valkyrie?.id == 'vesper') ? 2 : 1;
+  double dashRechargeTimer = 0.0;
+  static const double vesperRechargeCooldown = 1.8;
+
   // Hull Points (HP) & Damage System
   double maxHp = 100.0;
   double hp = 100.0;
@@ -66,6 +72,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
     maxHp = baseHull + bonusHp;
     hp = maxHp;
+    dashCharges = maxDashCharges;
+    dashRechargeTimer = 0.0;
   }
 
   void heal(double amount) {
@@ -196,7 +204,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           break;
       }
       takeHit(dmg);
-    } else if (other is DreadnoughtLeviathanComponent) {
+    } else if (other is SectorBoss) {
       takeHit(45.0);
     }
   }
@@ -252,6 +260,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     velocity += forward * movementAcceleration * directionMultiplier * dt;
   }
 
+  void accelerateInDirection(double dt, Vector2 direction, double power) {
+    if (direction.length <= 0.001) return;
+    velocity += direction.normalized() * movementAcceleration * power * dt;
+  }
+
   void clampSpeed() {
     final effectiveMaxSpeed = movementMaxSpeed * speedModifier;
     if (velocity.length > effectiveMaxSpeed) {
@@ -265,12 +278,101 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void dash() {
+    final vId = valkyrie?.id ?? 'lyra';
+
+    if (vId == 'vesper') {
+      // 🗡️ VESPER: PHANTOM QUICK-SLIP (Dual-charge agile micro-evade)
+      if (dashCharges <= 0) return;
+      dashCharges--;
+      if (dashRechargeTimer <= 0) {
+        dashRechargeTimer = vesperRechargeCooldown;
+      }
+      dashActiveTimer = 0.18;
+      dashDirection = forward.normalized();
+      invulnerableTimer = 0.25;
+      game.playSfx('dash.wav');
+      game.world.add(
+        DashGhost(
+          position: position,
+          initialAngle: angle,
+          radius: radius,
+          ghostColor: const Color(0xFFE040FB),
+        ),
+      );
+      return;
+    }
+
     if (dashCooldownTimer > 0) return;
 
-    dashActiveTimer = GameConstants.playerDashDurationSeconds;
-    dashCooldownTimer = GameConstants.playerDashCooldownSeconds;
+    if (vId == 'selene') {
+      // 🔮 SELENE: QUANTUM PHASE BLINK
+      // Instant spatial blink of 210px forward; phases clean through obstacles
+      dashCooldownTimer = 2.5;
+      invulnerableTimer = 0.35;
+      dashDirection = forward.normalized();
+
+      game.world.add(
+        DashGhost(
+          position: position,
+          initialAngle: angle,
+          radius: radius,
+          ghostColor: const Color(0xFF00E5FF),
+        ),
+      );
+
+      position += dashDirection * 210.0;
+      enforceSectorBounds(0.01);
+
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [const Color(0xFF00E5FF), Colors.white],
+        count: 8,
+        minSize: 1.5,
+        maxSize: 3.0,
+        minSpeed: 30.0,
+        maxSpeed: 80.0,
+      );
+      game.playSfx('dash.wav');
+      return;
+    }
+
+    if (vId == 'astraea') {
+      // 🌟 ASTRAEA: GENESIS PHASE GLIDE
+      dashCooldownTimer = 2.2;
+      invulnerableTimer = 0.40;
+      dashDirection = forward.normalized();
+
+      game.world.add(
+        DashGhost(
+          position: position,
+          initialAngle: angle,
+          radius: radius,
+          ghostColor: const Color(0xFFFFD700),
+        ),
+      );
+
+      position += dashDirection * 220.0;
+      enforceSectorBounds(0.01);
+      game.playSfx('dash.wav');
+      return;
+    }
+
+    // 🔥 LYRA (Default): AFTERBURNER SURGE
+    // Linear high-velocity burst (0.28s), no floor hazards
+    dashActiveTimer = 0.28;
+    dashCooldownTimer = 1.8;
     dashDirection = forward.normalized();
-    invulnerableTimer = math.max(invulnerableTimer, GameConstants.playerDashDurationSeconds);
+    invulnerableTimer = 0.32;
+    game.playSfx('dash.wav');
+
+    game.world.add(
+      DashGhost(
+        position: position,
+        initialAngle: angle,
+        radius: radius,
+        ghostColor: const Color(0xFFFF9100),
+      ),
+    );
   }
 
   void respawn(double x, double y) {
@@ -291,7 +393,20 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     _updateNebulaModifiers();
 
     invulnerableTimer = math.max(0.0, invulnerableTimer - dt);
-    dashCooldownTimer = math.max(0.0, dashCooldownTimer - dt);
+    if (valkyrie?.id == 'vesper') {
+      if (dashCharges < maxDashCharges) {
+        dashRechargeTimer = math.max(0.0, dashRechargeTimer - dt);
+        if (dashRechargeTimer <= 0) {
+          dashCharges++;
+          if (dashCharges < maxDashCharges) {
+            dashRechargeTimer = vesperRechargeCooldown;
+          }
+        }
+      }
+      dashCooldownTimer = (dashCharges > 0) ? 0.0 : dashRechargeTimer;
+    } else {
+      dashCooldownTimer = math.max(0.0, dashCooldownTimer - dt);
+    }
     muzzleFlashTimer = math.max(0.0, muzzleFlashTimer - dt);
     _soundCooldownTimer = math.max(0.0, _soundCooldownTimer - dt);
 
@@ -307,12 +422,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           // Micro-recoil (subtle physical kickback without impeding steering)
           velocity -= forward * (w.recoil * 0.15);
 
-          muzzleFlashTimer = 0.07;
+          muzzleFlashTimer = 0.05;
           muzzleFlashSize = math.max(muzzleFlashSize, w.muzzleFlashSize);
 
           if (_soundCooldownTimer <= 0) {
             game.playSfx('shoot.wav');
-            _soundCooldownTimer = 0.055;
+            _soundCooldownTimer = 0.11;
           }
         }
       }
@@ -323,70 +438,113 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     // Handle active dash
     if (dashActiveTimer > 0) {
       dashActiveTimer = math.max(0.0, dashActiveTimer - dt);
-      velocity = dashDirection * GameConstants.playerDashSpeed;
+      final speed = (valkyrie?.id == 'lyra')
+          ? 520.0
+          : (valkyrie?.id == 'vesper' ? 440.0 : GameConstants.playerDashSpeed);
+      velocity = dashDirection * speed;
       position += velocity * dt;
       enforceSectorBounds(dt);
 
-      // Spawn dash ghost trail
+      final ghostColor = (valkyrie?.id == 'vesper') ? const Color(0xFFE040FB) : const Color(0xFFFF9100);
       game.world.add(
         DashGhost(
           position: position,
           initialAngle: angle,
           radius: radius,
+          ghostColor: ghostColor,
         ),
       );
       return;
     }
 
-    // Input Handling
+    // Input Handling (Virtual Joystick + 360° Directional WASD/Arrows or Classic Tank Rotation)
     GameJoystick? joy;
     try {
       joy = game.joystick;
     } catch (_) {}
     final stick = joy?.stickInput ?? Vector2.zero();
-    if (stick.length > 0.15 && (joy?.isDragging ?? false)) {
-      // Joystick drag steering & thrust
-      final targetAngle = math.atan2(stick.y, stick.x) + math.pi / 2;
-      double diff = targetAngle - angle;
-      while (diff < -math.pi) diff += 2 * math.pi;
-      while (diff > math.pi) diff -= 2 * math.pi;
 
-      final turnAmount = (GameConstants.playerTurnSpeed * math.pi / 180.0) * dt;
-      if (diff.abs() < turnAmount) {
-        angle = targetAngle;
-      } else {
-        angle += turnAmount * diff.sign;
-      }
+    final isLeft = keys.contains(LogicalKeyboardKey.arrowLeft) ||
+        keys.contains(LogicalKeyboardKey.keyA) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowLeft) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyA);
 
-      accelerate(dt, stick.length);
+    final isRight = keys.contains(LogicalKeyboardKey.arrowRight) ||
+        keys.contains(LogicalKeyboardKey.keyD) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowRight) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyD);
+
+    final isUp = keys.contains(LogicalKeyboardKey.arrowUp) ||
+        keys.contains(LogicalKeyboardKey.keyW) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowUp) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyW);
+
+    final isDown = keys.contains(LogicalKeyboardKey.arrowDown) ||
+        keys.contains(LogicalKeyboardKey.keyS) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowDown) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyS);
+
+    final kbDir = Vector2.zero();
+    if (isLeft) kbDir.x -= 1.0;
+    if (isRight) kbDir.x += 1.0;
+    if (isUp) kbDir.y -= 1.0;
+    if (isDown) kbDir.y += 1.0;
+    if (kbDir.length > 1.0) kbDir.normalize();
+
+    final isStrafeLock = game.isAimLocked || game.mobileShootPressed;
+
+    if (stick.length > 0.12 && (joy?.isDragging ?? false)) {
+      // Mobile / Virtual Joystick Hybrid:
+      // 1) Always move/thrust in 360° direction of the joystick thumb
+      accelerateInDirection(dt, stick, stick.length.clamp(0.0, 1.0));
       isThrusting = true;
+
+      // 2) If AIM LOCK (FIRE/LOCK button) is NOT active, smoothly align nose with flight direction.
+      //    If AIM LOCK IS active, keep nose locked on target so the player can fly backward/strafe while shooting!
+      if (!isStrafeLock) {
+        final targetAngle = math.atan2(stick.y, stick.x) + math.pi / 2;
+        double diff = targetAngle - angle;
+        while (diff < -math.pi) diff += 2 * math.pi;
+        while (diff > math.pi) diff -= 2 * math.pi;
+
+        final turnAmount = (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
+        if (diff.abs() < turnAmount) {
+          angle = targetAngle;
+        } else {
+          angle += turnAmount * diff.sign;
+        }
+      }
+    } else if (game.useDirectionalControls) {
+      // Optional 360° Directional Mode on Keyboard (with Strafe Lock support)
+      if (kbDir.length > 0.05) {
+        accelerateInDirection(dt, kbDir, 1.0);
+        isThrusting = true;
+
+        if (!isStrafeLock) {
+          final targetAngle = math.atan2(kbDir.y, kbDir.x) + math.pi / 2;
+          double diff = targetAngle - angle;
+          while (diff < -math.pi) diff += 2 * math.pi;
+          while (diff > math.pi) diff -= 2 * math.pi;
+
+          final turnAmount = (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
+          if (diff.abs() < turnAmount) {
+            angle = targetAngle;
+          } else {
+            angle += turnAmount * diff.sign;
+          }
+        }
+      } else {
+        isThrusting = false;
+      }
     } else {
-      // Standard Keyboard Input Handling (with HardwareKeyboard fallback to eliminate matrix ghosting)
+      // Formula 1 on Keyboard (Default — Nova Drift / Tactical Reverse Kiting):
+      // A/D = Rotate nose smoothly, W = Thrust forward, S = Tactical Reverse (Kiting while shooting forward!)
       double rotateDirection = 0.0;
-      final isLeft = keys.contains(LogicalKeyboardKey.arrowLeft) ||
-          keys.contains(LogicalKeyboardKey.keyA) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowLeft) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyA);
-
-      final isRight = keys.contains(LogicalKeyboardKey.arrowRight) ||
-          keys.contains(LogicalKeyboardKey.keyD) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowRight) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyD);
-
-      if (isLeft) {
-        rotateDirection -= 1.0;
-      }
-      if (isRight) {
-        rotateDirection += 1.0;
-      }
+      if (isLeft) rotateDirection -= 1.0;
+      if (isRight) rotateDirection += 1.0;
       if (rotateDirection != 0.0) {
-        rotate(dt, rotateDirection);
+        rotate(dt, rotateDirection * 1.15);
       }
-
-      final isUp = keys.contains(LogicalKeyboardKey.arrowUp) ||
-          keys.contains(LogicalKeyboardKey.keyW) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowUp) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyW);
 
       if (isUp) {
         accelerate(dt, 1.0);
@@ -395,20 +553,19 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         isThrusting = false;
       }
 
-      final isDown = keys.contains(LogicalKeyboardKey.arrowDown) ||
-          keys.contains(LogicalKeyboardKey.keyS) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowDown) ||
-          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyS);
-
       if (isDown) {
-        accelerate(dt, -1.0);
+        accelerate(dt, -0.92);
       }
     }
 
     final isDash = keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight) ||
+        keys.contains(LogicalKeyboardKey.gameButtonB) ||
+        keys.contains(LogicalKeyboardKey.gameButtonLeft1) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.shiftLeft) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.shiftRight) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonB) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonLeft1) ||
         game.mobileDashPressed;
 
     if (isDash) {
@@ -421,7 +578,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     position += velocity * dt;
     enforceSectorBounds(dt);
 
-    // Disparo multi-tecla: Espaço, Z, X, C, Ctrl, Numpad 0 ou Enter
+    // Disparo multi-tecla: Espaço, Z, X, C, Ctrl, Numpad 0, Enter ou Gamepad A/R1
     // Isso resolve completamente qualquer conflito de ghosting em teclados escolares
     final isShoot = keys.contains(LogicalKeyboardKey.space) ||
         keys.contains(LogicalKeyboardKey.keyZ) ||
@@ -432,6 +589,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         keys.contains(LogicalKeyboardKey.numpad0) ||
         keys.contains(LogicalKeyboardKey.enter) ||
         keys.contains(LogicalKeyboardKey.numpadEnter) ||
+        keys.contains(LogicalKeyboardKey.gameButtonA) ||
+        keys.contains(LogicalKeyboardKey.gameButtonRight1) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.space) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyZ) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyX) ||
@@ -441,6 +600,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.numpad0) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.enter) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.numpadEnter) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonA) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonRight1) ||
         game.mobileShootPressed;
 
     if (isShoot) {
@@ -448,7 +609,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
 
     final isSpecial = keys.contains(LogicalKeyboardKey.keyE) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyE);
+        keys.contains(LogicalKeyboardKey.gameButtonX) ||
+        keys.contains(LogicalKeyboardKey.gameButtonY) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyE) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonX) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonY);
 
     if (isSpecial) {
       game.triggerSpecial();
@@ -546,9 +711,33 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     _renderShip(canvas);
 
-    // Muzzle flash rendering
+    // Muzzle flash rendering: crisp, forward-directed spark that never covers the ship
     if (muzzleFlashTimer > 0) {
-      Glow.orb(canvas, Offset(0, -radius), muzzleFlashSize * 0.7, Colors.yellowAccent, intensity: 1.2);
+      final flashRatio = (muzzleFlashTimer / 0.05).clamp(0.0, 1.0);
+      final flashLen = math.min(9.0, muzzleFlashSize * 0.35);
+      final flashWidth = math.min(4.5, muzzleFlashSize * 0.18);
+
+      final tip = Offset(0, -radius * 1.18);
+
+      // Sharp directional diamond spark
+      final diamond = Path()
+        ..moveTo(tip.dx, tip.dy - flashLen)
+        ..lineTo(tip.dx - flashWidth, tip.dy)
+        ..lineTo(tip.dx, tip.dy + flashLen * 0.4)
+        ..lineTo(tip.dx + flashWidth, tip.dy)
+        ..close();
+
+      final flashPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.95 * flashRatio)
+        ..blendMode = BlendMode.plus
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(diamond, flashPaint);
+
+      final coronaPaint = Paint()
+        ..color = const Color(0xFFFFEB3B).withValues(alpha: 0.40 * flashRatio)
+        ..blendMode = BlendMode.plus
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(tip, flashLen * 0.6, coronaPaint);
     }
   }
 
@@ -653,6 +842,33 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
           // Dark matter reactor ring
           canvas.drawCircle(Offset(0, radius * 0.05), radius * 0.22, accentPaint);
+          return;
+
+        case ValkyrieShipDesign.originPrime:
+          // Astraea: Mythical precursor starframe with sweeping golden wings
+          final path = Path()
+            ..moveTo(0, -radius * 1.25) // Apex
+            ..lineTo(-radius * 0.5, -radius * 0.2)
+            ..lineTo(-radius * 1.1, radius * 0.6) // Swept wing L
+            ..lineTo(-radius * 0.4, radius * 0.5)
+            ..lineTo(-radius * 0.2, radius * 0.95) // Engine L
+            ..lineTo(0, radius * 0.65)
+            ..lineTo(radius * 0.2, radius * 0.95) // Engine R
+            ..lineTo(radius * 0.4, radius * 0.5)
+            ..lineTo(radius * 1.1, radius * 0.6) // Swept wing R
+            ..lineTo(radius * 0.5, -radius * 0.2)
+            ..close();
+          canvas.drawPath(path, fillPaint);
+          Glow.heroStrokePath(canvas, path, const Color(0xFFFFD700), width: GameConstants.lineWidth + 0.5);
+
+          // Celestial Diamond Core
+          final core = Path()
+            ..moveTo(0, -radius * 0.5)
+            ..lineTo(-radius * 0.22, 0)
+            ..lineTo(0, radius * 0.3)
+            ..lineTo(radius * 0.22, 0)
+            ..close();
+          canvas.drawPath(core, Paint()..color = Colors.white..style = PaintingStyle.fill);
           return;
       }
     }
@@ -766,14 +982,16 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 }
 
 class DashGhost extends PositionComponent {
-  final double maxLifespan = 0.15;
-  double lifespan = 0.15;
+  final double maxLifespan = 0.20;
+  double lifespan = 0.20;
   final double radius;
+  final Color ghostColor;
 
   DashGhost({
     required Vector2 position,
     required double initialAngle,
     required this.radius,
+    this.ghostColor = Colors.white,
   }) {
     this.position = position.clone();
     angle = initialAngle;
@@ -792,15 +1010,15 @@ class DashGhost extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final alpha = (lifespan / maxLifespan * 80).clamp(0.0, 255.0).toInt();
+    final alpha = (lifespan / maxLifespan * 110).clamp(0.0, 255.0).toInt();
     if (alpha <= 0) return;
 
     canvas.translate(radius, radius);
 
     final paint = Paint()
-      ..color = Color.fromARGB(alpha, 255, 255, 255)
+      ..color = ghostColor.withAlpha(alpha)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.4;
 
     final path = Path()
       ..moveTo(0, -radius)

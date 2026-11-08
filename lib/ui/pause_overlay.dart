@@ -15,6 +15,7 @@ class PauseOverlay extends StatefulWidget {
 class _PauseOverlayState extends State<PauseOverlay> {
   final FocusNode _focusNode = FocusNode();
   int _selectedButtonIndex = 0; // 0 = Resume Sortie, 1 = Return to Hangar
+  int _activeTab = 0; // 0 = Mission Status, 1 = Cosmic Grimoire
 
   @override
   void initState() {
@@ -42,7 +43,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
       if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
           event.logicalKey == LogicalKeyboardKey.keyS) {
         setState(() {
-          _selectedButtonIndex = 1;
+          _selectedButtonIndex = (_selectedButtonIndex + 1) % 3;
         });
         widget.game.playSfx('menu_select.wav');
         return KeyEventResult.handled;
@@ -50,7 +51,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
       if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
           event.logicalKey == LogicalKeyboardKey.keyW) {
         setState(() {
-          _selectedButtonIndex = 0;
+          _selectedButtonIndex = (_selectedButtonIndex - 1 + 3) % 3;
         });
         widget.game.playSfx('menu_select.wav');
         return KeyEventResult.handled;
@@ -60,9 +61,12 @@ class _PauseOverlayState extends State<PauseOverlay> {
           event.logicalKey == LogicalKeyboardKey.space) {
         if (_selectedButtonIndex == 0) {
           widget.game.resumeGame();
-        } else {
+        } else if (_selectedButtonIndex == 1) {
           widget.game.resumeGame();
           widget.game.changeState(GameState.valkyrieSelection);
+        } else {
+          widget.game.resumeGame();
+          widget.game.changeState(GameState.menu);
         }
         return KeyEventResult.handled;
       }
@@ -136,8 +140,84 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
 
+                      // Tab Toggle: Mission Status vs Cosmic Grimoire
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => _activeTab = 0);
+                                game.playSfx('menu_select.wav');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: _activeTab == 0
+                                      ? valkyrie.primaryColor.withValues(alpha: 0.22)
+                                      : Colors.white.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _activeTab == 0 ? valkyrie.primaryColor : Colors.white12,
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'STATUS DA MISSÃO',
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => _activeTab = 1);
+                                game.playSfx('menu_select.wav');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: _activeTab == 1
+                                      ? const Color(0xFFFFD700).withValues(alpha: 0.22)
+                                      : Colors.white.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _activeTab == 1 ? const Color(0xFFFFD700) : Colors.white12,
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    '✨ GRIMÓRIO CÓSMICO',
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFFFD700),
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      if (_activeTab == 1)
+                        _buildCosmicGrimoire(game)
+                      else
                       // Round Summary Box
                       Container(
                         padding: const EdgeInsets.all(16.0),
@@ -361,7 +441,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                       const SizedBox(height: 12),
 
-                      // Action Button 2: Abort Sortie (Return to Hangar)
+                      // Action Button 2: Abort Sortie (Return to Hangar / Workshop)
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -384,7 +464,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                             game.resumeGame();
                             game.changeState(GameState.valkyrieSelection);
                           },
-                          icon: const Icon(Icons.home, size: 18),
+                          icon: const Icon(Icons.rocket_launch_rounded, size: 18),
                           label: Text(
                             _selectedButtonIndex == 1 ? '► RETURN TO HANGAR' : 'RETURN TO HANGAR',
                             style: TextStyle(
@@ -408,6 +488,48 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 10),
+
+                      // Action Button 3: Return to Main Title Menu
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _selectedButtonIndex == 2 ? const Color(0xFF00E5FF) : Colors.transparent,
+                            width: 2.0,
+                          ),
+                        ),
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            game.resumeGame();
+                            game.changeState(GameState.menu);
+                          },
+                          icon: const Icon(Icons.home_rounded, size: 18),
+                          label: Text(
+                            _selectedButtonIndex == 2 ? '► MENU PRINCIPAL' : 'MENU PRINCIPAL',
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
+                              color: _selectedButtonIndex == 2 ? const Color(0xFF00E5FF) : Colors.white60,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white60,
+                            backgroundColor: _selectedButtonIndex == 2 ? Colors.white10 : Colors.transparent,
+                            side: BorderSide(
+                              color: _selectedButtonIndex == 2 ? const Color(0xFF00E5FF) : Colors.white12,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -415,6 +537,143 @@ class _PauseOverlayState extends State<PauseOverlay> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCosmicGrimoire(AsteroidsGame game) {
+    const recipes = [
+      (
+        weaponId: 'blaster',
+        weaponName: 'Twin Pulse Blaster (MK 3)',
+        passiveId: 'passive_overdrive',
+        passiveName: 'Overdrive Reactor',
+        evolvedName: 'Supernova Annihilator',
+        desc: 'Feixes triplos de plasma solar que incineram frotas inteiras.',
+      ),
+      (
+        weaponId: 'spread_shot',
+        weaponName: 'Spread Cannon (MK 3)',
+        passiveId: 'passive_shield_recharge',
+        passiveName: 'Nano-Repair Matrix',
+        evolvedName: 'Hyperion Flak Storm',
+        desc: 'Tempestade de 9 fragmentos perfurantes de alta cadência.',
+      ),
+      (
+        weaponId: 'rapid_fire',
+        weaponName: 'Tachyon Gattling (MK 3)',
+        passiveId: 'passive_fire_rate',
+        passiveName: 'Chrono Accelerator',
+        evolvedName: 'Absolute Zero Tachyon Beam',
+        desc: 'Torrente contínua de táquions que atravessa múltiplos alvos.',
+      ),
+      (
+        weaponId: 'bomb_launcher',
+        weaponName: 'Nova Launcher (MK 3)',
+        passiveId: 'passive_magnet',
+        passiveName: 'Graviton Attractor',
+        evolvedName: 'Singularity Rift Torpedo',
+        desc: 'Torpedo quântico que gera fendas gravitacionais de matéria escura.',
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'RECEITAS DE SUPERAÇÃO // EVOLUÇÕES DE ARSENAL',
+            style: TextStyle(
+              fontFamily: 'Orbitron',
+              fontSize: 10.5,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFFFD700),
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...recipes.map((r) {
+            final weaponMatch = game.player.activeWeapons.where((w) => w.id == r.weaponId).toList();
+            final hasWeapon = weaponMatch.isNotEmpty;
+            final isMaxWeapon = hasWeapon && weaponMatch.first.level >= weaponMatch.first.maxLevel;
+            final isEvolved = hasWeapon && weaponMatch.first.isEvolved;
+            final hasPassive = game.activePassives.contains(r.passiveId);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isEvolved
+                    ? const Color(0xFFFFD700).withValues(alpha: 0.14)
+                    : Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isEvolved
+                      ? const Color(0xFFFFD700)
+                      : (isMaxWeapon && hasPassive ? const Color(0xFF00E676) : Colors.white12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '★ ${r.evolvedName.toUpperCase()}',
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: isEvolved ? const Color(0xFFFFD700) : Colors.white,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        isEvolved
+                            ? 'EVOLUÍDA!'
+                            : (isMaxWeapon && hasPassive ? 'PRONTA!' : 'BLOQUEADA'),
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          color: isEvolved
+                              ? const Color(0xFFFFD700)
+                              : (isMaxWeapon && hasPassive ? const Color(0xFF00E676) : Colors.white38),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${hasWeapon ? "✅" : "⬜"} ${r.weaponName}  +  ${hasPassive ? "✅" : "⬜"} ${r.passiveName}',
+                    style: const TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.cyanAccent,
+                    ),
+                  ),
+                  Text(
+                    r.desc,
+                    style: const TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 10.5,
+                      color: Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

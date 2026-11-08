@@ -85,6 +85,7 @@ class SpaceStationComponent extends PositionComponent with HasGameReference<Aste
       try {
         game.addScore(1500);
         game.addRunCredits(200);
+        game.chargeBossBeacon('ESTAÇÃO DE PESQUISA');
         game.playSfx('powerup.wav');
         game.triggerScreenShake(duration: 0.45, intensity: 8.0);
 
@@ -117,6 +118,13 @@ class SpaceStationComponent extends PositionComponent with HasGameReference<Aste
 
   @override
   void render(Canvas canvas) {
+    try {
+      final camPos = game.camera.viewfinder.position;
+      final dx = (position.x - camPos.x).abs();
+      final dy = (position.y - camPos.y).abs();
+      if (dx > 750 + transmissionRadius || dy > 450 + transmissionRadius) return;
+    } catch (_) {}
+
     super.render(canvas);
 
     final statusColor = isSecured

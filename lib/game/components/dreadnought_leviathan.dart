@@ -11,12 +11,24 @@ import 'enemy_bullet.dart';
 import 'chest.dart';
 import 'drop.dart';
 import 'xp_orb.dart';
+import 'sector_boss.dart';
+import 'hyperspace_gate.dart';
 
 class DreadnoughtLeviathanComponent extends PositionComponent
-    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks
+    implements SectorBoss {
+  @override
   final double radius = 72.0;
+
+  @override
   final double maxHp = 3500.0;
+
+  @override
   late double hp;
+
+  @override
+  String get bossName => 'DREADNOUGHT LEVIATHAN // SECTOR TITAN';
+
   double hitFlashTimer = 0.0;
 
   double shootTimer = 0.0;
@@ -82,7 +94,9 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       }
 
       if (deathTimer >= 3.5) {
-        game.completeMission(survived: true);
+        if (!game.isBossRushMode) {
+          game.completeMission(survived: true);
+        }
         removeFromParent();
       }
       return;
@@ -292,6 +306,15 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       );
     }
     game.affinityManager.getAffinity(game.selectedValkyrie.id).addXp(150);
+    game.hyperModeUnlocked = true;
+    game.saveHyperModeState();
+
+    if (game.isBossRushMode) {
+      game.onBossRushBossDefeated(position.clone());
+    } else {
+      // Abre Portal de Hiperespaço para o próximo setor!
+      game.world.add(HyperspaceGateComponent(position: position.clone()));
+    }
 
     game.spawnFloatingText(
       position + Vector2(0, -60),
@@ -313,20 +336,18 @@ class DreadnoughtLeviathanComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    // 1. Draw Telegraphed Heavy Railgun Laser
+    canvas.save();
+    canvas.translate(radius, radius);
+
+    // 1. Draw Telegraphed Heavy Railgun Laser (along forward nose axis)
     if (isTelegraphingBeam) {
       final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
       final laserPaint = Paint()
         ..color = const Color(0xFFFF1744).withValues(alpha: 0.55 + pulse * 0.45)
         ..strokeWidth = 3.5 + pulse * 2.0
         ..style = PaintingStyle.stroke;
-      final endOffset = Offset(lockedBeamDir.x * 900.0, lockedBeamDir.y * 900.0);
-      canvas.drawLine(Offset(radius, radius), Offset(radius + endOffset.dx, radius + endOffset.dy), laserPaint);
+      canvas.drawLine(Offset(0, -radius * 1.3), const Offset(0, -900.0), laserPaint);
     }
-
-    canvas.save();
-    canvas.translate(radius, radius);
-    canvas.rotate(angle);
 
     final isFlashing = hitFlashTimer > 0;
     final hpRatio = (hp / maxHp).clamp(0.0, 1.0);

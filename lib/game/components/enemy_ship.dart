@@ -147,7 +147,12 @@ class EnemyShipComponent extends PositionComponent
       case RaiderState.stalking:
         // Orbit and drift near the player at ~350px
         final targetDir = toPlayer.normalized();
-        angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+        final desiredAngle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+        double diff = (desiredAngle - angle) % (math.pi * 2);
+        if (diff > math.pi) diff -= math.pi * 2;
+        if (diff < -math.pi) diff += math.pi * 2;
+        angle += diff.clamp(-7.0 * dt, 7.0 * dt);
+
         if (dist > 380) {
           velocity = targetDir * baseSpeed;
         } else if (dist < 260) {
@@ -162,6 +167,7 @@ class EnemyShipComponent extends PositionComponent
           raiderState = RaiderState.telegraphing;
           raiderTimer = 0.8; // 0.8s telegraphed laser warning
           lockedChargeDirection = targetDir;
+          angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
           velocity = Vector2.zero();
         }
         break;
@@ -354,6 +360,7 @@ class EnemyShipComponent extends PositionComponent
 
     // Vampire Survivors formula: Drop Stardust XP / Chest
     if (isElite) {
+      game.chargeBossBeacon('SUB-CHEFE ABATIDO');
       // ⚠️ GUARANTEED COSMIC CHEST FROM ELITE COMMANDER!
       game.world.add(
         ChestComponent(
@@ -436,7 +443,10 @@ class EnemyShipComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    // 1. Draw Telegraphed Red Aiming Laser for Raider
+    canvas.save();
+    canvas.translate(radius, radius);
+
+    // 1. Draw Telegraphed Red Aiming Laser for Raider (straight out of ship's nose)
     if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {
       final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 50.0) + 1) / 2;
       final laserPaint = Paint()
@@ -444,14 +454,9 @@ class EnemyShipComponent extends PositionComponent
         ..strokeWidth = 1.8 + pulse * 1.2
         ..style = PaintingStyle.stroke;
 
-      // Laser points along lockedChargeDirection from ship center
-      final endOffset = Offset(lockedChargeDirection.x * 650.0, lockedChargeDirection.y * 650.0);
-      canvas.drawLine(Offset(radius, radius), Offset(radius + endOffset.dx, radius + endOffset.dy), laserPaint);
+      // In local coordinates, ship's nose is (0, -radius), facing forward (0, -1)
+      canvas.drawLine(Offset(0, -radius), const Offset(0, -650.0), laserPaint);
     }
-
-    canvas.save();
-    canvas.translate(radius, radius);
-    canvas.rotate(angle);
 
     final isFlashing = hitFlashTimer > 0;
     final flashColor = Colors.white;
@@ -473,9 +478,13 @@ class EnemyShipComponent extends PositionComponent
 
     canvas.restore();
 
-    // 2. Floating Health Bar for Elite Commander (drawn unrotated above the ship)
+    // 2. Floating Health Bar for Elite Commander (counter-rotated so it stays horizontal)
     if (type == EnemyType.eliteCommander) {
+      canvas.save();
+      canvas.translate(radius, radius);
+      canvas.rotate(-angle);
       _renderHealthBar(canvas);
+      canvas.restore();
     }
   }
 
@@ -589,8 +598,8 @@ class EnemyShipComponent extends PositionComponent
   void _renderHealthBar(Canvas canvas) {
     const barWidth = 60.0;
     const barHeight = 6.0;
-    const barY = -12.0;
-    final barX = radius - barWidth / 2;
+    final barY = -radius - 14.0;
+    const barX = -barWidth / 2;
 
     // Background
     final bgPaint = Paint()

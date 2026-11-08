@@ -28,36 +28,9 @@ class GameJoystick extends PositionComponent with HasGameReference<AsteroidsGame
 
   @override
   void render(Canvas canvas) {
-    if (game.state != GameState.playing) return;
-    
-    super.render(canvas);
-    
-    // Translate canvas to the center of the joystick for easy drawing
-    canvas.translate(backgroundRadius, backgroundRadius);
-
-    // Draw background outer ring (semi-transparent cyan outline)
-    final bgPaint = Paint()
-      ..color = Colors.cyan.withOpacity(0.12)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset.zero, backgroundRadius, bgPaint);
-
-    final borderPaint = Paint()
-      ..color = Colors.cyan.withOpacity(0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    canvas.drawCircle(Offset.zero, backgroundRadius, borderPaint);
-
-    // Draw knob (glowing cyan circle)
-    final knobPaint = Paint()
-      ..color = Colors.cyanAccent.withOpacity(0.8)
-      ..style = PaintingStyle.fill;
-    
-    // Draw subtle shadow for the knob
-    final shadowPaint = Paint()
-      ..color = Colors.cyan.withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8.0);
-    canvas.drawCircle(Offset(knobPosition.x, knobPosition.y), knobRadius, shadowPaint);
-    canvas.drawCircle(Offset(knobPosition.x, knobPosition.y), knobRadius, knobPaint);
+    // Visual rendering and touch/drag interaction are handled by the
+    // always-visible Virtual Joystick widget in HudOverlay so it is never
+    // occluded by the fixed-resolution camera viewport.
   }
 
   @override
@@ -72,33 +45,47 @@ class GameJoystick extends PositionComponent with HasGameReference<AsteroidsGame
     }
 
     if (isDragging) {
-      // Input is determined by the drag
-      stickInput = knobPosition / backgroundRadius;
+      // Input is determined by the drag with 0.12 radial deadzone
+      final raw = knobPosition / backgroundRadius;
+      if (raw.length < 0.12) {
+        stickInput.setZero();
+      } else {
+        stickInput = raw;
+      }
     } else {
-      // On PC, visually reflect keyboard presses!
+      // Visually reflect keyboard presses on the HUD Virtual Joystick
       final keys = game.keysPressed;
       final targetKnob = Vector2.zero();
 
-      if (keys.contains(LogicalKeyboardKey.arrowLeft) || keys.contains(LogicalKeyboardKey.keyA)) {
-        targetKnob.x -= 1.0;
-      }
-      if (keys.contains(LogicalKeyboardKey.arrowRight) || keys.contains(LogicalKeyboardKey.keyD)) {
-        targetKnob.x += 1.0;
-      }
-      if (keys.contains(LogicalKeyboardKey.arrowUp) || keys.contains(LogicalKeyboardKey.keyW)) {
-        targetKnob.y -= 1.0;
-      }
-      if (keys.contains(LogicalKeyboardKey.arrowDown) || keys.contains(LogicalKeyboardKey.keyS)) {
-        targetKnob.y += 1.0;
-      }
+      final isLeft = keys.contains(LogicalKeyboardKey.arrowLeft) ||
+          keys.contains(LogicalKeyboardKey.keyA) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowLeft) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyA);
+      final isRight = keys.contains(LogicalKeyboardKey.arrowRight) ||
+          keys.contains(LogicalKeyboardKey.keyD) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowRight) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyD);
+      final isUp = keys.contains(LogicalKeyboardKey.arrowUp) ||
+          keys.contains(LogicalKeyboardKey.keyW) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowUp) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyW);
+      final isDown = keys.contains(LogicalKeyboardKey.arrowDown) ||
+          keys.contains(LogicalKeyboardKey.keyS) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowDown) ||
+          HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyS);
+
+      if (isLeft) targetKnob.x -= 1.0;
+      if (isRight) targetKnob.x += 1.0;
+      if (isUp) targetKnob.y -= 1.0;
+      if (isDown) targetKnob.y += 1.0;
 
       if (targetKnob.length > 0) {
         targetKnob.normalize();
-        targetKnob.scale(backgroundRadius * 0.7);
+        targetKnob.scale(backgroundRadius * 0.78);
       }
 
       // Smoothly slide the knob towards target
-      knobPosition.lerp(targetKnob, 15 * dt);
+      knobPosition.lerp(targetKnob, (18 * dt).clamp(0.0, 1.0));
       stickInput = knobPosition / backgroundRadius;
     }
   }

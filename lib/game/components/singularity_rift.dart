@@ -5,7 +5,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
-import 'dreadnought_leviathan.dart';
+import 'sector_boss.dart';
 
 class SingularityRiftComponent extends PositionComponent with HasGameReference<AsteroidsGame> {
   final double pullRadius;
@@ -106,8 +106,8 @@ class SingularityRiftComponent extends PositionComponent with HasGameReference<A
     } catch (_) {}
 
     try {
-      final bosses = game.world.children.whereType<DreadnoughtLeviathanComponent>();
-      for (final b in List<DreadnoughtLeviathanComponent>.from(bosses)) {
+      final bosses = game.world.children.whereType<SectorBoss>();
+      for (final b in List<SectorBoss>.from(bosses)) {
         if (position.distanceTo(b.position) <= pullRadius * 0.75) {
           b.takeDamage(tickDmg, b.position);
         }
@@ -141,8 +141,8 @@ class SingularityRiftComponent extends PositionComponent with HasGameReference<A
     } catch (_) {}
 
     try {
-      final bosses = game.world.children.whereType<DreadnoughtLeviathanComponent>();
-      for (final b in List<DreadnoughtLeviathanComponent>.from(bosses)) {
+      final bosses = game.world.children.whereType<SectorBoss>();
+      for (final b in List<SectorBoss>.from(bosses)) {
         if (position.distanceTo(b.position) <= pullRadius) {
           b.takeDamage(damage * 0.75, b.position);
         }

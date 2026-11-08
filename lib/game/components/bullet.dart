@@ -8,7 +8,7 @@ import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
 import 'enemy_ship.dart';
-import 'dreadnought_leviathan.dart';
+import 'sector_boss.dart';
 
 class BulletComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius;
@@ -154,7 +154,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
       } else {
         removeFromParent();
       }
-    } else if (other is DreadnoughtLeviathanComponent) {
+    } else if (other is SectorBoss) {
       double dealtDamage = damage;
       bool isCrit = false;
       try {

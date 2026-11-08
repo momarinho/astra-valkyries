@@ -128,36 +128,43 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
   }
 
   ({Color a, Color b}) _paletteAt(double t) {
-    for (var i = 0; i < _paletteStops.length - 1; i++) {
-      final s0 = _paletteStops[i];
-      final s1 = _paletteStops[i + 1];
+    final stops = game.currentSector.paletteStops;
+    for (var i = 0; i < stops.length - 1; i++) {
+      final s0 = stops[i];
+      final s1 = stops[i + 1];
       if (t <= s1.t) {
         final span = s1.t - s0.t;
         final k = span <= 0 ? 1.0 : ((t - s0.t) / span).clamp(0.0, 1.0);
         return (a: Color.lerp(s0.a, s1.a, k)!, b: Color.lerp(s0.b, s1.b, k)!);
       }
     }
-    final last = _paletteStops.last;
+    final last = stops.last;
     return (a: last.a, b: last.b);
   }
 
+  static final Shader _baseBgShader = const LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF060A1A), Color(0xFF010208)],
+  ).createShader(Rect.fromLTWH(0, 0, GameConstants.screenWidth, GameConstants.screenHeight));
+  static final Paint _baseBgPaint = Paint()..shader = _baseBgShader;
+
+  final Paint _blobPaint = Paint()..blendMode = BlendMode.plus;
+
   void _drawBlob(Canvas canvas, Offset center, double radius, Color color, double alpha) {
+    if (alpha <= 0.01) return;
+    final a = alpha.clamp(0.0, 1.0);
     final shader = RadialGradient(
       colors: [
-        color.withValues(alpha: alpha.clamp(0.0, 1.0)),
-        color.withValues(alpha: alpha.clamp(0.0, 1.0) * 0.35),
+        color.withValues(alpha: a),
+        color.withValues(alpha: a * 0.35),
         color.withValues(alpha: 0.0),
       ],
       stops: const [0.0, 0.45, 1.0],
     ).createShader(Rect.fromCircle(center: center, radius: radius));
 
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..shader = shader
-        ..blendMode = BlendMode.plus,
-    );
+    _blobPaint.shader = shader;
+    canvas.drawCircle(center, radius, _blobPaint);
   }
 
   @override
@@ -177,16 +184,8 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
     canvas.save();
     canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
 
-    // 1. Gradiente base: azul-marinho quase preto → preto
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, width, height),
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF060A1A), Color(0xFF010208)],
-        ).createShader(Rect.fromLTWH(0, 0, width, height)),
-    );
+    // 1. Gradiente base: azul-marinho quase preto → preto (shader pré-compilado em cache)
+    canvas.drawRect(Rect.fromLTWH(0, 0, width, height), _baseBgPaint);
 
     // 2. Nebulosa em 3 manchas suaves que respiram devagar
     final palette = _paletteAt(_shownElapsed);

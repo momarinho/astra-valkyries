@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game/asteroids_game.dart';
 import 'ui/valkyrie_selection_overlay.dart';
-import 'ui/menu_overlay.dart';
+import 'ui/title_screen_overlay.dart';
 import 'ui/settings_overlay.dart';
 import 'ui/hud_overlay.dart';
 import 'ui/shop_overlay.dart';
@@ -14,6 +14,7 @@ import 'ui/weapon_selection_overlay.dart';
 import 'ui/pause_overlay.dart';
 import 'ui/level_up_overlay.dart';
 import 'ui/chest_overlay.dart';
+import 'ui/tactical_map_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,7 +77,7 @@ class _GameScreenState extends State<GameScreen> {
         autofocus: true,
         overlayBuilderMap: {
           'valkyrieSelection': (context, game) => ValkyrieSelectionOverlay(game: game),
-          'menu': (context, game) => MenuOverlay(game: game),
+          'menu': (context, game) => TitleScreenOverlay(game: game),
           'settings': (context, game) => SettingsOverlay(game: game),
           'hud': (context, game) => HudOverlay(game: game),
           'shop': (context, game) => ShopOverlay(game: game),
@@ -87,8 +88,9 @@ class _GameScreenState extends State<GameScreen> {
           'pause': (context, game) => PauseOverlay(game: game),
           'levelUp': (context, game) => LevelUpOverlay(game: game),
           'chest': (context, game) => ChestOverlay(game: game),
+          'tacticalMap': (context, game) => TacticalMapOverlay(game: game),
         },
-        initialActiveOverlays: const ['valkyrieSelection'],
+        initialActiveOverlays: const ['menu'],
       ),
     );
   }

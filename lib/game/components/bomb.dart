@@ -9,7 +9,8 @@ import 'asteroid.dart';
 import 'cargo_wreck.dart';
 import 'enemy_ship.dart';
 import 'singularity_rift.dart';
-import 'dreadnought_leviathan.dart';
+import 'sector_boss.dart';
+import 'derelict_turret.dart';
 
 class BombComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final Vector2 velocity;
@@ -89,7 +90,7 @@ class BombComponent extends PositionComponent with HasGameReference<AsteroidsGam
     super.onCollisionStart(intersectionPoints, other);
     if (_hasExploded) return;
 
-    if (other is AsteroidComponent || other is CargoWreckComponent || other is EnemyShipComponent || other is DreadnoughtLeviathanComponent) {
+    if (other is AsteroidComponent || other is CargoWreckComponent || other is EnemyShipComponent || other is SectorBoss) {
       explode();
     }
   }
@@ -176,8 +177,16 @@ class BombExplosionComponent extends PositionComponent with HasGameReference<Ast
       }
     }
 
-    final bosses = game.world.children.whereType<DreadnoughtLeviathanComponent>();
-    for (final boss in List<DreadnoughtLeviathanComponent>.from(bosses)) {
+    final turrets = game.world.children.whereType<DerelictTurretComponent>();
+    for (final turret in List<DerelictTurretComponent>.from(turrets)) {
+      final distance = position.distanceTo(turret.position);
+      if (distance <= maxRadius + turret.radius) {
+        turret.takeDamage(damage, turret.position);
+      }
+    }
+
+    final bosses = game.world.children.whereType<SectorBoss>();
+    for (final boss in List<SectorBoss>.from(bosses)) {
       final distance = position.distanceTo(boss.position);
       if (distance <= maxRadius + boss.radius) {
         boss.takeDamage(damage, boss.position);

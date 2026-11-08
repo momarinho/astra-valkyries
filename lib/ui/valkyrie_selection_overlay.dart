@@ -5,6 +5,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'package:asteroids/game/meta_progression.dart';
 import 'package:asteroids/game/affinity_system.dart';
+import 'package:asteroids/game/sector.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -18,9 +19,25 @@ class ValkyrieSelectionOverlay extends StatefulWidget {
 class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   int _selectedTab = 0; // 0 = Sortie / Hangar, 1 = Oficina / Workshop, 2 = Galeria / Memórias
   int _selectedIndex = 0;
+  int _selectedSectorIndex = 0;
+  bool _unlockedSecretValkyrie = false;
+  final List<LogicalKeyboardKey> _keySequence = [];
   late final FocusNode _focusNode;
 
-  final List<Valkyrie> _valkyries = Valkyrie.roster;
+  List<Valkyrie> get _valkyries => _unlockedSecretValkyrie ? Valkyrie.allValkyries : Valkyrie.roster;
+
+  static const List<LogicalKeyboardKey> _konamiSequence = [
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.keyB,
+    LogicalKeyboardKey.keyA,
+  ];
   String? _currentDialogueText;
   String _selectedGalleryFilter = 'all'; // 'all', 'lyra', 'selene', 'vesper'
   SecretMemory? _openedMemory;
@@ -29,6 +46,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   @override
   void initState() {
     super.initState();
+    _selectedTab = widget.game.initialHangarTab.clamp(0, 2);
     _focusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -43,6 +61,33 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
+
+    // Easter Egg: Konami Code sequence detection
+    _keySequence.add(event.logicalKey);
+    if (_keySequence.length > _konamiSequence.length) {
+      _keySequence.removeAt(0);
+    }
+    if (_keySequence.length == _konamiSequence.length) {
+      bool match = true;
+      for (var i = 0; i < _konamiSequence.length; i++) {
+        if (_keySequence[i] != _konamiSequence[i]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) {
+        setState(() {
+          _unlockedSecretValkyrie = true;
+          _selectedIndex = _valkyries.indexWhere((v) => v.id == 'astraea');
+          if (_selectedIndex < 0) _selectedIndex = 0;
+          _currentDialogueText = '★ PROTOCOLO ANCESTRAL DESBLOQUEADO: ASTRAEA ATIVADA! (+9.999 SUCATA) ★';
+        });
+        widget.game.addScrap(9999);
+        widget.game.playSfx('powerup.wav');
+        _keySequence.clear();
+        return;
+      }
+    }
 
     if (_openedMemory != null) {
       if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -94,6 +139,16 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           _currentDialogueText = null;
         });
         widget.game.playSfx('menu_select.wav');
+      } else if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
+        setState(() {
+          _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectors.length) % Sector.allSectors.length;
+        });
+        widget.game.playSfx('menu_select.wav');
+      } else if (event.logicalKey == LogicalKeyboardKey.bracketRight) {
+        setState(() {
+          _selectedSectorIndex = (_selectedSectorIndex + 1) % Sector.allSectors.length;
+        });
+        widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.enter ||
           event.logicalKey == LogicalKeyboardKey.space) {
         _deployValkyrie(_valkyries[_selectedIndex]);
@@ -107,6 +162,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
   void _deployValkyrie(Valkyrie valkyrie) {
     widget.game.selectedValkyrie = valkyrie;
+    widget.game.currentSector = Sector.allSectors[_selectedSectorIndex];
     widget.game.playSfx('powerup.wav');
     widget.game.startGame();
   }
@@ -287,17 +343,6 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             ),
             const SizedBox(width: 8),
 
-            // Leaderboards
-            IconButton(
-              onPressed: () {
-                widget.game.playSfx('menu_select.wav');
-                widget.game.changeState(GameState.leaderboard);
-              },
-              icon: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFFD700)),
-              tooltip: 'Global Leaderboards',
-            ),
-            const SizedBox(width: 2),
-
             // Settings
             IconButton(
               onPressed: () {
@@ -305,18 +350,35 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 widget.game.changeState(GameState.settings);
               },
               icon: const Icon(Icons.settings, color: Colors.cyanAccent),
-              tooltip: 'Game Settings',
+              tooltip: 'Controles & Configurações',
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: 6),
 
             // Return to Main Menu
-            IconButton(
+            OutlinedButton.icon(
               onPressed: () {
                 widget.game.playSfx('menu_select.wav');
                 widget.game.changeState(GameState.menu);
               },
-              icon: const Icon(Icons.close_rounded, color: Colors.white70),
-              tooltip: 'Return to Main Menu',
+              icon: const Icon(Icons.arrow_back_rounded, size: 15, color: Colors.white),
+              label: const Text(
+                'MENU PRINCIPAL',
+                style: TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                  color: Colors.white,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white30),
+                backgroundColor: Colors.white.withValues(alpha: 0.06),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             ),
           ],
         ),
@@ -612,30 +674,105 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         Row(
           children: [
             Expanded(
-              child: Row(
-                children: [
-                  Icon(Icons.touch_app_rounded, color: current.accentColor, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'SWIPE OR TAP PILOT • READY FOR DEPLOYMENT',
-                    style: TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.5,
-                      color: Colors.white.withOpacity(0.7),
-                    ),
+              child: _buildSectorSelector(current),
+            ),
+            const SizedBox(width: 8),
+            // Hyper Mode Toggle Chip (+25% Speed, +50% XP/Scrap)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  widget.game.isHyperMode = !widget.game.isHyperMode;
+                });
+                widget.game.playSfx('menu_select.wav');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: widget.game.isHyperMode
+                      ? const Color(0xFFFFD700).withValues(alpha: 0.22)
+                      : const Color(0xFF0C1017).withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: widget.game.isHyperMode
+                        ? const Color(0xFFFFD700)
+                        : Colors.white24,
+                    width: widget.game.isHyperMode ? 1.6 : 1.0,
                   ),
-                ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.bolt_rounded,
+                      size: 15,
+                      color: widget.game.isHyperMode ? const Color(0xFFFFD700) : Colors.white54,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'HYPER',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: widget.game.isHyperMode ? const Color(0xFFFFD700) : Colors.white54,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
+            // Boss Rush Toggle Chip (Sequential 4-Titan Gauntlet)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  widget.game.isBossRushMode = !widget.game.isBossRushMode;
+                });
+                widget.game.playSfx('menu_select.wav');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: widget.game.isBossRushMode
+                      ? const Color(0xFFFF1744).withValues(alpha: 0.22)
+                      : const Color(0xFF0C1017).withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: widget.game.isBossRushMode
+                        ? const Color(0xFFFF1744)
+                        : Colors.white24,
+                    width: widget.game.isBossRushMode ? 1.6 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.whatshot_rounded,
+                      size: 15,
+                      color: widget.game.isBossRushMode ? const Color(0xFFFF1744) : Colors.white54,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'BOSS RUSH',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: widget.game.isBossRushMode ? const Color(0xFFFF1744) : Colors.white54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
             ElevatedButton(
               onPressed: () => _deployValkyrie(current),
               style: ElevatedButton.styleFrom(
                 backgroundColor: current.primaryColor,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -645,15 +782,15 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.rocket_launch_rounded, size: 20, color: Colors.black),
-                  SizedBox(width: 8),
+                  Icon(Icons.rocket_launch_rounded, size: 18, color: Colors.black),
+                  SizedBox(width: 6),
                   Text(
                     'DEPLOY // DECOLAR',
                     style: TextStyle(
                       fontFamily: 'Orbitron',
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 2.0,
+                      letterSpacing: 1.5,
                       color: Colors.black,
                     ),
                   ),
@@ -663,6 +800,90 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSectorSelector(Valkyrie current) {
+    final sector = Sector.allSectors[_selectedSectorIndex];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C1017).withOpacity(0.92),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: sector.primaryColor.withOpacity(0.5), width: 1.0),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            iconSize: 14,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Setor Anterior [Tecla [ ]',
+            icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white70),
+            onPressed: () {
+              setState(() {
+                _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectors.length) % Sector.allSectors.length;
+              });
+              widget.game.playSfx('menu_select.wav');
+            },
+          ),
+          const SizedBox(width: 6),
+          Icon(sector.icon, color: sector.primaryColor, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    sector.name.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: sector.primaryColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: sector.primaryColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: sector.primaryColor.withOpacity(0.6)),
+                  ),
+                  child: Text(
+                    sector.difficultyLabel,
+                    style: TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: sector.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            iconSize: 14,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Próximo Setor [Tecla ] ]',
+            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70),
+            onPressed: () {
+              setState(() {
+                _selectedSectorIndex = (_selectedSectorIndex + 1) % Sector.allSectors.length;
+              });
+              widget.game.playSfx('menu_select.wav');
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -1234,14 +1455,18 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Rajdhani',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  color: color,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Rajdhani',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                    color: color,
+                  ),
                 ),
               ),
             ],

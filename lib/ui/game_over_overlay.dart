@@ -14,59 +14,30 @@ class GameOverOverlay extends StatefulWidget {
 }
 
 class _GameOverOverlayState extends State<GameOverOverlay> {
-  final TextEditingController _nameController = TextEditingController();
-  final FocusNode _nameFocusNode = FocusNode();
-  bool _isSaving = false;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _nameFocusNode.onKeyEvent = (node, event) {
+    _focusNode.onKeyEvent = (node, event) {
       if (event is KeyDownEvent) {
         if (event.logicalKey == LogicalKeyboardKey.escape) {
-          widget.game.changeState(GameState.valkyrieSelection);
+          widget.game.changeState(GameState.menu);
           return KeyEventResult.handled;
         } else if (event.logicalKey == LogicalKeyboardKey.enter ||
             event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-          if (_nameController.text.trim().isNotEmpty) {
-            _submitAndShowLeaderboard();
-          } else {
-            widget.game.startGame();
-          }
+          widget.game.startGame();
           return KeyEventResult.handled;
         }
       }
       return KeyEventResult.ignored;
     };
-    // Mobile: Do not automatically focus textfield to prevent intrusive virtual keyboard popup
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _nameFocusNode.dispose();
+    _focusNode.dispose();
     super.dispose();
-  }
-
-  Future<void> _submitAndShowLeaderboard() async {
-    if (_isSaving) return;
-    final name = _nameController.text.trim().isEmpty ? 'Commander' : _nameController.text.trim();
-    setState(() {
-      _isSaving = true;
-    });
-
-    widget.game.participantName = name;
-    try {
-      await ApiService.saveFairScore(
-        playerName: name,
-        scientistName: widget.game.selectedValkyrie.name,
-        score: widget.game.score,
-      );
-    } catch (_) {}
-
-    if (mounted) {
-      widget.game.changeState(GameState.leaderboard);
-    }
   }
 
   String _getCombatRating(int score, int level) {
@@ -81,7 +52,19 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
     }
   }
 
-  String _getAfterActionQuote(String pilotId) {
+  String _getAfterActionQuote(String pilotId, bool isVictory) {
+    if (isVictory) {
+      switch (pilotId) {
+        case 'lyra':
+          return '"Target neutralized and sector cleared! Nobody outflies the Sol-Blaze, Commander!"';
+        case 'selene':
+          return '"All Void anomalies purged with 100% tactical precision. The stars are secure once again."';
+        case 'vesper':
+          return '"Hah! Even their biggest Titans turned into cosmic dust! Ready for another round, Commander?"';
+        default:
+          return '"Void Protocol conquered! Returning to the Hangar in triumph."';
+      }
+    }
     switch (pilotId) {
       case 'lyra':
         return '"We\'ll come back with hotter thrusters next time, Commander! Don\'t count us out yet!"';
@@ -101,10 +84,10 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
     final score = game.score;
 
     return Focus(
-      focusNode: _nameFocusNode,
+      focusNode: _focusNode,
       autofocus: true,
       child: GestureDetector(
-        onTap: () => _nameFocusNode.requestFocus(),
+        onTap: () => _focusNode.requestFocus(),
         child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Center(
@@ -137,16 +120,25 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          'HULL COMPROMISED // SORTIE TERMINATED',
+                          (game.missionSurvived || game.campaignCompleted)
+                              ? (game.campaignCompleted
+                                  ? '🏆 VICTORY // VOID SINGULARITY CONQUERED!'
+                                  : '🏆 MISSION ACCOMPLISHED // SECTOR SECURED!')
+                              : 'HULL COMPROMISED // SORTIE TERMINATED',
                           style: TextStyle(
                             fontFamily: 'Orbitron',
                             fontVariations: const [FontVariation('wght', 800)],
                             fontSize: 22,
                             letterSpacing: 2,
-                            color: valkyrie.primaryColor,
+                            color: (game.missionSurvived || game.campaignCompleted)
+                                ? const Color(0xFFFFD700)
+                                : valkyrie.primaryColor,
                             shadows: [
                               Shadow(
-                                color: valkyrie.primaryColor.withOpacity(0.8),
+                                color: ((game.missionSurvived || game.campaignCompleted)
+                                        ? const Color(0xFFFFD700)
+                                        : valkyrie.primaryColor)
+                                    .withOpacity(0.8),
                                 blurRadius: 16,
                               ),
                             ],
@@ -155,7 +147,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Vessel hull integrity collapsed under heavy asteroid bombardment.',
+                        (game.missionSurvived || game.campaignCompleted)
+                            ? 'All primary tactical objectives achieved. Returning to the Hangar in triumph!'
+                            : 'Vessel hull integrity collapsed under heavy asteroid bombardment.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Rajdhani',
@@ -372,7 +366,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image.asset(
-                                  valkyrie.hudDamagedAsset,
+                                  (game.missionSurvived || game.campaignCompleted)
+                                      ? valkyrie.hudNeutralAsset
+                                      : valkyrie.hudDamagedAsset,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => Container(
                                     color: Colors.black54,
@@ -409,7 +405,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    _getAfterActionQuote(valkyrie.id),
+                                    _getAfterActionQuote(valkyrie.id, game.missionSurvived || game.campaignCompleted),
                                     style: const TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 14.0,
@@ -438,12 +434,12 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               onPressed: () {
                                 game.startGame();
                               },
-                              icon: const Icon(Icons.refresh, size: 20),
+                              icon: const Icon(Icons.refresh, size: 18),
                               label: const Text(
                                 'RETRY SORTIE',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1,
                                 ),
@@ -451,7 +447,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: valkyrie.primaryColor,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 15),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -460,29 +456,62 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                             ),
                           ),
 
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
 
-                          // Return to Hangar Button
+                          // Shop & Hangar Button
                           Expanded(
                             flex: 1,
                             child: OutlinedButton.icon(
                               focusNode: FocusNode(canRequestFocus: false),
                               onPressed: () {
+                                game.initialHangarTab = 1;
                                 game.changeState(GameState.valkyrieSelection);
                               },
-                              icon: const Icon(Icons.home, size: 18),
+                              icon: const Icon(Icons.precision_manufacturing_rounded, size: 17, color: Color(0xFFFFB300)),
                               label: const Text(
-                                'RETURN TO HANGAR',
+                                'LOJA & HANGAR',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
-                                  fontSize: 13,
-                                  letterSpacing: 1,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFFB300),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFFFB300),
+                                side: const BorderSide(color: Color(0xFFFFB300)),
+                                padding: const EdgeInsets.symmetric(vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          // Return to Main Menu Button
+                          Expanded(
+                            flex: 1,
+                            child: OutlinedButton.icon(
+                              focusNode: FocusNode(canRequestFocus: false),
+                              onPressed: () {
+                                game.changeState(GameState.menu);
+                              },
+                              icon: const Icon(Icons.home_rounded, size: 18),
+                              label: const Text(
+                                'MENU PRINCIPAL',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11.5,
+                                  letterSpacing: 0.8,
                                 ),
                               ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white70,
                                 side: const BorderSide(color: Colors.white24),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 15),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
