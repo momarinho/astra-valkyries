@@ -190,12 +190,12 @@ void main() {
       expect(game.runCredits - creditsBefore, equals(200));
     });
 
-    test('Sprint 17 & 18: Tactical Laser Sight, Synthesized WAVs, 2D Anime Art Assets & Hades Dialogues', () {
+    test('Sprint 17 & 18: Clean Ship Nose, Synthesized WAVs, 2D Anime Art Assets & Hades Dialogues', () {
       final game = AsteroidsGame();
       final player = PlayerComponent(position: Vector2(2400, 2400))..customGame = game;
       game.player = player;
 
-      expect(player.hasTacticalLaserSight, isTrue);
+      expect(player.hasTacticalLaserSight, isFalse);
 
       // Verify synthesized WAV audio files exist
       for (final wav in ['level_up.wav', 'chest_open.wav', 'beacon_charge.wav', 'boss_spawn.wav']) {

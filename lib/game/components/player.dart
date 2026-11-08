@@ -738,7 +738,6 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     canvas.translate(radius, radius);
 
-    _renderTacticalLaserSight(canvas);
     _renderShip(canvas);
 
     // Muzzle flash rendering: crisp, forward-directed spark that never covers the ship
@@ -771,7 +770,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
   }
 
-  bool hasTacticalLaserSight = true;
+  bool hasTacticalLaserSight = false;
 
   void _renderTacticalLaserSight(Canvas canvas) {
     if (!hasTacticalLaserSight) return;
