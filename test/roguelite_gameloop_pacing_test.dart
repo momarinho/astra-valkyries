@@ -8,6 +8,7 @@ import 'package:asteroids/game/components/asteroid_field.dart';
 import 'package:asteroids/game/components/hyperspace_gate.dart';
 import 'package:asteroids/game/components/phase4_biome_elements.dart';
 import 'package:asteroids/game/components/starfield.dart';
+import 'package:asteroids/game/components/drop.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();
@@ -94,6 +95,22 @@ void main() {
       expect(game.asteroidField!.swarm20Spawned, isFalse);
       expect(game.asteroidField!.subBoss45Spawned, isFalse);
       expect(game.player.hp, equals(game.player.maxHp));
+    });
+
+    test('DropType.vortexSurge activates temporary 7.5s surge and expires properly', () {
+      final game = _createTestGame();
+      final drop = DropComponent(position: Vector2(1000, 1000), type: DropType.vortexSurge);
+      game.world.add(drop);
+
+      expect(game.player.vortexSurgeTimer, equals(0.0));
+
+      // Trigger collection
+      drop.onCollisionStart({}, game.player);
+      expect(game.player.vortexSurgeTimer, equals(7.5));
+
+      // Advance by 8.0s -> timer should tick down to 0 and expire
+      game.player.update(8.0);
+      expect(game.player.vortexSurgeTimer, equals(0.0));
     });
   });
 }

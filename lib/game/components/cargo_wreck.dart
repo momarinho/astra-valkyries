@@ -122,9 +122,9 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
           maxSpeed: 160.0,
         );
 
-        // Eject random rare drop: Shield, Health or Rare Helium
+        // Eject random rare drop: Shield, Health, Rare Helium or Vortex Surge
         final random = math.Random();
-        final dropRoll = random.nextInt(3);
+        final dropRoll = random.nextInt(4);
         DropType dropType;
         switch (dropRoll) {
           case 0:
@@ -134,8 +134,11 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
             dropType = DropType.health;
             break;
           case 2:
-          default:
             dropType = DropType.rareHelium;
+            break;
+          case 3:
+          default:
+            dropType = DropType.vortexSurge;
             break;
         }
 

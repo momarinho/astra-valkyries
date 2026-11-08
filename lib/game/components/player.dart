@@ -17,6 +17,7 @@ import 'joystick.dart';
 import 'cosmic_nebula.dart';
 import 'living_biomes.dart';
 import 'speech_bubble.dart';
+import 'singularity_rift.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? customGame;
@@ -124,6 +125,14 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double cryoFreezeTimer = 0.0;
   double cryoMistAccelerationMultiplier = 1.0;
 
+  // Powerup Temporário estilo Vampire Survivors Nduja Fritta (Sobrecarga de Vórtice)
+  double vortexSurgeTimer = 0.0;
+  double _vortexSurgePulseTimer = 0.0;
+
+  void activateVortexSurge(double duration) {
+    vortexSurgeTimer = math.max(vortexSurgeTimer, duration);
+  }
+
   void applyCryoFreeze([double duration = 0.8]) {
     cryoFreezeTimer = math.max(cryoFreezeTimer, duration);
   }
@@ -143,6 +152,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     bonusCritChance = 0.0;
     isShieldSuppressed = false;
     cryoFreezeTimer = 0.0;
+    vortexSurgeTimer = 0.0;
     cryoMistAccelerationMultiplier = 1.0;
   }
 
@@ -490,6 +500,26 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             _soundCooldownTimer = 0.11;
           }
         }
+      }
+    }
+
+    // Temporary Floor Drop: Vortex Surge (Vampire Survivors Nduja Fritta style)
+    if (vortexSurgeTimer > 0) {
+      vortexSurgeTimer = math.max(0.0, vortexSurgeTimer - dt);
+      _vortexSurgePulseTimer -= dt;
+      if (_vortexSurgePulseTimer <= 0) {
+        _vortexSurgePulseTimer = 0.65;
+        final rng = math.Random();
+        final a = rng.nextDouble() * 2 * math.pi;
+        final offset = Vector2(math.cos(a), math.sin(a)) * (radius + 55.0);
+        game.world.add(
+          SingularityRiftComponent(
+            position: position + offset,
+            pullRadius: 135.0,
+            damage: 160.0,
+            duration: 0.60,
+          ),
+        );
       }
     }
 

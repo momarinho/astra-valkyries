@@ -84,7 +84,7 @@ class SingularityRiftComponent extends PositionComponent with HasGameReference<A
   }
 
   void _applyVortexDamage() {
-    final tickDmg = damage * 0.18;
+    final tickDmg = damage * 0.12;
 
     try {
       final asteroids = game.world.children.whereType<AsteroidComponent>();
@@ -135,7 +135,7 @@ class SingularityRiftComponent extends PositionComponent with HasGameReference<A
       final enemies = game.world.children.whereType<EnemyShipComponent>();
       for (final e in List<EnemyShipComponent>.from(enemies)) {
         if (position.distanceTo(e.position) <= pullRadius) {
-          e.takeDamage(damage * 0.75, e.position);
+          e.takeDamage(damage * 0.45, e.position);
         }
       }
     } catch (_) {}
@@ -144,7 +144,7 @@ class SingularityRiftComponent extends PositionComponent with HasGameReference<A
       final bosses = game.world.children.whereType<SectorBoss>();
       for (final b in List<SectorBoss>.from(bosses)) {
         if (position.distanceTo(b.position) <= pullRadius) {
-          b.takeDamage(damage * 0.75, b.position);
+          b.takeDamage(damage * 0.45, b.position);
         }
       }
     } catch (_) {}

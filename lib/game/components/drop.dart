@@ -14,6 +14,7 @@ enum DropType {
   health,      // Cápsula de Reparo (+1 Vida)
   cometDust,   // Poeira Estelar do Cometa (+1000 pts + Reparo/Escudo)
   memoryCore,  // Núcleo de Memória Cósmico (+15 Bond XP da Valquíria)
+  vortexSurge, // Sobrecarga de Vórtice estilo Vampire Survivors Nduja Fritta (7.5s temporário!)
 }
 
 class DropComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
@@ -183,6 +184,19 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         );
         particleColor = const Color(0xFFFF4081);
         break;
+
+      case DropType.vortexSurge:
+        game.player.activateVortexSurge(7.5);
+        game.triggerScreenShake(duration: 0.45, intensity: 10.0);
+        game.spawnFloatingText(
+          position,
+          "🌀 SOBRECARGA DE VÓRTICE! (7.5s)",
+          color: const Color(0xFFD500F9),
+          fontSize: 18.0,
+          velocity: Vector2(0, -38),
+        );
+        particleColor = const Color(0xFFD500F9);
+        break;
     }
 
     // Explosion particles upon pickup
@@ -240,6 +254,9 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         break;
       case DropType.memoryCore:
         mainColor = const Color(0xFFFF4081);
+        break;
+      case DropType.vortexSurge:
+        mainColor = const Color(0xFFD500F9);
         break;
     }
 
@@ -338,6 +355,27 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         ..cubicTo(3.0, -6.0, 6.0, -3.0, 4.5, -0.5)
         ..close();
       canvas.drawPath(heartPath, symbolPaint);
+    } else if (type == DropType.vortexSurge) {
+      // Swirling Vortex Spiral
+      final spiralPaint = Paint()
+        ..color = mainColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawCircle(Offset.zero, 3.0, symbolPaint);
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: 6.0),
+        pulseTimer * 4.0,
+        math.pi * 1.3,
+        false,
+        spiralPaint,
+      );
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: 8.5),
+        pulseTimer * 4.0 + math.pi,
+        math.pi * 1.2,
+        false,
+        spiralPaint,
+      );
     }
   }
 }

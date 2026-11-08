@@ -427,14 +427,16 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       DropType dropType;
       if (roll >= healthThreshold) {
         dropType = DropType.health;
-      } else if (roll < 0.40) {
+      } else if (roll < 0.35) {
         dropType = DropType.lunarSample;
-      } else if (roll < 0.65) {
+      } else if (roll < 0.60) {
         dropType = DropType.rareHelium;
-      } else if (roll < 0.80) {
+      } else if (roll < 0.78) {
         dropType = DropType.shield;
-      } else {
+      } else if (roll < 0.90) {
         dropType = DropType.darkMatter;
+      } else {
+        dropType = DropType.vortexSurge; // Raro Drop Especial estilo Vampire Survivors
       }
 
       final driftAngle = random.nextDouble() * 2 * math.pi;

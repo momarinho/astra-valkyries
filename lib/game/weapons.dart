@@ -484,7 +484,7 @@ class BombLauncher extends Weapon {
 
   @override
   void applyEvolution() {
-    cooldown = 0.85;
+    cooldown = 1.25;
     recoil = 8.0;
     damage = 420.0;
     muzzleFlashSize = 28.0;
@@ -691,18 +691,18 @@ class QuantumChakram extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.92;
-      damage = 85.0;
+      cooldown = 1.05;
+      damage = 75.0;
     } else if (level >= 3) {
-      cooldown = 0.75;
-      damage = 110.0;
+      cooldown = 0.90;
+      damage = 95.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.52;
-    damage = 155.0;
+    cooldown = 0.80;
+    damage = 125.0;
   }
 }
 
@@ -738,18 +738,18 @@ class RepulsorGravityAura extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 1.10;
-      damage = 65.0;
+      cooldown = 1.25;
+      damage = 58.0;
     } else if (level >= 3) {
-      cooldown = 0.88;
-      damage = 88.0;
+      cooldown = 1.05;
+      damage = 75.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.62;
-    damage = 135.0;
+    cooldown = 0.95;
+    damage = 110.0;
   }
 }
 

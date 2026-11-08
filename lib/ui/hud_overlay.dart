@@ -698,6 +698,35 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                     ),
                   ),
 
+                // Vortex Surge Floor Drop Status (Vampire Survivors style)
+                if (player.vortexSurgeTimer > 0) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD500F9).withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFD500F9)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD500F9).withOpacity(0.4),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '🌀 VORTEX SURGE: ${player.vortexSurgeTimer.toStringAsFixed(1)}s',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFD500F9),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 10),
 
                 // Tactical Mini-Radar & Spatial Navigation (Tap or Key M to open full Tactical Map)
