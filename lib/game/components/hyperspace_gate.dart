@@ -12,6 +12,7 @@ class HyperspaceGateComponent extends PositionComponent with HasGameReference<As
   final double radius = 55.0;
   double _rotation = 0.0;
   double _pulseTimer = 0.0;
+  double _autoWarpTimer = 0.0;
   bool _isWarping = false;
 
   final Paint _ringPaint = Paint()
@@ -32,7 +33,7 @@ class HyperspaceGateComponent extends PositionComponent with HasGameReference<As
     game.playSfx('powerup.wav');
     game.spawnFloatingText(
       position + Vector2(0, -75),
-      '🌀 PORTAL DE HIPERESPAÇO ABERTO! ENTRE PARA AVANÇAR!',
+      '🌀 PORTAL DE HIPERESPAÇO ABERTO! SALTO ESTABILIZANDO...',
       color: const Color(0xFF00E5FF),
       fontSize: 16.0,
     );
@@ -43,15 +44,22 @@ class HyperspaceGateComponent extends PositionComponent with HasGameReference<As
     super.update(dt);
     _rotation += dt * 1.8;
     _pulseTimer += dt * 3.0;
+    _autoWarpTimer += dt;
 
     if (_isWarping) return;
 
-    // Checa proximidade com a nave da jogadora
+    // Checa proximidade com a nave da jogadora e atrai o vórtice suavemente
     final player = game.player;
     final dist = position.distanceTo(player.position);
 
-    // Se estiver a menos de 50px do vórtice central, aciona o Mapa Estelar Ramificado
-    if (dist <= 50.0) {
+    if (dist > 50.0) {
+      final dir = (player.position - position).normalized();
+      position += dir * 85.0 * dt;
+    }
+
+    // Se encostar no vórtice OU se passarem 3.5 segundos de comemoração pós-chefe,
+    // aciona automaticamente o Mapa Estelar com as rotas do próximo setor!
+    if (dist <= 80.0 || _autoWarpTimer >= 3.5) {
       _isWarping = true;
       removeFromParent();
       game.openStarChart();

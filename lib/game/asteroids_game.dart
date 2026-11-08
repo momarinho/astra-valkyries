@@ -1533,8 +1533,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       }
 
       if (timeRemaining <= 0) {
-        if (activeBoss != null && !activeBoss!.isDefeated) {
-          timeRemaining = 0; // Overtime during Boss Climax
+        final hasActiveBoss = activeBoss != null && !activeBoss!.isDefeated;
+        final hasGate = world.children.any((c) => c is HyperspaceGateComponent);
+        if (hasActiveBoss || hasGate) {
+          timeRemaining = 0; // Overtime durante o Clímax do Chefe ou preparação do Hipersalto
         } else {
           timeRemaining = 0;
           if (!voidReaperSpawned) {
@@ -1892,11 +1894,18 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Reseta cronômetros de ondas do AsteroidField
     if (asteroidField != null) {
       asteroidField!.difficultyTimer = 0.0;
+      asteroidField!.subBoss45Spawned = false;
       asteroidField!.elite1Spawned = false;
       asteroidField!.elite2Spawned = false;
       asteroidField!.leviathanSpawned = false;
       asteroidField!.cryoPodSpawned = false;
+      asteroidField!.swarm20Spawned = false;
+      asteroidField!.swarm60Spawned = false;
+      asteroidField!.sectorClimaxSpawned = false;
     }
+
+    // Repara o casco da Valquíria após a travessia hiperespacial bem-sucedida
+    player.heal(player.maxHp);
 
     // Recompensas do Salto de Hiperespaço
     addScore(10000);

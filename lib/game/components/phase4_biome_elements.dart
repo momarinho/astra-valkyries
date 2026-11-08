@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,8 @@ class BiomeBackdropComponent extends PositionComponent
     with HasGameReference<AsteroidsGame> {
   final SectorId sectorId;
   double _animTimer = 0.0;
+  ui.Image? _backdropImage;
+  final List<Vector2> _ambientMotes = [];
 
   BiomeBackdropComponent({required this.sectorId})
       : super(
@@ -27,13 +30,144 @@ class BiomeBackdropComponent extends PositionComponent
         );
 
   @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    try {
+      final sector = Sector.findById(sectorId);
+      final assetPath = sector.biomeImageAsset.replaceFirst('assets/images/', '');
+      _backdropImage = await game.images.load(assetPath);
+    } catch (_) {
+      _backdropImage = null;
+    }
+
+    final rng = math.Random(sectorId.index * 7919);
+    for (int i = 0; i < 48; i++) {
+      _ambientMotes.add(Vector2(
+        rng.nextDouble() * GameConstants.screenWidth,
+        rng.nextDouble() * GameConstants.screenHeight,
+      ));
+    }
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     _animTimer += dt;
+
+    final width = GameConstants.screenWidth;
+    final height = GameConstants.screenHeight;
+    for (int i = 0; i < _ambientMotes.length; i++) {
+      final mote = _ambientMotes[i];
+      switch (sectorId) {
+        case SectorId.vesta:
+        case SectorId.orion:
+          mote.y -= 32.0 * dt;
+          mote.x += math.sin(_animTimer + i) * 14.0 * dt;
+          break;
+        case SectorId.cryoAbyss:
+          mote.y += 26.0 * dt;
+          mote.x += math.cos(_animTimer + i) * 12.0 * dt;
+          break;
+        case SectorId.graveyard:
+          mote.x -= 18.0 * dt;
+          mote.y += math.sin(_animTimer * 0.5 + i) * 10.0 * dt;
+          break;
+        case SectorId.xenoHive:
+          mote.x += math.sin(_animTimer * 1.5 + i) * 18.0 * dt;
+          mote.y += math.cos(_animTimer * 1.5 + i) * 18.0 * dt;
+          break;
+        case SectorId.eventHorizon:
+        case SectorId.voidThrone:
+          mote.x += math.sin(_animTimer + i) * 22.0 * dt;
+          mote.y += math.cos(_animTimer + i) * 22.0 * dt;
+          break;
+      }
+      if (mote.x < 0) mote.x = width;
+      if (mote.x > width) mote.x = 0;
+      if (mote.y < 0) mote.y = height;
+      if (mote.y > height) mote.y = 0;
+    }
+  }
+
+  void _renderAmbientMotes(Canvas canvas, double width, double height) {
+    final sector = Sector.findById(sectorId);
+    final moteColor = sector.primaryColor;
+    final motePaint = Paint()..style = PaintingStyle.fill;
+    final haloPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..blendMode = BlendMode.plus;
+
+    for (int i = 0; i < _ambientMotes.length; i++) {
+      final pos = _ambientMotes[i].toOffset();
+      final pulse = 0.5 + 0.5 * math.sin(_animTimer * 3.0 + i);
+      final r = (1.5 + (i % 3)) * (0.8 + 0.4 * pulse);
+
+      motePaint.color = moteColor.withValues(alpha: 0.65 + 0.35 * pulse);
+      haloPaint.color = moteColor.withValues(alpha: 0.30 * pulse);
+
+      canvas.drawCircle(pos, r * 2.5, haloPaint);
+      canvas.drawCircle(pos, r, motePaint);
+    }
   }
 
   @override
   void render(Canvas canvas) {
+    final width = GameConstants.screenWidth;
+    final height = GameConstants.screenHeight;
+
+    Vector2 camPos;
+    try {
+      camPos = game.camera.viewfinder.position;
+    } catch (_) {
+      camPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    }
+
+    // 1. Renderiza o Backdrop Fotorrealista do Bioma com Parallax Suave e Vinheta Tática
+    if (_backdropImage != null) {
+      canvas.save();
+      canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
+
+      final normX = (camPos.x / GameConstants.sectorWidth).clamp(0.0, 1.0);
+      final normY = (camPos.y / GameConstants.sectorHeight).clamp(0.0, 1.0);
+
+      // Cobre 130% do viewport para permitir o deslocamento de profundidade cósmica
+      final viewW = width * 1.30;
+      final viewH = height * 1.30;
+      final offsetX = -(normX * (viewW - width));
+      final offsetY = -(normY * (viewH - height));
+
+      final srcRect = Rect.fromLTWH(
+        0,
+        0,
+        _backdropImage!.width.toDouble(),
+        _backdropImage!.height.toDouble(),
+      );
+      final dstRect = Rect.fromLTWH(offsetX, offsetY, viewW, viewH);
+
+      final bgPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.90)
+        ..filterQuality = FilterQuality.medium;
+      canvas.drawImageRect(_backdropImage!, srcRect, dstRect, bgPaint);
+
+      // Vinheta atmosférica de alto contraste tático
+      final vignettePaint = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Colors.transparent,
+            Colors.black.withValues(alpha: 0.25),
+            Colors.black.withValues(alpha: 0.70),
+          ],
+          stops: const [0.55, 0.82, 1.0],
+        ).createShader(Rect.fromLTWH(0, 0, width, height));
+      canvas.drawRect(Rect.fromLTWH(0, 0, width, height), vignettePaint);
+
+      // Partículas atmosféricas temáticas flutuantes (fagulhas, geada, esporos)
+      _renderAmbientMotes(canvas, width, height);
+
+      canvas.restore();
+    }
+
+    // 2. Renderiza as Macro-Estruturas e Sub-Pisos Arquiteturais nos slots globais do mapa
     final center = const Offset(
       GameConstants.sectorWidth / 2,
       GameConstants.sectorHeight / 2,

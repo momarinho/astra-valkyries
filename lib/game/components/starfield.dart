@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'package:asteroids/constants.dart';
+import 'phase4_biome_elements.dart';
 
 class Star {
   Vector2 position;
@@ -39,7 +40,9 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
     ..style = PaintingStyle.fill
     ..blendMode = BlendMode.plus;
 
-  StarfieldComponent({this.numStars = 170});
+  StarfieldComponent({this.numStars = 170}) {
+    priority = -40; // Renderiza logo acima do BiomeBackdropComponent (-45)
+  }
 
   // Paleta da nebulosa por instante da partida (segundos decorridos).
   // Acompanha as fases de dificuldade do AsteroidField (0/50/105/150/180s).
@@ -184,8 +187,11 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
     canvas.save();
     canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
 
-    // 1. Gradiente base: azul-marinho quase preto → preto (shader pré-compilado em cache)
-    canvas.drawRect(Rect.fromLTWH(0, 0, width, height), _baseBgPaint);
+    // 1. Gradiente base: desenhado apenas se nenhum BiomeBackdropComponent estiver ativo
+    final hasBiome = game.world.children.any((c) => c is BiomeBackdropComponent);
+    if (!hasBiome) {
+      canvas.drawRect(Rect.fromLTWH(0, 0, width, height), _baseBgPaint);
+    }
 
     // 2. Nebulosa em 3 manchas suaves que respiram devagar
     final palette = _paletteAt(_shownElapsed);

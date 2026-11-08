@@ -25,6 +25,9 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   bool leviathanSpawned = false;
   bool cryoPodSpawned = false;
   bool goldenAsteroidSpawned = false;
+  bool swarm20Spawned = false;
+  bool swarm60Spawned = false;
+  bool sectorClimaxSpawned = false;
 
   AsteroidField({this.mode = 'classic'});
 
@@ -41,22 +44,34 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     enemySpawnTimer += dt;
     difficultyTimer += dt;
 
-    // Timeline Script do Vampire Survivors (Incursões de Sub-Chefes aos 45s, 90s e 135s):
+    // Timeline Script do Roguelite (Hordas e Incursões Escaladas):
+    if (difficultyTimer >= 20.0 && !swarm20Spawned) {
+      swarm20Spawned = true;
+      _spawnSwarmRush(count: 10, label: '⚠️ ENXAME DO VÁCUO DETECTADO! ⚠️');
+    }
     if (difficultyTimer >= 45.0 && !subBoss45Spawned) {
       subBoss45Spawned = true;
       _spawnEliteCommander(1, label: '⚠️ SUB-CHEFE [0:45]: VANGUARDA DO VÁCUO!');
-    } else if (difficultyTimer >= 90.0 && !elite1Spawned) {
-      elite1Spawned = true;
-      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [1:30]: EXECUTORES GÊMEOS!');
-    } else if (difficultyTimer >= 135.0 && !elite2Spawned) {
-      elite2Spawned = true;
-      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [2:15]: GUARDA DE ELITE DO SETOR!');
     }
-
-    // 3. Easter Egg: Ancient Precursor Cryo-Pod Drifting Event (Minuto 1:15 / 75s)
+    if (difficultyTimer >= 60.0 && !swarm60Spawned) {
+      swarm60Spawned = true;
+      _spawnSwarmRush(count: 14, label: '⚠️ CERCO DE DRONES EM ALTA VELOCIDADE! ⚠️');
+    }
     if (difficultyTimer >= 75.0 && !cryoPodSpawned) {
       cryoPodSpawned = true;
       _spawnCryoPod();
+    }
+    if (difficultyTimer >= 90.0 && !elite1Spawned) {
+      elite1Spawned = true;
+      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [1:30]: EXECUTORES GÊMEOS!');
+    }
+    if (difficultyTimer >= 135.0 && !elite2Spawned) {
+      elite2Spawned = true;
+      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [2:15]: GUARDA DE ELITE DO SETOR!');
+    }
+    if (difficultyTimer >= 150.0 && !sectorClimaxSpawned) {
+      sectorClimaxSpawned = true;
+      _triggerSectorBossClimax();
     }
 
     // 2. Intervalo de Asteroides
@@ -87,22 +102,83 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       }
     }
 
-    // 3. Intervalo de Frota Inimiga (Scouts, Raiders, Snipers)
+    // 3. Intervalo de Frota Inimiga (Scouts, Raiders, Snipers, Enxames)
     double enemyInterval;
-    if (difficultyTimer < 40.0) {
-      enemyInterval = 4.5; // Onboarding inicial: patrulhas espaçadas
-    } else if (difficultyTimer < 90.0) {
-      enemyInterval = 3.0; // Enxames leves
-    } else if (difficultyTimer < 150.0) {
-      enemyInterval = 2.2; // Pressão constante
+    if (difficultyTimer < 30.0) {
+      enemyInterval = 1.6; // Início dinâmico: hordas leves já nos primeiros segundos!
+    } else if (difficultyTimer < 75.0) {
+      enemyInterval = 1.25; // Enxames contínuos
+    } else if (difficultyTimer < 140.0) {
+      enemyInterval = 0.90; // Pressão constante
     } else {
-      enemyInterval = 1.4; // Tempestade cósmica
+      enemyInterval = 0.65; // Tempestade cósmica pré-chefe
     }
 
     if (enemySpawnTimer > enemyInterval) {
       enemySpawnTimer = 0.0;
       _spawnEnemyWave();
     }
+  }
+
+  void _spawnSwarmRush({required int count, String? label}) {
+    Vector2 playerPos;
+    try {
+      playerPos = game.player.position;
+    } catch (_) {
+      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    }
+
+    if (label != null) {
+      try {
+        game.playSfx('low_health.wav');
+        game.triggerScreenShake(duration: 0.6, intensity: 12.0);
+        game.spawnFloatingText(
+          playerPos + Vector2(0, -60),
+          label,
+          color: const Color(0xFFFF5252),
+          fontSize: 16.0,
+        );
+      } catch (_) {}
+    }
+
+    final random = math.Random();
+    for (int i = 0; i < count; i++) {
+      final angle = (2 * math.pi * i / count) + (random.nextDouble() - 0.5) * 0.25;
+      final dist = 520.0 + random.nextDouble() * 80.0;
+      final spawnPos = playerPos + Vector2(math.cos(angle), math.sin(angle)) * dist;
+
+      spawnPos.x = spawnPos.x.clamp(60.0, GameConstants.sectorWidth - 60.0);
+      spawnPos.y = spawnPos.y.clamp(60.0, GameConstants.sectorHeight - 60.0);
+
+      spawnOrPromoteEnemy(
+        EnemyShipComponent(
+          position: spawnPos,
+          type: EnemyType.voidSwarmer,
+        ),
+      );
+    }
+  }
+
+  void _triggerSectorBossClimax() {
+    if (game.activeBoss != null && !game.activeBoss!.isDefeated) return;
+
+    try {
+      game.triggerBossEncounter();
+      game.playSfx('powerup.wav');
+      game.triggerScreenShake(duration: 1.5, intensity: 24.0);
+      Vector2 pPos;
+      try {
+        pPos = game.player.position;
+      } catch (_) {
+        pPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      }
+      game.spawnFloatingText(
+        pPos + Vector2(0, -75),
+        '🚨 ALERTA GERAL: O TITÃ DO SETOR EMERGIU DO HIPERESPAÇO! 🚨',
+        color: const Color(0xFFFF1744),
+        fontSize: 19.0,
+      );
+    } catch (_) {}
   }
 
   /// Horde Director (Sprint 20): Respeita o teto de 35-45 naves ativas.
@@ -223,33 +299,36 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       if (sectorId == SectorId.xenoHive && roll < 0.45) {
         chosenType = EnemyType.voidSwarmer;
         count = 6 + random.nextInt(4);
+      } else if (roll < 0.60) {
+        chosenType = EnemyType.voidSwarmer;
+        count = 4 + random.nextInt(4);
       } else {
         chosenType = EnemyType.scout;
-        count = random.nextInt(2) + 1;
+        count = 2 + random.nextInt(2);
       }
     } else if (difficultyTimer < 110.0) {
       if (roll < 0.25) {
         chosenType = (sectorId == SectorId.cryoAbyss) ? EnemyType.cryoBomber : EnemyType.raider;
-        count = 1;
+        count = 2;
       } else if (roll < 0.50) {
         if (sectorId == SectorId.graveyard) {
           chosenType = EnemyType.aegisBulwark;
           count = 1;
         } else if (sectorId == SectorId.xenoHive) {
           chosenType = EnemyType.voidSwarmer;
-          count = 8 + random.nextInt(5);
+          count = 8 + random.nextInt(6);
         } else {
           chosenType = EnemyType.voidSwarmer;
-          count = 6;
+          count = 6 + random.nextInt(4);
         }
       } else {
         chosenType = EnemyType.scout;
-        count = random.nextInt(3) + 2;
+        count = 3 + random.nextInt(3);
       }
     } else {
       if (roll < 0.22) {
         chosenType = EnemyType.voidSwarmer;
-        count = 8 + random.nextInt(6);
+        count = 10 + random.nextInt(6);
       } else if (roll < 0.42) {
         chosenType = EnemyType.aegisBulwark;
         count = 1 + (game.voidCellsLevel >= 2 ? 1 : 0);
