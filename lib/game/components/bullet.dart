@@ -9,6 +9,7 @@ import 'asteroid.dart';
 import 'cargo_wreck.dart';
 import 'enemy_ship.dart';
 import 'sector_boss.dart';
+import 'advanced_weapons.dart';
 
 class BulletComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius;
@@ -17,6 +18,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
   final double damage;
   final Color? color;
   int piercesLeft;
+  final ElementalStatus elementalStatus;
 
   BulletComponent({
     required Vector2 position,
@@ -26,6 +28,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
     this.damage = 25.0,
     this.color,
     this.piercesLeft = 0,
+    this.elementalStatus = ElementalStatus.none,
   }) {
     this.position = position;
     anchor = Anchor.center;
@@ -130,6 +133,9 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         }
       } catch (_) {}
 
+      if (elementalStatus != ElementalStatus.none) {
+        other.applyElementalStatus(elementalStatus, duration: 4.0);
+      }
       other.takeDamage(dealtDamage, position);
       if (isCrit) {
         game.spawnFloatingText(
@@ -165,6 +171,9 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         }
       } catch (_) {}
 
+      if (elementalStatus != ElementalStatus.none) {
+        other.applyElementalStatus(elementalStatus, duration: 4.0);
+      }
       other.takeDamage(dealtDamage, position);
       if (isCrit) {
         game.spawnFloatingText(

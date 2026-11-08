@@ -170,7 +170,7 @@ class AffinityManager {
       title: 'Supernova da Paixão',
       subtitle: 'Votos Eternos // Pôr do Sol em Alfa Centauro',
       description: 'Sob a luz dourada de um sistema estelar binário, Lyra confessa que seu coração queima com mais intensidade ao seu lado do que qualquer motor a plasma.',
-      imageAsset: 'assets/art/valkyries/lyra/pinup_memory_1.jpg', // Placeholder de alta resolução
+      imageAsset: 'assets/art/valkyries/lyra/pinup_memory_2.jpg',
       requiredBondLevel: 5,
       themeColor: Color(0xFFFF1744),
     ),
@@ -192,7 +192,7 @@ class AffinityManager {
       title: 'Barreira Desarmada',
       subtitle: 'Pinup Confidencial // Banho de Cristal',
       description: 'Pela primeira vez em anos, a estoica estrategista desliga seus escudos e descansa em seu traje de nano-fibra translúcida, convidando você para seu aposento particular.',
-      imageAsset: 'assets/art/valkyries/selene/hangar_fullbody.png',
+      imageAsset: 'assets/art/valkyries/selene/pinup_memory_1.jpg',
       requiredBondLevel: 3,
       themeColor: Color(0xFF00B0FF),
     ),
@@ -202,7 +202,7 @@ class AffinityManager {
       title: 'Prisma Eterno',
       subtitle: 'Votos Eternos // Ressonância Perfeita',
       description: 'Selene sintoniza a frequência de seu núcleo de escudo com o seu batimento cardíaco, jurando proteção absoluta contra a vastidão do vácuo.',
-      imageAsset: 'assets/art/valkyries/selene/hangar_fullbody.png',
+      imageAsset: 'assets/art/valkyries/selene/pinup_memory_2.jpg',
       requiredBondLevel: 5,
       themeColor: Color(0xFF651FFF),
     ),
@@ -224,7 +224,7 @@ class AffinityManager {
       title: 'Adrenalina Pura',
       subtitle: 'Pinup Confidencial // Couro e Graxa',
       description: 'Tirando a jaqueta pesada após aniquilar um esquadrão de elite, Vesper te desafia para uma aposta ousada na cabine de torpedos.',
-      imageAsset: 'assets/art/valkyries/vesper/hangar_fullbody.png',
+      imageAsset: 'assets/art/valkyries/vesper/pinup_memory_1.jpg',
       requiredBondLevel: 3,
       themeColor: Color(0xFFFF4081),
     ),
@@ -234,7 +234,7 @@ class AffinityManager {
       title: 'Colapso Gravitacional',
       subtitle: 'Votos Eternos // Pacto Selvagem',
       description: 'A renegada mais temida dos setores externos admite que seu único ponto vulnerável é o seu abraço.',
-      imageAsset: 'assets/art/valkyries/vesper/hangar_fullbody.png',
+      imageAsset: 'assets/art/valkyries/vesper/pinup_memory_2.jpg',
       requiredBondLevel: 5,
       themeColor: Color(0xFFAA00FF),
     ),
@@ -324,6 +324,37 @@ class AffinityManager {
     if (pool.isEmpty) return '"Pronta para o combate, Comandante!"';
     final randIndex = math.Random().nextInt(pool.length);
     return pool[randIndex].text;
+  }
+
+  /// Diálogos Reativos Pós-Run estilo Hades (Sprint 18):
+  /// Reage ao último Chefe enfrentado e ao resultado da incursão anterior.
+  String getReactivePostRunDialogue(String valkyrieId, {String? lastBoss, bool wasVictory = false}) {
+    if (lastBoss != null && lastBoss.isNotEmpty) {
+      if (wasVictory) {
+        switch (valkyrieId) {
+          case 'selene':
+            return '"O padrão de ataque de $lastBoss foi completamente decodificado. Uma vitória cirúrgica, Comandante."';
+          case 'vesper':
+            return '"HAHA! Você viu os pedaços de $lastBoss voando pelo setor?! Ninguém segura a nossa artilharia!"';
+          case 'astraea':
+            return '"A anomalia $lastBoss retornou ao pó estelar primordial. O cosmos curva-se à nossa luz."';
+          default:
+            return '"Derrubamos $lastBoss em velocidade máxima! Ninguém no vácuo consegue nos alcançar, Comandante!"';
+        }
+      } else {
+        switch (valkyrieId) {
+          case 'selene':
+            return '"Recalibrando escudos após o confronto com $lastBoss. Ajustei a matriz de fase para não sermos surpreendidos novamente."';
+          case 'vesper':
+            return '"Aquele maldito $lastBoss amassou minha fuselagem! Abasteça os torpedos, chefe, quero revanche AGORA!"';
+          case 'astraea':
+            return '"Mesmo as estrelas oscilam diante de $lastBoss. Mas nossa chama ancestral jamais se apagará."';
+          default:
+            return '"Aquele $lastBoss tinha um poder de fogo absurdo... Mas já sei exatamente como desviar na próxima incursão!"';
+        }
+      }
+    }
+    return getRandomDialogue(valkyrieId);
   }
 
   /// Retorna a lista de memórias de uma Valquíria específica

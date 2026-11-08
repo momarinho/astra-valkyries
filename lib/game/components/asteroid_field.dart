@@ -199,45 +199,52 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
     }
 
-    // Determine enemy type based on clock timeline
+    // Determine enemy type based on clock timeline & Sprint 15 Sector Faction Bestiary
     EnemyType chosenType;
     int count = 1;
+    final sectorId = game.currentSector.id;
+    final roll = random.nextDouble();
 
-    if (difficultyTimer < 50.0) {
-      // Phase 1: Scout Drones
-      chosenType = EnemyType.scout;
-      count = random.nextInt(2) + 1; // 1-2 scouts
-    } else if (difficultyTimer < 110.0) {
-      // Phase 2: Scout swarms + occasional Phantom Raider
-      if (random.nextDouble() < 0.25) {
-        chosenType = EnemyType.raider;
-        count = 1;
+    if (difficultyTimer < 45.0) {
+      if (sectorId == SectorId.xenoHive && roll < 0.45) {
+        chosenType = EnemyType.voidSwarmer;
+        count = 6 + random.nextInt(4);
       } else {
         chosenType = EnemyType.scout;
-        count = random.nextInt(3) + 2; // 2-4 scouts
+        count = random.nextInt(2) + 1;
       }
-    } else if (difficultyTimer < 180.0) {
-      // Phase 3: Scouts, Raiders and Corvette Snipers
-      final roll = random.nextDouble();
-      if (roll < 0.40) {
-        chosenType = EnemyType.scout;
-        count = 3;
-      } else if (roll < 0.75) {
-        chosenType = EnemyType.raider;
+    } else if (difficultyTimer < 110.0) {
+      if (roll < 0.25) {
+        chosenType = (sectorId == SectorId.cryoAbyss) ? EnemyType.cryoBomber : EnemyType.raider;
         count = 1;
+      } else if (roll < 0.50) {
+        if (sectorId == SectorId.graveyard) {
+          chosenType = EnemyType.aegisBulwark;
+          count = 1;
+        } else if (sectorId == SectorId.xenoHive) {
+          chosenType = EnemyType.voidSwarmer;
+          count = 8 + random.nextInt(5);
+        } else {
+          chosenType = EnemyType.voidSwarmer;
+          count = 6;
+        }
       } else {
-        chosenType = EnemyType.sniper;
-        count = 1;
+        chosenType = EnemyType.scout;
+        count = random.nextInt(3) + 2;
       }
     } else {
-      // Phase 4: High intensity mixed assault
-      final roll = random.nextDouble();
-      if (roll < 0.35) {
-        chosenType = EnemyType.scout;
-        count = 4;
-      } else if (roll < 0.70) {
-        chosenType = EnemyType.raider;
-        count = 2;
+      if (roll < 0.22) {
+        chosenType = EnemyType.voidSwarmer;
+        count = 8 + random.nextInt(6);
+      } else if (roll < 0.42) {
+        chosenType = EnemyType.aegisBulwark;
+        count = 1 + (game.voidCellsLevel >= 2 ? 1 : 0);
+      } else if (roll < 0.58) {
+        chosenType = EnemyType.carrierHive;
+        count = 1;
+      } else if (roll < 0.76) {
+        chosenType = (sectorId == SectorId.cryoAbyss) ? EnemyType.cryoBomber : EnemyType.gravityWeaver;
+        count = 1;
       } else {
         chosenType = EnemyType.sniper;
         count = 2;

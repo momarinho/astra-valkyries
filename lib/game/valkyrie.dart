@@ -207,10 +207,10 @@ class Valkyrie {
     firepowerRating: 5,
     primaryColor: const Color(0xFFFFD700), // Imperial Gold
     accentColor: const Color(0xFFFFFFFF),  // Pure Stellar White
-    hudNeutralAsset: 'assets/art/valkyries/lyra/hud_neutral.png',
-    hudDamagedAsset: 'assets/art/valkyries/lyra/hud_damaged.png',
-    hudUltimateAsset: 'assets/art/valkyries/lyra/hud_ultimate.png',
-    hangarFullBodyAsset: 'assets/art/valkyries/lyra/hangar_fullbody.png',
+    hudNeutralAsset: 'assets/art/valkyries/astraea/hud_neutral.png',
+    hudDamagedAsset: 'assets/art/valkyries/astraea/hud_damaged.png',
+    hudUltimateAsset: 'assets/art/valkyries/astraea/hud_ultimate.png',
+    hangarFullBodyAsset: 'assets/art/valkyries/astraea/hangar_fullbody.png',
     shipAsset: 'assets/art/valkyries/lyra/ship_topdown.png',
     isSecret: true,
   );

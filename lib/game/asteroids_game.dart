@@ -37,6 +37,8 @@ import 'components/proximity_mine.dart';
 import 'components/derelict_turret.dart';
 import 'components/scrap_goliath.dart';
 import 'components/void_singularity_core.dart';
+import 'components/advanced_weapons.dart';
+import 'components/dead_cells_biome.dart';
 import 'map/sector_map_data.dart';
 import 'map/sector_map_generator.dart';
 import 'weapons.dart';
@@ -44,6 +46,7 @@ import 'level_manager.dart';
 import 'scientist.dart';
 import 'valkyrie.dart';
 import 'rogue_perks.dart';
+import 'roguelite_systems.dart';
 import 'meta_progression.dart';
 import 'affinity_system.dart';
 import 'sector.dart';
@@ -64,6 +67,7 @@ enum GameState {
   shop,
   leaderboard,
   levelUp,
+  starChart,
 }
 
 class ChestReward {
@@ -114,12 +118,122 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   int initialHangarTab = 0; // 0 = Hangar/Sortie, 1 = Loja/Oficina, 2 = Galeria
   GameState previousMenuState = GameState.menu;
 
-  // Masterpiece Modes (Sprint 8 - 12)
+  // Masterpiece Modes (Sprint 8 - 12) & Phase 2 Roguelite Systems (Sprint 13 - 18)
   bool isHyperMode = false;
   bool hyperModeUnlocked = true;
   bool isBossRushMode = false;
   int bossRushStage = 0;
   bool campaignCompleted = false;
+
+  // Sprint 13, 16, 17, 18: Void Cells, Blueprints, Mutations & Milestones
+  int voidCellsLevel = 0; // 0 a 5 (Dead Cells Boss Cells style)
+  int maxUnlockedVoidCells = 1;
+  final Set<String> foundBlueprints = {'aegis_sawblades', 'tesla_arc', 'inferno_cone'};
+  final Set<String> forgedBlueprints = {'aegis_sawblades', 'tesla_arc', 'inferno_cone'};
+  final List<String> activeMutations = [];
+  final Set<String> unlockedMilestones = {};
+  bool flawlessBossKill = true;
+  String? lastBossEncountered;
+  bool lastRunWasVictory = false;
+
+  bool isWeaponUnlockedInPool(String weaponId) {
+    const starterPool = {
+      'blaster',
+      'spread_shot',
+      'rapid_fire',
+      'bomb_launcher',
+      'aegis_sawblades',
+      'tesla_arc',
+      'inferno_cone',
+    };
+    return starterPool.contains(weaponId) || forgedBlueprints.contains(weaponId);
+  }
+
+  void tryDropBlueprint(Vector2 pos, {bool guaranteed = false}) {
+    final unfound = BlueprintDef.allBlueprints.where((bp) => !foundBlueprints.contains(bp.weaponId)).toList();
+    if (unfound.isEmpty) return;
+    if (!guaranteed && math.Random().nextDouble() > 0.35) return;
+
+    final bp = unfound.first;
+    foundBlueprints.add(bp.weaponId);
+    playSfx('powerup.wav');
+    spawnFloatingText(
+      pos + Vector2(0, -35),
+      '📐 DIAGRAMA DESBLOQUEADO: ${bp.name.toUpperCase()}!',
+      color: const Color(0xFF00E5FF),
+      fontSize: 15.0,
+    );
+    savePersistentCredits();
+  }
+
+  bool forgeBlueprint(String weaponId) {
+    final bp = BlueprintDef.findByWeaponId(weaponId);
+    if (bp == null) return false;
+    if (!foundBlueprints.contains(weaponId) || forgedBlueprints.contains(weaponId)) return false;
+    if (totalCredits < bp.forgeCost) return false;
+
+    totalCredits -= bp.forgeCost;
+    forgedBlueprints.add(weaponId);
+    playSfx('purchase.wav');
+    unlockMilestone('ach_blueprint_forge');
+    savePersistentCredits();
+    return true;
+  }
+
+  void unlockMilestone(String id) {
+    if (unlockedMilestones.contains(id)) return;
+    unlockedMilestones.add(id);
+    for (final m in MilestoneAchievement.allMilestones) {
+      if (m.id == id) {
+        totalCredits += m.scrapReward;
+        try {
+          spawnFloatingText(
+            player.position + Vector2(0, -85),
+            '🏆 CONQUISTA: ${m.title} (+${m.scrapReward} SUCATA)',
+            color: const Color(0xFFFFD700),
+            fontSize: 15.5,
+          );
+        } catch (_) {}
+        break;
+      }
+    }
+    savePersistentCredits();
+  }
+
+  void applyPilotMutation(String mutationId) {
+    if (activeMutations.contains(mutationId) || activeMutations.length >= 3) return;
+    activeMutations.add(mutationId);
+    switch (mutationId) {
+      case 'mut_lone_wolf':
+        rogueDamageMultiplier += 0.45;
+        break;
+      case 'mut_scrap_alchemist':
+        rogueCritChance = (rogueCritChance + 0.08).clamp(0.0, 1.0);
+        break;
+      case 'mut_elemental_overload':
+        rogueDamageMultiplier += 0.25;
+        break;
+    }
+  }
+
+  void spawnWingmanBullet({
+    required Vector2 position,
+    required Vector2 velocity,
+    required double damage,
+    required bool isEvolved,
+  }) {
+    world.add(
+      BulletComponent(
+        position: position,
+        radius: isEvolved ? 3.5 : 2.5,
+        velocity: velocity,
+        lifeTimer: 0.75,
+        damage: damage * rogueDamageMultiplier,
+        color: isEvolved ? const Color(0xFFFFD700) : const Color(0xFF00E5FF),
+        elementalStatus: isEvolved ? ElementalStatus.ionShock : ElementalStatus.none,
+      ),
+    );
+  }
 
   // Sistema Híbrido (Vampire Survivors + Risk of Rain): Sinalizadores de Anomalia
   int beaconsCharged = 0;
@@ -163,9 +277,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void addStardust(int amount) => addXp(amount);
   void addScrap(int amount) {
-    final effective = isHyperMode ? (amount * 1.5).round() : amount;
+    final voidCellMult = 1.0 + (voidCellsLevel * 0.25);
+    final effective = ((isHyperMode ? amount * 1.5 : amount) * voidCellMult).round();
     runCredits += effective;
     totalCredits += effective;
+    if (activeMutations.contains('mut_scrap_alchemist')) {
+      try {
+        player.heal(0.5);
+      } catch (_) {}
+    }
     savePersistentCredits();
   }
 
@@ -507,6 +627,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       final prefs = await SharedPreferences.getInstance();
       totalCredits = prefs.getInt('persistent_credits') ?? 0;
       hyperModeUnlocked = prefs.getBool('hyper_mode_unlocked') ?? true;
+      voidCellsLevel = prefs.getInt('void_cells_level') ?? 0;
+      maxUnlockedVoidCells = prefs.getInt('max_unlocked_void_cells') ?? 1;
+      selectedMovementPresetIndex = prefs.getInt('movement_preset_index') ?? 1;
+      useDirectionalControls = prefs.getBool('use_directional_controls') ?? false;
+      final savedFoundBp = prefs.getStringList('found_blueprints');
+      if (savedFoundBp != null) foundBlueprints.addAll(savedFoundBp);
+      final savedForgedBp = prefs.getStringList('forged_blueprints');
+      if (savedForgedBp != null) forgedBlueprints.addAll(savedForgedBp);
+      final savedMilestones = prefs.getStringList('unlocked_milestones');
+      if (savedMilestones != null) unlockedMilestones.addAll(savedMilestones);
     } catch (_) {}
 
     // Register global hardware keyboard handler for instant pause detection
@@ -525,8 +655,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void addRunCredits(int amount) {
     if (state != GameState.playing) return;
-    final effective = isHyperMode ? (amount * 1.5).round() : amount;
+    final voidCellMult = 1.0 + (voidCellsLevel * 0.25);
+    final effective = ((isHyperMode ? amount * 1.5 : amount) * voidCellMult).round();
     runCredits += effective;
+    if (activeMutations.contains('mut_scrap_alchemist')) {
+      try {
+        player.heal(0.5);
+      } catch (_) {}
+    }
   }
 
   bool purchaseMetaUpgrade(String id) {
@@ -552,6 +688,13 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('persistent_credits', totalCredits);
+      await prefs.setInt('void_cells_level', voidCellsLevel);
+      await prefs.setInt('max_unlocked_void_cells', maxUnlockedVoidCells);
+      await prefs.setInt('movement_preset_index', selectedMovementPresetIndex);
+      await prefs.setBool('use_directional_controls', useDirectionalControls);
+      await prefs.setStringList('found_blueprints', foundBlueprints.toList());
+      await prefs.setStringList('forged_blueprints', forgedBlueprints.toList());
+      await prefs.setStringList('unlocked_milestones', unlockedMilestones.toList());
     } catch (_) {}
   }
 
@@ -681,6 +824,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       case GameState.levelUp:
         _safeAddOverlay('levelUp');
         break;
+      case GameState.starChart:
+        _safeAddOverlay('starChart');
+        break;
     }
   }
 
@@ -788,6 +934,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Roguelike run stats from selected Valkyrie + Meta Upgrades
     activePassives.clear();
+    activeMutations.clear();
+    flawlessBossKill = true;
     rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus).clamp(0.0, 1.0);
     rogueDamageMultiplier = 1.0 + metaProgression.damageBonusMultiplier;
     rogueFireRateMultiplier = 1.0;
@@ -869,6 +1017,19 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is SingularityRiftComponent ||
         child is ProximityMineComponent ||
         child is DerelictTurretComponent ||
+        child is OrbitalSawbladeComponent ||
+        child is TeslaLightningComponent ||
+        child is ChakramProjectileComponent ||
+        child is GravityAuraPulseComponent ||
+        child is ThermalLanceBeamComponent ||
+        child is WingmanDroneComponent ||
+        child is PlayerClusterMineComponent ||
+        child is MegastructureWallComponent ||
+        child is LaserContainmentGateComponent ||
+        child is TimedVaultComponent ||
+        child is FlawlessVaultComponent ||
+        child is VoidMerchantComponent ||
+        child is CursedShrineComponent ||
         child is SectorBoss ||
         child is HyperspaceGateComponent ||
         child is VoidReaperComponent);
@@ -1017,8 +1178,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     switch (currentSector.id) {
       case SectorId.orion:
+      case SectorId.cryoAbyss:
         final boss = IgnisWyrmComponent(position: spawnPos);
         activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
         world.add(boss);
         spawnFloatingText(
           player.position + Vector2(0, -60),
@@ -1028,8 +1192,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         );
         break;
       case SectorId.graveyard:
+      case SectorId.xenoHive:
         final boss = ScrapGoliathComponent(position: spawnPos);
         activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
         world.add(boss);
         spawnFloatingText(
           player.position + Vector2(0, -60),
@@ -1041,6 +1208,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       case SectorId.eventHorizon:
         final boss = VoidSingularityCoreComponent(position: spawnPos);
         activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
         world.add(boss);
         spawnFloatingText(
           player.position + Vector2(0, -60),
@@ -1052,6 +1221,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       case SectorId.vesta:
         final boss = DreadnoughtLeviathanComponent(position: spawnPos);
         activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
         world.add(boss);
         spawnFloatingText(
           player.position + Vector2(0, -60),
@@ -1145,7 +1316,28 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     );
   }
 
-  void jumpToNextSector() {
+  void openStarChart() {
+    if (state != GameState.playing) return;
+    if (currentSector.id == SectorId.eventHorizon && campaignCompleted) {
+      jumpToNextSector();
+      return;
+    }
+    pauseEngine();
+    state = GameState.starChart;
+    _safeAddOverlay('starChart');
+  }
+
+  void jumpToNextSector({Sector? targetSector, String? chosenMutationId}) {
+    if (chosenMutationId != null) {
+      applyPilotMutation(chosenMutationId);
+    }
+    if (state == GameState.starChart) {
+      overlays.remove('starChart');
+      state = GameState.playing;
+      resumeEngine();
+      gameFocusNode?.requestFocus();
+    }
+
     if (currentSector.id == SectorId.eventHorizon && campaignCompleted) {
       addScore(30000);
       addScrap(2500);
@@ -1153,23 +1345,29 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       return;
     }
 
-    SectorId nextId;
-    switch (currentSector.id) {
-      case SectorId.vesta:
-        nextId = SectorId.orion;
-        break;
-      case SectorId.orion:
-        nextId = SectorId.graveyard;
-        break;
-      case SectorId.graveyard:
-        nextId = SectorId.eventHorizon;
-        break;
-      case SectorId.eventHorizon:
-        nextId = SectorId.vesta; // Loop / Cataclismo com bônus de pontuação
-        break;
+    if (targetSector != null) {
+      currentSector = targetSector;
+    } else {
+      SectorId nextId;
+      switch (currentSector.id) {
+        case SectorId.vesta:
+          nextId = SectorId.orion;
+          break;
+        case SectorId.orion:
+        case SectorId.cryoAbyss:
+          nextId = SectorId.graveyard;
+          break;
+        case SectorId.graveyard:
+        case SectorId.xenoHive:
+          nextId = SectorId.eventHorizon;
+          break;
+        case SectorId.eventHorizon:
+          nextId = SectorId.vesta; // Loop / Cataclismo com bônus de pontuação
+          break;
+      }
+      currentSector = Sector.findById(nextId);
     }
 
-    currentSector = Sector.findById(nextId);
     timeRemaining = fairRoundDuration;
     voidReaperSpawned = false;
     activeBoss = null;
@@ -1188,6 +1386,17 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is BulletComponent ||
         child is ProximityMineComponent ||
         child is DerelictTurretComponent ||
+        child is TeslaLightningComponent ||
+        child is ChakramProjectileComponent ||
+        child is GravityAuraPulseComponent ||
+        child is ThermalLanceBeamComponent ||
+        child is PlayerClusterMineComponent ||
+        child is MegastructureWallComponent ||
+        child is LaserContainmentGateComponent ||
+        child is TimedVaultComponent ||
+        child is FlawlessVaultComponent ||
+        child is VoidMerchantComponent ||
+        child is CursedShrineComponent ||
         child is SectorBoss ||
         child is HyperspaceGateComponent ||
         child is VoidReaperComponent);
@@ -1621,9 +1830,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (state != GameState.playing) return;
 
     missionSurvived = survived;
+    lastRunWasVictory = survived;
     if (survived) {
       score += 1000; // Bônus de sobrevivência de 3 minutos completos
       runCredits += 350; // Survival mission scrap bounty
+      if (voidCellsLevel >= maxUnlockedVoidCells && maxUnlockedVoidCells < 5) {
+        maxUnlockedVoidCells = (voidCellsLevel + 1).clamp(1, 5);
+        unlockMilestone('ach_void_cell_1');
+      }
       if (!topRecordBeaten && topLeaderScore > 0 && score > topLeaderScore) {
         topRecordBeaten = true;
       }

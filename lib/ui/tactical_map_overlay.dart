@@ -402,6 +402,22 @@ class _TacticalMapPainter extends CustomPainter {
             canvas.drawCircle(nodePos, 10.0, Paint()..color = node.primaryColor.withOpacity(0.35));
             break;
 
+          case MapNodeType.timedVault:
+          case MapNodeType.flawlessVault:
+            canvas.drawCircle(nodePos, 6.5, Paint()..color = node.primaryColor);
+            break;
+
+          case MapNodeType.voidMerchant:
+            canvas.drawRect(
+              Rect.fromCenter(center: nodePos, width: 9, height: 9),
+              Paint()..color = const Color(0xFFFFB300),
+            );
+            break;
+
+          case MapNodeType.cursedShrine:
+            canvas.drawCircle(nodePos, 6.0, Paint()..color = const Color(0xFFE040FB));
+            break;
+
           case MapNodeType.playerSpawn:
             break;
           default:

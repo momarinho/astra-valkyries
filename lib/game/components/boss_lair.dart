@@ -97,9 +97,11 @@ class BossLairComponent extends PositionComponent with HasGameReference<Asteroid
     final SectorBoss boss;
     switch (game.currentSector.id) {
       case SectorId.orion:
+      case SectorId.cryoAbyss:
         boss = IgnisWyrmComponent(position: position.clone());
         break;
       case SectorId.graveyard:
+      case SectorId.xenoHive:
         boss = ScrapGoliathComponent(position: position.clone());
         break;
       case SectorId.eventHorizon:
@@ -111,6 +113,8 @@ class BossLairComponent extends PositionComponent with HasGameReference<Asteroid
     }
 
     game.activeBoss = boss;
+    game.flawlessBossKill = true;
+    game.lastBossEncountered = boss.bossName;
     game.world.add(boss);
 
     game.playSfx('powerup.wav');

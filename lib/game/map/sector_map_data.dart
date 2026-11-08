@@ -13,6 +13,10 @@ enum MapNodeType {
   bossLair,
   cryoPod,
   warpGate,
+  timedVault,
+  flawlessVault,
+  voidMerchant,
+  cursedShrine,
 }
 
 class MapNode {

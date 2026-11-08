@@ -30,3 +30,4 @@ go-backend/go-backend
 go-backend.db
 go-backend.db-journal
 go-backend.log
+build/

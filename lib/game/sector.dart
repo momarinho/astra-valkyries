@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 enum SectorId {
   vesta,
   orion,
+  cryoAbyss,
   graveyard,
+  xenoHive,
   eventHorizon,
 }
 
@@ -119,9 +121,76 @@ class Sector {
     ),
   ];
 
+  static const Sector cryoAbyss = Sector(
+    id: SectorId.cryoAbyss,
+    name: 'Abismo Criogênico',
+    subtitle: 'Setor 2B // Glaciares de Hidrogênio Sólido',
+    description: 'Rota alternativa congelada. Bombardeiros criogênicos e tempestades de gelo reduzem a velocidade térmica.',
+    difficultyLabel: 'DIFÍCIL // ROTA B',
+    primaryColor: Color(0xFF80D8FF),
+    secondaryColor: Color(0xFF006064),
+    speedMultiplier: 1.15,
+    asteroidDensity: 1.15,
+    hazardWarning: 'Zero Absoluto: Bombardeiros Criogênicos e cristais de alta densidade.',
+    icon: Icons.ac_unit,
+    paletteStops: [
+      (t: 0.0, a: Color(0xFF004D40), b: Color(0xFF0097A7)),
+      (t: 50.0, a: Color(0xFF006064), b: Color(0xFF00B8D4)),
+      (t: 105.0, a: Color(0xFF01579B), b: Color(0xFF00E5FF)),
+      (t: 150.0, a: Color(0xFF1A237E), b: Color(0xFF40C4FF)),
+      (t: 180.0, a: Color(0xFF311B92), b: Color(0xFF80D8FF)),
+    ],
+  );
+
+  static const Sector xenoHive = Sector(
+    id: SectorId.xenoHive,
+    name: 'Colmeia Xeno de Leviatãs',
+    subtitle: 'Setor 3B // Ninho Biológico do Vazio',
+    description: 'Rota alternativa infestada por Carrier Hives e enxames massivos de Void Swarmers.',
+    difficultyLabel: 'EXPERT // ROTA B',
+    primaryColor: Color(0xFFFF4081),
+    secondaryColor: Color(0xFF4A148C),
+    speedMultiplier: 1.28,
+    asteroidDensity: 1.25,
+    hazardWarning: 'Infestação Xeno: Naves-Mãe invocadoras e enxames vorazes.',
+    icon: Icons.hive_rounded,
+    paletteStops: [
+      (t: 0.0, a: Color(0xFF311B92), b: Color(0xFF880E4F)),
+      (t: 50.0, a: Color(0xFF4A148C), b: Color(0xFFC51162)),
+      (t: 105.0, a: Color(0xFF6A1B9A), b: Color(0xFFFF4081)),
+      (t: 150.0, a: Color(0xFF880E4F), b: Color(0xFFFF80AB)),
+      (t: 180.0, a: Color(0xFF1A0033), b: Color(0xFFD500F9)),
+    ],
+  );
+
+  static List<Sector> get allSectorsWithBranches => [
+        ...allSectors,
+        cryoAbyss,
+        xenoHive,
+      ];
+
+  /// Retorna as opções de rota ramificada no Mapa Estelar (Branching Star Chart) ao concluir um setor
+  static List<Sector> getNextBranchChoices(Sector current) {
+    switch (current.id) {
+      case SectorId.vesta:
+        // Do Setor 1 (Vesta) bifurca para Setor 2A (Forja de Órion) ou Setor 2B (Abismo Criogênico)
+        return [allSectors[1], cryoAbyss];
+      case SectorId.orion:
+      case SectorId.cryoAbyss:
+        // Do Setor 2A/2B bifurca para Setor 3A (Cemitério Aegis) ou Setor 3B (Colmeia Xeno)
+        return [allSectors[2], xenoHive];
+      case SectorId.graveyard:
+      case SectorId.xenoHive:
+        // Do Setor 3A/3B converge para o Clímax Final no Setor 4 (Event Horizon)
+        return [allSectors[3]];
+      case SectorId.eventHorizon:
+        return [];
+    }
+  }
+
   static Sector get defaultSector => allSectors.first;
 
   static Sector findById(SectorId id) {
-    return allSectors.firstWhere((s) => s.id == id, orElse: () => defaultSector);
+    return allSectorsWithBranches.firstWhere((s) => s.id == id, orElse: () => defaultSector);
   }
 }

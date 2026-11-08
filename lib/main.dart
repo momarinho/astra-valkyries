@@ -15,6 +15,7 @@ import 'ui/pause_overlay.dart';
 import 'ui/level_up_overlay.dart';
 import 'ui/chest_overlay.dart';
 import 'ui/tactical_map_overlay.dart';
+import 'ui/star_chart_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,6 +90,7 @@ class _GameScreenState extends State<GameScreen> {
           'levelUp': (context, game) => LevelUpOverlay(game: game),
           'chest': (context, game) => ChestOverlay(game: game),
           'tacticalMap': (context, game) => TacticalMapOverlay(game: game),
+          'starChart': (context, game) => StarChartOverlay(game: game),
         },
         initialActiveOverlays: const ['menu'],
       ),

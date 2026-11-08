@@ -191,13 +191,20 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       final double dmg;
       switch (other.type) {
         case EnemyType.scout:
-          dmg = 16.0;
+        case EnemyType.voidSwarmer:
+          dmg = 14.0;
           break;
         case EnemyType.raider:
-          dmg = 32.0;
+        case EnemyType.cryoBomber:
+          dmg = 30.0;
           break;
         case EnemyType.sniper:
+        case EnemyType.gravityWeaver:
           dmg = 22.0;
+          break;
+        case EnemyType.aegisBulwark:
+        case EnemyType.carrierHive:
+          dmg = 36.0;
           break;
         case EnemyType.eliteCommander:
           dmg = 45.0;
@@ -213,7 +220,16 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     if (isInvulnerable() || game.state != GameState.playing) return;
     game.playSfx('player_hit.wav');
 
-    final actualDamage = damage.clamp(5.0, 999.0);
+    if (game.activeBoss != null && !game.activeBoss!.isDefeated) {
+      game.flawlessBossKill = false;
+    }
+
+    double adjustedDamage = damage;
+    if (game.activeMutations.contains('mut_emergency_protocol') && hpPercent <= 0.40) {
+      adjustedDamage *= 0.60;
+    }
+
+    final actualDamage = adjustedDamage.clamp(5.0, 999.0);
     hp = math.max(0.0, hp - actualDamage);
 
     game.triggerScreenShake(duration: 0.35, intensity: math.min(18.0, 8.0 + actualDamage * 0.25));
@@ -277,8 +293,21 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     velocity.scale(math.exp(-movementFriction * dt));
   }
 
+  void _triggerMirrorDashDeflection() {
+    try {
+      if (!game.activeMutations.contains('mut_mirror_dash')) return;
+      final enemyBullets = game.world.children.whereType<EnemyBulletComponent>().toList();
+      for (final eb in enemyBullets) {
+        if (eb.position.distanceTo(position) <= 150.0) {
+          eb.removeFromParent();
+        }
+      }
+    } catch (_) {}
+  }
+
   void dash() {
     final vId = valkyrie?.id ?? 'lyra';
+    _triggerMirrorDashDeflection();
 
     if (vId == 'vesper') {
       // 🗡️ VESPER: PHANTOM QUICK-SLIP (Dual-charge agile micro-evade)
@@ -709,6 +738,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     canvas.translate(radius, radius);
 
+    _renderTacticalLaserSight(canvas);
     _renderShip(canvas);
 
     // Muzzle flash rendering: crisp, forward-directed spark that never covers the ship
@@ -738,6 +768,49 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         ..blendMode = BlendMode.plus
         ..style = PaintingStyle.fill;
       canvas.drawCircle(tip, flashLen * 0.6, coronaPaint);
+    }
+  }
+
+  bool hasTacticalLaserSight = true;
+
+  void _renderTacticalLaserSight(Canvas canvas) {
+    if (!hasTacticalLaserSight) return;
+    bool isLocked = false;
+    try {
+      isLocked = game.isAimLocked || game.mobileShootPressed;
+    } catch (_) {}
+
+    final sightColor = isLocked
+        ? const Color(0xFFFF1744)
+        : (valkyrie?.accentColor ?? const Color(0xFF00E5FF));
+    final alpha = isLocked ? 0.55 : 0.26;
+    final sightPaint = Paint()
+      ..color = sightColor.withValues(alpha: alpha)
+      ..strokeWidth = isLocked ? 1.8 : 1.2
+      ..style = PaintingStyle.stroke;
+
+    // Feixe de mira tracejado saindo do nariz da nave (Sprint 17: Tactical Laser Sight)
+    const double startY = -24.0;
+    const double endY = -380.0;
+    const double dashLen = 14.0;
+    const double gapLen = 10.0;
+    double y = startY;
+    while (y > endY) {
+      final nextY = math.max(endY, y - dashLen);
+      canvas.drawLine(Offset(0, y), Offset(0, nextY), sightPaint);
+      y = nextY - gapLen;
+    }
+
+    // Retícula holográfica na ponta do feixe
+    final reticleCenter = const Offset(0, endY);
+    canvas.drawCircle(
+      reticleCenter,
+      isLocked ? 6.5 : 4.5,
+      sightPaint,
+    );
+    if (isLocked) {
+      canvas.drawLine(const Offset(-10, endY), const Offset(-4, endY), sightPaint);
+      canvas.drawLine(const Offset(4, endY), const Offset(10, endY), sightPaint);
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:asteroids/game/valkyrie.dart';
 import 'package:asteroids/game/meta_progression.dart';
 import 'package:asteroids/game/affinity_system.dart';
 import 'package:asteroids/game/sector.dart';
+import 'package:asteroids/game/roguelite_systems.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -18,6 +19,7 @@ class ValkyrieSelectionOverlay extends StatefulWidget {
 
 class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   int _selectedTab = 0; // 0 = Sortie / Hangar, 1 = Oficina / Workshop, 2 = Galeria / Memórias
+  int _workshopSubTab = 0; // 0 = Upgrades, 1 = Forja de Diagramas (Sprint 16), 2 = Conquistas (Sprint 17)
   int _selectedIndex = 0;
   int _selectedSectorIndex = 0;
   bool _unlockedSecretValkyrie = false;
@@ -677,6 +679,54 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               child: _buildSectorSelector(current),
             ),
             const SizedBox(width: 8),
+            // Void Cells Difficulty Selector (Sprint 16: 0 to 5 Cells)
+            GestureDetector(
+              key: const Key('void_cells_selector_button'),
+              onTap: () {
+                setState(() {
+                  final maxVc = widget.game.maxUnlockedVoidCells.clamp(1, 5);
+                  widget.game.voidCellsLevel = (widget.game.voidCellsLevel + 1) % (maxVc + 1);
+                });
+                widget.game.savePersistentCredits();
+                widget.game.playSfx('menu_select.wav');
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: widget.game.voidCellsLevel > 0
+                      ? const Color(0xFFE040FB).withValues(alpha: 0.22)
+                      : const Color(0xFF0C1017).withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: widget.game.voidCellsLevel > 0
+                        ? const Color(0xFFE040FB)
+                        : Colors.white24,
+                    width: widget.game.voidCellsLevel > 0 ? 1.6 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.science_rounded,
+                      size: 15,
+                      color: widget.game.voidCellsLevel > 0 ? const Color(0xFFE040FB) : Colors.white54,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'VOID CELLS: ${widget.game.voidCellsLevel}',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: widget.game.voidCellsLevel > 0 ? const Color(0xFFE040FB) : Colors.white54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             // Hyper Mode Toggle Chip (+25% Speed, +50% XP/Scrap)
             GestureDetector(
               onTap: () {
@@ -973,41 +1023,238 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             ],
           ),
 
-          const Divider(color: Colors.white12, height: 24),
+          const Divider(color: Colors.white12, height: 20),
 
-          // Responsive Upgrade Grid / List
+          // Sub-navigation inside Workshop: Fleet Upgrades | Blueprint Forge | Milestones Codex
+          Row(
+            children: [
+              _buildWorkshopSubTabButton(0, 'MELHORIAS DE FROTA', Icons.tune_rounded, const Color(0xFFFFB300)),
+              const SizedBox(width: 8),
+              _buildWorkshopSubTabButton(1, 'FORJA DE DIAGRAMAS', Icons.architecture_rounded, const Color(0xFF00E5FF)),
+              const SizedBox(width: 8),
+              _buildWorkshopSubTabButton(2, 'CÓDICE DE CONQUISTAS', Icons.emoji_events_rounded, const Color(0xFFFFD700)),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Responsive Content (Upgrades / Blueprints / Milestones)
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final useTwoColumns = constraints.maxWidth > 800;
+            child: _workshopSubTab == 0
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      final useTwoColumns = constraints.maxWidth > 800;
 
-                if (useTwoColumns) {
-                  return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.3,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                    ),
-                    itemCount: upgrades.length,
-                    itemBuilder: (context, index) {
-                      return _buildMetaUpgradeCard(upgrades[index], meta);
+                      if (useTwoColumns) {
+                        return GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 2.3,
+                            crossAxisSpacing: 14,
+                            mainAxisSpacing: 14,
+                          ),
+                          itemCount: upgrades.length,
+                          itemBuilder: (context, index) {
+                            return _buildMetaUpgradeCard(upgrades[index], meta);
+                          },
+                        );
+                      } else {
+                        return ListView.separated(
+                          itemCount: upgrades.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return _buildMetaUpgradeCard(upgrades[index], meta);
+                          },
+                        );
+                      }
                     },
-                  );
-                } else {
-                  return ListView.separated(
-                    itemCount: upgrades.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _buildMetaUpgradeCard(upgrades[index], meta);
-                    },
-                  );
-                }
-              },
-            ),
+                  )
+                : (_workshopSubTab == 1 ? _buildBlueprintForgeList() : _buildMilestonesList()),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWorkshopSubTabButton(int subIndex, String label, IconData icon, Color color) {
+    final isSelected = _workshopSubTab == subIndex;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _workshopSubTab = subIndex);
+        widget.game.playSfx('menu_select.wav');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: isSelected ? color : Colors.white12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isSelected ? color : Colors.white54),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : Colors.white60,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlueprintForgeList() {
+    final blueprints = BlueprintDef.allBlueprints;
+    return ListView.separated(
+      itemCount: blueprints.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final bp = blueprints[index];
+        final isFound = widget.game.foundBlueprints.contains(bp.weaponId);
+        final isForged = widget.game.forgedBlueprints.contains(bp.weaponId);
+        final canForge = isFound && !isForged && widget.game.totalCredits >= bp.forgeCost;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111724),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isForged ? const Color(0xFF00E676) : (isFound ? bp.color : Colors.white12),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(bp.icon, color: isFound ? bp.color : Colors.white24, size: 26),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isFound ? bp.name.toUpperCase() : 'DIAGRAMA CRIPTOGRAFADO // ???',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isFound ? Colors.white : Colors.white38,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isFound ? bp.description : 'Origem: ${bp.dropSource}',
+                      style: const TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (isForged)
+                const Text(
+                  'FORJADO ✓',
+                  style: TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF00E676),
+                  ),
+                )
+              else
+                ElevatedButton(
+                  onPressed: canForge
+                      ? () {
+                          widget.game.forgeBlueprint(bp.weaponId);
+                          setState(() {});
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E5FF),
+                    foregroundColor: Colors.black,
+                  ),
+                  child: Text(
+                    isFound ? 'FORJAR (${bp.forgeCost} c)' : 'BLOQUEADO',
+                    style: const TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMilestonesList() {
+    final milestones = MilestoneAchievement.allMilestones;
+    return ListView.separated(
+      itemCount: milestones.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final m = milestones[index];
+        final isUnlocked = widget.game.unlockedMilestones.contains(m.id);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111724),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isUnlocked ? const Color(0xFFFFD700) : Colors.white12,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(m.icon, color: isUnlocked ? m.color : Colors.white24, size: 24),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      m.title.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isUnlocked ? const Color(0xFFFFD700) : Colors.white70,
+                      ),
+                    ),
+                    Text(
+                      m.description,
+                      style: const TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12,
+                        color: Colors.white60,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                isUnlocked ? 'CONCLUÍDA (+${m.scrapReward}c)' : 'RECOMPENSA: +${m.scrapReward}c',
+                style: TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: isUnlocked ? const Color(0xFF00E676) : const Color(0xFFFFB300),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1629,7 +1876,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildDialogueBubble(Valkyrie v) {
-    final text = _currentDialogueText ?? widget.game.affinityManager.getRandomDialogue(v.id);
+    final text = _currentDialogueText ??
+        widget.game.affinityManager.getReactivePostRunDialogue(
+          v.id,
+          lastBoss: widget.game.lastBossEncountered,
+          wasVictory: widget.game.lastRunWasVictory,
+        );
 
     return GestureDetector(
       onTap: () {

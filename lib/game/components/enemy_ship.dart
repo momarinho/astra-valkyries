@@ -10,12 +10,18 @@ import 'enemy_bullet.dart';
 import 'xp_orb.dart';
 import 'chest.dart';
 import 'drop.dart';
+import 'advanced_weapons.dart';
 
 enum EnemyType {
   scout,          // Swarmer / Fodder: direct fast pursuit
   raider,         // Charger / Kamikaze: telegraphed laser dash
   sniper,         // Artillery: stays back and shoots plasma orbs
   eliteCommander, // Miniboss: large flagship with HP bar & guaranteed chest drop
+  voidSwarmer,    // Sprint 15: Ultra-fast swarm drone that spawns in packs of 15-30
+  aegisBulwark,   // Sprint 15: Heavy cruiser with impenetrable frontal shield (requires flanking/dash)
+  carrierHive,    // Sprint 15: Mothership that spawns Void Swarmers from afar
+  gravityWeaver,  // Sprint 15: Warps local gravity, pulling the player ship inward
+  cryoBomber,     // Sprint 15: Fires glacial cryo-shells that slow movement
 }
 
 enum RaiderState {
@@ -43,6 +49,51 @@ class EnemyShipComponent extends PositionComponent
   RaiderState raiderState = RaiderState.stalking;
   double raiderTimer = 0.0;
   Vector2 lockedChargeDirection = Vector2.zero();
+
+  // Sprint 14: 4 Elemental Status Effects & Cross-Elemental Synergy
+  final Map<ElementalStatus, double> activeStatuses = {};
+  double _burnTickTimer = 0.0;
+
+  bool hasStatus(ElementalStatus status) => (activeStatuses[status] ?? 0.0) > 0.0;
+
+  void applyElementalStatus(ElementalStatus status, {double duration = 4.0}) {
+    if (status == ElementalStatus.none || hp <= 0) return;
+
+    // Check for Cross-Elemental Synergy Reaction (e.g. Freeze + Burn, Shock + Freeze, Rupture + Element)
+    final hadOtherElement = activeStatuses.entries.any((e) => e.key != status && e.value > 0);
+    activeStatuses[status] = math.max(activeStatuses[status] ?? 0.0, duration);
+
+    if (hadOtherElement) {
+      try {
+        game.spawnFloatingText(
+          position + Vector2(0, -radius - 10),
+          '⚡ ELEMENTAL SYNERGY!',
+          color: const Color(0xFFFFD700),
+          fontSize: 11.0,
+        );
+      } catch (_) {}
+      hp -= 28.0;
+      if (hp <= 0) {
+        die();
+        return;
+      }
+    }
+
+    // Ion Shock arcs electricity to a nearby enemy within 170px
+    if (status == ElementalStatus.ionShock) {
+      try {
+        for (final other in game.world.children.whereType<EnemyShipComponent>()) {
+          if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 170.0) {
+            other.hp -= 14.0;
+            if (other.hp <= 0) {
+              other.die();
+            }
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+  }
 
   EnemyShipComponent({
     required Vector2 position,
@@ -79,6 +130,39 @@ class EnemyShipComponent extends PositionComponent
         scoreValue = 1500;
         shootCooldown = 2.4;
         break;
+      case EnemyType.voidSwarmer:
+        radius = 9.5;
+        maxHp = 14.0;
+        baseSpeed = 195.0;
+        scoreValue = 55;
+        break;
+      case EnemyType.aegisBulwark:
+        radius = 22.0;
+        maxHp = 190.0;
+        baseSpeed = 72.0;
+        scoreValue = 420;
+        break;
+      case EnemyType.carrierHive:
+        radius = 28.0;
+        maxHp = 340.0;
+        baseSpeed = 48.0;
+        scoreValue = 750;
+        shootCooldown = 3.2;
+        break;
+      case EnemyType.gravityWeaver:
+        radius = 18.0;
+        maxHp = 115.0;
+        baseSpeed = 85.0;
+        scoreValue = 340;
+        shootCooldown = 2.0;
+        break;
+      case EnemyType.cryoBomber:
+        radius = 17.0;
+        maxHp = 95.0;
+        baseSpeed = 90.0;
+        scoreValue = 310;
+        shootCooldown = 2.2;
+        break;
     }
 
     hp = maxHp;
@@ -103,33 +187,165 @@ class EnemyShipComponent extends PositionComponent
       hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
     }
 
+    // Tick Elemental Statuses (Solar Burn DoT & Cryo Freeze Slow)
+    if (activeStatuses.isNotEmpty) {
+      final expired = <ElementalStatus>[];
+      activeStatuses.forEach((st, remaining) {
+        final next = remaining - dt;
+        if (next <= 0) {
+          expired.add(st);
+        } else {
+          activeStatuses[st] = next;
+        }
+      });
+      for (final st in expired) {
+        activeStatuses.remove(st);
+      }
+
+      if (hasStatus(ElementalStatus.solarBurn)) {
+        _burnTickTimer += dt;
+        if (_burnTickTimer >= 0.5) {
+          _burnTickTimer = 0.0;
+          takeDamage(14.0, position);
+          if (hp <= 0) return;
+        }
+      }
+    }
+
+    final cryoSlowFactor = hasStatus(ElementalStatus.cryoFreeze) ? 0.50 : 1.0;
+    final effectiveDt = dt * cryoSlowFactor;
+
     final player = game.player;
     final toPlayer = player.position - position;
     final distToPlayer = toPlayer.length;
 
     // Despawn non-elite enemies if drifted far outside the camera radius
-    if (type != EnemyType.eliteCommander && distToPlayer > GameConstants.proximityDespawnRadius * 1.35) {
+    if (type != EnemyType.eliteCommander &&
+        type != EnemyType.carrierHive &&
+        distToPlayer > GameConstants.proximityDespawnRadius * 1.35) {
       removeFromParent();
       return;
     }
 
     switch (type) {
       case EnemyType.scout:
-        _updateScout(dt, toPlayer, distToPlayer);
+        _updateScout(effectiveDt, toPlayer, distToPlayer);
         break;
       case EnemyType.raider:
-        _updateRaider(dt, player, toPlayer, distToPlayer);
+        _updateRaider(effectiveDt, player, toPlayer, distToPlayer);
         break;
       case EnemyType.sniper:
-        _updateSniper(dt, toPlayer, distToPlayer);
+        _updateSniper(effectiveDt, toPlayer, distToPlayer);
         break;
       case EnemyType.eliteCommander:
-        _updateElite(dt, toPlayer, distToPlayer);
+        _updateElite(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.voidSwarmer:
+        _updateVoidSwarmer(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.aegisBulwark:
+        _updateAegisBulwark(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.carrierHive:
+        _updateCarrierHive(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.gravityWeaver:
+        _updateGravityWeaver(effectiveDt, player, toPlayer, distToPlayer);
+        break;
+      case EnemyType.cryoBomber:
+        _updateCryoBomber(effectiveDt, toPlayer, distToPlayer);
         break;
     }
 
-    position += velocity * dt;
+    position += velocity * cryoSlowFactor * dt;
     _enforceSectorBounds();
+  }
+
+  void _updateVoidSwarmer(double dt, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final dir = toPlayer.normalized();
+      final tangent = Vector2(-dir.y, dir.x) * math.sin( spiralAngle += dt * 7.0 ) * 0.35;
+      final combined = (dir + tangent).normalized();
+      velocity = combined * baseSpeed;
+      angle = math.atan2(combined.y, combined.x) + math.pi / 2;
+    }
+  }
+
+  void _updateAegisBulwark(double dt, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final targetDir = toPlayer.normalized();
+      final desiredAngle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+      double diff = (desiredAngle - angle) % (math.pi * 2);
+      if (diff > math.pi) diff -= math.pi * 2;
+      if (diff < -math.pi) diff += math.pi * 2;
+      // Turns deliberately so the player can Dash behind its frontal shield!
+      angle += diff.clamp(-1.8 * dt, 1.8 * dt);
+      final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
+      velocity = forwardDir * baseSpeed;
+    }
+  }
+
+  void _updateCarrierHive(double dt, Vector2 toPlayer, double dist) {
+    final targetDir = dist > 1.0 ? toPlayer.normalized() : Vector2(0, -1);
+    angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+    if (dist > 520) {
+      velocity = targetDir * baseSpeed;
+    } else if (dist < 360) {
+      velocity = -targetDir * (baseSpeed * 0.8);
+    } else {
+      velocity = Vector2(-targetDir.y, targetDir.x) * (baseSpeed * 0.5);
+    }
+
+    shootCooldown -= dt;
+    if (shootCooldown <= 0) {
+      shootCooldown = 3.8;
+      // Spawns a mini-squad of 3 Void Swarmers if under enemy cap
+      final currentEnemies = game.world.children.whereType<EnemyShipComponent>().length;
+      if (currentEnemies < 32) {
+        for (var i = -1; i <= 1; i++) {
+          final offset = Vector2(i * 24.0, 24.0);
+          game.world.add(
+            EnemyShipComponent(
+              position: position + offset,
+              type: EnemyType.voidSwarmer,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _updateGravityWeaver(double dt, PlayerComponent player, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final dir = toPlayer.normalized();
+      angle += 2.5 * dt;
+      velocity = dir * baseSpeed;
+      // Pulls the player ship gently toward the Gravity Weaver within 340px
+      if (dist <= 340.0) {
+        final pullToWeaver = (position - player.position).normalized();
+        player.velocity += pullToWeaver * (110.0 * dt);
+      }
+    }
+  }
+
+  void _updateCryoBomber(double dt, Vector2 toPlayer, double dist) {
+    final targetDir = dist > 1.0 ? toPlayer.normalized() : Vector2(0, -1);
+    angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+    velocity = targetDir * baseSpeed;
+
+    shootCooldown -= dt;
+    if (shootCooldown <= 0 && dist <= 520) {
+      shootCooldown = 2.4;
+      game.world.add(
+        EnemyBulletComponent(
+          position: position + targetDir * (radius + 5.0),
+          radius: 6.0,
+          velocity: targetDir * 195.0,
+          damage: 1.0,
+          bulletColor: const Color(0xFF80D8FF),
+        ),
+      );
+    }
   }
 
   void _updateScout(double dt, Vector2 toPlayer, double dist) {
@@ -288,29 +504,62 @@ class EnemyShipComponent extends PositionComponent
   }
 
   bool takeDamage(double damage, Vector2 hitPos) {
-    hp -= damage;
+    double effectiveDamage = damage;
+
+    // Void Rupture amplification (+35% damage from all sources)
+    if (hasStatus(ElementalStatus.voidRupture)) {
+      effectiveDamage *= 1.35;
+    }
+
+    // Aegis Bulwark directional frontal shield: blocks 80% of damage hitting the front arc!
+    if (type == EnemyType.aegisBulwark) {
+      final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
+      Vector2 toAttacker = hitPos - position;
+      if (toAttacker.length <= 0.1) {
+        try {
+          toAttacker = game.player.position - position;
+        } catch (_) {}
+      }
+      if (toAttacker.length > 0.1 && toAttacker.normalized().dot(forwardDir) > 0.30) {
+        effectiveDamage *= 0.20;
+        try {
+          game.spawnFloatingText(
+            hitPos,
+            '🛡️ SHIELDED!',
+            color: const Color(0xFF00E5FF),
+            fontSize: 10.0,
+          );
+        } catch (_) {}
+      }
+    }
+
+    hp -= effectiveDamage;
     hitFlashTimer = 0.12;
 
-    game.spawnExplosionParticles(
-      position: hitPos,
-      colorChoices: [Colors.white, const Color(0xFFFF1744), Colors.amber],
-      count: 3,
-      minSize: 1.5,
-      maxSize: 3.0,
-      minSpeed: 30.0,
-      maxSpeed: 80.0,
-    );
+    try {
+      game.spawnExplosionParticles(
+        position: hitPos,
+        colorChoices: [Colors.white, const Color(0xFFFF1744), Colors.amber],
+        count: 3,
+        minSize: 1.5,
+        maxSize: 3.0,
+        minSpeed: 30.0,
+        maxSpeed: 80.0,
+      );
+    } catch (_) {}
 
     if (hp <= 0) {
       die();
       return true;
     } else {
-      game.spawnFloatingText(
-        hitPos,
-        '-${damage.toInt()}',
-        color: const Color(0xFFFF8A80),
-        fontSize: 11.5,
-      );
+      try {
+        game.spawnFloatingText(
+          hitPos,
+          '-${damage.toInt()}',
+          color: const Color(0xFFFF8A80),
+          fontSize: 11.5,
+        );
+      } catch (_) {}
       return false;
     }
   }
@@ -335,9 +584,38 @@ class EnemyShipComponent extends PositionComponent
       case EnemyType.eliteCommander:
         scrapReward = 120;
         break;
+      case EnemyType.voidSwarmer:
+        scrapReward = 4;
+        break;
+      case EnemyType.aegisBulwark:
+        scrapReward = 45;
+        break;
+      case EnemyType.carrierHive:
+        scrapReward = 80;
+        break;
+      case EnemyType.gravityWeaver:
+        scrapReward = 35;
+        break;
+      case EnemyType.cryoBomber:
+        scrapReward = 30;
+        break;
     }
     game.addRunCredits(scrapReward);
     game.spawnFloatingText(position, '+$scoreValue', color: Colors.white, fontSize: 13.0);
+
+    // Solar Burn Death Detonation Synergy: enemies dying while burning explode!
+    if (hasStatus(ElementalStatus.solarBurn)) {
+      for (final other in List<EnemyShipComponent>.from(game.world.children.whereType<EnemyShipComponent>())) {
+        if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 105.0) {
+          other.takeDamage(35.0, other.position);
+        }
+      }
+    }
+
+    // Blueprint Drop (Sprint 16): Elites and Carrier Hives can drop technological Blueprints!
+    if (type == EnemyType.eliteCommander || type == EnemyType.carrierHive) {
+      game.tryDropBlueprint(position);
+    }
 
     final isElite = type == EnemyType.eliteCommander;
     final shake = isElite ? 16.0 : (type == EnemyType.raider ? 6.0 : 4.0);
@@ -433,6 +711,21 @@ class EnemyShipComponent extends PositionComponent
         case EnemyType.eliteCommander:
           dmg = 45.0;
           break;
+        case EnemyType.voidSwarmer:
+          dmg = 10.0;
+          break;
+        case EnemyType.aegisBulwark:
+          dmg = 34.0;
+          break;
+        case EnemyType.carrierHive:
+          dmg = 38.0;
+          break;
+        case EnemyType.gravityWeaver:
+          dmg = 24.0;
+          break;
+        case EnemyType.cryoBomber:
+          dmg = 22.0;
+          break;
       }
       other.takeHit(dmg);
       // Small bounce/recoil away from player
@@ -474,12 +767,27 @@ class EnemyShipComponent extends PositionComponent
       case EnemyType.eliteCommander:
         _renderElite(canvas, isFlashing, flashColor);
         break;
+      case EnemyType.voidSwarmer:
+        _renderScout(canvas, isFlashing, const Color(0xFFE040FB));
+        break;
+      case EnemyType.aegisBulwark:
+        _renderBulwark(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.carrierHive:
+        _renderElite(canvas, isFlashing, const Color(0xFF00E676));
+        break;
+      case EnemyType.gravityWeaver:
+        _renderSniper(canvas, isFlashing, const Color(0xFFAA00FF));
+        break;
+      case EnemyType.cryoBomber:
+        _renderSniper(canvas, isFlashing, const Color(0xFF80D8FF));
+        break;
     }
 
     canvas.restore();
 
-    // 2. Floating Health Bar for Elite Commander (counter-rotated so it stays horizontal)
-    if (type == EnemyType.eliteCommander) {
+    // 2. Floating Health Bar for Elite Commander & Carrier Hive (counter-rotated so it stays horizontal)
+    if (type == EnemyType.eliteCommander || type == EnemyType.carrierHive) {
       canvas.save();
       canvas.translate(radius, radius);
       canvas.rotate(-angle);
@@ -592,6 +900,36 @@ class EnemyShipComponent extends PositionComponent
       const Color(0xFFD500F9),
       strokeWidth: 2.0,
       intensity: 1.5,
+    );
+  }
+
+  void _renderBulwark(Canvas canvas, bool isFlashing, Color flashColor) {
+    final path = Path()
+      ..moveTo(-radius * 0.9, -radius * 0.7)
+      ..lineTo(radius * 0.9, -radius * 0.7)
+      ..lineTo(radius * 0.7, radius * 0.9)
+      ..lineTo(-radius * 0.7, radius * 0.9)
+      ..close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFF0A1E2E).withValues(alpha: 0.95)
+        ..style = PaintingStyle.fill,
+    );
+    final strokeColor = isFlashing ? flashColor : const Color(0xFF00E5FF);
+    Glow.strokePath(canvas, path, strokeColor, width: 2.2, intensity: 1.3);
+
+    // Glowing Frontal Directional Energy Shield Arc
+    final shieldRect = Rect.fromCircle(center: Offset.zero, radius: radius * 1.18);
+    canvas.drawArc(
+      shieldRect,
+      -math.pi * 0.85,
+      math.pi * 0.70,
+      false,
+      Paint()
+        ..color = const Color(0xFF00E5FF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.5,
     );
   }
 

@@ -12,6 +12,7 @@ import 'package:asteroids/game/components/singularity_rift.dart';
 import 'package:asteroids/game/components/proximity_mine.dart';
 import 'package:asteroids/game/components/derelict_turret.dart';
 import 'package:asteroids/game/components/boss_lair.dart';
+import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'sector_map_data.dart';
 
 /// Gerador Procedural de Setores Cósmicos (Inspirado no estilo Dead Cells).
@@ -37,7 +38,13 @@ class SectorMapGenerator {
         child is SingularityRiftComponent ||
         child is ProximityMineComponent ||
         child is DerelictTurretComponent ||
-        child is BossLairComponent);
+        child is BossLairComponent ||
+        child is MegastructureWallComponent ||
+        child is LaserContainmentGateComponent ||
+        child is TimedVaultComponent ||
+        child is FlawlessVaultComponent ||
+        child is VoidMerchantComponent ||
+        child is CursedShrineComponent);
     for (final p in List.from(oldPois)) {
       p.removeFromParent();
     }
@@ -248,6 +255,98 @@ class SectorMapGenerator {
       primaryColor: const Color(0xFF00E5FF),
       isDiscovered: false,
     ));
+
+    // 6. Sprint 13: Arquitetura de Biomas estilo Dead Cells (Corredores de Megaestrutura, Portão Laser, Cofres & Mercador)
+    // Corredores de Megaestrutura dividindo o setor em câmaras táticas (mantendo o centro de spawn 2400,2400 livre!)
+    final walls = <(Vector2 pos, Vector2 size)>[
+      (Vector2(1850, 1650), Vector2(320, 28)),
+      (Vector2(2950, 1650), Vector2(320, 28)),
+      (Vector2(1650, 2950), Vector2(28, 320)),
+      (Vector2(3150, 2950), Vector2(28, 320)),
+    ];
+    for (final w in walls) {
+      game.world.add(
+        MegastructureWallComponent(
+          position: w.$1,
+          wallSize: w.$2,
+          wallColor: sector.primaryColor,
+        ),
+      );
+    }
+
+    // Portão de Contenção Laser protegendo a Câmara do Cofre Cronometrado ao Norte
+    final gatePos = Vector2(2400, 1520);
+    game.world.add(
+      LaserContainmentGateComponent(
+        position: gatePos,
+        length: 260.0,
+        isHorizontal: true,
+      ),
+    );
+
+    // Cofre Cronometrado (< 2m00s) estilo Dead Cells
+    final timedVaultPos = Vector2(2400, 1180);
+    game.world.add(TimedVaultComponent(position: timedVaultPos));
+    nodes.add(
+      MapNode(
+        id: 'timed_vault',
+        type: MapNodeType.timedVault,
+        position: timedVaultPos,
+        label: 'COFRE CRONOMETRADO (< 02:00)',
+        description: 'Alcance antes de 2m00s para desbloquear Diagrama, Baú Dourado e +250c.',
+        icon: Icons.timer_rounded,
+        primaryColor: const Color(0xFFFFD700),
+        isDiscovered: false,
+      ),
+    );
+
+    // Cofre Intocável (Flawless Boss Vault)
+    final flawlessPos = bossPos + Vector2(0, -290);
+    game.world.add(FlawlessVaultComponent(position: flawlessPos));
+    nodes.add(
+      MapNode(
+        id: 'flawless_vault',
+        type: MapNodeType.flawlessVault,
+        position: flawlessPos,
+        label: 'CÂMARA INTOCÁVEL DO TITÃ',
+        description: 'Derrote o Chefe Soberano sem sofrer dano para abrir este cofre lendário.',
+        icon: Icons.workspace_premium_rounded,
+        primaryColor: const Color(0xFF00E5FF),
+        isDiscovered: false,
+      ),
+    );
+
+    // Mercador Errante do Vazio (Void Merchant)
+    final merchantPos = Vector2(1580, 2400);
+    game.world.add(VoidMerchantComponent(position: merchantPos));
+    nodes.add(
+      MapNode(
+        id: 'void_merchant',
+        type: MapNodeType.voidMerchant,
+        position: merchantPos,
+        label: 'MERCADOR ERRANTE DO VAZIO',
+        description: 'Troque Sucata por reparo imediato (+45 HP) e armamento tático.',
+        icon: Icons.storefront_rounded,
+        primaryColor: const Color(0xFFFFB300),
+        isDiscovered: false,
+      ),
+    );
+
+    // Santuário Amaldiçoado (Cursed Shrine)
+    final shrinePos = Vector2(3220, 2400);
+    game.world.add(CursedShrineComponent(position: shrinePos));
+    nodes.add(
+      MapNode(
+        id: 'cursed_shrine',
+        type: MapNodeType.cursedShrine,
+        position: shrinePos,
+        label: 'SANTUÁRIO AMALDIÇOADO DO VAZIO',
+        description: 'Sacrifique 20% de HP atual para maximizar uma arma, ganhar +150c e carregar 1 Sinalizador.',
+        icon: Icons.whatshot_rounded,
+        primaryColor: const Color(0xFFE040FB),
+        isDiscovered: false,
+      ),
+    );
 
     final mapData = SectorMapData(
       sector: sector,

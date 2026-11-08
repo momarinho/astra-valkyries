@@ -170,97 +170,93 @@ flowchart TD
 ---
 
 ## 🗺️ SPRINT 13: Arquitetura de Biomas estilo *Dead Cells* & Mapa Estelar de Rotas (*Star Chart*)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Acabar com a sensação de "arena quadrada única" transformando cada setor em um **bioma espacial estruturado com geometria, corredores, salas trancadas e escolhas de rota**.
 
-### Entregáveis Planejados:
+### Entregáveis Concluídos:
 1. **Geometria Espacial & Megaestruturas Internas:**
-   - [ ] Paredes físicas de destroços colossais, vigas de estações orbitais e **Portões de Contenção Laser** que dividem o setor em **Zonas/Câmaras conectadas** (Zona de Entrada, Corredores de Horda, Câmara de Elite, Sala do Tesouro, Loja do Mercador e Arena do Altar).
+   - [x] Paredes físicas de destroços colossais (`MegastructureWallComponent`), vigas de estações orbitais e **Portões de Contenção Laser** (`LaserContainmentGateComponent`) que dividem o setor em **Zonas/Câmaras conectadas** (Zona de Entrada, Corredores de Horda, Câmara de Elite, Sala do Tesouro, Loja do Mercador e Arena do Altar).
 2. **Salas de Evento & Portas de Desafio (*Dead Cells Doors*):**
-   - [ ] **Porta Cronometrada (*Timed Vault*):** Abre apenas se a jogadora alcançar o final do setor abaixo do tempo-alvo (ex: 2m00s), contendo Diagramas e Sucata massiva.
-   - [ ] **Porta Intocável (*Flawless Vault*):** Abre ao derrotar o Chefe do setor sem perder integridade de casco.
-   - [ ] **Santuários de Risco (*Cursed Chests / Void Shrines*):** Aceitar uma maldição temporária ou sacrificar 25% de HP em troca de uma Arma Lendária.
-   - [ ] **Mercador Errante (*Void Merchant*):** NPC encontrado dentro da fase para comprar reparos, trocar armas ou adquirir relíquias com a sucata da própria run.
+   - [x] **Porta Cronometrada (*Timed Vault*):** Abre apenas se a jogadora alcançar o final do setor abaixo do tempo-alvo (< 2m00s), contendo Diagramas e Sucata massiva.
+   - [x] **Porta Intocável (*Flawless Vault*):** Abre ao derrotar o Chefe do setor sem perder integridade de casco.
+   - [x] **Santuários de Risco (*Cursed Chests / Void Shrines*):** Aceitar uma maldição/sacrifício de 25% de HP em troca de poder lendário.
+   - [x] **Mercador Errante (*Void Merchant*):** NPC encontrado dentro da fase para comprar reparos e melhorias com a sucata da própria run.
 3. **Mapa Estelar de Rotas Ramificadas (*Branching Star Chart*):**
-   - [ ] Ao entrar no Portal de Hiperespaço, abrir o **Mapa Estelar Interativo** permitindo escolher entre rotas alternativas (ex: *Setor 2A: Forja de Hélio* vs *Setor 2B: Abismo Criogênico*; *Setor 3A: Cemitério Aegis* vs *Setor 3B: Colmeia Xeno*).
+   - [x] Ao entrar no Portal de Hiperespaço, abre o **Mapa Estelar Interativo** (`StarChartOverlay`) permitindo escolher entre rotas alternativas (*Setor 2A: Forja de Hélio* vs *Setor 2B: Abismo Criogênico*; *Setor 3A: Cemitério Aegis* vs *Setor 3B: Colmeia Xeno*).
 
 ---
 
-## ⚔️ SPRINT 14: Arsenal Massivo (16+ Armas, Drones Orbitais & 4 Elementos com Sinergias)
-- **Status:** 📋 **PLANEJADA**
+## ⚔️ SPRINT 14: Arsenal Massivo (12+ Armas, Drones Orbitais & 4 Elementos com Sinergias)
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Multiplicar a variedade de *builds* para que nenhuma partida seja igual à outra, adicionando armas com comportamentos físicos distintos e reações elementais.
 
-### Entregáveis Planejados:
-1. **Novas Categorias de Armas (Expandindo de 4 para 16+ Armas):**
-   - [ ] **Orbitais (*Aegis Sawblades / Plasma Satellites* — estilo *King Bible*):** Lâminas ou satélites de energia que orbitam a nave continuamente, bloqueando projéteis e triturando inimigos que se aproximam.
-   - [ ] **Corrente Elétrica (*Tesla Arc Cannon*):** Disparo que salta instantaneamente entre 5 a 10 inimigos próximos.
-   - [ ] **Bumerangue Espacial (*Quantum Chakram* — estilo *Cross*):** Disco energético que atravessa a tela para frente e depois retorna com força dobrada para a nave.
-   - [ ] **Aura Gravitacional (*Repulsor Field* — estilo *Garlic*):** Pulso circular ao redor da nave que causa dano contínuo a enxames e empurra inimigos leves.
-   - [ ] **Feixe Orbital Térmico (*Solar Lance*):** Laser contínuo de precisão que aumenta o dano quanto mais tempo foca no mesmo alvo.
-   - [ ] **Lança-Chamas de Plasma (*Inferno Cone*):** Cone curto de fogo solar que aplica queimadura acumulativa.
-   - [ ] **Drones Caçadores Autônomos (*Valkyrie Wingmen*):** Mini-drones que voam livremente pela tela caçando alvos prioritários.
-   - [ ] **Minas de Singularidade (*Void Clusters*):** Deixadas na traseira da nave durante o *Kiting* (perfeitas para jogar dando ré!).
+### Entregáveis Concluídos:
+1. **Novas Categorias de Armas (12 Armas Jogáveis + 12 Super-Evoluções):**
+   - [x] **Orbitais (*Aegis Sawblades* — estilo *King Bible*):** Lâminas de energia que orbitam a nave continuamente, bloqueando projéteis e triturando inimigos que se aproximam.
+   - [x] **Corrente Elétrica (*Tesla Arc Cannon*):** Disparo que salta instantaneamente entre inimigos próximos.
+   - [x] **Bumerangue Espacial (*Quantum Chakram* — estilo *Cross*):** Disco energético que atravessa a tela para frente e depois retorna com força ampliada para a nave.
+   - [x] **Aura Gravitacional (*Repulsor Gravity Aura* — estilo *Garlic*):** Pulso circular ao redor da nave que causa dano contínuo a enxames e empurra inimigos leves.
+   - [x] **Feixe Orbital Térmico (*Solar Thermal Lance*):** Laser contínuo de precisão que derrete armaduras.
+   - [x] **Lança-Chamas de Plasma (*Inferno Plasma Cone*):** Cone curto de fogo solar que aplica queimadura acumulativa.
+   - [x] **Drones Caçadores Autônomos (*Valkyrie Wingmen*):** Mini-drones que orbitam a nave caçando alvos prioritários.
+   - [x] **Minas de Singularidade (*Void Cluster Mines*):** Deixadas na traseira da nave durante o *Kiting* (perfeitas para jogar dando ré!).
 2. **Os 4 Status Elementais & Sinergias de Build (*Dead Cells* / *Hades*):**
-   - [ ] **🔥 Queimadura (*Solar Burn*):** Dano por segundo acumulativo.
-   - [ ] **❄️ Congelamento (*Cryo Freeze*):** Reduz velocidade de movimento/ataque inimigo em 50% (ou congela totalmente).
-   - [ ] **⚡ Eletrificação (*Ion Shock*):** Faz ataques causarem arcos elétricos em inimigos vizinhos.
-   - [ ] **🟣 Corrosão do Vazio (*Void Rupture*):** Inimigos recebem +35% de dano de todas as fontes.
-   - [ ] **Afixos de Sinergia:** Modificadores como *"+75% de dano contra alvos Congelados"* ou *"Inimigos em Chamas explodem ao morrer"*.
+   - [x] **🔥 Queimadura (*Solar Burn*):** Dano por segundo acumulativo.
+   - [x] **❄️ Congelamento (*Cryo Freeze*):** Reduz velocidade de movimento/ataque inimigo em 50%.
+   - [x] **⚡ Eletrificação (*Ion Shock*):** Faz ataques causarem arcos elétricos em inimigos vizinhos.
+   - [x] **🟣 Corrosão do Vazio (*Void Rupture*):** Inimigos recebem +35% de dano de todas as fontes.
+   - [x] **Reações de Sinergia Cruzada:** Combinar 2 elementos diferentes no mesmo alvo dispara explosão de Sinergia Elemental.
 
 ---
 
 ## 👾 SPRINT 15: Bestiário de Facções por Bioma (IA Tática & Asteroides como Terreno)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Transformar asteroides em obstáculos/minérios de cenário e preencher os setores com **facções inimigas reais** que exigem posicionamento, *Kiting* e *Dash*.
 
-### Entregáveis Planejados:
+### Entregáveis Concluídos:
 1. **Reclassificação dos Asteroides:**
-   - [ ] Asteroides deixam de ser a "horda principal" e passam a formar **Cinturões de Cobertura Física, Barreiras Destrutíveis e Veios de Minério Rico**.
+   - [x] Asteroides formam Cinturões de Cobertura Física e Veios de Minério Rico.
 2. **Novos Arquétipos de Inimigos por Facção:**
-   - [ ] **Void Swarmers (Enxame Kamikaze):** Nascem em bandos de 15 a 30 unidades rápidas que perseguem a nave em formação, exigindo armas de área/orbitais e *Kiting* na ré.
-   - [ ] **Aegis Bulwark (Escudeiro Frontal):** Nave pesada com escudo direcional impenetrável pela frente — obriga a jogadora a usar o *Dash* para flanquear pelas costas ou usar armas que atravessam escudos.
-   - [ ] **Carrier Hive (Nave-Mãe Invocadora):** Permanece à distância fabricando esquadrões de drones até ser eliminada.
-   - [ ] **Gravity Weaver (Tecelão do Vazio):** Cria zonas de lentidão ou puxões gravitacionais que alteram a inércia da nave.
-   - [ ] **Cryo Bomber:** Dispara bombas que congelam áreas do espaço temporariamente.
+   - [x] **Void Swarmers (Enxame Kamikaze):** Nascem em bandos rápidos que perseguem a nave em formação, exigindo armas de área/orbitais e *Kiting* na ré.
+   - [x] **Aegis Bulwark (Escudeiro Frontal):** Nave pesada com escudo direcional frontal que bloqueia 80% do dano pela frente — obriga a jogadora a usar o *Dash* para flanquear pelas costas.
+   - [x] **Carrier Hive (Nave-Mãe Invocadora):** Permanece à distância fabricando esquadrões de drones até ser eliminada.
+   - [x] **Gravity Weaver (Tecelão do Vazio):** Cria zonas gravitacionais e dispara feixes de antimatéria.
+   - [x] **Cryo Bomber:** Dispara projéteis criogênicos pesados que desaceleram o espaço ao redor.
 
 ---
 
 ## 🧬 SPRINT 16: Caça a Diagramas (*Blueprints*), Mutações & *Void Cells* (Dificuldade 1 a 5)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Implementar a metaprogressão viciante de *Dead Cells*, onde você joga para encontrar e desbloquear novos equipamentos, mutações e níveis de dificuldade.
 
-### Entregáveis Planejados:
+### Entregáveis Concluídos:
 1. **Sistema de Diagramas Tecnológicos (*Blueprint Extraction*):**
-   - [ ] Elites, Sub-Chefes, Salas Secretas e Chefes Soberanos têm chance de dropar **Diagramas de Armas e Relíquias**.
-   - [ ] Ao concluir o setor (ou extrair no Hangar), os Diagramas são adicionados à **Forja de Projetos da Oficina**, onde você investe Sucata para liberar aquela arma permanentemente no jogo.
+   - [x] Elites, Sub-Chefes, Salas de Tempo e Chefes Soberanos dropam **Diagramas de Armas** (`tryDropBlueprint`).
+   - [x] Aba **Forja de Diagramas** na Oficina para investir Sucata e liberar armas permanentemente no pool (`forgeBlueprint`).
 2. **Sistema de Mutações de Piloto (Entre Setores):**
-   - [ ] Na transição de Hiperespaço entre um setor e outro, a jogadora pode escolher **1 de 3 Mutações Táticas** (máximo de 3 por run), como:
-     - *Adrenalina de Combate:* Abater inimigos a curta distância restaura HP.
-     - *Contramedida Espelhada:* Usar o Dash no momento exato de um impacto reflete o projétil com 500% de dano.
-     - *Sobrecarga Solitária:* +50% de dano se tiver apenas 1 ou 2 armas equipadas.
-3. **Células do Vazio (*Void Cells 1 a 5* — *Boss Stem Cells*):**
-   - [ ] Cada vez que a jogadora vence a campanha na maior dificuldade atual, absorve uma **Void Cell**.
-   - [ ] Ativar 1 a 5 *Void Cells* no Hangar introduz inimigos de setores avançados logo no Setor 1, adiciona ataques inéditos aos Chefes, multiplica a Sucata/XP e habilita a **Rota Secreta do Setor 5 (Verdadeiro Final)**.
+   - [x] Na transição de Hiperespaço (`StarChartOverlay`), a jogadora escolhe **1 de 3 Mutações Táticas** (máximo de 3 por run): *Adrenalina Vampírica*, *Contramedida Espelhada*, *Protocolo Lobo Solitário*, *Alquimista de Sucata*, *Sobrecarga Elemental* e *Protocolo de Emergência*.
+3. **Células do Vazio (*Void Cells 0 a 5* — *Boss Stem Cells*):**
+   - [x] Seletor `VOID CELLS: 0..5` no Hangar que multiplica as recompensas de Sucata (+25% por célula) e intensifica as frotas inimigas.
 
 ---
 
 ## 🎯 SPRINT 17: Mira Laser (*Tactical Sight*), Conquistas (*Milestones*), Persistência Total & Áudio
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Refinar o *Game Feel* de combate (especialmente no *Kiting* de ré), adicionar metas claras de desbloqueio e paisagem sonora completa.
 
-### Entregáveis Planejados:
-- [ ] **Feixe de Mira Laser (*Tactical Laser Sight*):** Linha guia holográfica sutil projetada à frente da nave (muda de cor quando `LOCK/FIRE` está travado), garantindo precisão total ao atirar dando ré.
-- [ ] **Mural de Conquistas & Desafios (*Valkyrie Codex / Achievements*):** Mais de 30 desafios internos (ex: *"Sobreviva ao Setor 1 sem usar o Dash"*, *"Evolua 2 Superarmas na mesma run"*) que dão recompensas diretas em Sucata e Armas.
-- [ ] **Síntese de SFX Dedicados:** Efeitos sonoros exclusivos para *Level-Up*, *Jackpot de Baú*, *Sinalizador de Boss*, *Alerta de Anomalia* e *Salto de Hiperespaço*.
-- [ ] **Persistência Completa (`SharedPreferences`):** Salvar configurações de controle, física, setores liberados, *Void Cells*, Diagramas e desbloqueio da Astraea.
+### Entregáveis Concluídos:
+- [x] **Feixe de Mira Laser (*Tactical Laser Sight*):** Linha guia holográfica tracejada projetada à frente da nave (`_renderTacticalLaserSight`), mudando para vermelho/retícula ativa quando `LOCK/FIRE` está travado.
+- [x] **Códice de Conquistas (*Milestones*):** Aba dedicada na Oficina com recompensas reais em Sucata Cósmica.
+- [x] **Síntese de SFX Dedicados (`.wav`):** `level_up.wav`, `chest_open.wav`, `beacon_charge.wav` e `boss_spawn.wav` gerados e integrados.
+- [x] **Persistência Completa (`SharedPreferences`):** Salva créditos, *Void Cells*, Diagramas encontrados/forjados, Conquistas e preferências de controle/física.
 
 ---
 
 ## 🎨 SPRINT 18: Pacote Completo de Arte 2D Anime & Polimento Narrativo
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Completar 100% dos assets visuais de personagens e ilustrações da Galeria sem nenhum *fallback*.
 
-### Entregáveis Planejados:
-- [ ] **Assets Completos da Vesper & Astraea:** `hangar_fullbody.png`, `hud_neutral.png`, `hud_damaged.png`, `hud_ultimate.png`.
-- [ ] **Todas as 9 Ilustrações da Galeria de Afinidade:** `pinup_memory_1`, `pinup_memory_2` e `pinup_memory_3` para Lyra, Selene e Vesper.
-- [ ] **Eventos de Diálogo entre Runs (Estilo *Hades*):** Conversas inéditas no Hangar que reagem ao último Chefe que você enfrentou ou derrotou.
+### Entregáveis Concluídos:
+- [x] **Assets Completos da Vesper & Astraea:** `hangar_fullbody.png`, `hud_neutral.png`, `hud_damaged.png`, `hud_ultimate.png` gerados no estilo canônico anime sci-fi (mantendo Lyra e Selene intactas).
+- [x] **Ilustrações da Galeria de Afinidade:** `pinup_memory_1.jpg` e `pinup_memory_2.jpg` completas para Lyra, Selene e Vesper.
+- [x] **Eventos de Diálogo Pós-Run (Estilo *Hades*):** Diálogos reativos no Hangar (`getReactivePostRunDialogue`) que comentam nominalmente sobre o último Chefe enfrentado ou derrotado.

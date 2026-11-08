@@ -50,11 +50,11 @@ class HyperspaceGateComponent extends PositionComponent with HasGameReference<As
     final player = game.player;
     final dist = position.distanceTo(player.position);
 
-    // Se estiver a menos de 50px do vórtice central, aciona o salto
+    // Se estiver a menos de 50px do vórtice central, aciona o Mapa Estelar Ramificado
     if (dist <= 50.0) {
       _isWarping = true;
-      game.jumpToNextSector();
       removeFromParent();
+      game.openStarChart();
     }
   }
 

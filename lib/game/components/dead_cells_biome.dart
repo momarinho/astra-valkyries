@@ -1,0 +1,477 @@
+import 'dart:math' as math;
+import 'package:flame/components.dart';
+import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
+import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/glow.dart';
+import 'package:asteroids/game/weapons.dart';
+import 'player.dart';
+import 'bullet.dart';
+import 'enemy_bullet.dart';
+import 'chest.dart';
+
+/// 1. Barreira Física de Megaestrutura (Corredores e Câmaras estilo Dead Cells)
+class MegastructureWallComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final Vector2 wallSize;
+  final Color wallColor;
+
+  MegastructureWallComponent({
+    required Vector2 position,
+    required this.wallSize,
+    this.wallColor = const Color(0xFF00E5FF),
+  }) {
+    this.position = position.clone();
+    size = wallSize.clone();
+    anchor = Anchor.center;
+  }
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(RectangleHitbox());
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state != GameState.playing) return;
+
+    // Empurra fisicamente a nave caso encoste na parede da megaestrutura
+    final p = game.player;
+    final halfW = size.x / 2 + p.radius;
+    final halfH = size.y / 2 + p.radius;
+    final dx = p.position.x - position.x;
+    final dy = p.position.y - position.y;
+
+    if (dx.abs() < halfW && dy.abs() < halfH) {
+      final overlapX = halfW - dx.abs();
+      final overlapY = halfH - dy.abs();
+      if (overlapX < overlapY) {
+        p.position.x += dx.sign * overlapX;
+        p.velocity.x = -p.velocity.x * 0.35;
+      } else {
+        p.position.y += dy.sign * overlapY;
+        p.velocity.y = -p.velocity.y * 0.35;
+      }
+    }
+  }
+
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollisionStart(intersectionPoints, other);
+    if (other is BulletComponent) {
+      other.removeFromParent();
+    } else if (other is EnemyBulletComponent) {
+      other.removeFromParent();
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.x, size.y),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(
+      rect,
+      Paint()
+        ..color = const Color(0xFF0B1324).withValues(alpha: 0.94)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawRRect(
+      rect,
+      Paint()
+        ..color = wallColor.withValues(alpha: 0.75)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
+  }
+}
+
+/// 2. Portão de Contenção Laser (Divide câmaras; pode ser desativado destruindo o emissor ou atravessado com Dash)
+class LaserContainmentGateComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final double length;
+  final bool isHorizontal;
+  double generatorHp = 140.0;
+  bool isDeactivated = false;
+  double pulseTimer = 0.0;
+
+  LaserContainmentGateComponent({
+    required Vector2 position,
+    this.length = 260.0,
+    this.isHorizontal = true,
+  }) {
+    this.position = position.clone();
+    size = isHorizontal ? Vector2(length, 22.0) : Vector2(22.0, length);
+    anchor = Anchor.center;
+  }
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(RectangleHitbox());
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (isDeactivated || game.state != GameState.playing) return;
+    pulseTimer += dt * 6.0;
+
+    final p = game.player;
+    final halfW = size.x / 2 + p.radius;
+    final halfH = size.y / 2 + p.radius;
+    final dx = (p.position.x - position.x).abs();
+    final dy = (p.position.y - position.y).abs();
+
+    if (dx < halfW && dy < halfH) {
+      // Se estiver em Dash/Invulnerável, atravessa livremente; caso contrário, sofre choque e recuo
+      if (!p.isInvulnerable() && p.dashActiveTimer <= 0) {
+        p.takeHit(12.0);
+        if (isHorizontal) {
+          p.velocity.y = -p.velocity.y.sign * 180.0;
+        } else {
+          p.velocity.x = -p.velocity.x.sign * 180.0;
+        }
+      }
+    }
+  }
+
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollisionStart(intersectionPoints, other);
+    if (isDeactivated) return;
+    if (other is BulletComponent) {
+      generatorHp -= other.damage;
+      other.removeFromParent();
+      if (generatorHp <= 0) {
+        isDeactivated = true;
+        game.addRunCredits(35);
+        game.spawnFloatingText(
+          position,
+          '🔓 PORTÃO LASER DESATIVADO! (+35c)',
+          color: const Color(0xFF00E676),
+          fontSize: 13.0,
+        );
+      }
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (isDeactivated) return;
+    final pulse = (math.sin(pulseTimer) + 1) * 0.5;
+    final beamPaint = Paint()
+      ..color = const Color(0xFFFF1744).withValues(alpha: 0.55 + pulse * 0.35)
+      ..strokeWidth = 5.0 + pulse * 2.0
+      ..strokeCap = StrokeCap.round;
+
+    if (isHorizontal) {
+      canvas.drawLine(Offset(0, size.y / 2), Offset(size.x, size.y / 2), beamPaint);
+    } else {
+      canvas.drawLine(Offset(size.x / 2, 0), Offset(size.x / 2, size.y), beamPaint);
+    }
+  }
+}
+
+/// 3. Porta Cronometrada estilo Dead Cells (Timed Vault < 2m00s)
+class TimedVaultComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame> {
+  final double radius = 110.0;
+  final double targetTimeRemaining = 60.0; // Em uma run de 180s, >60s restantes = menos de 2m00s gastos!
+  bool isOpened = false;
+  bool isLockedForever = false;
+
+  TimedVaultComponent({required Vector2 position}) {
+    this.position = position.clone();
+    anchor = Anchor.center;
+    size = Vector2.all(radius * 2);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state != GameState.playing || isOpened) return;
+
+    if (game.timeRemaining < targetTimeRemaining) {
+      isLockedForever = true;
+      return;
+    }
+
+    if (game.player.position.distanceTo(position) <= radius) {
+      isOpened = true;
+      game.addRunCredits(250);
+      game.tryDropBlueprint(position, guaranteed: true);
+      game.world.add(ChestComponent(position: position + Vector2(0, 35), tier: ChestTier.gold));
+      game.spawnFloatingText(
+        position + Vector2(0, -35),
+        '⏱️ COFRE CRONOMETRADO ABERTO! (+250c + DIAGRAMA)',
+        color: const Color(0xFFFFD700),
+        fontSize: 15.0,
+      );
+      game.playSfx('powerup.wav');
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+    canvas.translate(radius, radius);
+    final color = isOpened
+        ? const Color(0xFF00E676)
+        : (isLockedForever ? Colors.redAccent : const Color(0xFFFFD700));
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.14)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+    canvas.restore();
+  }
+}
+
+/// 4. Porta Intocável estilo Dead Cells (Flawless Boss Vault)
+class FlawlessVaultComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame> {
+  final double radius = 105.0;
+  bool isClaimed = false;
+
+  FlawlessVaultComponent({required Vector2 position}) {
+    this.position = position.clone();
+    anchor = Anchor.center;
+    size = Vector2.all(radius * 2);
+  }
+
+  bool get canClaim => !isClaimed && game.flawlessBossKill;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state != GameState.playing || isClaimed) return;
+
+    if (canClaim && game.player.position.distanceTo(position) <= radius) {
+      isClaimed = true;
+      game.addRunCredits(300);
+      game.tryDropBlueprint(position, guaranteed: true);
+      game.world.add(ChestComponent(position: position + Vector2(0, -30), tier: ChestTier.cosmic));
+      game.spawnFloatingText(
+        position + Vector2(0, -45),
+        '👑 COFRE INTOCÁVEL DESBLOQUEADO! (+300c + JACKPOT)',
+        color: const Color(0xFF00E5FF),
+        fontSize: 15.5,
+      );
+      game.playSfx('powerup.wav');
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+    canvas.translate(radius, radius);
+    final color = isClaimed
+        ? const Color(0xFF00E676)
+        : (canClaim ? const Color(0xFF00E5FF) : Colors.white38);
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.14)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
+    canvas.restore();
+  }
+}
+
+/// 5. Mercador Errante do Vazio (Void Merchant In-Game Shop Zone)
+class VoidMerchantComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame> {
+  final double radius = 130.0;
+  bool hasTraded = false;
+  double interactProgress = 0.0;
+  static const double requiredTime = 1.2;
+
+  VoidMerchantComponent({required Vector2 position}) {
+    this.position = position.clone();
+    anchor = Anchor.center;
+    size = Vector2.all(radius * 2);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state != GameState.playing || hasTraded) return;
+
+    if (game.player.position.distanceTo(position) <= radius) {
+      interactProgress += dt;
+      if (interactProgress >= requiredTime) {
+        _completeTrade();
+      }
+    } else {
+      interactProgress = math.max(0.0, interactProgress - dt);
+    }
+  }
+
+  void _completeTrade() {
+    hasTraded = true;
+    const tradeCost = 50;
+    if (game.runCredits >= tradeCost) {
+      game.runCredits -= tradeCost;
+    } else if (game.totalCredits >= tradeCost) {
+      game.totalCredits -= tradeCost;
+    }
+
+    // Restaura +45 HP e concede uma nova arma do pool ou faz upgrade de uma arma equipada!
+    game.player.heal(45.0);
+    final lockedIds = Weapon.allWeaponIds
+        .where((id) => !game.player.unlockedWeapons.containsKey(id))
+        .toList();
+    if (lockedIds.isNotEmpty) {
+      final chosenId = lockedIds[math.Random().nextInt(lockedIds.length)];
+      final newW = Weapon.createById(chosenId);
+      game.player.addWeapon(newW);
+      game.spawnFloatingText(
+        position + Vector2(0, -35),
+        '🛒 MERCADOR: +45 HP & ${newW.name.toUpperCase()} ADQUIRIDA!',
+        color: const Color(0xFFFFD700),
+        fontSize: 14.5,
+      );
+    } else {
+      for (final w in game.player.activeWeapons) {
+        w.upgrade();
+      }
+      game.spawnFloatingText(
+        position + Vector2(0, -35),
+        '🛒 MERCADOR: +45 HP & ARSENAL APRIMORADO!',
+        color: const Color(0xFFFFD700),
+        fontSize: 14.5,
+      );
+    }
+    game.playSfx('powerup.wav');
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+    canvas.translate(radius, radius);
+    final color = hasTraded ? Colors.white24 : const Color(0xFFFFB300);
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.14)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.85)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4,
+    );
+    canvas.restore();
+  }
+}
+
+/// 6. Santuário Amaldiçoado (Cursed Shrine: Sacrifica 20% HP por Arma Lendária MK 3 + Sucata)
+class CursedShrineComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame> {
+  final double radius = 105.0;
+  bool isActivated = false;
+  double channelTimer = 0.0;
+
+  CursedShrineComponent({required Vector2 position}) {
+    this.position = position.clone();
+    anchor = Anchor.center;
+    size = Vector2.all(radius * 2);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state != GameState.playing || isActivated) return;
+
+    if (game.player.position.distanceTo(position) <= radius) {
+      channelTimer += dt;
+      if (channelTimer >= 1.2) {
+        activateShrine();
+      }
+    } else {
+      channelTimer = math.max(0.0, channelTimer - dt);
+    }
+  }
+
+  void activateShrine() {
+    if (isActivated) return;
+    isActivated = true;
+
+    // Sacrifica 20% do HP atual (nunca letal, mantém pelo menos 15 HP)
+    final p = game.player;
+    final sacrifice = math.min(p.hp - 15.0, p.maxHp * 0.20);
+    if (sacrifice > 0) {
+      p.hp -= sacrifice;
+    }
+
+    // Recompensa: Evolui ou maximiza uma arma e concede +150c!
+    if (p.activeWeapons.isNotEmpty) {
+      final w = p.activeWeapons.first;
+      while (w.level < w.maxLevel) {
+        w.upgrade();
+      }
+      if (w.canEvolve) {
+        w.evolve();
+      }
+    }
+    game.addRunCredits(150);
+    game.chargeBossBeacon('SANTUÁRIO DO VAZIO');
+    game.spawnFloatingText(
+      position + Vector2(0, -35),
+      '🩸 PACTO DO SANTUÁRIO: ARMA MAXIMIZADA + 150c!',
+      color: const Color(0xFFE040FB),
+      fontSize: 14.5,
+    );
+    game.playSfx('special.wav');
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+    canvas.translate(radius, radius);
+    final color = isActivated ? Colors.white24 : const Color(0xFFE040FB);
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.16)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4,
+    );
+    canvas.restore();
+  }
+}
