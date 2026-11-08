@@ -15,6 +15,8 @@ import 'enemy_bullet.dart';
 import 'sector_boss.dart';
 import 'joystick.dart';
 import 'cosmic_nebula.dart';
+import 'living_biomes.dart';
+import 'speech_bubble.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? customGame;
@@ -119,6 +121,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double speedModifier = 1.0;
   double bonusCritChance = 0.0;
   bool isShieldSuppressed = false;
+  double cryoFreezeTimer = 0.0;
+  double cryoMistAccelerationMultiplier = 1.0;
+
+  void applyCryoFreeze([double duration = 0.8]) {
+    cryoFreezeTimer = math.max(cryoFreezeTimer, duration);
+  }
 
   void resetRoguelikeStats() {
     magnetRadius = 140.0;
@@ -134,6 +142,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     speedModifier = 1.0;
     bonusCritChance = 0.0;
     isShieldSuppressed = false;
+    cryoFreezeTimer = 0.0;
+    cryoMistAccelerationMultiplier = 1.0;
   }
 
   PlayerComponent({required Vector2 position}) {
@@ -257,6 +267,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     // Brief invulnerability window (i-frames)
     invulnerableTimer = 0.85;
 
+    if (hp > 0 && hpPercent < 0.25) {
+      try {
+        game.triggerSpeechBubble(SpeechTrigger.criticalHull);
+      } catch (_) {}
+    }
+
     if (hp <= 0) {
       hp = 0.0;
       game.completeMission(survived: false);
@@ -269,16 +285,24 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       );
 
   void rotate(double dt, double direction) {
+    if (cryoFreezeTimer > 0) return;
     angle += (GameConstants.playerTurnSpeed * math.pi / 180.0) * direction * dt;
   }
 
   void accelerate(double dt, double directionMultiplier) {
-    velocity += forward * movementAcceleration * directionMultiplier * dt;
+    if (cryoFreezeTimer > 0) return;
+    velocity += forward *
+        (movementAcceleration * cryoMistAccelerationMultiplier) *
+        directionMultiplier *
+        dt;
   }
 
   void accelerateInDirection(double dt, Vector2 direction, double power) {
-    if (direction.length <= 0.001) return;
-    velocity += direction.normalized() * movementAcceleration * power * dt;
+    if (direction.length <= 0.001 || cryoFreezeTimer > 0) return;
+    velocity += direction.normalized() *
+        (movementAcceleration * cryoMistAccelerationMultiplier) *
+        power *
+        dt;
   }
 
   void clampSpeed() {
@@ -420,6 +444,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     if (game.state != GameState.playing) return;
 
     _updateNebulaModifiers();
+    if (cryoFreezeTimer > 0) {
+      cryoFreezeTimer = math.max(0.0, cryoFreezeTimer - dt);
+      velocity.scale(math.exp(-9.0 * dt));
+    }
 
     invulnerableTimer = math.max(0.0, invulnerableTimer - dt);
     if (valkyrie?.id == 'vesper') {
@@ -708,8 +736,17 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     speedModifier = 1.0;
     bonusCritChance = 0.0;
     isShieldSuppressed = false;
+    cryoMistAccelerationMultiplier = 1.0;
 
     try {
+      for (final mist in game.world.children.whereType<CryoMistZoneComponent>()) {
+        if (mist.containsPoint(position)) {
+          cryoMistAccelerationMultiplier = CryoMistZoneComponent.accelerationReductionFactor;
+          activeNebulaName ??= 'CRYO MIST';
+          activeNebulaModifier ??= '❄️ NEBLINA CRIOGÊNICA (-30% ACELERAÇÃO)';
+          break;
+        }
+      }
       for (final nebula in game.world.children.whereType<CosmicNebulaComponent>()) {
         if (nebula.containsPoint(position)) {
           activeNebulaName = nebula.name;

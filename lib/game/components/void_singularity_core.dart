@@ -189,6 +189,7 @@ class VoidSingularityCoreComponent extends PositionComponent
     hp = 0;
     game.sectorMap?.isBossDefeated = true;
     game.campaignCompleted = true;
+    game.onBossDefeatedSpeechCheck();
     game.hyperModeUnlocked = true;
     game.saveHyperModeState();
 

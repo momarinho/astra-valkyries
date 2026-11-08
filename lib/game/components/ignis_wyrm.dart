@@ -242,6 +242,7 @@ class IgnisWyrmComponent extends PositionComponent
   void _defeat() {
     isDefeated = true;
     hp = 0;
+    game.onBossDefeatedSpeechCheck();
     game.addScore(8000);
     game.addRunCredits(800);
     game.playSfx('powerup.wav');

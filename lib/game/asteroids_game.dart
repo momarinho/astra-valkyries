@@ -39,6 +39,8 @@ import 'components/scrap_goliath.dart';
 import 'components/void_singularity_core.dart';
 import 'components/advanced_weapons.dart';
 import 'components/dead_cells_biome.dart';
+import 'components/living_biomes.dart';
+import 'components/speech_bubble.dart';
 import 'map/sector_map_data.dart';
 import 'map/sector_map_generator.dart';
 import 'weapons.dart';
@@ -50,6 +52,7 @@ import 'roguelite_systems.dart';
 import 'meta_progression.dart';
 import 'affinity_system.dart';
 import 'sector.dart';
+import 'ending_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:asteroids/services/api_service.dart';
 import 'dart:io' as io;
@@ -135,6 +138,77 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   bool flawlessBossKill = true;
   String? lastBossEncountered;
   bool lastRunWasVictory = false;
+
+  // Fase 3 (Sprints 22, 23, 24): Lore, Caixas Pretas, Balões de Fala & Finais Múltiplos
+  SpeechBubbleComponent? activeSpeechBubble;
+  final Set<String> unlockedFlightRecorders = {'log_erebus_01'};
+  bool astraeaMatrixDecoded = false;
+  bool primordialSovereignDefeated = false;
+  EndingType lastTriggeredEnding = EndingType.none;
+  final Set<EndingType> unlockedEndings = {};
+
+  bool get canAccessSecretSector5 => EndingManager.canAccessSecretSector5(
+        voidCellsLevel: voidCellsLevel,
+        astraeaMatrixDecoded: astraeaMatrixDecoded,
+        selectedValkyrieId: selectedValkyrie.id,
+      );
+
+  FlightRecorderLog recoverFlightRecorder(Vector2 pos) {
+    final unfound = FlightRecorderLog.allFlightRecorders
+        .where((log) => !unlockedFlightRecorders.contains(log.id))
+        .toList();
+    final chosen = unfound.isNotEmpty
+        ? unfound.first
+        : FlightRecorderLog.allFlightRecorders[
+            pos.x.toInt().abs() % FlightRecorderLog.allFlightRecorders.length];
+    unlockedFlightRecorders.add(chosen.id);
+    if (unlockedFlightRecorders.length >= 4) {
+      astraeaMatrixDecoded = true;
+    }
+    try {
+      spawnFloatingText(
+        pos + Vector2(0, -48),
+        '📼 CAIXA PRETA: ${chosen.vesselName.toUpperCase()}!',
+        color: const Color(0xFFFFD700),
+        fontSize: 13.5,
+      );
+      triggerSpeechBubble(SpeechTrigger.flightRecorderFound);
+    } catch (_) {}
+    savePersistentCredits();
+    return chosen;
+  }
+
+  SpeechBubbleComponent triggerSpeechBubble(
+    SpeechTrigger trigger, {
+    String? customText,
+  }) {
+    if (activeSpeechBubble != null && activeSpeechBubble!.isMounted) {
+      activeSpeechBubble!.removeFromParent();
+    }
+    final text = customText ??
+        SpeechBubbleComponent.getContextualLine(selectedValkyrie.id, trigger);
+    final bubble = SpeechBubbleComponent(
+      valkyrieId: selectedValkyrie.id,
+      valkyrieName: selectedValkyrie.name,
+      fullText: text,
+      trigger: trigger,
+      accentColor: selectedValkyrie.accentColor,
+    );
+    try {
+      bubble.position = player.position + Vector2(0, -34);
+    } catch (_) {}
+    activeSpeechBubble = bubble;
+    world.add(bubble);
+    playSfx('menu_select.wav');
+    return bubble;
+  }
+
+  void onBossDefeatedSpeechCheck() {
+    if (flawlessBossKill) {
+      unlockMilestone('ach_flawless_titan');
+      triggerSpeechBubble(SpeechTrigger.flawlessVictory);
+    }
+  }
 
   bool isWeaponUnlockedInPool(String weaponId) {
     const starterPool = {
@@ -439,6 +513,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           color: const Color(0xFFFFD700),
           apply: () {
             targetW.evolve();
+            unlockMilestone('ach_superweapon');
+            triggerSpeechBubble(SpeechTrigger.superWeapon);
           },
         ),
       );
@@ -982,6 +1058,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     _initSectorPois();
 
     changeState(GameState.playing);
+    primordialSovereignDefeated = false;
+    lastTriggeredEnding = EndingType.none;
+    triggerSpeechBubble(SpeechTrigger.hyperspaceJump);
 
     if (isBossRushMode) {
       _spawnBossRushStage(0);
@@ -1030,6 +1109,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is FlawlessVaultComponent ||
         child is VoidMerchantComponent ||
         child is CursedShrineComponent ||
+        child is CryoMistZoneComponent ||
+        child is CryoMineComponent ||
+        child is OrganicBiomassWallComponent ||
+        child is XenoCocoonComponent ||
+        child is SpeechBubbleComponent ||
         child is SectorBoss ||
         child is HyperspaceGateComponent ||
         child is VoidReaperComponent);
@@ -1178,7 +1262,6 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     switch (currentSector.id) {
       case SectorId.orion:
-      case SectorId.cryoAbyss:
         final boss = IgnisWyrmComponent(position: spawnPos);
         activeBoss = boss;
         flawlessBossKill = true;
@@ -1191,8 +1274,20 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           fontSize: 18.0,
         );
         break;
+      case SectorId.cryoAbyss:
+        final boss = GlacialColossusComponent(position: spawnPos);
+        activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '❄️ GLACIAL COLOSSUS INVOCADO! (TITÃ CRIOGÊNICO)',
+          color: const Color(0xFF80D8FF),
+          fontSize: 18.0,
+        );
+        break;
       case SectorId.graveyard:
-      case SectorId.xenoHive:
         final boss = ScrapGoliathComponent(position: spawnPos);
         activeBoss = boss;
         flawlessBossKill = true;
@@ -1202,6 +1297,19 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           player.position + Vector2(0, -60),
           '⚙️ SCRAP GOLIATH INVOCADO! (COLOSSO MAGNÉTICO)',
           color: const Color(0xFF00E676),
+          fontSize: 18.0,
+        );
+        break;
+      case SectorId.xenoHive:
+        final boss = CarrierHiveAlphaComponent(position: spawnPos);
+        activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '🪲 CARRIER HIVE ALPHA INVOCADA! (RAINHA XENO)',
+          color: const Color(0xFFFF4081),
           fontSize: 18.0,
         );
         break;
@@ -1215,6 +1323,19 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           player.position + Vector2(0, -60),
           '🌌 VOID SINGULARITY CORE INVOCADO! (SOBERANO DO VÁCUO)',
           color: const Color(0xFFE040FB),
+          fontSize: 18.0,
+        );
+        break;
+      case SectorId.voidThrone:
+        final boss = PrimordialVoidSovereignComponent(position: spawnPos);
+        activeBoss = boss;
+        flawlessBossKill = true;
+        lastBossEncountered = boss.bossName;
+        world.add(boss);
+        spawnFloatingText(
+          player.position + Vector2(0, -60),
+          '✨ PRIMORDIAL VOID SOVEREIGN INVOCADO! (O ARQUITETO)',
+          color: const Color(0xFFFFD700),
           fontSize: 18.0,
         );
         break;
@@ -1233,6 +1354,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         break;
     }
 
+    triggerSpeechBubble(SpeechTrigger.bossArrival);
     playSfx('powerup.wav');
     triggerScreenShake(duration: 0.9, intensity: 22.0);
   }
@@ -1318,7 +1440,13 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void openStarChart() {
     if (state != GameState.playing) return;
-    if (currentSector.id == SectorId.eventHorizon && campaignCompleted) {
+    if (currentSector.id == SectorId.voidThrone && campaignCompleted) {
+      jumpToNextSector();
+      return;
+    }
+    if (currentSector.id == SectorId.eventHorizon &&
+        campaignCompleted &&
+        !canAccessSecretSector5) {
       jumpToNextSector();
       return;
     }
@@ -1338,7 +1466,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       gameFocusNode?.requestFocus();
     }
 
-    if (currentSector.id == SectorId.eventHorizon && campaignCompleted) {
+    if (currentSector.id == SectorId.voidThrone && campaignCompleted) {
+      addScore(50000);
+      addScrap(5000);
+      completeMission(survived: true);
+      return;
+    }
+
+    if (currentSector.id == SectorId.eventHorizon &&
+        campaignCompleted &&
+        targetSector?.id != SectorId.voidThrone) {
       addScore(30000);
       addScrap(2500);
       completeMission(survived: true);
@@ -1362,7 +1499,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           nextId = SectorId.eventHorizon;
           break;
         case SectorId.eventHorizon:
-          nextId = SectorId.vesta; // Loop / Cataclismo com bônus de pontuação
+          nextId = canAccessSecretSector5 ? SectorId.voidThrone : SectorId.vesta;
+          break;
+        case SectorId.voidThrone:
+          nextId = SectorId.vesta;
           break;
       }
       currentSector = Sector.findById(nextId);
@@ -1397,6 +1537,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         child is FlawlessVaultComponent ||
         child is VoidMerchantComponent ||
         child is CursedShrineComponent ||
+        child is CryoMistZoneComponent ||
+        child is CryoMineComponent ||
+        child is OrganicBiomassWallComponent ||
+        child is XenoCocoonComponent ||
+        child is SpeechBubbleComponent ||
         child is SectorBoss ||
         child is HyperspaceGateComponent ||
         child is VoidReaperComponent);
@@ -1425,6 +1570,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Efeitos visuais e sonoros de dobra espacial
     playSfx('powerup.wav');
     triggerScreenShake(duration: 1.5, intensity: 22.0);
+    triggerSpeechBubble(SpeechTrigger.hyperspaceJump);
 
     spawnFloatingText(
       player.position + Vector2(0, -75),
@@ -1583,7 +1729,13 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     completeMission(survived: false);
   }
 
+  static const int maxActiveFloatingTexts = 26;
+
   void spawnFloatingText(Vector2 position, String text, {Color color = Colors.white, double fontSize = 14.0, Vector2? velocity}) {
+    final existingTexts = world.children.whereType<FloatingTextComponent>().toList();
+    if (existingTexts.length >= maxActiveFloatingTexts) {
+      existingTexts.first.removeFromParent();
+    }
     world.add(
       FloatingTextComponent(
         position: position.clone(),
@@ -1708,6 +1860,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       color: primaryColor,
       fontSize: 18,
     );
+    triggerSpeechBubble(SpeechTrigger.superWeapon);
 
     switch (selectedValkyrie.id) {
       case 'lyra':
@@ -1831,6 +1984,18 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     missionSurvived = survived;
     lastRunWasVictory = survived;
+    final bondLevel = affinityManager.getAffinity(selectedValkyrie.id).bondLevel;
+    lastTriggeredEnding = EndingManager.evaluateEnding(
+      survived: survived,
+      sectorId: currentSector.id,
+      voidReaperSpawned: voidReaperSpawned,
+      campaignCompleted: campaignCompleted,
+      primordialSovereignDefeated: primordialSovereignDefeated,
+      activeValkyrieBondLevel: bondLevel,
+    );
+    if (lastTriggeredEnding != EndingType.none) {
+      unlockedEndings.add(lastTriggeredEnding);
+    }
     if (survived) {
       score += 1000; // Bônus de sobrevivência de 3 minutos completos
       runCredits += 350; // Survival mission scrap bounty

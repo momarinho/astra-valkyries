@@ -268,6 +268,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   void _defeat() {
     isDefeated = true;
     hp = 0;
+    game.onBossDefeatedSpeechCheck();
     game.addScore(5000);
     game.addRunCredits(500);
     game.playSfx('powerup.wav');

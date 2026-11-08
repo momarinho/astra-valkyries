@@ -11,6 +11,7 @@ import 'ignis_wyrm.dart';
 import 'cryo_pod.dart';
 
 class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
+  static const int maxActiveEnemiesCap = 40; // Teto estrito (35 a 45 naves) para manter 60 FPS cravados
   final String mode;
   double spawnTimer = 0.0;
   double enemySpawnTimer = 0.0;
@@ -100,11 +101,24 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
     if (enemySpawnTimer > enemyInterval) {
       enemySpawnTimer = 0.0;
-      final activeEnemies = game.world.children.whereType<EnemyShipComponent>().length;
-      if (activeEnemies < 16) {
-        _spawnEnemyWave();
-      }
+      _spawnEnemyWave();
     }
+  }
+
+  /// Horde Director (Sprint 20): Respeita o teto de 35-45 naves ativas.
+  /// Se o teto for atingido, promove uma nave existente para Elite com Aura em vez de inflar entidades.
+  void spawnOrPromoteEnemy(EnemyShipComponent candidate) {
+    final activeEnemies = game.world.children.whereType<EnemyShipComponent>().toList();
+    if (activeEnemies.length >= maxActiveEnemiesCap) {
+      final nonPromoted = activeEnemies.where((e) => !e.isPromotedElite && e.hp > 0).toList();
+      if (nonPromoted.isNotEmpty) {
+        nonPromoted.first.promoteToEliteWithAura();
+      } else if (activeEnemies.isNotEmpty) {
+        activeEnemies.first.promoteToEliteWithAura();
+      }
+      return;
+    }
+    game.world.add(candidate);
   }
 
   void _spawnLeviathanBoss() {
@@ -261,7 +275,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       spawnPos.x = spawnPos.x.clamp(60.0, GameConstants.sectorWidth - 60.0);
       spawnPos.y = spawnPos.y.clamp(60.0, GameConstants.sectorHeight - 60.0);
 
-      game.world.add(
+      spawnOrPromoteEnemy(
         EnemyShipComponent(
           position: spawnPos,
           type: chosenType,

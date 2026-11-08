@@ -11,6 +11,7 @@ import 'xp_orb.dart';
 import 'chest.dart';
 import 'drop.dart';
 import 'advanced_weapons.dart';
+import 'asteroid.dart';
 
 enum EnemyType {
   scout,          // Swarmer / Fodder: direct fast pursuit
@@ -24,6 +25,13 @@ enum EnemyType {
   cryoBomber,     // Sprint 15: Fires glacial cryo-shells that slow movement
 }
 
+enum EliteAuraType {
+  none,
+  cryoFrost,   // Aura Criogênica: desacelera alvos próximos
+  aegisShield, // Aura de Escudo: reduz dano recebido em 25%
+  ionShock,    // Aura de Choque: sobrecarrega velocidade e cadência
+}
+
 enum RaiderState {
   stalking,
   telegraphing,
@@ -31,14 +39,68 @@ enum RaiderState {
   recovering,
 }
 
+class VoidSwarmComponent extends EnemyShipComponent {
+  VoidSwarmComponent({required super.position}) : super(type: EnemyType.voidSwarmer);
+}
+
 class EnemyShipComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final EnemyType type;
   late final double radius;
+  late final double baseMaxHp;
   late double maxHp;
   late double hp;
   late double baseSpeed;
   late int scoreValue;
+
+  // Sprint 20: Promoção de Elite pelo Horde Director ao atingir o teto de entidades
+  bool isPromotedElite = false;
+  EliteAuraType eliteAura = EliteAuraType.none;
+
+  static double calculateScaledHp({
+    required double baseHp,
+    required double minutesElapsed,
+    required int voidCells,
+  }) {
+    final safeMin = math.max(0.0, minutesElapsed);
+    final safeCells = math.max(0, voidCells);
+    return baseHp * (1.0 + safeMin * 0.25) * (1.0 + safeCells * 0.35);
+  }
+
+  void applyDynamicScaling({
+    required double minutesElapsed,
+    required int voidCells,
+  }) {
+    maxHp = calculateScaledHp(
+      baseHp: baseMaxHp,
+      minutesElapsed: minutesElapsed,
+      voidCells: voidCells,
+    );
+    if (isPromotedElite) {
+      maxHp *= 1.65;
+    }
+    hp = maxHp;
+  }
+
+  void promoteToEliteWithAura([EliteAuraType? aura]) {
+    if (isPromotedElite) {
+      hp = (hp + maxHp * 0.35).clamp(1.0, maxHp * 1.25);
+      return;
+    }
+    isPromotedElite = true;
+    final availableAuras = const [
+      EliteAuraType.cryoFrost,
+      EliteAuraType.aegisShield,
+      EliteAuraType.ionShock,
+    ];
+    eliteAura = aura ?? availableAuras[position.x.toInt().abs() % availableAuras.length];
+    maxHp *= 1.65;
+    hp = maxHp;
+    scoreValue = (scoreValue * 1.8).round();
+    if (eliteAura == EliteAuraType.ionShock) {
+      baseSpeed *= 1.18;
+    }
+  }
 
   Vector2 velocity = Vector2.zero();
   double hitFlashTimer = 0.0;
@@ -165,6 +227,7 @@ class EnemyShipComponent extends PositionComponent
         break;
     }
 
+    baseMaxHp = maxHp;
     hp = maxHp;
     size = Vector2.all(radius * 2);
   }
@@ -173,6 +236,30 @@ class EnemyShipComponent extends PositionComponent
   Future<void> onLoad() async {
     await super.onLoad();
     add(CircleHitbox());
+    try {
+      final elapsedMin = math.max(
+        (AsteroidsGame.fairRoundDuration - game.timeRemaining).clamp(0.0, 600.0) / 60.0,
+        (game.asteroidField?.difficultyTimer ?? 0.0) / 60.0,
+      );
+      if (elapsedMin > 0.01 || game.voidCellsLevel > 0) {
+        applyDynamicScaling(minutesElapsed: elapsedMin, voidCells: game.voidCellsLevel);
+      }
+    } catch (_) {}
+  }
+
+  void resolveAsteroidImpact(AsteroidComponent asteroid) {
+    if (asteroid.isRemoving || asteroid.hp <= 0 || hp <= 0) return;
+    final dist = position.distanceTo(asteroid.position);
+    if (dist < radius + asteroid.radius) {
+      final pushDir = dist > 0.1 ? (position - asteroid.position).normalized() : Vector2(0, -1);
+      position = asteroid.position + pushDir * (radius + asteroid.radius + 1.0);
+      velocity = pushDir * (baseSpeed * 1.15);
+
+      // Naves leves (Void Swarmers & Scouts) sofrem dano de impacto ao colidirem contra asteroides massivos
+      if ((type == EnemyType.voidSwarmer || type == EnemyType.scout) && asteroid.radius >= 24.0) {
+        takeDamage(asteroid.radius * 0.90, position);
+      }
+    }
   }
 
   @override
@@ -259,6 +346,21 @@ class EnemyShipComponent extends PositionComponent
 
     position += velocity * cryoSlowFactor * dt;
     _enforceSectorBounds();
+
+    // Sprint 19: Colisão de naves leves contra asteroides massivos
+    if (type == EnemyType.voidSwarmer || type == EnemyType.scout) {
+      try {
+        for (final a in List<AsteroidComponent>.from(game.world.children.whereType<AsteroidComponent>())) {
+          if (hp <= 0) break;
+          resolveAsteroidImpact(a);
+        }
+      } catch (_) {}
+    }
+
+    // Sprint 20: Aura Criogênica de Elite desacelera a nave da jogadora se muito próxima
+    if (isPromotedElite && eliteAura == EliteAuraType.cryoFrost && distToPlayer <= 145.0) {
+      player.velocity.scale(math.pow(0.82, dt).toDouble());
+    }
   }
 
   void _updateVoidSwarmer(double dt, Vector2 toPlayer, double dist) {
@@ -511,6 +613,11 @@ class EnemyShipComponent extends PositionComponent
       effectiveDamage *= 1.35;
     }
 
+    // Sprint 20: Aura de Escudo de Elite reduz dano recebido em 25%
+    if (isPromotedElite && eliteAura == EliteAuraType.aegisShield) {
+      effectiveDamage *= 0.75;
+    }
+
     // Aegis Bulwark directional frontal shield: blocks 80% of damage hitting the front arc!
     if (type == EnemyType.aegisBulwark) {
       final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
@@ -731,6 +838,8 @@ class EnemyShipComponent extends PositionComponent
       // Small bounce/recoil away from player
       final push = (position - other.position).normalized();
       velocity = push * (baseSpeed * 1.5);
+    } else if (other is AsteroidComponent) {
+      resolveAsteroidImpact(other);
     }
   }
 
@@ -738,6 +847,38 @@ class EnemyShipComponent extends PositionComponent
   void render(Canvas canvas) {
     canvas.save();
     canvas.translate(radius, radius);
+
+    // Sprint 20: Aura visual de Inimigo Promovido a Elite pelo Horde Director
+    if (isPromotedElite && eliteAura != EliteAuraType.none) {
+      final Color auraColor;
+      switch (eliteAura) {
+        case EliteAuraType.cryoFrost:
+          auraColor = const Color(0xFF80D8FF);
+          break;
+        case EliteAuraType.aegisShield:
+          auraColor = const Color(0xFF00E676);
+          break;
+        case EliteAuraType.ionShock:
+        case EliteAuraType.none:
+          auraColor = const Color(0xFFFFD700);
+          break;
+      }
+      canvas.drawCircle(
+        Offset.zero,
+        radius * 1.45,
+        Paint()
+          ..color = auraColor.withValues(alpha: 0.16)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        Offset.zero,
+        radius * 1.45,
+        Paint()
+          ..color = auraColor.withValues(alpha: 0.78)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8,
+      );
+    }
 
     // 1. Draw Telegraphed Red Aiming Laser for Raider (straight out of ship's nose)
     if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {

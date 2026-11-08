@@ -6,6 +6,7 @@ import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'player.dart';
+import 'dead_cells_biome.dart';
 
 class EnemyBulletComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
@@ -63,6 +64,8 @@ class EnemyBulletComponent extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerComponent) {
       other.takeHit(damage);
+      removeFromParent();
+    } else if (other is MegastructureWallComponent) {
       removeFromParent();
     }
   }

@@ -112,7 +112,8 @@ void main() {
       bombs.first.explode();
       final rifts = game.world.children.whereType<SingularityRiftComponent>().toList();
       expect(rifts.isNotEmpty, isTrue);
-      expect(rifts.first.pullRadius, 240.0);
+      expect(rifts.first.pullRadius, 160.0);
+      expect(rifts.first.duration, 0.8);
     });
 
     test('ChestComponent generates Super-Evolution reward card with highest priority for MK MAX weapons', () {

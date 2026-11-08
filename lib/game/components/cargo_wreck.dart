@@ -3,18 +3,20 @@ import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/roguelite_systems.dart';
 import 'package:asteroids/game/components/drop.dart';
 import 'package:asteroids/game/components/xp_orb.dart';
 
 /// Destructible Derelict Cargo Container floating in the sector.
 /// Can be breached by weapon fire to release emergency repair nanites,
-/// photonic shields, or rare celestial materials.
+/// photonic shields, rare celestial materials, and Flight Recorder Black Boxes (Sprint 22).
 class CargoWreckComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   double hp = 180.0;
   final double maxHp = 180.0;
   double hitFlashTimer = 0.0;
   double rotationSpeed = 0.08;
   double _beaconTimer = 0.0;
+  FlightRecorderLog? recoveredLog;
 
   final Paint _hullPaint = Paint()
     ..color = const Color(0xFF263238)
@@ -89,6 +91,11 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
   }
 
   void _breach() {
+    recoveredLog = FlightRecorderLog.allFlightRecorders[
+        position.x.toInt().abs() % FlightRecorderLog.allFlightRecorders.length];
+    try {
+      recoveredLog = game.recoverFlightRecorder(position);
+    } catch (_) {}
     if (isMounted) {
       try {
         game.addScore(450);

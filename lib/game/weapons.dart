@@ -57,6 +57,53 @@ abstract class Weapon {
   void applyUpgradeStats();
   void applyEvolution();
 
+  /// Ficha de História / Origem Diegética (Sprint 22 — Lore Log estilo Dark Souls / Hades)
+  String get loreLog => getWeaponLore(id);
+
+  static String getWeaponLore(String id) {
+    switch (id) {
+      case 'blaster':
+        return 'O armamento padrão da Esquadrilha Valquíria durante o Cerco de Vesta. '
+            'Forjado com bobinas de deutério pressurizado, foi a única arma que continuou disparando '
+            'quando a Primeira Frota perdeu contato com a Terra.';
+      case 'spread_shot':
+        return 'Desenvolvido nos estaleiros orbitais de Hélio para varrer nuvens de estilhaços. '
+            'Seus canos divergentes dispersam energia cinética capaz de conter enxames inteiros no escuro.';
+      case 'rapid_fire':
+        return 'Um emissor experimental de táquions que resfria o próprio cano usando o zero absoluto do vácuo. '
+            'Dizem que os pilotos que abusam de sua cadência ouvem ecos do próprio futuro no rádio.';
+      case 'bomb_launcher':
+        return 'Protótipo banido pelo Tratado de Titã de 2184. Cada ogiva comprime matéria escura até '
+            'rasgar uma micro-fenda no espaço-tempo, devorando blindagens e a luz ao redor.';
+      case 'aegis_sawblades':
+        return 'Originalmente escudos rotativos de mineração criados para triturar asteroides de tungstênio em Calisto. '
+            'Quando a Frota Corrompida atacou, as mineradoras descobriram que cascos inimigos rasgavam igual rocha.';
+      case 'tesla_arc':
+        return 'Bobina recuperada dos destroços do Encouraçado Soberano "Aegis-IV". '
+            'Dispara arcos voltaicos inteligentes que buscam o núcleo energético mais próximo em cadeia.';
+      case 'quantum_chakram':
+        return 'Arma cerimonial da Ordem de Caelum. O disco dobra a geometria gravitacional local para '
+            'retornar sempre à nave que o lançou, cortando duas vezes na mesma batida de coração.';
+      case 'repulsor_aura':
+        return 'Gerador de pulso harmônico instalado ao redor do reator central da Valquíria. '
+            'Converte o desespero do cerco em ondas de choque gravitacionais de 360 graus.';
+      case 'solar_lance':
+        return 'Canalizador direto de plasma coronal extraído da Forja de Órion. '
+            'Seu feixe contínuo atinge temperaturas estelares que fundem escudos frontais em segundos.';
+      case 'inferno_cone':
+        return 'Propulsor secundário modificado por Lyra Vance após ficar sem munição no Cinturão Exterior. '
+            'Transforma combustível estelar bruto em uma tempestade incandescente de curta distância.';
+      case 'valkyrie_wingmen':
+        return 'Drones autônomos contendo fragmentos das matrizes de IA de pilotos caídas em missões passadas. '
+            'Mesmo após a morte de suas naves originais, elas se recusam a deixar uma irmã voar sozinha.';
+      case 'void_mines':
+        return 'Minas magnéticas de contenção usadas por caçadoras furtivas. '
+            'Flutuam silenciosamente no rastro da nave, aguardando perseguidores gananciosos demais.';
+      default:
+        return 'Relíquia bélica registrada nos arquivos confidenciais do Protocolo Void.';
+    }
+  }
+
   static const List<String> allWeaponIds = [
     'blaster',
     'spread_shot',

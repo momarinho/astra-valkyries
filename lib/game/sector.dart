@@ -7,6 +7,7 @@ enum SectorId {
   graveyard,
   xenoHive,
   eventHorizon,
+  voidThrone, // Sprint 24: Setor 5 Secreto (O Trono do Vazio)
 }
 
 class Sector {
@@ -163,14 +164,36 @@ class Sector {
     ],
   );
 
+  static const Sector voidThrone = Sector(
+    id: SectorId.voidThrone,
+    name: 'O Trono do Vazio',
+    subtitle: 'Setor 5 Secreto // Berço do Soberano Primordial',
+    description: 'Santuário proibido além do Horizonte de Eventos. Acessível apenas com 3+ Void Cells ou Matriz da Astraea decodificada.',
+    difficultyLabel: 'DIVINO // SECRETO',
+    primaryColor: Color(0xFFFFD700),
+    secondaryColor: Color(0xFFE040FB),
+    speedMultiplier: 1.48,
+    asteroidDensity: 1.40,
+    hazardWarning: 'Singularidade Soberana: O Arquiteto do Protocolo rege o tecido do tempo.',
+    icon: Icons.auto_awesome_rounded,
+    paletteStops: [
+      (t: 0.0, a: Color(0xFF140024), b: Color(0xFF4A148C)),
+      (t: 50.0, a: Color(0xFF311B92), b: Color(0xFF880E4F)),
+      (t: 105.0, a: Color(0xFF4A148C), b: Color(0xFFFFB300)),
+      (t: 150.0, a: Color(0xFF6A1B9A), b: Color(0xFFFFD700)),
+      (t: 180.0, a: Color(0xFF1A0033), b: Color(0xFFFFFFFF)),
+    ],
+  );
+
   static List<Sector> get allSectorsWithBranches => [
         ...allSectors,
         cryoAbyss,
         xenoHive,
+        voidThrone,
       ];
 
   /// Retorna as opções de rota ramificada no Mapa Estelar (Branching Star Chart) ao concluir um setor
-  static List<Sector> getNextBranchChoices(Sector current) {
+  static List<Sector> getNextBranchChoices(Sector current, {bool canUnlockSecret = false}) {
     switch (current.id) {
       case SectorId.vesta:
         // Do Setor 1 (Vesta) bifurca para Setor 2A (Forja de Órion) ou Setor 2B (Abismo Criogênico)
@@ -184,6 +207,11 @@ class Sector {
         // Do Setor 3A/3B converge para o Clímax Final no Setor 4 (Event Horizon)
         return [allSectors[3]];
       case SectorId.eventHorizon:
+        if (canUnlockSecret) {
+          return [voidThrone];
+        }
+        return [];
+      case SectorId.voidThrone:
         return [];
     }
   }

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/ending_manager.dart';
 import 'package:asteroids/services/api_service.dart';
 
 class GameOverOverlay extends StatefulWidget {
@@ -157,6 +158,63 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                           color: Colors.white.withOpacity(0.7),
                         ),
                       ),
+
+                      if (game.lastTriggeredEnding != EndingType.none) ...[
+                        const SizedBox(height: 12),
+                        Builder(
+                          builder: (context) {
+                            final ending = EndingManager.getDetails(game.lastTriggeredEnding);
+                            if (ending == null) return const SizedBox.shrink();
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: ending.primaryColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: ending.primaryColor.withOpacity(0.65),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${ending.code} // ${ending.title}',
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: ending.primaryColor,
+                                      letterSpacing: 1.1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    ending.biometricStatus,
+                                    style: const TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    ending.narrativeBody,
+                                    style: const TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 12.5,
+                                      height: 1.25,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
 
                       const SizedBox(height: 16),
 

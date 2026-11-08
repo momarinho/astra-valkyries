@@ -208,6 +208,7 @@ class ScrapGoliathComponent extends PositionComponent
     isDefeated = true;
     hp = 0;
     game.sectorMap?.isBossDefeated = true;
+    game.onBossDefeatedSpeechCheck();
 
     game.addScore(10000);
     game.addRunCredits(1000);

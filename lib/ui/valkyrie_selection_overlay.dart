@@ -1025,19 +1025,21 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
           const Divider(color: Colors.white12, height: 20),
 
-          // Sub-navigation inside Workshop: Fleet Upgrades | Blueprint Forge | Milestones Codex
-          Row(
+          // Sub-navigation inside Workshop: Fleet Upgrades | Blueprint Forge | Milestones Codex | Faction Codex | Flight Recorders
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
             children: [
               _buildWorkshopSubTabButton(0, 'MELHORIAS DE FROTA', Icons.tune_rounded, const Color(0xFFFFB300)),
-              const SizedBox(width: 8),
               _buildWorkshopSubTabButton(1, 'FORJA DE DIAGRAMAS', Icons.architecture_rounded, const Color(0xFF00E5FF)),
-              const SizedBox(width: 8),
-              _buildWorkshopSubTabButton(2, 'CÓDICE DE CONQUISTAS', Icons.emoji_events_rounded, const Color(0xFFFFD700)),
+              _buildWorkshopSubTabButton(2, 'CONQUISTAS', Icons.emoji_events_rounded, const Color(0xFFFFD700)),
+              _buildWorkshopSubTabButton(3, 'CÓDICE DE FACÇÕES', Icons.auto_stories_rounded, const Color(0xFFFF4081)),
+              _buildWorkshopSubTabButton(4, 'CAIXAS PRETAS & LORE', Icons.settings_input_antenna_rounded, const Color(0xFFE040FB)),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Responsive Content (Upgrades / Blueprints / Milestones)
+          // Responsive Content (Upgrades / Blueprints / Milestones / Factions / Flight Recorders)
           Expanded(
             child: _workshopSubTab == 0
                 ? LayoutBuilder(
@@ -1068,7 +1070,13 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       }
                     },
                   )
-                : (_workshopSubTab == 1 ? _buildBlueprintForgeList() : _buildMilestonesList()),
+                : (_workshopSubTab == 1
+                    ? _buildBlueprintForgeList()
+                    : (_workshopSubTab == 2
+                        ? _buildMilestonesList()
+                        : (_workshopSubTab == 3
+                            ? _buildFactionCodexList()
+                            : _buildFlightRecordersList()))),
           ),
         ],
       ),
@@ -1155,6 +1163,18 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         color: Colors.white70,
                       ),
                     ),
+                    if (isFound) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        '📜 ${bp.loreLog}',
+                        style: const TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1249,6 +1269,159 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   fontSize: 10.5,
                   fontWeight: FontWeight.bold,
                   color: isUnlocked ? const Color(0xFF00E676) : const Color(0xFFFFB300),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFactionCodexList() {
+    final factions = FactionCodexEntry.allFactions;
+    return ListView.separated(
+      itemCount: factions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final f = factions[index];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111724),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: f.color.withValues(alpha: 0.7), width: 1.4),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(f.icon, color: f.color, size: 26),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          f.title,
+                          style: const TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          f.subtitle,
+                          style: TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: f.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    f.threatClassification,
+                    style: TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                      color: f.color,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                f.loreHistory,
+                style: const TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 12.5,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '🎯 DIRETRIZ TÁTICA: ${f.tacticalWeakness}',
+                style: const TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF00E676),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFlightRecordersList() {
+    final logs = FlightRecorderLog.allFlightRecorders;
+    return ListView.separated(
+      itemCount: logs.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        final isUnlocked = widget.game.unlockedFlightRecorders.contains(log.id);
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111724),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isUnlocked ? const Color(0xFFE040FB) : Colors.white12,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.graphic_eq_rounded,
+                    color: isUnlocked ? const Color(0xFFE040FB) : Colors.white24,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isUnlocked
+                          ? '📼 ${log.vesselName.toUpperCase()} // ${log.pilotCallsign}'
+                          : '📼 CAIXA PRETA CRIPTOGRAFADA // DESTRUA CARGUEIROS NO SETOR',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isUnlocked ? Colors.white : Colors.white38,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    log.sectorOrigin,
+                    style: const TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 11.5,
+                      color: Color(0xFF00E5FF),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isUnlocked
+                    ? log.transmissionText
+                    : 'Sinal de caixa preta oculto em destroços de cargueiros (Cargo Wrecks).',
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 12.5,
+                  fontStyle: isUnlocked ? FontStyle.italic : FontStyle.normal,
+                  color: isUnlocked ? Colors.white70 : Colors.white38,
                 ),
               ),
             ],

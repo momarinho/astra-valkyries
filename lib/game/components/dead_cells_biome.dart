@@ -9,8 +9,10 @@ import 'player.dart';
 import 'bullet.dart';
 import 'enemy_bullet.dart';
 import 'chest.dart';
+import 'asteroid.dart';
+import 'enemy_ship.dart';
 
-/// 1. Barreira Física de Megaestrutura (Corredores e Câmaras estilo Dead Cells)
+/// 1. Barreira Física de Megaestrutura (Corredores e Câmaras estilo Dead Cells — Física Unificada Sprint 19)
 class MegastructureWallComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final Vector2 wallSize;
@@ -32,12 +34,75 @@ class MegastructureWallComponent extends PositionComponent
     add(RectangleHitbox());
   }
 
+  void resolveAsteroidCollision(AsteroidComponent a) {
+    if (a.isRemoving || a.hp <= 0) return;
+    final halfW = size.x / 2 + a.radius;
+    final halfH = size.y / 2 + a.radius;
+    final dx = a.position.x - position.x;
+    final dy = a.position.y - position.y;
+
+    if (dx.abs() < halfW && dy.abs() < halfH) {
+      final impactSpeed = a.velocity.length;
+      final overlapX = halfW - dx.abs();
+      final overlapY = halfH - dy.abs();
+      final signX = dx == 0 ? 1.0 : dx.sign;
+      final signY = dy == 0 ? 1.0 : dy.sign;
+
+      if (overlapX < overlapY) {
+        a.position.x += signX * (overlapX + 1.0);
+        a.velocity.x = signX * a.velocity.x.abs() * 0.85;
+      } else {
+        a.position.y += signY * (overlapY + 1.0);
+        a.velocity.y = signY * a.velocity.y.abs() * 0.85;
+      }
+
+      // Se a velocidade de impacto for alta, o asteroide sofre dano estrutural ou se fragmenta
+      if (impactSpeed >= 50.0) {
+        final impactDmg = math.max(25.0, impactSpeed * 0.55);
+        final destroyed = a.takeDamage(impactDmg, a.position);
+        if (destroyed) {
+          try {
+            game.onAsteroidDestroyed(a.position, a.scoreValue);
+          } catch (_) {}
+        }
+      }
+    }
+  }
+
+  void resolveEnemyCollision(EnemyShipComponent e) {
+    if (e.isRemoving || e.hp <= 0) return;
+    final halfW = size.x / 2 + e.radius;
+    final halfH = size.y / 2 + e.radius;
+    final dx = e.position.x - position.x;
+    final dy = e.position.y - position.y;
+
+    if (dx.abs() < halfW && dy.abs() < halfH) {
+      final overlapX = halfW - dx.abs();
+      final overlapY = halfH - dy.abs();
+      final signX = dx == 0 ? 1.0 : dx.sign;
+      final signY = dy == 0 ? 1.0 : dy.sign;
+
+      // Bloqueia fisicamente a nave inimiga e aplica força de desvio tático (steering avoidance)
+      if (overlapX < overlapY) {
+        e.position.x += signX * (overlapX + 1.0);
+        e.velocity.x = signX * e.baseSpeed * 0.65;
+        final steerSign = dy >= 0 ? 1.0 : -1.0;
+        e.velocity.y += steerSign * e.baseSpeed * 0.80;
+      } else {
+        e.position.y += signY * (overlapY + 1.0);
+        e.velocity.y = signY * e.baseSpeed * 0.65;
+        final steerSign = dx >= 0 ? 1.0 : -1.0;
+        e.velocity.x += steerSign * e.baseSpeed * 0.80;
+      }
+    }
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
     if (game.state != GameState.playing) return;
 
-    // Empurra fisicamente a nave caso encoste na parede da megaestrutura
+    // 1. Empurra fisicamente a nave da jogadora caso encoste na parede da megaestrutura
     final p = game.player;
     final halfW = size.x / 2 + p.radius;
     final halfH = size.y / 2 + p.radius;
@@ -48,11 +113,34 @@ class MegastructureWallComponent extends PositionComponent
       final overlapX = halfW - dx.abs();
       final overlapY = halfH - dy.abs();
       if (overlapX < overlapY) {
-        p.position.x += dx.sign * overlapX;
+        p.position.x += (dx == 0 ? 1.0 : dx.sign) * overlapX;
         p.velocity.x = -p.velocity.x * 0.35;
       } else {
-        p.position.y += dy.sign * overlapY;
+        p.position.y += (dy == 0 ? 1.0 : dy.sign) * overlapY;
         p.velocity.y = -p.velocity.y * 0.35;
+      }
+    }
+
+    // 2. Física Unificada (Sprint 19): Asteroides, Naves Inimigas e Projéteis
+    for (final child in List<Component>.from(game.world.children)) {
+      if (child is AsteroidComponent) {
+        resolveAsteroidCollision(child);
+      } else if (child is EnemyShipComponent) {
+        resolveEnemyCollision(child);
+      } else if (child is EnemyBulletComponent) {
+        final bHalfW = size.x / 2 + child.radius;
+        final bHalfH = size.y / 2 + child.radius;
+        if ((child.position.x - position.x).abs() < bHalfW &&
+            (child.position.y - position.y).abs() < bHalfH) {
+          child.removeFromParent();
+        }
+      } else if (child is BulletComponent) {
+        final bHalfW = size.x / 2 + child.radius;
+        final bHalfH = size.y / 2 + child.radius;
+        if ((child.position.x - position.x).abs() < bHalfW &&
+            (child.position.y - position.y).abs() < bHalfH) {
+          child.removeFromParent();
+        }
       }
     }
   }
@@ -64,6 +152,10 @@ class MegastructureWallComponent extends PositionComponent
       other.removeFromParent();
     } else if (other is EnemyBulletComponent) {
       other.removeFromParent();
+    } else if (other is AsteroidComponent) {
+      resolveAsteroidCollision(other);
+    } else if (other is EnemyShipComponent) {
+      resolveEnemyCollision(other);
     }
   }
 

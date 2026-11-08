@@ -25,7 +25,10 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
   @override
   void initState() {
     super.initState();
-    _branchChoices = Sector.getNextBranchChoices(widget.game.currentSector);
+    _branchChoices = Sector.getNextBranchChoices(
+      widget.game.currentSector,
+      canUnlockSecret: widget.game.canAccessSecretSector5,
+    );
     if (_branchChoices.isEmpty) {
       _branchChoices = [Sector.defaultSector];
     }
@@ -229,7 +232,7 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
 
                       // 2. Pilot Mutation Selection (up to 3 per run)
                       if (_mutationChoices.isNotEmpty && widget.game.activeMutations.length < 3) ...[
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 12),
                         Text(
                           '2. ESCOLHA 1 MUTAÇÃO DE PILOTO (${widget.game.activeMutations.length}/3 ATIVAS)',
                           style: const TextStyle(
@@ -240,16 +243,16 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                             letterSpacing: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         ...List.generate(_mutationChoices.length, (i) {
                           final mut = _mutationChoices[i];
                           final isSelected = _selectedMutationIdx == i;
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.only(bottom: 6),
                             child: GestureDetector(
                               onTap: () => setState(() => _selectedMutationIdx = i),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? mut.color.withValues(alpha: 0.18)
@@ -285,6 +288,17 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                                               color: Colors.white70,
                                             ),
                                           ),
+                                          Text(
+                                            '📜 ${mut.loreLog}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontFamily: 'Rajdhani',
+                                              fontSize: 10.5,
+                                              fontStyle: FontStyle.italic,
+                                              color: Colors.white54,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -298,7 +312,7 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                         }),
                       ],
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 12),
                       ElevatedButton.icon(
                         key: const Key('confirm_star_chart_jump_button'),
                         onPressed: _confirmWarpJump,

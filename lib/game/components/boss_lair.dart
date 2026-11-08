@@ -9,6 +9,8 @@ import 'dreadnought_leviathan.dart';
 import 'ignis_wyrm.dart';
 import 'scrap_goliath.dart';
 import 'void_singularity_core.dart';
+import 'living_biomes.dart';
+import 'speech_bubble.dart';
 
 /// Covil / Arena Territorial do Chefe de Setor.
 /// Gerado proceduralmente em um quadrante distante do mapa (estilo Dead Cells).
@@ -97,15 +99,22 @@ class BossLairComponent extends PositionComponent with HasGameReference<Asteroid
     final SectorBoss boss;
     switch (game.currentSector.id) {
       case SectorId.orion:
-      case SectorId.cryoAbyss:
         boss = IgnisWyrmComponent(position: position.clone());
         break;
+      case SectorId.cryoAbyss:
+        boss = GlacialColossusComponent(position: position.clone());
+        break;
       case SectorId.graveyard:
-      case SectorId.xenoHive:
         boss = ScrapGoliathComponent(position: position.clone());
+        break;
+      case SectorId.xenoHive:
+        boss = CarrierHiveAlphaComponent(position: position.clone());
         break;
       case SectorId.eventHorizon:
         boss = VoidSingularityCoreComponent(position: position.clone());
+        break;
+      case SectorId.voidThrone:
+        boss = PrimordialVoidSovereignComponent(position: position.clone());
         break;
       case SectorId.vesta:
         boss = DreadnoughtLeviathanComponent(position: position.clone());
@@ -116,6 +125,7 @@ class BossLairComponent extends PositionComponent with HasGameReference<Asteroid
     game.flawlessBossKill = true;
     game.lastBossEncountered = boss.bossName;
     game.world.add(boss);
+    game.triggerSpeechBubble(SpeechTrigger.bossArrival);
 
     game.playSfx('powerup.wav');
     game.triggerScreenShake(duration: 1.5, intensity: 26.0);

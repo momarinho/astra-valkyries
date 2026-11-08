@@ -13,6 +13,7 @@ import 'package:asteroids/game/components/proximity_mine.dart';
 import 'package:asteroids/game/components/derelict_turret.dart';
 import 'package:asteroids/game/components/boss_lair.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
+import 'package:asteroids/game/components/living_biomes.dart';
 import 'sector_map_data.dart';
 
 /// Gerador Procedural de Setores Cósmicos (Inspirado no estilo Dead Cells).
@@ -44,7 +45,11 @@ class SectorMapGenerator {
         child is TimedVaultComponent ||
         child is FlawlessVaultComponent ||
         child is VoidMerchantComponent ||
-        child is CursedShrineComponent);
+        child is CursedShrineComponent ||
+        child is CryoMistZoneComponent ||
+        child is CryoMineComponent ||
+        child is OrganicBiomassWallComponent ||
+        child is XenoCocoonComponent);
     for (final p in List.from(oldPois)) {
       p.removeFromParent();
     }
@@ -210,8 +215,8 @@ class SectorMapGenerator {
       case SectorId.eventHorizon:
         final riftPos = Vector2(2400, 2000);
         final riftPos2 = Vector2(2800, 3000);
-        game.world.add(SingularityRiftComponent(position: riftPos, pullRadius: 260.0));
-        game.world.add(SingularityRiftComponent(position: riftPos2, pullRadius: 240.0));
+        game.world.add(SingularityRiftComponent(position: riftPos, pullRadius: 160.0, duration: 0.8));
+        game.world.add(SingularityRiftComponent(position: riftPos2, pullRadius: 160.0, duration: 0.8));
         nodes.add(MapNode(
           id: 'singularity_rift',
           type: MapNodeType.singularityRift,
@@ -232,6 +237,54 @@ class SectorMapGenerator {
           primaryColor: const Color(0xFFAA00FF),
           isDiscovered: false,
         ));
+        break;
+
+      case SectorId.cryoAbyss:
+        // Sprint 21: Setor 2B (Abismo Criogênico de Caelum) — Neblina de Gelo (-30% aceleração) e Minas Criogênicas
+        final mist1 = Vector2(2150, 2050);
+        final mist2 = Vector2(2850, 2750);
+        game.world.add(CryoMistZoneComponent(position: mist1, radius: 380.0));
+        game.world.add(CryoMistZoneComponent(position: mist2, radius: 360.0));
+        final cryoMineCoords = [
+          Vector2(2050, 2250),
+          Vector2(2750, 2150),
+          Vector2(2250, 2850),
+          Vector2(2850, 2650),
+        ];
+        for (final pos in cryoMineCoords) {
+          game.world.add(CryoMineComponent(position: pos));
+        }
+        break;
+
+      case SectorId.xenoHive:
+        // Sprint 21: Setor 3B (Colmeia Xeno-Biológica de Nêmesis) — Paredes Orgânicas Regenerativas e Casulos Xeno
+        game.world.add(
+          OrganicBiomassWallComponent(
+            position: Vector2(2100, 2050),
+            wallSize: Vector2(280, 32),
+          ),
+        );
+        game.world.add(
+          OrganicBiomassWallComponent(
+            position: Vector2(2700, 2750),
+            wallSize: Vector2(32, 280),
+          ),
+        );
+        final cocoonCoords = [
+          Vector2(1950, 2250),
+          Vector2(2850, 2150),
+          Vector2(2150, 2850),
+          Vector2(2800, 2700),
+        ];
+        for (final pos in cocoonCoords) {
+          game.world.add(XenoCocoonComponent(position: pos));
+        }
+        break;
+
+      case SectorId.voidThrone:
+        // Sprint 24: Setor 5 Secreto (O Trono do Vazio)
+        final throneRift = Vector2(2400, 1950);
+        game.world.add(SingularityRiftComponent(position: throneRift, pullRadius: 160.0, duration: 0.8));
         break;
 
       case SectorId.vesta:

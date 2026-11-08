@@ -17,9 +17,9 @@ class SingularityRiftComponent extends PositionComponent with HasGameReference<A
 
   SingularityRiftComponent({
     required Vector2 position,
-    this.pullRadius = 240.0,
+    this.pullRadius = 160.0,
     this.damage = 380.0,
-    this.duration = 1.8,
+    this.duration = 0.8,
   }) {
     this.position = position;
     anchor = Anchor.center;

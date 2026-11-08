@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 
 enum NebulaType {
@@ -8,24 +9,42 @@ enum NebulaType {
   darkMatter,  // High critical chance (+50% crit rate), but movement damped (-30% max speed)
 }
 
-/// Large interactive cosmic nebula region.
-/// Alters weapon fire cadences, ship speed, or critical damage when the player navigates inside.
+/// Large interactive cosmic nebula region (Rebalanceada na Sprint 20).
+/// Possui deriva espacial contínua, duração finita (25 a 35s) e Sobrecarga Térmica/Radiação:
+/// permanecer mais de 6s contínuos drena 5% de HP/segundo até a nave sair da área.
 class CosmicNebulaComponent extends PositionComponent with HasGameReference<AsteroidsGame> {
   final NebulaType type;
   final double radius;
+  final Vector2 driftVelocity;
+  final double maxDuration;
+  double elapsedTimer = 0.0;
+  double playerInsideTimer = 0.0;
+  static const double overloadThreshold = 6.0;
+  bool isOverloaded = false;
+  double _overloadWarningTimer = 0.0;
   double _pulseTimer = 0.0;
 
   CosmicNebulaComponent({
     required Vector2 position,
     required this.type,
     this.radius = 420.0,
-  }) : super(position: position, size: Vector2.all(radius * 2), anchor: Anchor.center);
+    Vector2? driftVelocity,
+    this.maxDuration = 30.0,
+  })  : driftVelocity = driftVelocity ??
+            (type == NebulaType.ionCloud ? Vector2(22.0, -14.0) : Vector2(-18.0, 16.0)),
+        super(position: position, size: Vector2.all(radius * 2), anchor: Anchor.center);
 
   String get name => type == NebulaType.ionCloud ? 'ION NEBULA' : 'DARK MATTER POCKET';
 
-  String get modifierText => type == NebulaType.ionCloud
-      ? '⚡ HYPER-CADENCE +30% // SHIELD DISRUPTION'
-      : '🎯 CRIT CHANCE +50% // GRAVITY DAMPED -30%';
+  String get modifierText {
+    final baseText = type == NebulaType.ionCloud
+        ? '⚡ HYPER-CADENCE +30% // SHIELD DISRUPTION'
+        : '🎯 CRIT CHANCE +50% // GRAVITY DAMPED -30%';
+    if (isOverloaded) {
+      return '☢️ SOBRECARGA DE RADIAÇÃO (-5% HP/s) // $baseText';
+    }
+    return baseText;
+  }
 
   Color get primaryColor => type == NebulaType.ionCloud
       ? const Color(0xFFE040FB) // Electric Magenta / Violet
@@ -44,6 +63,59 @@ class CosmicNebulaComponent extends PositionComponent with HasGameReference<Aste
   void update(double dt) {
     super.update(dt);
     _pulseTimer += dt * 0.8;
+
+    // 1. Deriva espacial contínua (Sprint 20)
+    position += driftVelocity * dt;
+    if (position.x < radius) {
+      position.x = radius;
+      driftVelocity.x = driftVelocity.x.abs();
+    } else if (position.x > GameConstants.sectorWidth - radius) {
+      position.x = GameConstants.sectorWidth - radius;
+      driftVelocity.x = -driftVelocity.x.abs();
+    }
+    if (position.y < radius) {
+      position.y = radius;
+      driftVelocity.y = driftVelocity.y.abs();
+    } else if (position.y > GameConstants.sectorHeight - radius) {
+      position.y = GameConstants.sectorHeight - radius;
+      driftVelocity.y = -driftVelocity.y.abs();
+    }
+
+    // 2. Duração finita (25 a 35s)
+    elapsedTimer += dt;
+    if (elapsedTimer >= maxDuration) {
+      removeFromParent();
+      return;
+    }
+
+    // 3. Sobrecarga Térmica / Radiação após 6s contínuos dentro da nuvem: drena 5% HP/s
+    try {
+      if (game.state == GameState.playing) {
+        final player = game.player;
+        if (containsPoint(player.position)) {
+          playerInsideTimer += dt;
+          if (playerInsideTimer > overloadThreshold) {
+            isOverloaded = true;
+            final drain = player.maxHp * 0.05 * dt;
+            player.hp = math.max(1.0, player.hp - drain);
+            _overloadWarningTimer += dt;
+            if (_overloadWarningTimer >= 1.0) {
+              _overloadWarningTimer = 0.0;
+              game.spawnFloatingText(
+                player.position + Vector2(0, -36),
+                '☢️ SOBRECARGA NEBULAR! (-5% HP/s)',
+                color: const Color(0xFFFF1744),
+                fontSize: 13.0,
+              );
+            }
+          }
+        } else {
+          playerInsideTimer = math.max(0.0, playerInsideTimer - dt * 2.5);
+          isOverloaded = playerInsideTimer > overloadThreshold;
+          _overloadWarningTimer = 0.0;
+        }
+      }
+    } catch (_) {}
   }
 
   @override

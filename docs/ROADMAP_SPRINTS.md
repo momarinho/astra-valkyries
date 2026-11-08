@@ -270,90 +270,85 @@ flowchart TD
 ---
 
 ## 🧱 SPRINT 19: Física Unificada de Cenário & Cobertura Tática
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Eliminar o comportamento de "fantasma" onde asteroides e naves inimigas atravessam estruturas sólidas.
-- **Entregáveis:**
-  - [ ] **Colisão Universal em Megaestruturas (`MegastructureWallComponent`):** Asteroides colidem com paredes, ricocheteiam com base no ângulo e velocidade, e se quebram em fragmentos menores se a velocidade de impacto for alta.
-  - [ ] **Naves Inimigas Bloqueadas por Paredes:** Naves hostis não atravessam paredes de estações espaciais; sofrem impacto ou contornam o obstáculo usando forças de desvio (*steering avoidance*).
-  - [ ] **Uso Tático do Cenário:** O jogador pode se posicionar atrás de vigas e barreiras para se proteger de projéteis de *Corvette Snipers*, torretas e lasers de Titãs.
-  - [ ] **Colisão Física entre Inimigos e Asteroides:** Naves de enxame leves (*Void Swarmers*) sofrem dano se colidirem contra asteroides massivos.
+- **Entregáveis Concluídos:**
+  - [x] **Colisão Universal em Megaestruturas (`MegastructureWallComponent`):** Asteroides colidem com paredes, ricocheteiam com base no ângulo e velocidade, e se quebram em fragmentos menores se a velocidade de impacto for alta (`resolveAsteroidCollision`).
+  - [x] **Naves Inimigas Bloqueadas por Paredes:** Naves hostis não atravessam paredes de estações espaciais; sofrem impacto ou contornam o obstáculo usando forças de desvio (*steering avoidance* em `resolveEnemyCollision`).
+  - [x] **Uso Tático do Cenário:** O jogador pode se posicionar atrás de vigas e barreiras para se proteger de projéteis de *Corvette Snipers* (`EnemyBulletComponent` dissipa na colisão com `MegastructureWallComponent`).
+  - [x] **Colisão Física entre Inimigos e Asteroides:** Naves de enxame leves (*VoidSwarmComponent* / *Scout*) sofrem dano se colidirem contra asteroides massivos (`resolveAsteroidImpact`).
 
 ---
 
 ## ⚖️ SPRINT 20: Rebalanceamento da Nebulosa & Diretor de Hordas Dinâmico
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Acabar com o efeito "inviolável" e fácil do jogo, introduzindo risco real na Nebulosa e um *Spawn Director* inteligente que gera tensão contínua a 60 FPS estáveis.
-- **Entregáveis:**
-  - [ ] **Nebulosa Dinâmica & Sobrecarga Térmica/Radiação:**
-    - A nebulosa passa a se mover lentamente pelo mapa ou tem duração finita (25 a 35s).
-    - Ficar dentro da nebulosa concede os bônus, mas acumula *Radiação/Calor* — após 6s contínuos, drena 5% de HP/segundo até a nave sair da nuvem.
-  - [ ] **Rebalanceamento do *Singularity Rift*:**
+- **Entregáveis Concluídos:**
+  - [x] **Nebulosa Dinâmica & Sobrecarga Térmica/Radiação (`CosmicNebulaComponent`):**
+    - A nebulosa deriva continuamente pelo espaço e tem duração finita (25 a 35s).
+    - Ficar dentro da nebulosa concede os bônus, mas acumula *Radiação/Calor* — após 6s contínuos (`overloadThreshold`), drena 5% de HP/segundo até a nave sair da nuvem.
+  - [x] **Rebalanceamento do *Singularity Rift* (`SingularityRiftComponent`):**
     - Redução do raio (240px $\to$ 160px) e duração (1.8s $\to$ 0.8s); funciona como controle de grupo momentâneo sem triturar a tela inteira.
-  - [ ] **Escalonamento Híbrido de Inimigos (Vida x Dano x Tempo):**
-    - Fórmula de HP dinâmico: $\text{HP} = \text{HP}_{\text{base}} \times (1 + \text{minutos} \times 0.25) \times (1 + \text{VoidCells} \times 0.35)$.
-    - Velocidade dos inimigos aumenta gradualmente ao longo dos minutos.
-  - [ ] **Teto Rígido de Entidades & Sifão de XP (Restaurar 60 FPS Cravados):**
-    - Teto estrito de 35 a 45 naves ativas simultâneas. Se o teto for atingido, novos spawns promovem inimigos existentes a versões de Elite com auras em vez de inflar a contagem.
-    - Otimização do pooling de orbs de Stardust e limitação de textos flutuantes por segundo.
+  - [x] **Escalonamento Híbrido de Inimigos (Vida x Dano x Tempo):**
+    - Fórmula de HP dinâmico (`EnemyShipComponent.calculateScaledHp`): $\text{HP} = \text{HP}_{\text{base}} \times (1 + \text{minutos} \times 0.25) \times (1 + \text{VoidCells} \times 0.35)$.
+  - [x] **Teto Rígido de Entidades & Sifão de XP (Restaurar 60 FPS Cravados):**
+    - Teto estrito de 40 naves ativas simultâneas (`AsteroidField.maxActiveEnemiesCap`). Se o teto for atingido, `spawnOrPromoteEnemy` promove inimigos existentes a versões de Elite com auras (`EliteAuraType.cryoFrost`, `aegisShield`, `ionShock`) em vez de inflar a contagem.
+    - Otimização do pooling de orbs de Stardust e limitação de textos flutuantes (`maxActiveFloatingTexts = 26`).
 
 ---
 
 ## ❄️ SPRINT 21: Ambientes Vivos para os Biomas 2B e 3B
-- **Status:** 📋 **PLANEJADA**
-- **Objetivo:** Garantir que os setores alternativos do Mapa Estelar tenham perigos ambientais e comportamentos visuais únicos.
-- **Entregáveis:**
-  - [ ] **Setor 2B (Abismo Criogênico de Caelum):**
-    - Nevoeiro criogênico que reduz a velocidade máxima e a tração da nave em 30%.
-    - Minas congelantes que aprisionam a nave em blocos de gelo por 0.8s se tocadas.
-    - Chefe: *Glacial Colossus* com placas de gelo reflexivas.
-  - [ ] **Setor 3B (Colmeia Xeno-Biológica de Nêmesis):**
-    - Paredes de biomassa viva que se regeneram lentamente ao serem baleadas.
-    - Casulos que chocam 10 *Void Swarmers* ao serem violados.
-    - Chefe: *Carrier Hive Alpha* que vomita enxames de esporos teleguiados.
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Garantir que os setores alternativos do Mapa Estelar tenham perigos ambientais e comportamentos visuais únicos (`lib/game/components/living_biomes.dart`).
+- **Entregáveis Concluídos:**
+  - [x] **Setor 2B (Abismo Criogênico de Caelum):**
+    - Nevoeiro criogênico (`CryoMistZoneComponent`) que reduz a aceleração da nave em 30%.
+    - Minas congelantes (`CryoMineComponent`) que aprisionam a nave por 0.8s se tocadas.
+    - Chefe: *Glacial Colossus* (`GlacialColossusComponent`) com blindagem regenerativa de gelo.
+  - [x] **Setor 3B (Colmeia Xeno-Biológica de Nêmesis):**
+    - Paredes de biomassa viva (`OrganicBiomassWallComponent`) que se regeneram lentamente.
+    - Casulos (`XenoCocoonComponent`) que chocam *Void Swarmers* ao serem violados.
+    - Chefe: *Carrier Hive Alpha* (`CarrierHiveAlphaComponent`) que lança enxames parasitários.
 
 ---
 
 ## 📜 SPRINT 22: Lore Diegética & Arquivos de História nos Itens
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Adicionar alma, contexto e profundidade ao universo de *Astra Valkyries* através de descrições ricas em estilo *Dark Souls* e *Hades*.
-- **Entregáveis:**
-  - [ ] **Lore Arquivada no Grimório e na Oficina:**
-    - Cada arma, mutação e diagrama recebe um bloco de história detalhando sua origem militar, propósito científico ou tragédia passada.
-  - [ ] **Caixas Pretas em Destroços (*Flight Recorders*):**
-    - Destroços de cargueiros (*Cargo Wrecks*) contêm trechos de diários de bordo deixados por pilotos anteriores que sucumbiram ao Vazio.
-  - [ ] **Códice de Facções Hostis:**
-    - Visualizador de modelos 2D no menu com histórico da *Frota Corrompida de Érebo*, das *Formas de Vida Xeno-Biológicas* e dos *Arquitetos Ancestrais*.
+- **Entregáveis Concluídos:**
+  - [x] **Lore Arquivada no Grimório e na Oficina:**
+    - Cada arma (`Weapon.loreLog`), mutação (`PilotMutation.loreLog`) e diagrama (`BlueprintDef.loreLog`) possui bloco de história detalhando sua origem militar, propósito científico ou tragédia passada.
+  - [x] **Caixas Pretas em Destroços (*Flight Recorders*):**
+    - Destroços de cargueiros (`CargoWreckComponent`) recuperam transmissões de caixas pretas (`FlightRecorderLog`) de pilotos anteriores que sucumbiram ao Vazio.
+  - [x] **Códice de Facções Hostis (`FactionCodexEntry`):**
+    - Aba no menu da Oficina com histórico da *Frota Corrompida de Érebo*, da *Colmeia Xeno-Biológica de Nêmesis* e dos *Arquitetos Ancestrais do Vazio*.
 
 ---
 
 ## 💬 SPRINT 23: Balões de Fala em Combate (*Anime Speech Bubbles*)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Dar voz ativa às Valquírias durante a ação sem pausar o combate.
-- **Entregáveis:**
-  - [ ] **Componente de Balão de Fala (`SpeechBubbleComponent`):**
-    - Balões elegantes de quadrinhos/anime com o retrato da piloto ativa, surgindo acima da nave com efeito sonoro de rádio/chiado.
-  - [ ] **Gatilhos de Fala Contextuais:**
-    - *Início da Partida / Salto de Hiperespaço.*
-    - *Despertar do Chefe do Setor (Troca de ofensas e provocações táticas).*
-    - *Alerta de Casco Crítico (< 25% HP).*
-    - *Ativação de Super-Arma ou Habilidade Especial.*
-    - *Eliminação de Chefe com Casco Intacto (Flawless).*
+- **Entregáveis Concluídos:**
+  - [x] **Componente de Balão de Fala (`SpeechBubbleComponent`):**
+    - Balões elegantes de quadrinhos/anime com o retrato da piloto ativa e efeito de texto datilografado (`displayedText`), surgindo acima da nave com efeito sonoro de rádio.
+  - [x] **Gatilhos de Fala Contextuais (`SpeechTrigger`):**
+    - *Início da Partida / Salto de Hiperespaço (`hyperspaceJump`).*
+    - *Despertar do Chefe do Setor (`bossArrival`).*
+    - *Alerta de Casco Crítico (< 25% HP, `criticalHull`).*
+    - *Ativação de Super-Arma ou Habilidade Especial (`superWeapon`).*
+    - *Eliminação de Chefe com Casco Intacto (`flawlessVictory`).*
 
 ---
 
 ## 🌌 SPRINT 24: O Sistema de Finais Múltiplos (Bad, Good, True Ending) & Setor 5 Secreto
-- **Status:** 📋 **PLANEJADA**
-- **Objetivo:** Concluir o ciclo da campanha com desfechos dramáticos, recompensas permanentes e clímax definitivo.
-- **Entregáveis:**
-  - [ ] **💀 Bad Ending (*Colapso do Vazio*):**
-    - Acionado se a jogadora for abatida no Setor 4 ou executada pelo Ceifador do Vazio no esgotamento de tempo.
-    - Cutscene com perda de sinal biométrico e reinicialização forçada do Protocolo no Hangar.
-  - [ ] **🌟 Good Ending (*Protocolo Estabilizado*):**
-    - Acionado ao derrotar o *Void Singularity Core* em dificuldade normal (*Void Cells 0 a 2*).
-    - Evacuação bem-sucedida dos comboios de refugiados, fechamento temporário da fenda e créditos finais.
-  - [ ] **Setor 5 Secreto: O Trono do Vazio (*The Primordial Sovereign*):**
-    - Desbloqueado com 3+ *Void Cells* ativas ou decodificando a matriz da Astraea.
-    - Confronto contra a inteligência cósmica que rege o loop do Protocolo.
-  - [ ] **✨ True Ending (*Quebra do Protocolo & Ascensão*):**
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Concluir o ciclo da campanha com desfechos dramáticos, recompensas permanentes e clímax definitivo (`EndingManager`).
+- **Entregáveis Concluídos:**
+  - [x] **💀 Bad Ending (*Colapso do Vazio*):**
+    - Acionado se a jogadora for abatida no Setor 4/5 ou executada pelo Ceifador do Vazio no esgotamento de tempo.
+  - [x] **🌟 Good Ending (*Protocolo Estabilizado*):**
+    - Acionado ao derrotar o *Void Singularity Core* no Setor 4 em dificuldade normal.
+  - [x] **Setor 5 Secreto: O Trono do Vazio (`SectorId.voidThrone`):**
+    - Desbloqueado com 3+ *Void Cells* ativas ou decodificando a matriz da Astraea, enfrentando o *Primordial Void Sovereign* (`PrimordialVoidSovereignComponent`).
+  - [x] **✨ True Ending (*Quebra do Protocolo & Ascensão*):**
     - Acionado ao vencer o Setor 5 com Elo de Afinidade Nível 5 com a Valquíria ativa.
-    - Cutscene estendida com ilustrações exclusivas em estilo anime, libertação definitiva das pilotos e restauração das constelações estelares.
