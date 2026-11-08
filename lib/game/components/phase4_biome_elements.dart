@@ -93,19 +93,17 @@ class BiomeBackdropComponent extends PositionComponent
     final sector = Sector.findById(sectorId);
     final moteColor = sector.primaryColor;
     final motePaint = Paint()..style = PaintingStyle.fill;
-    final haloPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..blendMode = BlendMode.plus;
+    final haloPaint = Paint()..style = PaintingStyle.fill;
 
     for (int i = 0; i < _ambientMotes.length; i++) {
       final pos = _ambientMotes[i].toOffset();
-      final pulse = 0.5 + 0.5 * math.sin(_animTimer * 3.0 + i);
-      final r = (1.5 + (i % 3)) * (0.8 + 0.4 * pulse);
+      final pulse = 0.5 + 0.5 * math.sin(_animTimer * 2.4 + i);
+      final r = (1.2 + (i % 2)) * (0.7 + 0.3 * pulse);
 
-      motePaint.color = moteColor.withValues(alpha: 0.65 + 0.35 * pulse);
-      haloPaint.color = moteColor.withValues(alpha: 0.30 * pulse);
+      motePaint.color = moteColor.withValues(alpha: 0.16 + 0.10 * pulse);
+      haloPaint.color = moteColor.withValues(alpha: 0.05 * pulse);
 
-      canvas.drawCircle(pos, r * 2.5, haloPaint);
+      canvas.drawCircle(pos, r * 2.0, haloPaint);
       canvas.drawCircle(pos, r, motePaint);
     }
   }
@@ -122,7 +120,7 @@ class BiomeBackdropComponent extends PositionComponent
       camPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
     }
 
-    // 1. Renderiza o Backdrop Fotorrealista do Bioma com Parallax Suave e Vinheta Tática
+    // 1. Renderiza o Backdrop Fotorrealista do Bioma com Parallax Suave e Scrim de Alto Contraste
     if (_backdropImage != null) {
       canvas.save();
       canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
@@ -144,24 +142,30 @@ class BiomeBackdropComponent extends PositionComponent
       );
       final dstRect = Rect.fromLTWH(offsetX, offsetY, viewW, viewH);
 
+      // Opacidade balanceada do backdrop para não ofuscar naves inimigas e asteroides
       final bgPaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.90)
+        ..color = Colors.white.withValues(alpha: 0.38)
         ..filterQuality = FilterQuality.medium;
       canvas.drawImageRect(_backdropImage!, srcRect, dstRect, bgPaint);
 
-      // Vinheta atmosférica de alto contraste tático
+      // Scrim cósmico de alto contraste (garante que os monstros, lasers e orbs saltem aos olhos)
+      final scrimPaint = Paint()
+        ..color = const Color(0xFF040711).withValues(alpha: 0.52);
+      canvas.drawRect(Rect.fromLTWH(0, 0, width, height), scrimPaint);
+
+      // Vinheta atmosférica tática
       final vignettePaint = Paint()
         ..shader = RadialGradient(
           colors: [
             Colors.transparent,
-            Colors.black.withValues(alpha: 0.25),
-            Colors.black.withValues(alpha: 0.70),
+            Colors.black.withValues(alpha: 0.35),
+            Colors.black.withValues(alpha: 0.85),
           ],
-          stops: const [0.55, 0.82, 1.0],
+          stops: const [0.45, 0.75, 1.0],
         ).createShader(Rect.fromLTWH(0, 0, width, height));
       canvas.drawRect(Rect.fromLTWH(0, 0, width, height), vignettePaint);
 
-      // Partículas atmosféricas temáticas flutuantes (fagulhas, geada, esporos)
+      // Partículas atmosféricas temáticas flutuantes sutis (micro-fagulhas, geada, esporos)
       _renderAmbientMotes(canvas, width, height);
 
       canvas.restore();

@@ -267,20 +267,20 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         intensity: 2.0,
       );
     } else {
-      // Standard rock
-      if (isFlashing) {
-        final fillPaint = Paint()
-          ..color = Colors.redAccent.withValues(alpha: 0.2)
-          ..style = PaintingStyle.fill;
-        canvas.drawPath(path, fillPaint);
-      }
+      // Standard rock: preenchimento opaco escuro para ocluir estrelas/bioma + borda luminosa nítida
+      final rockFill = Paint()
+        ..color = isFlashing
+            ? Colors.redAccent.withValues(alpha: 0.35)
+            : const Color(0xFF0C101A).withValues(alpha: 0.88)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, rockFill);
 
       Glow.strokePath(
         canvas,
         path,
         isFlashing ? Colors.redAccent : const Color(0xFFDDEBFF),
-        width: isFlashing ? GameConstants.lineWidth * 1.8 : GameConstants.lineWidth,
-        intensity: isFlashing ? 1.6 : 0.9,
+        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.4,
+        intensity: isFlashing ? 1.7 : 1.1,
       );
     }
   }

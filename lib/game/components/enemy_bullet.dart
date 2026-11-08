@@ -77,23 +77,30 @@ class EnemyBulletComponent extends PositionComponent
     final pulse = 0.85 + 0.15 * math.sin(DateTime.now().millisecondsSinceEpoch / 90.0);
     final curR = radius * pulse;
 
+    // Dark high-contrast rim so enemy bullets pop against bright nebulae
+    final darkRimPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4;
+    canvas.drawCircle(Offset.zero, curR + 1.2, darkRimPaint);
+
     final fillPaint = Paint()
-      ..color = bulletColor.withValues(alpha: 0.85)
+      ..color = bulletColor.withValues(alpha: 0.90)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset.zero, curR * 0.7, fillPaint);
+    canvas.drawCircle(Offset.zero, curR * 0.72, fillPaint);
 
     final centerPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset.zero, curR * 0.35, centerPaint);
+    canvas.drawCircle(Offset.zero, curR * 0.38, centerPaint);
 
     Glow.drawGlowCircle(
       canvas,
       Offset.zero,
       curR,
       bulletColor,
-      strokeWidth: 1.5,
-      intensity: 1.2,
+      strokeWidth: 2.0,
+      intensity: 1.5,
     );
   }
 }

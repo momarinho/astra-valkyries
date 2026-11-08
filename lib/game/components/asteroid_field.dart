@@ -47,7 +47,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     // Timeline Script do Roguelite (Hordas e Incursões Escaladas):
     if (difficultyTimer >= 20.0 && !swarm20Spawned) {
       swarm20Spawned = true;
-      _spawnSwarmRush(count: 10, label: '⚠️ ENXAME DO VÁCUO DETECTADO! ⚠️');
+      _spawnSwarmRush(count: 4, label: '⚠️ PATRULHA DE RECONHECIMENTO DETECTADA! ⚠️');
     }
     if (difficultyTimer >= 45.0 && !subBoss45Spawned) {
       subBoss45Spawned = true;
@@ -55,7 +55,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     }
     if (difficultyTimer >= 60.0 && !swarm60Spawned) {
       swarm60Spawned = true;
-      _spawnSwarmRush(count: 14, label: '⚠️ CERCO DE DRONES EM ALTA VELOCIDADE! ⚠️');
+      _spawnSwarmRush(count: 10, label: '⚠️ CERCO DE DRONES EM ALTA VELOCIDADE! ⚠️');
     }
     if (difficultyTimer >= 75.0 && !cryoPodSpawned) {
       cryoPodSpawned = true;
@@ -102,16 +102,18 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       }
     }
 
-    // 3. Intervalo de Frota Inimiga (Scouts, Raiders, Snipers, Enxames)
+    // 3. Intervalo de Frota Inimiga (Curva Roguelite Progressiva)
     double enemyInterval;
-    if (difficultyTimer < 30.0) {
-      enemyInterval = 1.6; // Início dinâmico: hordas leves já nos primeiros segundos!
-    } else if (difficultyTimer < 75.0) {
-      enemyInterval = 1.25; // Enxames contínuos
+    if (difficultyTimer < 25.0) {
+      enemyInterval = 3.4; // Onboarding suave: 1 nave por vez para coletar XP inicial e escolher upgrade
+    } else if (difficultyTimer < 50.0) {
+      enemyInterval = 2.4; // Pequenas patrulhas para testar o primeiro upgrade
+    } else if (difficultyTimer < 90.0) {
+      enemyInterval = 1.6; // Incursões moderadas (Scouts, Raiders, Enxames)
     } else if (difficultyTimer < 140.0) {
-      enemyInterval = 0.90; // Pressão constante
+      enemyInterval = 1.15; // Pressão constante
     } else {
-      enemyInterval = 0.65; // Tempestade cósmica pré-chefe
+      enemyInterval = 0.80; // Tempestade cósmica pré-chefe
     }
 
     if (enemySpawnTimer > enemyInterval) {
@@ -295,16 +297,17 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     final sectorId = game.currentSector.id;
     final roll = random.nextDouble();
 
-    if (difficultyTimer < 45.0) {
-      if (sectorId == SectorId.xenoHive && roll < 0.45) {
+    if (difficultyTimer < 25.0) {
+      // Início seguro: apenas Scouts lentos individuais (fácil de mirar e farmar XP inicial)
+      chosenType = EnemyType.scout;
+      count = 1;
+    } else if (difficultyTimer < 50.0) {
+      if (roll < 0.35) {
         chosenType = EnemyType.voidSwarmer;
-        count = 6 + random.nextInt(4);
-      } else if (roll < 0.60) {
-        chosenType = EnemyType.voidSwarmer;
-        count = 4 + random.nextInt(4);
+        count = 3;
       } else {
         chosenType = EnemyType.scout;
-        count = 2 + random.nextInt(2);
+        count = 2;
       }
     } else if (difficultyTimer < 110.0) {
       if (roll < 0.25) {
@@ -316,14 +319,14 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
           count = 1;
         } else if (sectorId == SectorId.xenoHive) {
           chosenType = EnemyType.voidSwarmer;
-          count = 8 + random.nextInt(6);
+          count = 6 + random.nextInt(4);
         } else {
           chosenType = EnemyType.voidSwarmer;
-          count = 6 + random.nextInt(4);
+          count = 4 + random.nextInt(3);
         }
       } else {
         chosenType = EnemyType.scout;
-        count = 3 + random.nextInt(3);
+        count = 2 + random.nextInt(2);
       }
     } else {
       if (roll < 0.22) {
