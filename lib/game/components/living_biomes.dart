@@ -16,6 +16,7 @@ import 'sector_boss.dart';
 import 'hyperspace_gate.dart';
 import 'dead_cells_biome.dart';
 import 'advanced_weapons.dart';
+export 'phase4_biome_elements.dart';
 
 /// ============================================================================
 /// SPRINT 21 — SETOR 2B: ABISMO CRIOGÊNICO DE CAELUM (CRYO ABYSS)
@@ -130,6 +131,9 @@ class CryoMineComponent extends PositionComponent
   void detonate() {
     if (isDetonated) return;
     isDetonated = true;
+    try {
+      game.notifyMineDestroyedForUnlocks();
+    } catch (_) {}
     try {
       final player = game.player;
       if (player.position.distanceTo(position) <= triggerRadius + 30.0) {

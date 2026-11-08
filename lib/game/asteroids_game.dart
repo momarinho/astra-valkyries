@@ -20,9 +20,6 @@ import 'components/joystick.dart';
 import 'components/drop.dart';
 import 'components/floating_text.dart';
 import 'components/xp_orb.dart';
-import 'components/space_station.dart';
-import 'components/cargo_wreck.dart';
-import 'components/cosmic_nebula.dart';
 import 'components/enemy_ship.dart';
 import 'components/enemy_bullet.dart';
 import 'components/chest.dart';
@@ -147,7 +144,30 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   EndingType lastTriggeredEnding = EndingType.none;
   final Set<EndingType> unlockedEndings = {};
 
-  bool get canAccessSecretSector5 => EndingManager.canAccessSecretSector5(
+  // Fase 4 (Sprints 25 a 28): Desbloqueio Condicional de Cenários, Relíquias, Armas & Bússola
+  final Set<SectorId> unlockedSectors = {SectorId.vesta};
+  final Set<String> unlockedRelics = {};
+  final Set<SectorId> rescuedSectorSecrets = {};
+  final Set<String> unlockedWeaponPool = {
+    'blaster',
+    'spread_shot',
+    'rapid_fire',
+    'bomb_launcher',
+  };
+  final Map<String, Set<String>> completedSectorsPerValkyrie = {};
+
+  // Rastreamento de feitos da run para desbloqueio condicional de armas (Sprint 27)
+  int runAsteroidsDestroyed = 0;
+  int runDashesExecuted = 0;
+  int runEnemiesKilled = 0;
+  int runVoidSwarmerKills = 0;
+  int runMinesDestroyed = 0;
+  int runSolarBurnTicks = 0;
+
+  bool get canAccessSecretSector5 =>
+      unlockedRelics.contains('yellow_sign') ||
+      unlockedRelics.contains('nemesis_yellow_sign') ||
+      EndingManager.canAccessSecretSector5(
         voidCellsLevel: voidCellsLevel,
         astraeaMatrixDecoded: astraeaMatrixDecoded,
         selectedValkyrieId: selectedValkyrie.id,
@@ -207,20 +227,255 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (flawlessBossKill) {
       unlockMilestone('ach_flawless_titan');
       triggerSpeechBubble(SpeechTrigger.flawlessVictory);
+      unlockWeaponWithToast('void_mines');
+    }
+    if (selectedValkyrie.id == 'lyra') {
+      unlockWeaponWithToast('inferno_cone');
+    }
+    markSectorCompleted(currentSector.id, selectedValkyrie.id);
+    checkSectorProgressionOnBossDefeated(currentSector.id);
+  }
+
+  void checkSectorProgressionOnBossDefeated(SectorId completedSector) {
+    switch (completedSector) {
+      case SectorId.vesta:
+        unlockSector(SectorId.cryoAbyss);
+        unlockSector(SectorId.orion);
+        break;
+      case SectorId.orion:
+        unlockSector(SectorId.graveyard);
+        break;
+      case SectorId.cryoAbyss:
+        unlockSector(SectorId.xenoHive);
+        break;
+      case SectorId.graveyard:
+      case SectorId.xenoHive:
+        unlockSector(SectorId.eventHorizon);
+        break;
+      case SectorId.eventHorizon:
+        if (voidCellsLevel >= 3 || unlockedRelics.contains('yellow_sign') || astraeaMatrixDecoded) {
+          unlockSector(SectorId.voidThrone);
+        }
+        break;
+      case SectorId.voidThrone:
+        break;
     }
   }
 
   bool isWeaponUnlockedInPool(String weaponId) {
-    const starterPool = {
-      'blaster',
-      'spread_shot',
-      'rapid_fire',
-      'bomb_launcher',
-      'aegis_sawblades',
-      'tesla_arc',
-      'inferno_cone',
-    };
-    return starterPool.contains(weaponId) || forgedBlueprints.contains(weaponId);
+    return unlockedWeaponPool.contains(weaponId) || forgedBlueprints.contains(weaponId);
+  }
+
+  void unlockWeaponWithToast(String weaponId) {
+    if (unlockedWeaponPool.contains(weaponId)) return;
+    unlockedWeaponPool.add(weaponId);
+    final bp = BlueprintDef.findByWeaponId(weaponId);
+    final name = bp?.name ?? weaponId.toUpperCase();
+    try {
+      spawnFloatingText(
+        player.position + Vector2(0, -60),
+        '🔓 ARMA DESBLOQUEADA NO POOL: $name!',
+        color: const Color(0xFFFFD700),
+        fontSize: 16.0,
+      );
+      playSfx('powerup.wav');
+    } catch (_) {}
+    savePersistentCredits();
+  }
+
+  void claimPermanentRelic(String relicId, [Vector2? pos]) {
+    if (unlockedRelics.contains(relicId)) return;
+    unlockedRelics.add(relicId);
+    final relic = PermanentRelic.findById(relicId);
+    final name = relic?.title ?? relicId.toUpperCase();
+
+    // Aplica benefício imediato da relíquia
+    if (relicId == 'yellow_sign' || relicId == 'nemesis_yellow_sign') {
+      astraeaMatrixDecoded = true;
+      affinityManager.addAffinity(selectedValkyrie.id, 500);
+      unlockSector(SectorId.voidThrone);
+    }
+
+    if (pos != null) {
+      try {
+        spawnFloatingText(
+          pos + Vector2(0, -50),
+          '🗺️ RELÍQUIA PERMANENTE OBTIDA: $name!',
+          color: const Color(0xFFFFD700),
+          fontSize: 15.5,
+        );
+        playSfx('powerup.wav');
+        triggerScreenShake(duration: 0.6, intensity: 10.0);
+      } catch (_) {}
+    }
+    savePersistentCredits();
+  }
+
+  void unlockSectorSecret(SectorId sId, [Vector2? pos]) {
+    if (rescuedSectorSecrets.contains(sId)) return;
+    rescuedSectorSecrets.add(sId);
+
+    // Resgate de Cápsulas (Coffins) estilo Vampire Survivors
+    if (sId == SectorId.vesta) {
+      // Libera Vesper gratuitamente
+      unlockWeaponWithToast('aegis_sawblades');
+    } else if (sId == SectorId.xenoHive) {
+      // Libera Astraea e drones aliados
+      astraeaMatrixDecoded = true;
+      unlockWeaponWithToast('valkyrie_wingmen');
+    } else if (sId == SectorId.cryoAbyss) {
+      unlockWeaponWithToast('quantum_chakram');
+    } else if (sId == SectorId.orion) {
+      unlockWeaponWithToast('solar_lance');
+    } else if (sId == SectorId.graveyard) {
+      unlockWeaponWithToast('tesla_arc');
+    }
+
+    addRunCredits(350);
+    if (pos != null) {
+      try {
+        spawnFloatingText(
+          pos + Vector2(0, -50),
+          '⚰️ SEGREDO DO BIOMA RESGATADO! (+350c)',
+          color: const Color(0xFF00E5FF),
+          fontSize: 15.0,
+        );
+        playSfx('powerup.wav');
+        triggerScreenShake(duration: 0.5, intensity: 8.0);
+      } catch (_) {}
+    }
+    savePersistentCredits();
+  }
+
+  bool isSectorUnlocked(SectorId id) => unlockedSectors.contains(id);
+
+  void unlockSector(SectorId id) {
+    if (unlockedSectors.contains(id)) return;
+    unlockedSectors.add(id);
+    final sector = Sector.findById(id);
+    try {
+      spawnFloatingText(
+        player.position + Vector2(0, -65),
+        '🌌 NOVO SETOR DESBLOQUEADO: ${sector.name.toUpperCase()}!',
+        color: sector.primaryColor,
+        fontSize: 16.0,
+      );
+      playSfx('powerup.wav');
+    } catch (_) {}
+    savePersistentCredits();
+  }
+
+  bool isSectorCompletedWith(SectorId sId, String valkyrieId) {
+    return completedSectorsPerValkyrie[sId.name]?.contains(valkyrieId) ?? false;
+  }
+
+  void markSectorCompleted(SectorId sId, String valkyrieId) {
+    completedSectorsPerValkyrie.putIfAbsent(sId.name, () => {}).add(valkyrieId);
+    savePersistentCredits();
+  }
+
+  void notifyAsteroidDestroyedForUnlocks() {
+    runAsteroidsDestroyed++;
+    if (runAsteroidsDestroyed >= 20) {
+      unlockWeaponWithToast('graviton_lance');
+    }
+    if (runAsteroidsDestroyed >= 80) {
+      unlockWeaponWithToast('aegis_sawblades');
+    }
+  }
+
+  void notifyDashExecutedForUnlocks() {
+    runDashesExecuted++;
+    if (runDashesExecuted >= 15) {
+      unlockWeaponWithToast('quantum_teleport');
+    }
+    if (runDashesExecuted >= 20) {
+      unlockWeaponWithToast('quantum_chakram');
+    }
+  }
+
+  void notifyEnemyKilledForUnlocks([EnemyType type = EnemyType.scout]) {
+    runEnemiesKilled++;
+    if (type == EnemyType.voidSwarmer) {
+      runVoidSwarmerKills++;
+      if (runVoidSwarmerKills >= 15) {
+        unlockSector(SectorId.xenoHive);
+      }
+      if (runVoidSwarmerKills >= 20) {
+        unlockWeaponWithToast('singularity_cannon');
+      }
+    }
+    if (runEnemiesKilled >= 25) {
+      unlockSector(SectorId.graveyard);
+    }
+    if (runEnemiesKilled >= 30) {
+      unlockWeaponWithToast('resonance_shield');
+    }
+    if (runEnemiesKilled >= 80 && player.unlockedWeapons.containsKey('rapid_fire')) {
+      final rf = player.unlockedWeapons['rapid_fire'];
+      if (rf != null && rf.level >= 3) {
+        unlockWeaponWithToast('tesla_arc');
+      }
+    }
+  }
+
+  void notifyMineDestroyedForUnlocks() {
+    runMinesDestroyed++;
+    if (runMinesDestroyed >= 5) {
+      unlockSector(SectorId.cryoAbyss);
+    }
+    if (runMinesDestroyed >= 10) {
+      unlockWeaponWithToast('void_mines');
+    }
+  }
+
+  void notifySolarBurnAppliedForUnlocks() {
+    runSolarBurnTicks++;
+    if (runSolarBurnTicks >= 25) {
+      unlockWeaponWithToast('solar_lance');
+    }
+  }
+
+  void notifyNebulaOverloadSurvivedForUnlocks() {
+    unlockWeaponWithToast('repulsor_aura');
+  }
+
+  void completeCurrentSectorRun() {
+    markSectorCompleted(currentSector.id, selectedValkyrie.id);
+    missionSurvived = true;
+    campaignCompleted = true;
+    addScore(15000);
+    addRunCredits(500);
+    checkSectorProgressionOnBossDefeated(currentSector.id);
+    completeMission(survived: true);
+  }
+
+  void loopBackToSector(Sector targetSector) {
+    if (state == GameState.starChart) {
+      overlays.remove('starChart');
+      state = GameState.playing;
+      resumeEngine();
+      gameFocusNode?.requestFocus();
+    }
+    currentSector = targetSector;
+    timeRemaining = fairRoundDuration;
+    voidReaperSpawned = false;
+    activeBoss = null;
+    beaconsCharged = 0;
+    if (asteroidField != null) {
+      asteroidField!.difficultyTimer += 360.0; // Inimigos e hordas escalonadas para o loop!
+    }
+    _removeAllAsteroidsAndProjectiles();
+    _initSectorPois();
+    try {
+      spawnFloatingText(
+        player.position + Vector2(0, -60),
+        '🔄 DOBRA REVERSA: REVISITANDO ${targetSector.name.toUpperCase()} EM LOOP!',
+        color: const Color(0xFFFFD700),
+        fontSize: 16.0,
+      );
+      playSfx('powerup.wav');
+    } catch (_) {}
   }
 
   void tryDropBlueprint(Vector2 pos, {bool guaranteed = false}) {
@@ -431,7 +686,21 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void triggerLevelUp() {
-    currentLevelUpChoices = RoguePerkGenerator.generateChoices(this, count: 3);
+    // Sprint 26: Tomo de Fusão Térmica concede permanentemente +1 escolha no Level-Up (4 em vez de 3)
+    final choiceCount = unlockedRelics.contains('thermal_tome') ? 4 : 3;
+    currentLevelUpChoices = RoguePerkGenerator.generateChoices(this, count: choiceCount);
+
+    // Sprint 25 & 27: Condições de nível estilo Vampire Survivors
+    if (runLevel >= 8 && currentSector.id == SectorId.vesta) {
+      unlockSector(SectorId.orion);
+    }
+    if (runLevel >= 8 && currentSector.id == SectorId.orion) {
+      unlockWeaponWithToast('solar_lance');
+    }
+    if (runLevel >= 10 && selectedValkyrie.id == 'selene') {
+      unlockSector(SectorId.cryoAbyss);
+    }
+
     playSfx('powerup.wav');
     triggerScreenShake(duration: 0.35, intensity: 7.0);
     pauseEngine();
@@ -666,13 +935,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     camera.viewfinder.anchor = Anchor.center;
 
     // Setup FlameAudio asset folder configuration and silence native warning spam on Linux
-    AudioLogger.logLevel = AudioLogLevel.none;
-    FlameAudio.updatePrefix('assets/sounds/');
     try {
+      AudioLogger.logLevel = AudioLogLevel.none;
+      FlameAudio.updatePrefix('assets/sounds/');
       await FlameAudio.bgm.initialize();
     } catch (_) {}
 
-    initSfxPlayers();
+    try {
+      initSfxPlayers();
+    } catch (_) {}
 
     // Add StarfieldComponent, SectorBoundaryComponent, and Sector POIs first
     world.add(StarfieldComponent());
@@ -690,15 +961,29 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     add(joystick);
 
     // Load local player profile
-    final profile = await ApiService.getLocalProfile();
-    if (profile != null) {
-      playerId = profile['id'];
-      playerUsername = profile['username'];
-    }
+    try {
+      final profile = await ApiService.getLocalProfile();
+      if (profile != null) {
+        playerId = profile['id'];
+        playerUsername = profile['username'];
+      }
+    } catch (_) {}
 
     // Load persistent meta-progression upgrades and account scrap bank
-    await metaProgression.loadFromPrefs();
-    await affinityManager.loadFromPrefs();
+    try {
+      await metaProgression.loadFromPrefs();
+      await affinityManager.loadFromPrefs();
+      await loadPersistentDataFromPrefs();
+    } catch (_) {}
+
+    // Register global hardware keyboard handler for instant pause detection
+    HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
+
+    // Initial state set for Astra Valkyries (Bootloader + Main Title Menu)
+    changeState(GameState.menu);
+  }
+
+  Future<void> loadPersistentDataFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       totalCredits = prefs.getInt('persistent_credits') ?? 0;
@@ -713,13 +998,36 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       if (savedForgedBp != null) forgedBlueprints.addAll(savedForgedBp);
       final savedMilestones = prefs.getStringList('unlocked_milestones');
       if (savedMilestones != null) unlockedMilestones.addAll(savedMilestones);
+
+      final savedSectors = prefs.getStringList('unlocked_sectors');
+      if (savedSectors != null && savedSectors.isNotEmpty) {
+        for (final sName in savedSectors) {
+          try {
+            unlockedSectors.add(SectorId.values.byName(sName));
+          } catch (_) {}
+        }
+      }
+      final savedRelics = prefs.getStringList('unlocked_relics');
+      if (savedRelics != null) unlockedRelics.addAll(savedRelics);
+      final savedSecrets = prefs.getStringList('rescued_sector_secrets');
+      if (savedSecrets != null) {
+        for (final sName in savedSecrets) {
+          try {
+            rescuedSectorSecrets.add(SectorId.values.byName(sName));
+          } catch (_) {}
+        }
+      }
+      final savedWeaponPool = prefs.getStringList('unlocked_weapon_pool');
+      if (savedWeaponPool != null && savedWeaponPool.isNotEmpty) {
+        unlockedWeaponPool.addAll(savedWeaponPool);
+      }
+      for (final sId in SectorId.values) {
+        final list = prefs.getStringList('completed_sector_${sId.name}');
+        if (list != null && list.isNotEmpty) {
+          completedSectorsPerValkyrie[sId.name] = list.toSet();
+        }
+      }
     } catch (_) {}
-
-    // Register global hardware keyboard handler for instant pause detection
-    HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
-
-    // Initial state set for Astra Valkyries (Bootloader + Main Title Menu)
-    changeState(GameState.menu);
   }
 
   Future<void> saveHyperModeState() async {
@@ -771,6 +1079,21 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       await prefs.setStringList('found_blueprints', foundBlueprints.toList());
       await prefs.setStringList('forged_blueprints', forgedBlueprints.toList());
       await prefs.setStringList('unlocked_milestones', unlockedMilestones.toList());
+
+      // Fase 4: Persistência de Setores, Relíquias, Segredos e Armas Desbloqueadas
+      await prefs.setStringList(
+        'unlocked_sectors',
+        unlockedSectors.map((s) => s.name).toList(),
+      );
+      await prefs.setStringList('unlocked_relics', unlockedRelics.toList());
+      await prefs.setStringList(
+        'rescued_sector_secrets',
+        rescuedSectorSecrets.map((s) => s.name).toList(),
+      );
+      await prefs.setStringList('unlocked_weapon_pool', unlockedWeaponPool.toList());
+      for (final entry in completedSectorsPerValkyrie.entries) {
+        await prefs.setStringList('completed_sector_${entry.key}', entry.value.toList());
+      }
     } catch (_) {}
   }
 
@@ -1012,6 +1335,20 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     activePassives.clear();
     activeMutations.clear();
     flawlessBossKill = true;
+
+    // Sprint 27: Reseta contadores de feitos da run
+    runAsteroidsDestroyed = 0;
+    runDashesExecuted = 0;
+    runEnemiesKilled = 0;
+    runVoidSwarmerKills = 0;
+    runMinesDestroyed = 0;
+    runSolarBurnTicks = 0;
+
+    // Sprint 26: Relíquia Matriz de Mutação Inicial concede 1 Mutação gratuita na decolagem!
+    if (unlockedRelics.contains('mutation_matrix') && PilotMutation.allMutations.isNotEmpty) {
+      final muts = PilotMutation.allMutations.toList()..shuffle();
+      applyPilotMutation(muts.first.id);
+    }
     rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus).clamp(0.0, 1.0);
     rogueDamageMultiplier = 1.0 + metaProgression.damageBonusMultiplier;
     rogueFireRateMultiplier = 1.0;
@@ -1767,6 +2104,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void onAsteroidDestroyed(Vector2 pos, int basePoints) {
     if (state != GameState.playing) return;
 
+    notifyAsteroidDestroyedForUnlocks();
     addScore(basePoints);
     final scrapReward = math.max(2, (basePoints / 16).round());
     addRunCredits(scrapReward);

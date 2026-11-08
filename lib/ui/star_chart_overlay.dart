@@ -21,6 +21,7 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
   late List<PilotMutation> _mutationChoices;
   int _selectedSectorIdx = 0;
   int _selectedMutationIdx = 0;
+  bool _showingLoopSelector = false;
 
   @override
   void initState() {
@@ -58,6 +59,21 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
       targetSector: targetSector,
       chosenMutationId: chosenMutation,
     );
+  }
+
+  void _extractVictory() {
+    widget.game.completeCurrentSectorRun();
+  }
+
+  void _loopBack(Sector sec) {
+    widget.game.loopBackToSector(sec);
+  }
+
+  void _resumeExploration() {
+    widget.game.overlays.remove('starChart');
+    widget.game.changeState(GameState.playing);
+    widget.game.resumeEngine();
+    widget.game.gameFocusNode?.requestFocus();
   }
 
   @override
@@ -312,6 +328,46 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                         }),
                       ],
 
+                      if (_showingLoopSelector) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          '🔄 SELECIONE O SETOR DE DESTINO DA DOBRA REVERSA (+HORDAS):',
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFFD700),
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: Sector.allSectorsWithBranches
+                              .where((s) => widget.game.isSectorUnlocked(s.id))
+                              .map((sec) {
+                            return ElevatedButton.icon(
+                              onPressed: () => _loopBack(sec),
+                              icon: Icon(sec.icon, size: 16, color: Colors.black),
+                              label: Text(
+                                '${sec.name.toUpperCase()} (LOOP)',
+                                style: const TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFFD700),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
                         key: const Key('confirm_star_chart_jump_button'),
@@ -334,6 +390,81 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Opções Táticas do Modelo Híbrido (Sprint 25)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              key: const Key('extract_victory_button'),
+                              onPressed: _extractVictory,
+                              icon: const Icon(Icons.military_tech_rounded, size: 16, color: Color(0xFF00E676)),
+                              label: const Text(
+                                'EXTRAIR VITÓRIA',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF00E676),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF00E676), width: 1.2),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              key: const Key('loop_mode_toggle_button'),
+                              onPressed: () {
+                                setState(() => _showingLoopSelector = !_showingLoopSelector);
+                                widget.game.playSfx('menu_select.wav');
+                              },
+                              icon: const Icon(Icons.sync_rounded, size: 16, color: Color(0xFFFFD700)),
+                              label: Text(
+                                _showingLoopSelector ? 'FECHAR LOOP' : 'DOBRA REVERSA',
+                                style: const TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFFD700),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFFFD700), width: 1.2),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              key: const Key('resume_exploration_button'),
+                              onPressed: _resumeExploration,
+                              icon: const Icon(Icons.explore_rounded, size: 16, color: Color(0xFF00E5FF)),
+                              label: const Text(
+                                'CONTINUAR MAPA',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF00E5FF),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF00E5FF), width: 1.2),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

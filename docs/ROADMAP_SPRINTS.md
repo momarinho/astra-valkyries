@@ -352,3 +352,75 @@ flowchart TD
     - Desbloqueado com 3+ *Void Cells* ativas ou decodificando a matriz da Astraea, enfrentando o *Primordial Void Sovereign* (`PrimordialVoidSovereignComponent`).
   - [x] **✨ True Ending (*Quebra do Protocolo & Ascensão*):**
     - Acionado ao vencer o Setor 5 com Elo de Afinidade Nível 5 com a Valquíria ativa.
+
+---
+
+# 🗺️ FASE 4: GERADORES DE MAPAS SEPARADOS POR BIOMA, MODELO HÍBRIDO (STAGE SELECT + PORTAL), RELÍQUIAS OCULTAS & ARSENAL PROGRESSIVO (SPRINTS 25 a 28)
+
+> **Diretriz de Design (Inspirada em *Vampire Survivors*, *Halls of Torment* e *Dead Cells*):** Acabar com o layout genérico único criando **Geradores de Mapas Separados por Bioma** (`lib/game/map/biomes/`), unir o **Stage Select no Hangar** com o **Portal de Hiperespaço / Loop Opcional**, e esconder Relíquias, Cápsulas e Condições de Armas em cada cenário.
+
+---
+
+## 🏗️ SPRINT 25: Arquitetura Visual & Procedural dos 6 Mapas Separados (`lib/game/map/biomes/`) + Modelo Híbrido
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Implementar a Bíblia Visual (`docs/BIBLIA_VISUAL_E_PROCEDURAL_MAPAS.md`) criando 6 geradores de mapas independentes com Esqueleto Fixo + Slots Procedurais, Backdrop/Sub-piso dedicado (`BiomeBackdropComponent` + `assets/images/biomes/`) e o modelo híbrido de progressão.
+- **Entregáveis Concluídos:**
+  - [x] **Camadas Visuais & Arquitetos Separados por Bioma (`lib/game/map/biomes/`):**
+    - `BiomeBackdropComponent`: Renderiza a atmosfera de fundo e sub-piso de cada mapa (Planeta rachado + Passarelas douradas em Vesta; Estrela de Dyson + 5 Pontes Solares em Hélio; Domo Térmico central em Caelum; Cascos de Encouraçados e vazamento verde no Cemitério Aegis; Membrana hexagonal de favos e veias neurais na Colmeia Xeno; Astrolábio circular de constelações no Trono do Vazio).
+    - `VestaBeltMapBuilder`: 2 Anéis concêntricos de asteroides cristalinos ciano, passarelas de mineração, docas laterais e *Sockets* nos 4 cantos.
+    - `HeliosForgeMapBuilder`: Duas grandes asas industriais (Oeste/Leste) ligadas por 5 pontes de energia solar, câmara octogonal da fornalha e jatos de chamas solares (`SolarFlameJetComponent`).
+    - `CryoAbyssMapBuilder`: Labirinto de paredes de gelo cristalino cercando o Domo Térmico Dourado (`ThermalDomeComponent` no centro seguro), 4 Obeliscos Rúnicos, neblina e minas criogênicas.
+    - `AegisGraveyardMapBuilder`: 3 Cascos colossais de Encouraçados formando salas táticas, corredor com rio de radiação esmeralda (`ReactorLeakHazardComponent`), torretas e minas magnéticas.
+    - `XenoHiveMapBuilder`: Zero paredes metálicas — 6 alcobas periféricas de incubação e Coração Real central formados por `OrganicBiomassWallComponent`, `XenoCocoonComponent` e poças de ácido (`AcidPoolHazardComponent`).
+    - `EventHorizonMapBuilder` & `VoidThroneMapBuilder`: Catedral Astrolábio circular com muralhas em arco de obsidiana/ouro branco e 4 Piras dos Arquitetos.
+  - [x] **Condições de Desbloqueio de Cenários (`unlockedSectors`) & *Stage Select* Visual no Hangar:**
+    - Novo save começa com o **Setor 1 (Vesta)** liberado; demais setores exibem cadeado, card visual oficial (`assets/images/biomes/*.jpg`) e condição clara (*Nível 8 em Vesta abre 2A; vencer Leviatã ou Nível 10 com Selene abre 2B; vencer 2A ou 2 Caixas Pretas abre 3A; vencer 2B ou 150 Void Swarmers abre 3B; vencer 3A/3B abre 4*).
+    - No Hangar (`ValkyrieSelectionOverlay`), permitir escolher em qual Cenário já desbloqueado decolar diretamente com miniaturas e checklist.
+  - [x] **Modelo Híbrido Pós-Chefe (Extrair Vitória, Continuar Explorando ou Saltar/Loopar):**
+    - Ao derrotar o Chefe do Setor, a jogadora pode continuar explorando o mapa livremente para buscar Relíquias/Cápsulas pendentes, ou entrar no `HyperspaceGateComponent` para abrir o `StarChartOverlay` (com opção de **Avançar para o próximo setor**, **Extrair Vitória Imediata do Estágio** ou **Dobra Reversa / Loop** mantendo toda a build).
+
+---
+
+## 🧭 SPRINT 26: Relíquias Permanentes & Cápsulas Ocultas nos Mapas (*Relics & Coffins*)
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Esconder objetos físicos únicos nas coordenadas extremas de cada setor (estilo *Milky Way Map*, *Grim Grimoire*, *Yellow Sign* e *Coffins* de *Vampire Survivors*) para recompensar a exploração e a revisitação.
+- **Entregáveis Concluídos:**
+  - [x] **5 Relíquias Permanentes Escondidas (1 por Setor Principal):**
+    - **Setor 1 — Radar Estelar Aegis (*Milky Way Map*):** Revela setas indicadoras na borda do HUD apontando para Relíquias, Cápsulas e Eventos Secretos em todos os mapas.
+    - **Setor 2A — Tomo de Fusão Térmica (*Grim Grimoire*):** Adiciona permanentemente +1 opção de escolha no Level-Up (4 cartas em vez de 3) e exibe receitas no HUD.
+    - **Setor 2B — Sinalizador do Mercador (*Glass Vizard*):** Faz o *Void Merchant* conceder 25% de desconto permanente em todos os setores.
+    - **Setor 3A — Matriz de Mutação Inicial (*Randomazzo*):** Permite ativar 1 Mutação de Piloto gratuita logo no Hangar antes de decolar.
+    - **Setor 3B — Selo Amarelo de Nêmesis (*Yellow Sign*):** Habilita a rota para o Setor 5 Secreto (O Trono do Vazio) e bônus de Afinidade.
+  - [x] **Cápsulas de Estase (*Valkyrie Coffins*) & Puzzles de Cenário:**
+    - Adicionado `StasisCoffinComponent` guardado por esquadrões de Elite nos cantos distantes do mapa (`4800x4800`). Abrir a cápsula no Setor 1 libera **Vesper**; decodificar o Altar no Setor 3B libera **Astraea**.
+
+---
+
+## 🔫 SPRINT 27: Desbloqueio Condicional de Armas (*Condition-Gated Arsenal*)
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Substituir a liberação puramente aleatória por **Condições de Desbloqueio por Feitos de Gameplay** (*Vampire Survivors* / *Brotato* / *Halls of Torment*).
+- **Entregáveis Concluídos:**
+  - [x] **Pool Inicial Focado (4 Armas Base) + 8 Armas Desbloqueáveis por Condição:**
+    - `Aegis Sawblades`: Destruir 80 asteroides.
+    - `Tesla Arc Cannon`: Eliminar 80 inimigos com *Rapid Fire* nível 3.
+    - `Quantum Chakram`: Executar 20 *Dashes* em uma partida.
+    - `Repulsor Gravity Aura`: Sobreviver à Sobrecarga Térmica da Nebulosa.
+    - `Solar Thermal Lance`: Aplicar *Solar Burn* 25 vezes ou Nível 8 no Setor 2A.
+    - `Singularity Cannon`: Eliminar 20 *Void Swarmers*.
+    - `Resonance Shield`: Eliminar 30 inimigos em uma partida.
+    - `Void Cluster Mines`: Destruir 10 Minas ou vencer sem dano.
+  - [x] **Notificação *In-Game* Instantânea (*Unlock Toast*):**
+    - Ao cumprir a condição durante a partida, exibir banner animado `🔓 ARMA DESBLOQUEADA NO POOL: [NOME]!` e injetá-la imediatamente no pool de Level-Up.
+
+---
+
+## 🏆 SPRINT 28: Checklist de Segredos por Setor & Bússola de Exploração no HUD
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Dar visibilidade clara ao jogador sobre o que falta descobrir em cada cenário para estimular o 100% (*Completionist Loop*).
+- **Entregáveis Concluídos:**
+  - [x] **Painel de Descobertas do Setor (No Hangar e no Mapa Estelar):**
+    - Mostrar para cada Setor: `[✓] Relíquia Encontrada`, `[✓] Evento Secreto Concluído`, `[✓] Concluído com cada Valquíria`.
+  - [x] **Ponteiros de Bússola no HUD (`_RadarScopePainter` com Radar Estelar Aegis):**
+    - Quando a jogadora possui o *Radar Estelar Aegis*, desenha ponteiros de bússola dourados e cianos nas bordas do radar indicando a direção e distância em metros (`420m ↗`) até a Relíquia ou Cápsula secreta daquele mapa.
+  - [x] **Persistência Total via SharedPreferences:**
+    - Salva e recarrega instantaneamente `unlockedSectors`, `unlockedRelics`, `rescuedSectorSecrets`, `unlockedWeaponPool` e `completedSectorsPerValkyrie`.

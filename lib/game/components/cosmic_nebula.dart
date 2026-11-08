@@ -110,6 +110,11 @@ class CosmicNebulaComponent extends PositionComponent with HasGameReference<Aste
             }
           }
         } else {
+          if (isOverloaded) {
+            try {
+              game.notifyNebulaOverloadSurvivedForUnlocks();
+            } catch (_) {}
+          }
           playerInsideTimer = math.max(0.0, playerInsideTimer - dt * 2.5);
           isOverloaded = playerInsideTimer > overloadThreshold;
           _overloadWarningTimer = 0.0;

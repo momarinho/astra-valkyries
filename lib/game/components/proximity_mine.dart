@@ -76,6 +76,9 @@ class ProximityMineComponent extends PositionComponent
   void detonate() {
     if (isDetonated) return;
     isDetonated = true;
+    try {
+      game.notifyMineDestroyedForUnlocks();
+    } catch (_) {}
 
     try {
       game.playSfx('bomb_explode.wav');

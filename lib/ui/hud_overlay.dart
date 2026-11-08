@@ -13,6 +13,8 @@ import 'package:asteroids/game/components/cargo_wreck.dart';
 import 'package:asteroids/game/components/cosmic_nebula.dart';
 import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/chest.dart';
+import 'package:asteroids/game/components/phase4_biome_elements.dart';
+import 'package:asteroids/game/map/sector_map_data.dart';
 
 class HudOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -1827,6 +1829,54 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       }
     } catch (_) {}
 
+    final hasAegisRadar = widget.game.unlockedRelics.contains('aegis_radar');
+    Offset? relicOffset;
+    double? relicDistanceMeters;
+    Offset? coffinOffset;
+    double? coffinDistanceMeters;
+
+    if (hasAegisRadar) {
+      try {
+        final currentSec = widget.game.currentSector;
+        if (!widget.game.unlockedRelics.contains(currentSec.relicId)) {
+          final pedestals = widget.game.world.children.whereType<RelicPedestalComponent>();
+          if (pedestals.isNotEmpty && !pedestals.first.isClaimed) {
+            final relPos = pedestals.first.position;
+            relicOffset = Offset(relPos.x - playerPos.x, relPos.y - playerPos.y);
+            relicDistanceMeters = (relicOffset.distance / 10).roundToDouble();
+          } else {
+            final relicNode = widget.game.sectorMap?.nodes
+                .where((n) => n.type == MapNodeType.relicPedestal)
+                .firstOrNull;
+            if (relicNode != null) {
+              relicOffset = Offset(relicNode.position.x - playerPos.x, relicNode.position.y - playerPos.y);
+              relicDistanceMeters = (relicOffset.distance / 10).roundToDouble();
+            }
+          }
+        }
+      } catch (_) {}
+
+      try {
+        final currentSec = widget.game.currentSector;
+        if (!widget.game.rescuedSectorSecrets.contains(currentSec.id)) {
+          final coffins = widget.game.world.children.whereType<StasisCoffinComponent>();
+          if (coffins.isNotEmpty && !coffins.first.isOpened) {
+            final cofPos = coffins.first.position;
+            coffinOffset = Offset(cofPos.x - playerPos.x, cofPos.y - playerPos.y);
+            coffinDistanceMeters = (coffinOffset.distance / 10).roundToDouble();
+          } else {
+            final coffinNode = widget.game.sectorMap?.nodes
+                .where((n) => n.type == MapNodeType.stasisCoffin)
+                .firstOrNull;
+            if (coffinNode != null) {
+              coffinOffset = Offset(coffinNode.position.x - playerPos.x, coffinNode.position.y - playerPos.y);
+              coffinDistanceMeters = (coffinOffset.distance / 10).roundToDouble();
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     return Container(
       width: 104,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -1864,6 +1914,9 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 enemyBlips: enemyBlips,
                 chestBlips: chestBlips,
                 bossOffset: bossOffset,
+                hasAegisRadar: hasAegisRadar,
+                relicOffset: relicOffset,
+                coffinOffset: coffinOffset,
                 sweepTimer: _radarSweepTimer,
                 isNearBoundary: player.isNearBoundary,
               ),
@@ -1881,6 +1934,35 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
               color: player.isNearBoundary ? Colors.redAccent : Colors.cyanAccent,
             ),
           ),
+          if (hasAegisRadar && (relicDistanceMeters != null || coffinDistanceMeters != null)) ...[
+            const SizedBox(height: 3),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD700).withOpacity(0.16),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.5), width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.explore_rounded, size: 9, color: Color(0xFFFFD700)),
+                  const SizedBox(width: 2),
+                  Text(
+                    relicDistanceMeters != null
+                        ? 'RELIC ${(relicDistanceMeters).round()}m'
+                        : 'SECR ${(coffinDistanceMeters!).round()}m',
+                    style: const TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1899,6 +1981,9 @@ class _RadarScopePainter extends CustomPainter {
   final List<({Offset offset, bool isElite})> enemyBlips;
   final List<Offset> chestBlips;
   final Offset? bossOffset;
+  final bool hasAegisRadar;
+  final Offset? relicOffset;
+  final Offset? coffinOffset;
   final double sweepTimer;
   final bool isNearBoundary;
 
@@ -1914,6 +1999,9 @@ class _RadarScopePainter extends CustomPainter {
     required this.enemyBlips,
     required this.chestBlips,
     required this.bossOffset,
+    this.hasAegisRadar = false,
+    this.relicOffset,
+    this.coffinOffset,
     required this.sweepTimer,
     required this.isNearBoundary,
   });
@@ -2130,6 +2218,80 @@ class _RadarScopePainter extends CustomPainter {
         ..color = const Color(0xFFFFD700)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(blipPos, 3.5, cometPaint);
+    }
+
+    // Aegis Radar Compass (Sprint 26 & 28)
+    if (hasAegisRadar) {
+      if (relicOffset != null) {
+        final dist = relicOffset!.distance;
+        const relicColor = Color(0xFFFFD700);
+        if (dist <= maxRange) {
+          final normX = (relicOffset!.dx / maxRange) * (radius * 0.88);
+          final normY = (relicOffset!.dy / maxRange) * (radius * 0.88);
+          final blipPos = center + Offset(normX, normY);
+
+          // Golden Star / Relic Icon
+          final starPaint = Paint()
+            ..color = relicColor
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(blipPos, 4.0, starPaint);
+          canvas.drawCircle(
+            blipPos,
+            6.0 + 2.0 * math.sin(sweepTimer * 5.0),
+            Paint()
+              ..color = relicColor.withOpacity(0.55)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.0,
+          );
+        } else {
+          // Perimeter Compass Pointer on radar edge
+          final angle = math.atan2(relicOffset!.dy, relicOffset!.dx);
+          final arrowPos = center + Offset(math.cos(angle), math.sin(angle)) * (radius * 0.92);
+
+          canvas.save();
+          canvas.translate(arrowPos.dx, arrowPos.dy);
+          canvas.rotate(angle + math.pi / 2);
+
+          final path = Path()
+            ..moveTo(0, -6.0)
+            ..lineTo(4.5, 4.0)
+            ..lineTo(-4.5, 4.0)
+            ..close();
+          canvas.drawPath(path, Paint()..color = relicColor..style = PaintingStyle.fill);
+          canvas.restore();
+        }
+      }
+
+      if (coffinOffset != null) {
+        final dist = coffinOffset!.distance;
+        const coffinColor = Color(0xFF00E5FF);
+        if (dist <= maxRange) {
+          final normX = (coffinOffset!.dx / maxRange) * (radius * 0.88);
+          final normY = (coffinOffset!.dy / maxRange) * (radius * 0.88);
+          final blipPos = center + Offset(normX, normY);
+
+          // Cyan Coffin Pod Icon
+          final podPaint = Paint()
+            ..color = coffinColor
+            ..style = PaintingStyle.fill;
+          canvas.drawRect(Rect.fromCenter(center: blipPos, width: 6, height: 8), podPaint);
+        } else {
+          final angle = math.atan2(coffinOffset!.dy, coffinOffset!.dx);
+          final arrowPos = center + Offset(math.cos(angle), math.sin(angle)) * (radius * 0.92);
+
+          canvas.save();
+          canvas.translate(arrowPos.dx, arrowPos.dy);
+          canvas.rotate(angle + math.pi / 2);
+
+          final path = Path()
+            ..moveTo(0, -5.5)
+            ..lineTo(4.0, 3.5)
+            ..lineTo(-4.0, 3.5)
+            ..close();
+          canvas.drawPath(path, Paint()..color = coffinColor..style = PaintingStyle.fill);
+          canvas.restore();
+        }
+      }
     }
 
     // Center Valkyrie ship icon (small triangle pointing in ship angle)

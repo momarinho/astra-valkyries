@@ -221,4 +221,98 @@ class Sector {
   static Sector findById(SectorId id) {
     return allSectorsWithBranches.firstWhere((s) => s.id == id, orElse: () => defaultSector);
   }
+
+  /// Caminho da arte modelo top-down oficial do bioma (Sprint 25)
+  String get biomeImageAsset {
+    switch (id) {
+      case SectorId.vesta:
+        return 'assets/images/biomes/biome_1_vesta_belt.jpg';
+      case SectorId.orion:
+        return 'assets/images/biomes/biome_2a_helios_forge.jpg';
+      case SectorId.cryoAbyss:
+        return 'assets/images/biomes/biome_2b_cryo_abyss.jpg';
+      case SectorId.graveyard:
+        return 'assets/images/biomes/biome_3a_aegis_graveyard.jpg';
+      case SectorId.xenoHive:
+        return 'assets/images/biomes/biome_3b_xeno_hive.jpg';
+      case SectorId.eventHorizon:
+      case SectorId.voidThrone:
+        return 'assets/images/biomes/biome_4_5_void_throne.jpg';
+    }
+  }
+
+  /// Condição de desbloqueio estilo Vampire Survivors exibida no Stage Select (Sprint 25)
+  String get unlockConditionText {
+    switch (id) {
+      case SectorId.vesta:
+        return 'Setor Inicial Liberado por Padrão.';
+      case SectorId.orion:
+        return 'Alcance o Nível 8 de Piloto no Cinturão de Vesta.';
+      case SectorId.cryoAbyss:
+        return 'Derrote o Dreadnought Leviathan no Setor 1 OU alcance Nível 10 com Selene.';
+      case SectorId.graveyard:
+        return 'Conclua a Forja Solar de Hélio (2A) OU recupere 2 Caixas Pretas.';
+      case SectorId.xenoHive:
+        return 'Conclua o Abismo Criogênico (2B) OU abata 80 Void Swarmers.';
+      case SectorId.eventHorizon:
+        return 'Derrote o Chefe Soberano do Setor 3A ou 3B.';
+      case SectorId.voidThrone:
+        return 'Ative 3+ Void Cells OU conquiste a Relíquia Selo Amarelo de Nêmesis (3B).';
+    }
+  }
+
+  /// ID da Relíquia Permanente escondida neste bioma (Sprint 26)
+  String? get relicId {
+    switch (id) {
+      case SectorId.vesta:
+        return 'aegis_radar';
+      case SectorId.orion:
+        return 'thermal_tome';
+      case SectorId.cryoAbyss:
+        return 'merchant_beacon';
+      case SectorId.graveyard:
+        return 'mutation_matrix';
+      case SectorId.xenoHive:
+        return 'yellow_sign';
+      case SectorId.eventHorizon:
+      case SectorId.voidThrone:
+        return null;
+    }
+  }
+
+  String get relicName {
+    switch (id) {
+      case SectorId.vesta:
+        return 'Radar Estelar Aegis';
+      case SectorId.orion:
+        return 'Tomo de Fusão Térmica';
+      case SectorId.cryoAbyss:
+        return 'Sinalizador do Mercador';
+      case SectorId.graveyard:
+        return 'Matriz de Mutação Inicial';
+      case SectorId.xenoHive:
+        return 'Selo Amarelo de Nêmesis';
+      case SectorId.eventHorizon:
+      case SectorId.voidThrone:
+        return 'Relíquia dos Arquitetos';
+    }
+  }
+
+  String get secretTitle {
+    switch (id) {
+      case SectorId.vesta:
+        return 'Cápsula Criogênica de Vesper';
+      case SectorId.orion:
+        return 'Reator Solar Adormecido';
+      case SectorId.cryoAbyss:
+        return 'Obelisco Rúnico de Caelum';
+      case SectorId.graveyard:
+        return 'Núcleo do Encouraçado Soberano';
+      case SectorId.xenoHive:
+        return 'Casulo Real da Astraea';
+      case SectorId.eventHorizon:
+      case SectorId.voidThrone:
+        return 'Altar Primordial do Trono';
+    }
+  }
 }

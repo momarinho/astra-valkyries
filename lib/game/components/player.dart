@@ -332,6 +332,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   void dash() {
     final vId = valkyrie?.id ?? 'lyra';
     _triggerMirrorDashDeflection();
+    try {
+      game.notifyDashExecutedForUnlocks();
+    } catch (_) {}
 
     if (vId == 'vesper') {
       // 🗡️ VESPER: PHANTOM QUICK-SLIP (Dual-charge agile micro-evade)

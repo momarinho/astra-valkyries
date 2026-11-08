@@ -673,6 +673,9 @@ class EnemyShipComponent extends PositionComponent
 
   void die() {
     removeFromParent();
+    try {
+      game.notifyEnemyKilledForUnlocks(type);
+    } catch (_) {}
     game.playSfx('asteroid_split.wav');
     game.addScore(scoreValue);
 

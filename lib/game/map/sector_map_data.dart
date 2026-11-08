@@ -17,6 +17,8 @@ enum MapNodeType {
   flawlessVault,
   voidMerchant,
   cursedShrine,
+  relicPedestal,
+  stasisCoffin,
 }
 
 class MapNode {

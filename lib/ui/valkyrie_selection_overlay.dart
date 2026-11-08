@@ -143,12 +143,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
         setState(() {
-          _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectors.length) % Sector.allSectors.length;
+          _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectorsWithBranches.length) % Sector.allSectorsWithBranches.length;
         });
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.bracketRight) {
         setState(() {
-          _selectedSectorIndex = (_selectedSectorIndex + 1) % Sector.allSectors.length;
+          _selectedSectorIndex = (_selectedSectorIndex + 1) % Sector.allSectorsWithBranches.length;
         });
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -163,8 +163,13 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   void _deployValkyrie(Valkyrie valkyrie) {
+    final sector = Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(0, Sector.allSectorsWithBranches.length - 1)];
+    if (!widget.game.isSectorUnlocked(sector.id)) {
+      widget.game.playSfx('game_over.wav');
+      return;
+    }
     widget.game.selectedValkyrie = valkyrie;
-    widget.game.currentSector = Sector.allSectors[_selectedSectorIndex];
+    widget.game.currentSector = sector;
     widget.game.playSfx('powerup.wav');
     widget.game.startGame();
   }
@@ -817,35 +822,46 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               ),
             ),
             const SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: () => _deployValkyrie(current),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: current.primaryColor,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 12,
-                shadowColor: current.primaryColor.withOpacity(0.6),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.rocket_launch_rounded, size: 18, color: Colors.black),
-                  SizedBox(width: 6),
-                  Text(
-                    'DEPLOY // DECOLAR',
-                    style: TextStyle(
-                      fontFamily: 'Orbitron',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                      color: Colors.black,
+            Builder(
+              builder: (context) {
+                final selectedSector = Sector.allSectorsWithBranches[
+                    _selectedSectorIndex.clamp(0, Sector.allSectorsWithBranches.length - 1)];
+                final isSectorUnlocked = widget.game.isSectorUnlocked(selectedSector.id);
+                return ElevatedButton(
+                  onPressed: isSectorUnlocked ? () => _deployValkyrie(current) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isSectorUnlocked ? current.primaryColor : const Color(0xFF2A2E3D),
+                    foregroundColor: isSectorUnlocked ? Colors.black : Colors.white38,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: isSectorUnlocked ? 12 : 0,
+                    shadowColor: current.primaryColor.withOpacity(0.6),
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSectorUnlocked ? Icons.rocket_launch_rounded : Icons.lock_outline_rounded,
+                        size: 18,
+                        color: isSectorUnlocked ? Colors.black : Colors.white38,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isSectorUnlocked ? 'DEPLOY // DECOLAR' : 'BLOQUEADO',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: isSectorUnlocked ? Colors.black : Colors.white38,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -854,83 +870,198 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildSectorSelector(Valkyrie current) {
-    final sector = Sector.allSectors[_selectedSectorIndex];
+    final sector = Sector.allSectorsWithBranches[
+        _selectedSectorIndex.clamp(0, Sector.allSectorsWithBranches.length - 1)];
+    final isUnlocked = widget.game.isSectorUnlocked(sector.id);
+    final isRelicClaimed = widget.game.unlockedRelics.contains(sector.relicId);
+    final isSecretRescued = widget.game.rescuedSectorSecrets.contains(sector.id);
+    final isCompletedWithCurrent = widget.game.isSectorCompletedWith(sector.id, current.id);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C1017).withOpacity(0.92),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: sector.primaryColor.withOpacity(0.5), width: 1.0),
+        color: const Color(0xFF0C1017).withOpacity(0.94),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isUnlocked
+              ? sector.primaryColor.withOpacity(0.6)
+              : Colors.redAccent.withOpacity(0.5),
+          width: 1.2,
+        ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            iconSize: 14,
+            iconSize: 16,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: 'Setor Anterior [Tecla [ ]',
             icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white70),
             onPressed: () {
               setState(() {
-                _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectors.length) % Sector.allSectors.length;
+                _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectorsWithBranches.length) %
+                    Sector.allSectorsWithBranches.length;
               });
               widget.game.playSfx('menu_select.wav');
             },
           ),
-          const SizedBox(width: 6),
-          Icon(sector.icon, color: sector.primaryColor, size: 16),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
+
+          // Miniatura do Bioma (Sprint 25)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    sector.biomeImageAsset,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: sector.primaryColor.withOpacity(0.2),
+                      child: Icon(sector.icon, color: sector.primaryColor, size: 24),
+                    ),
+                  ),
+                  if (!isUnlocked)
+                    Container(
+                      color: Colors.black.withOpacity(0.7),
+                      child: const Center(
+                        child: Icon(Icons.lock_rounded, color: Colors.amberAccent, size: 22),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Informações do Setor e Checklist
           Expanded(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  child: Text(
-                    sector.name.toUpperCase(),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        sector.name.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isUnlocked ? sector.primaryColor : Colors.white60,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: sector.primaryColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: sector.primaryColor.withOpacity(0.6)),
+                      ),
+                      child: Text(
+                        sector.difficultyLabel,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: sector.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                if (!isUnlocked)
+                  Text(
+                    '🔒 DESBLOQUEIO: ${sector.unlockConditionText}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Orbitron',
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: sector.primaryColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: sector.primaryColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: sector.primaryColor.withOpacity(0.6)),
-                  ),
-                  child: Text(
-                    sector.difficultyLabel,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: 'Rajdhani',
-                      fontSize: 9,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.bold,
-                      color: sector.primaryColor,
+                      color: Colors.amberAccent,
                     ),
+                  )
+                else
+                  // Checklist de Descobertas (Sprint 28)
+                  Row(
+                    children: [
+                      _buildChecklistBadge(
+                        'Relíquia',
+                        isRelicClaimed,
+                        const Color(0xFFFFD700),
+                        sector.relicName,
+                      ),
+                      const SizedBox(width: 6),
+                      _buildChecklistBadge(
+                        'Segredo',
+                        isSecretRescued,
+                        const Color(0xFF00E5FF),
+                        sector.secretTitle,
+                      ),
+                      const SizedBox(width: 6),
+                      _buildChecklistBadge(
+                        current.name,
+                        isCompletedWithCurrent,
+                        current.primaryColor,
+                        'Completado com ${current.name}',
+                      ),
+                    ],
                   ),
-                ),
               ],
             ),
           ),
+
+          const SizedBox(width: 8),
           IconButton(
-            iconSize: 14,
+            iconSize: 16,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: 'Próximo Setor [Tecla ] ]',
             icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70),
             onPressed: () {
               setState(() {
-                _selectedSectorIndex = (_selectedSectorIndex + 1) % Sector.allSectors.length;
+                _selectedSectorIndex =
+                    (_selectedSectorIndex + 1) % Sector.allSectorsWithBranches.length;
               });
               widget.game.playSfx('menu_select.wav');
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChecklistBadge(String label, bool completed, Color color, String tooltip) {
+    return Tooltip(
+      message: tooltip,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            size: 11,
+            color: completed ? color : Colors.white30,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Rajdhani',
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: completed ? color : Colors.white54,
+            ),
           ),
         ],
       ),
@@ -1025,7 +1156,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
           const Divider(color: Colors.white12, height: 20),
 
-          // Sub-navigation inside Workshop: Fleet Upgrades | Blueprint Forge | Milestones Codex | Faction Codex | Flight Recorders
+          // Sub-navigation inside Workshop: Fleet Upgrades | Blueprint Forge | Milestones Codex | Faction Codex | Flight Recorders | Permanent Relics
           Wrap(
             spacing: 8,
             runSpacing: 6,
@@ -1035,11 +1166,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               _buildWorkshopSubTabButton(2, 'CONQUISTAS', Icons.emoji_events_rounded, const Color(0xFFFFD700)),
               _buildWorkshopSubTabButton(3, 'CÓDICE DE FACÇÕES', Icons.auto_stories_rounded, const Color(0xFFFF4081)),
               _buildWorkshopSubTabButton(4, 'CAIXAS PRETAS & LORE', Icons.settings_input_antenna_rounded, const Color(0xFFE040FB)),
+              _buildWorkshopSubTabButton(5, 'RELÍQUIAS PERMANENTES', Icons.diamond_outlined, const Color(0xFFFFD700)),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Responsive Content (Upgrades / Blueprints / Milestones / Factions / Flight Recorders)
+          // Responsive Content (Upgrades / Blueprints / Milestones / Factions / Flight Recorders / Relics)
           Expanded(
             child: _workshopSubTab == 0
                 ? LayoutBuilder(
@@ -1076,7 +1208,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         ? _buildMilestonesList()
                         : (_workshopSubTab == 3
                             ? _buildFactionCodexList()
-                            : _buildFlightRecordersList()))),
+                            : (_workshopSubTab == 4
+                                ? _buildFlightRecordersList()
+                                : _buildPermanentRelicsList())))),
           ),
         ],
       ),
@@ -1422,6 +1556,116 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   fontSize: 12.5,
                   fontStyle: isUnlocked ? FontStyle.italic : FontStyle.normal,
                   color: isUnlocked ? Colors.white70 : Colors.white38,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPermanentRelicsList() {
+    final relics = PermanentRelic.allRelics;
+    return ListView.separated(
+      itemCount: relics.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final relic = relics[index];
+        final isUnlocked = widget.game.unlockedRelics.contains(relic.id);
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isUnlocked
+                ? relic.color.withOpacity(0.12)
+                : const Color(0xFF10141E).withOpacity(0.7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isUnlocked ? relic.color : Colors.white24,
+              width: isUnlocked ? 1.6 : 1.0,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: relic.color.withOpacity(isUnlocked ? 0.25 : 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: relic.color.withOpacity(isUnlocked ? 0.8 : 0.3)),
+                ),
+                child: Icon(relic.icon, color: isUnlocked ? relic.color : Colors.white38, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            relic.title.toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              color: isUnlocked ? Colors.white : Colors.white60,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: (isUnlocked ? relic.color : Colors.white24).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: isUnlocked ? relic.color : Colors.white38),
+                          ),
+                          child: Text(
+                            isUnlocked ? '✓ ATIVA PERMANENTEMENTE' : '🔒 NÃO DESCOBERTA',
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isUnlocked ? relic.color : Colors.white54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Origem: ${relic.sectorLabel}',
+                      style: TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                        color: relic.color,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      relic.effectDescription,
+                      style: const TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '📜 "${relic.loreLog}"',
+                      style: const TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

@@ -141,6 +141,11 @@ class AffinityManager {
     );
   }
 
+  /// Adiciona pontos/XP de afinidade à Valquíria informada
+  bool addAffinity(String valkyrieId, int amount) {
+    return getAffinity(valkyrieId).addXp(amount);
+  }
+
   /// Catálogo Completo de Memórias Secretas (CGs / Pinups)
   static final List<SecretMemory> allMemories = [
     // --- LYRA (Solar Vanguard) ---

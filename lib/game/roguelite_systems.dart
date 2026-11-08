@@ -132,6 +132,30 @@ class BlueprintDef {
     }
     return null;
   }
+
+  /// Condição de desbloqueio por feito de gameplay (Sprint 27 — Condition-Gated Arsenal)
+  String get unlockConditionText {
+    switch (weaponId) {
+      case 'aegis_sawblades':
+        return 'Destrua 80 asteroides OU quebre 5 escudos de Aegis Bulwark.';
+      case 'tesla_arc':
+        return 'Alcance Nível 3 com Rapid Fire OU elimine 80 inimigos em uma partida.';
+      case 'quantum_chakram':
+        return 'Execute 20 Dashes em uma partida OU ative o Obelisco Rúnico no Setor 2B.';
+      case 'repulsor_aura':
+        return 'Sobreviva à Sobrecarga de uma Nebulosa OU colete 5 cápsulas de reparo.';
+      case 'solar_lance':
+        return 'Alcance Nível 8 no Setor 2A OU aplique Solar Burn 25 vezes.';
+      case 'inferno_cone':
+        return 'Derrote qualquer Chefe de Setor jogando com Lyra Vancroft.';
+      case 'valkyrie_wingmen':
+        return 'Alcance Elo de Afinidade Nível 2 OU abra uma Cápsula de Estase secreta.';
+      case 'void_mines':
+        return 'Destrua 10 Minas Criogênicas/Proximidade OU vença um Chefe sem tomar dano.';
+      default:
+        return 'Complete feitos táticos em combate ou forje na Oficina.';
+    }
+  }
 }
 
 /// Definição de uma Mutação de Piloto escolhida entre Setores (Sprint 16 & Sprint 22 Lore)
@@ -434,4 +458,90 @@ class MilestoneAchievement {
       color: Color(0xFFE040FB),
     ),
   ];
+}
+
+/// Definição das 5 Relíquias Permanentes escondidas nas extremidades de cada Setor (Sprint 26)
+class PermanentRelic {
+  final String id;
+  final String title;
+  final String sectorLabel;
+  final String effectDescription;
+  final String loreLog;
+  final IconData icon;
+  final Color color;
+
+  const PermanentRelic({
+    required this.id,
+    required this.title,
+    required this.sectorLabel,
+    required this.effectDescription,
+    required this.loreLog,
+    required this.icon,
+    required this.color,
+  });
+
+  static const List<PermanentRelic> allRelics = [
+    PermanentRelic(
+      id: 'aegis_radar',
+      title: 'RADAR ESTELAR AEGIS',
+      sectorLabel: 'Setor 1 // Cinturão de Vesta',
+      effectDescription:
+          'Ativa permanentemente a Bússola de Segredos no HUD apontando direção e distância (m) até Relíquias e Cápsulas ocultas.',
+      loreLog:
+          'Módulo cartográfico de longo alcance da capitânia Aegis-I. Enxerga assinaturas quânticas através de asteroides e nebulosas.',
+      icon: Icons.explore_rounded,
+      color: Color(0xFF00E5FF),
+    ),
+    PermanentRelic(
+      id: 'thermal_tome',
+      title: 'TOMO DE FUSÃO TÉRMICA',
+      sectorLabel: 'Setor 2A // Forja Solar de Hélio',
+      effectDescription:
+          'Adiciona permanentemente +1 Carta de Escolha em todos os Level-Ups (4 opções em vez de 3) e exibe sinergias.',
+      loreLog:
+          'Manual sagrado dos Mestres Forjadores de Hélio contendo os diagramas de sobrealimentação de todas as Superarmas.',
+      icon: Icons.menu_book_rounded,
+      color: Color(0xFFFF9100),
+    ),
+    PermanentRelic(
+      id: 'merchant_beacon',
+      title: 'SINALIZADOR DO MERCADOR',
+      sectorLabel: 'Setor 2B // Abismo Criogênico',
+      effectDescription:
+          'Concede 25% de desconto permanente no Mercador Errante do Vazio (75c em vez de 100c) em todos os setores.',
+      loreLog:
+          'Moeda de salvo-conduto da Guilda dos Contrabandistas do Vazio. Quem a carrega nunca paga preço cheio no front.',
+      icon: Icons.storefront_rounded,
+      color: Color(0xFF80D8FF),
+    ),
+    PermanentRelic(
+      id: 'mutation_matrix',
+      title: 'MATRIZ DE MUTAÇÃO INICIAL',
+      sectorLabel: 'Setor 3A // Cemitério Aegis',
+      effectDescription:
+          'Permite iniciar toda partida já com 1 Mutação de Piloto ativa gratuitamente logo na decolagem.',
+      loreLog:
+          'Injetor neural recuperado do Encouraçado Soberano. Sincroniza os reflexos da piloto antes mesmo do salto hiperespacial.',
+      icon: Icons.biotech_rounded,
+      color: Color(0xFF00E676),
+    ),
+    PermanentRelic(
+      id: 'yellow_sign',
+      title: 'SELO AMARELO DE NÊMESIS',
+      sectorLabel: 'Setor 3B // Colmeia Xeno',
+      effectDescription:
+          'Destrava permanentemente a rota para o Setor 5 Secreto (O Trono do Vazio) e aumenta o ganho de Afinidade.',
+      loreLog:
+          'Insígnia proibida deixada pelos Arquitetos Ancestrais no coração da Colmeia. Sua frequência abre o portão além do Horizonte.',
+      icon: Icons.wb_iridescent_rounded,
+      color: Color(0xFFFFD700),
+    ),
+  ];
+
+  static PermanentRelic? findById(String id) {
+    for (final r in allRelics) {
+      if (r.id == id) return r;
+    }
+    return null;
+  }
 }
