@@ -131,8 +131,15 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double vortexSurgeTimer = 0.0;
   double _vortexSurgePulseTimer = 0.0;
 
+  // Sobrecarga Sangrenta Temporária (Pactos e Santuários: dano x2 e alta cadência por poucos segundos)
+  double bloodOverdriveTimer = 0.0;
+
   void activateVortexSurge(double duration) {
     vortexSurgeTimer = math.max(vortexSurgeTimer, duration);
+  }
+
+  void activateBloodOverdrive(double duration) {
+    bloodOverdriveTimer = math.max(bloodOverdriveTimer, duration);
   }
 
   void applyCryoFreeze([double duration = 0.8]) {
@@ -155,6 +162,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     isShieldSuppressed = false;
     cryoFreezeTimer = 0.0;
     vortexSurgeTimer = 0.0;
+    bloodOverdriveTimer = 0.0;
     cryoMistAccelerationMultiplier = 1.0;
   }
 
@@ -490,7 +498,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       w.currentCooldown = math.max(0.0, w.currentCooldown - dt);
       if (w.currentCooldown <= 0) {
         if (w.fire(this)) {
-          final cooldownMultiplier = (activeNebulaName == 'ION NEBULA') ? 0.70 : 1.0;
+          final bloodCooldownMult = bloodOverdriveTimer > 0 ? 0.60 : 1.0;
+          final cooldownMultiplier = ((activeNebulaName == 'ION NEBULA') ? 0.70 : 1.0) * bloodCooldownMult;
           final effectiveCooldown = w.cooldown * game.rogueFireRateMultiplier * cooldownMultiplier;
           w.currentCooldown = effectiveCooldown;
 
@@ -526,6 +535,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           ),
         );
       }
+    }
+
+    // Temporary Blood Overdrive (Pacto de Santuário / Frenesi Tático)
+    if (bloodOverdriveTimer > 0) {
+      bloodOverdriveTimer = math.max(0.0, bloodOverdriveTimer - dt);
     }
 
     final keys = game.keysPressed;
@@ -812,6 +826,15 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
 
     canvas.translate(radius, radius);
+
+    if (bloodOverdriveTimer > 0) {
+      final pulse = 1.0 + 0.15 * math.sin(DateTime.now().millisecondsSinceEpoch * 0.015);
+      final auraPaint = Paint()
+        ..color = const Color(0xFFE040FB).withValues(alpha: 0.38)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0;
+      canvas.drawCircle(Offset.zero, (radius + 8.0) * pulse, auraPaint);
+    }
 
     _renderShip(canvas);
 

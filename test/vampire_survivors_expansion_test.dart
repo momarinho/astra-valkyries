@@ -8,6 +8,7 @@ import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/sector.dart';
 import 'package:asteroids/game/rogue_perks.dart';
 import 'package:asteroids/game/components/player.dart';
+import 'package:asteroids/game/components/bullet.dart';
 import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/cryo_pod.dart';
 import 'package:asteroids/game/components/chest.dart';
@@ -238,16 +239,44 @@ void main() {
 
     test('Calibrated weapon power curves maintain smooth progression without exponential early spikes', () {
       final blaster = Blaster();
-      expect(blaster.damage, equals(60.0));
+      expect(blaster.damage, equals(26.0));
       blaster.upgrade(); // Lv 2
-      expect(blaster.damage, equals(75.0));
-      expect(blaster.cooldown, equals(0.50));
+      expect(blaster.damage, equals(42.0));
+      expect(blaster.cooldown, equals(0.52));
       blaster.upgrade(); // Lv 3
-      expect(blaster.damage, equals(85.0));
-      expect(blaster.cooldown, equals(0.45));
+      expect(blaster.damage, equals(60.0));
+      expect(blaster.cooldown, equals(0.42));
       blaster.evolve();
       expect(blaster.damage, equals(150.0));
       expect(blaster.cooldown, equals(0.16));
+    });
+
+    test('Blood Overdrive surge grants temporary x2 damage and high firing cadence without permanent mutation', () {
+      final game = AsteroidsGame();
+      final player = PlayerComponent(position: Vector2(200, 200))..customGame = game;
+      game.player = player;
+      game.world.add(player);
+      game.state = GameState.playing;
+
+      expect(player.bloodOverdriveTimer, equals(0.0));
+      player.activateBloodOverdrive(10.0);
+      expect(player.bloodOverdriveTimer, equals(10.0));
+
+      final blaster = Blaster();
+      blaster.fire(player);
+
+      final bullets = game.world.children.whereType<BulletComponent>().toList();
+      expect(bullets.isNotEmpty, isTrue);
+      // Base damage is 26.0, with overdrive surge multiplier (x2) it is 52.0
+      expect(bullets.first.damage, equals(52.0));
+
+      // Update dt = 3.0
+      player.update(3.0);
+      expect(player.bloodOverdriveTimer, closeTo(7.0, 0.01));
+
+      // Update dt = 8.0 -> expires
+      player.update(8.0);
+      expect(player.bloodOverdriveTimer, equals(0.0));
     });
   });
 }

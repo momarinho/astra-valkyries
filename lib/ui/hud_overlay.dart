@@ -753,6 +753,28 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   const SizedBox(height: 6),
                 ],
 
+                // Blood Overdrive Surge (Pacto do Santuário / Frenesi Tático)
+                if (player.bloodOverdriveTimer > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF1744).withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFFF1744)),
+                    ),
+                    child: Text(
+                      '🩸 SOBRECARGA: ${player.bloodOverdriveTimer.toStringAsFixed(1)}s',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF5252),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+
                 // Tactical Mini-Radar & Spatial Navigation
                 GestureDetector(
                   onTap: () {

@@ -160,12 +160,13 @@ class Blaster extends Weapon {
           cooldown: 0.70,
           recoil: 12.0,
           muzzleFlashSize: 8.0,
-          damage: 60.0,
+          damage: 26.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 
     // Super-Evolution: Supernova Annihilator (Dual continuous gold plasma beams with infinite pierce)
     if (isEvolved) {
@@ -220,14 +221,14 @@ class Blaster extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.50;
+      cooldown = 0.52;
       recoil = 8.0;
-      damage = 75.0;
+      damage = 42.0;
       muzzleFlashSize = 10.0;
     } else if (level >= 3) {
-      cooldown = 0.45;
+      cooldown = 0.42;
       recoil = 5.0;
-      damage = 85.0;
+      damage = 60.0;
       muzzleFlashSize = 12.0;
     }
   }
@@ -250,12 +251,13 @@ class SpreadShot extends Weapon {
           cooldown: 0.95,
           recoil: 14.0,
           muzzleFlashSize: 11.0,
-          damage: 32.0,
+          damage: 14.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 
     // Super-Evolution: Hyperion Flak Storm (10-way 360-degree perimeter flak ring)
     if (isEvolved) {
@@ -315,14 +317,14 @@ class SpreadShot extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.72;
+      cooldown = 0.75;
       recoil = 10.0;
-      damage = 42.0;
+      damage = 22.0;
       muzzleFlashSize = 13.0;
     } else if (level >= 3) {
       cooldown = 0.62;
       recoil = 6.0;
-      damage = 50.0;
+      damage = 32.0;
       muzzleFlashSize = 15.0;
     }
   }
@@ -345,12 +347,13 @@ class RapidFire extends Weapon {
           cooldown: 0.32,
           recoil: 4.0,
           muzzleFlashSize: 6.0,
-          damage: 20.0,
+          damage: 10.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 
     // Super-Evolution: Absolute Zero Tachyon Beam (Hyper-dense piercing glacial stream)
     if (isEvolved) {
@@ -386,12 +389,12 @@ class RapidFire extends Weapon {
     if (level == 2) {
       cooldown = 0.22;
       recoil = 2.5;
-      damage = 26.0;
+      damage = 16.0;
       muzzleFlashSize = 8.0;
     } else if (level >= 3) {
       cooldown = 0.18;
       recoil = 1.8;
-      damage = 30.0;
+      damage = 22.0;
       muzzleFlashSize = 9.0;
     }
   }
@@ -414,12 +417,13 @@ class BombLauncher extends Weapon {
           cooldown: 1.80,
           recoil: 22.0,
           muzzleFlashSize: 18.0,
-          damage: 180.0,
+          damage: 80.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final speed = (isEvolved ? 340.0 : 280.0) + (level - 1) * 40.0;
 
     // Smart torpedo targeting: seeks the nearest enemy ship or asteroid within 550px
@@ -471,14 +475,14 @@ class BombLauncher extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 1.40;
+      cooldown = 1.45;
       recoil = 16.0;
-      damage = 240.0;
+      damage = 130.0;
       muzzleFlashSize = 22.0;
     } else if (level >= 3) {
-      cooldown = 1.25;
+      cooldown = 1.20;
       recoil = 12.0;
-      damage = 270.0;
+      damage = 190.0;
       muzzleFlashSize = 25.0;
     }
   }
@@ -502,12 +506,13 @@ class AegisSawblades extends Weapon {
           cooldown: 3.8,
           recoil: 0.0,
           muzzleFlashSize: 4.0,
-          damage: 45.0,
+          damage: 16.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final bladeCount = isEvolved ? 6 : (level + 1); // 2, 3, 4 -> 6 blades
     final orbitRadius = isEvolved ? 115.0 : 88.0;
 
@@ -536,17 +541,17 @@ class AegisSawblades extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 3.2;
-      damage = 45.0;
+      damage = 24.0;
     } else if (level >= 3) {
       cooldown = 2.8;
-      damage = 55.0;
+      damage = 35.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 2.2;
-    damage = 75.0;
+    damage = 55.0;
   }
 }
 
@@ -560,12 +565,13 @@ class TeslaArcCannon extends Weapon {
           cooldown: 0.90,
           recoil: 3.0,
           muzzleFlashSize: 10.0,
-          damage: 52.0,
+          damage: 20.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final maxJumps = isEvolved ? 8 : (2 + level); // 3, 4, 5 -> 8 jumps
     final jumpRange = isEvolved ? 380.0 : 260.0;
 
@@ -640,17 +646,17 @@ class TeslaArcCannon extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 0.75;
-      damage = 52.0;
+      damage = 30.0;
     } else if (level >= 3) {
       cooldown = 0.62;
-      damage = 64.0;
+      damage = 42.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 0.48;
-    damage = 90.0;
+    damage = 65.0;
   }
 }
 
@@ -664,12 +670,13 @@ class QuantumChakram extends Weapon {
           cooldown: 1.15,
           recoil: 4.0,
           muzzleFlashSize: 8.0,
-          damage: 65.0,
+          damage: 24.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final count = isEvolved ? 3 : (level >= 3 ? 2 : 1);
 
     for (var i = 0; i < count; i++) {
@@ -693,17 +700,17 @@ class QuantumChakram extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 1.05;
-      damage = 68.0;
+      damage = 34.0;
     } else if (level >= 3) {
       cooldown = 0.95;
-      damage = 52.0;
+      damage = 28.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 0.85;
-    damage = 62.0;
+    damage = 40.0;
   }
 }
 
@@ -717,12 +724,13 @@ class RepulsorGravityAura extends Weapon {
           cooldown: 1.35,
           recoil: 0.0,
           muzzleFlashSize: 6.0,
-          damage: 48.0,
+          damage: 18.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final radius = (isEvolved ? 235.0 : 145.0) + (level - 1) * 22.0;
 
     player.game.world.add(
@@ -740,17 +748,17 @@ class RepulsorGravityAura extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 1.20;
-      damage = 48.0;
+      damage = 26.0;
     } else if (level >= 3) {
       cooldown = 1.05;
-      damage = 60.0;
+      damage = 36.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 0.90;
-    damage = 85.0;
+    damage = 55.0;
   }
 }
 
@@ -764,12 +772,13 @@ class SolarThermalLance extends Weapon {
           cooldown: 0.65,
           recoil: 6.0,
           muzzleFlashSize: 14.0,
-          damage: 78.0,
+          damage: 28.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final beamLen = isEvolved ? 680.0 : (460.0 + (level - 1) * 60.0);
     final start = player.position + player.forward * player.radius;
     final end = start + player.forward * beamLen;
@@ -820,17 +829,17 @@ class SolarThermalLance extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 0.58;
-      damage = 78.0;
+      damage = 44.0;
     } else if (level >= 3) {
       cooldown = 0.46;
-      damage = 98.0;
+      damage = 62.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 0.35;
-    damage = 135.0;
+    damage = 95.0;
   }
 }
 
@@ -844,12 +853,13 @@ class InfernoPlasmaCone extends Weapon {
           cooldown: 0.28,
           recoil: 2.0,
           muzzleFlashSize: 12.0,
-          damage: 24.0,
+          damage: 9.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final count = isEvolved ? 5 : 3;
     for (var i = 0; i < count; i++) {
       final offsetAngle = (i - (count - 1) / 2.0) * 0.18;
@@ -876,17 +886,17 @@ class InfernoPlasmaCone extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 0.24;
-      damage = 24.0;
+      damage = 13.0;
     } else if (level >= 3) {
       cooldown = 0.20;
-      damage = 28.0;
+      damage = 17.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 0.16;
-    damage = 36.0;
+    damage = 25.0;
   }
 }
 
@@ -900,12 +910,13 @@ class ValkyrieWingmen extends Weapon {
           cooldown: 4.5,
           recoil: 0.0,
           muzzleFlashSize: 4.0,
-          damage: 34.0,
+          damage: 12.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final droneCount = isEvolved ? 4 : (level >= 3 ? 3 : 2);
 
     final existing = player.game.world.children.whereType<WingmanDroneComponent>().toList();
@@ -929,17 +940,17 @@ class ValkyrieWingmen extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 4.0;
-      damage = 34.0;
+      damage = 18.0;
     } else if (level >= 3) {
       cooldown = 3.6;
-      damage = 42.0;
+      damage = 25.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 3.0;
-    damage = 58.0;
+    damage = 40.0;
   }
 }
 
@@ -953,12 +964,13 @@ class VoidClusterMines extends Weapon {
           cooldown: 1.40,
           recoil: 0.0,
           muzzleFlashSize: 5.0,
-          damage: 115.0,
+          damage: 45.0,
         );
 
   @override
   bool fire(PlayerComponent player) {
-    final effectiveDamage = damage * player.damageMultiplier;
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final backward = -player.forward;
     final right = Vector2(-player.forward.y, player.forward.x);
     final count = isEvolved ? 3 : (level >= 3 ? 2 : 1);
@@ -982,16 +994,16 @@ class VoidClusterMines extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 1.20;
-      damage = 125.0;
+      damage = 70.0;
     } else if (level >= 3) {
       cooldown = 1.05;
-      damage = 110.0;
+      damage = 65.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 0.85;
-    damage = 135.0;
+    damage = 95.0;
   }
 }

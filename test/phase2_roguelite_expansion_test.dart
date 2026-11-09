@@ -230,5 +230,33 @@ void main() {
       );
       expect(defeatLine, contains('SCRAP GOLIATH'));
     });
+
+    test('Cursed Shrine and Void Merchant grant temporary 10s blood overdrive instead of permanent weapon evolutions', () {
+      final game = AsteroidsGame();
+      final player = PlayerComponent(position: Vector2(300, 300))..customGame = game;
+      game.player = player;
+      game.world.add(player);
+      game.state = GameState.playing;
+
+      final initialWeapon = player.activeWeapons.first;
+      expect(initialWeapon.level, equals(1));
+      expect(initialWeapon.isEvolved, isFalse);
+
+      final shrine = CursedShrineComponent(position: Vector2(300, 300));
+      game.world.add(shrine);
+      shrine.customGame = game;
+
+      // Activate shrine
+      player.hp = 100.0;
+      shrine.activateShrine();
+
+      expect(shrine.isActivated, isTrue);
+      expect(player.bloodOverdriveTimer, equals(10.0));
+      expect(player.invulnerableTimer, equals(2.5));
+      // Weapon should remain level 1 and NOT be permanently evolved
+      expect(initialWeapon.level, equals(1));
+      expect(initialWeapon.isEvolved, isFalse);
+      expect(player.hp, closeTo(85.0, 0.1)); // 15% non-lethal sacrifice
+    });
   });
 }

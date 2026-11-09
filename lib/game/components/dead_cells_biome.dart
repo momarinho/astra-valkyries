@@ -401,6 +401,11 @@ class VoidMerchantComponent extends PositionComponent
   double interactProgress = 0.0;
   static const double requiredTime = 1.2;
 
+  AsteroidsGame? _customGame;
+  @override
+  AsteroidsGame get game => _customGame ?? super.game;
+  set customGame(AsteroidsGame g) => _customGame = g;
+
   VoidMerchantComponent({required Vector2 position}) {
     this.position = position.clone();
     anchor = Anchor.center;
@@ -415,14 +420,14 @@ class VoidMerchantComponent extends PositionComponent
     if (game.player.position.distanceTo(position) <= radius) {
       interactProgress += dt;
       if (interactProgress >= requiredTime) {
-        _completeTrade();
+        completeTrade();
       }
     } else {
       interactProgress = math.max(0.0, interactProgress - dt);
     }
   }
 
-  void _completeTrade() {
+  void completeTrade() {
     hasTraded = true;
     const tradeCost = 50;
     if (game.runCredits >= tradeCost) {
@@ -431,32 +436,15 @@ class VoidMerchantComponent extends PositionComponent
       game.totalCredits -= tradeCost;
     }
 
-    // Restaura +45 HP e concede uma nova arma do pool ou faz upgrade de uma arma equipada!
-    game.player.heal(45.0);
-    final lockedIds = Weapon.allWeaponIds
-        .where((id) => !game.player.unlockedWeapons.containsKey(id))
-        .toList();
-    if (lockedIds.isNotEmpty) {
-      final chosenId = lockedIds[math.Random().nextInt(lockedIds.length)];
-      final newW = Weapon.createById(chosenId);
-      game.player.addWeapon(newW);
-      game.spawnFloatingText(
-        position + Vector2(0, -35),
-        '🛒 MERCADOR: +45 HP & ${newW.name.toUpperCase()} ADQUIRIDA!',
-        color: const Color(0xFFFFD700),
-        fontSize: 14.5,
-      );
-    } else {
-      for (final w in game.player.activeWeapons) {
-        w.upgrade();
-      }
-      game.spawnFloatingText(
-        position + Vector2(0, -35),
-        '🛒 MERCADOR: +45 HP & ARSENAL APRIMORADO!',
-        color: const Color(0xFFFFD700),
-        fontSize: 14.5,
-      );
-    }
+    // Restaura +25 HP e concede Sobrecarregador Tático temporário (10.0s)
+    game.player.heal(25.0);
+    game.player.activateBloodOverdrive(10.0);
+    game.spawnFloatingText(
+      position + Vector2(0, -35),
+      '🛒 MERCADOR: +25 HP & SOBRECARGA TÁTICA (10s)!',
+      color: const Color(0xFFFFD700),
+      fontSize: 14.5,
+    );
     game.playSfx('powerup.wav');
   }
 
@@ -491,6 +479,11 @@ class CursedShrineComponent extends PositionComponent
   bool isActivated = false;
   double channelTimer = 0.0;
 
+  AsteroidsGame? _customGame;
+  @override
+  AsteroidsGame get game => _customGame ?? super.game;
+  set customGame(AsteroidsGame g) => _customGame = g;
+
   CursedShrineComponent({required Vector2 position}) {
     this.position = position.clone();
     anchor = Anchor.center;
@@ -516,28 +509,24 @@ class CursedShrineComponent extends PositionComponent
     if (isActivated) return;
     isActivated = true;
 
-    // Sacrifica 20% do HP atual (nunca letal, mantém pelo menos 15 HP)
+    // Sacrifica 15% do HP atual (nunca letal, mantém pelo menos 15 HP)
     final p = game.player;
-    final sacrifice = math.min(p.hp - 15.0, p.maxHp * 0.20);
+    final sacrifice = math.min(p.hp - 15.0, p.maxHp * 0.15);
     if (sacrifice > 0) {
       p.hp -= sacrifice;
     }
 
-    // Recompensa: Evolui ou maximiza uma arma e concede +150c!
-    if (p.activeWeapons.isNotEmpty) {
-      final w = p.activeWeapons.first;
-      while (w.level < w.maxLevel) {
-        w.upgrade();
-      }
-      if (w.canEvolve) {
-        w.evolve();
-      }
-    }
-    game.addRunCredits(150);
+    // Recompensa: Sobrecarga Sangrenta Temporária (10s)! (Dano x2, alta cadência)
+    // Os poderes duram poucos segundos em vez de alterar permanentemente as armas
+    p.activateBloodOverdrive(10.0);
+    p.invulnerableTimer = math.max(p.invulnerableTimer, 2.5);
+
+    game.addRunCredits(100);
     game.chargeBossBeacon('SANTUÁRIO DO VAZIO');
+    game.triggerScreenShake(duration: 0.45, intensity: 10.0);
     game.spawnFloatingText(
       position + Vector2(0, -35),
-      '🩸 PACTO DO SANTUÁRIO: ARMA MAXIMIZADA + 150c!',
+      '🩸 PACTO SANGRENTO: SOBRECARGA 10s (DANO x2 & CADÊNCIA)! +100c',
       color: const Color(0xFFE040FB),
       fontSize: 14.5,
     );
