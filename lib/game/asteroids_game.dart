@@ -149,6 +149,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   final Set<String> unlockedRelics = {};
   final Set<SectorId> rescuedSectorSecrets = {};
   final Set<String> unlockedWeaponPool = {
+    'tachyon_katana',
     'blaster',
     'spread_shot',
     'rapid_fire',

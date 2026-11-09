@@ -7,6 +7,7 @@ import 'package:asteroids/game/meta_progression.dart';
 import 'package:asteroids/game/affinity_system.dart';
 import 'package:asteroids/game/sector.dart';
 import 'package:asteroids/game/roguelite_systems.dart';
+import 'package:asteroids/game/weapon_codex.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -41,7 +42,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     LogicalKeyboardKey.keyA,
   ];
   String? _currentDialogueText;
-  String _selectedGalleryFilter = 'all'; // 'all', 'lyra', 'selene', 'vesper'
+  String _selectedGalleryFilter = 'all'; // 'all', 'kaede', 'lyra', 'selene', 'vesper'
+  int _gallerySubTab = 0; // 0 = Memórias das Pilotas, 1 = Códice do Arsenal
+  String _selectedWeaponCodexCategory = 'all'; // 'all', 'blade', 'plasma', 'kinetic', 'gravity'
+  WeaponCodexEntry? _openedWeaponCodex;
   SecretMemory? _openedMemory;
   bool _cleanMode = false;
 
@@ -229,6 +233,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             if (_openedMemory != null)
               Positioned.fill(
                 child: _buildMemoryLightbox(_openedMemory!),
+              ),
+
+            // Full-Screen Weapon Dossier Lightbox Modal
+            if (_openedWeaponCodex != null)
+              Positioned.fill(
+                child: _buildWeaponDossierLightbox(_openedWeaponCodex!),
               ),
           ],
         ),
@@ -2357,6 +2367,91 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildGalleryView(Valkyrie current) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Mode Selector: Memórias das Pilotas vs Códice do Arsenal
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF101622).withOpacity(0.9),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildGalleryModeButton(
+                  0,
+                  '💖 MEMÓRIAS DAS PILOTOS',
+                  Icons.photo_library_rounded,
+                  const Color(0xFFFF4081),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildGalleryModeButton(
+                  1,
+                  '⚔️ CÓDICE DO ARSENAL & LORE',
+                  Icons.military_tech_rounded,
+                  const Color(0xFF00E5FF),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Sub-Tab Content: Pilot Memories or Weapon Armory Codex
+        Expanded(
+          child: _gallerySubTab == 0
+              ? _buildPilotMemoriesView()
+              : _buildWeaponCodexView(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGalleryModeButton(int index, String label, IconData icon, Color activeColor) {
+    final isSelected = _gallerySubTab == index;
+    return GestureDetector(
+      onTap: () {
+        widget.game.playSfx('menu_select.wav');
+        setState(() => _gallerySubTab = index);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? activeColor : Colors.transparent,
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: isSelected ? activeColor : Colors.white60),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.1,
+                color: isSelected ? Colors.white : Colors.white60,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPilotMemoriesView() {
     final allMemories = AffinityManager.allMemories;
     final filteredMemories = _selectedGalleryFilter == 'all'
         ? allMemories
@@ -2912,6 +3007,817 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       ),
     ),
   );
+  }
+
+  Widget _buildWeaponCodexView() {
+    final allEntries = WeaponCodexEntry.allEntries;
+    final filteredEntries = allEntries.where(_filterWeaponCodexByCat).toList();
+
+    int totalUnlocked = 0;
+    for (final e in allEntries) {
+      if (widget.game.isWeaponUnlockedInPool(e.id)) totalUnlocked++;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Weapon Codex Filter Bar & Counter
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131A26).withOpacity(0.9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Filter Buttons
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildWeaponCodexFilterChip('all', 'TODAS (${allEntries.length})'),
+                      const SizedBox(width: 8),
+                      _buildWeaponCodexFilterChip('blade', 'LÂMINAS / CORTE'),
+                      const SizedBox(width: 8),
+                      _buildWeaponCodexFilterChip('plasma', 'PLASMA / ENERGIA'),
+                      const SizedBox(width: 8),
+                      _buildWeaponCodexFilterChip('kinetic', 'CINÉTICA / EXPLOSIVOS'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Unlocked Counter Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00E5FF).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF00E5FF)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'ARSENAL: $totalUnlocked / ${allEntries.length}',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Weapons Grid
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 950 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+              return GridView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: constraints.maxWidth > 950 ? 1.45 : 1.35,
+                ),
+                itemCount: filteredEntries.length,
+                itemBuilder: (context, index) {
+                  return _buildWeaponCodexCard(filteredEntries[index]);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _filterWeaponCodexByCat(WeaponCodexEntry entry) {
+    switch (_selectedWeaponCodexCategory) {
+      case 'blade':
+        return ['tachyon_katana', 'quantum_chakram', 'aegis_sawblades'].contains(entry.id);
+      case 'plasma':
+        return ['blaster', 'rapid_fire', 'solar_lance', 'inferno_cone', 'tesla_arc'].contains(entry.id);
+      case 'kinetic':
+        return ['spread_shot', 'bomb_launcher', 'valkyrie_wingmen', 'void_mines', 'repulsor_aura'].contains(entry.id);
+      default:
+        return true;
+    }
+  }
+
+  Widget _buildWeaponCodexFilterChip(String catId, String label) {
+    final isSelected = _selectedWeaponCodexCategory == catId;
+    return GestureDetector(
+      onTap: () {
+        widget.game.playSfx('menu_select.wav');
+        setState(() => _selectedWeaponCodexCategory = catId);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF00E5FF).withOpacity(0.25) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF00E5FF) : Colors.white12,
+            width: 1.0,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Orbitron',
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: isSelected ? Colors.white : Colors.white60,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeaponCodexCard(WeaponCodexEntry entry) {
+    final isUnlocked = widget.game.isWeaponUnlockedInPool(entry.id);
+
+    return GestureDetector(
+      onTap: () {
+        widget.game.playSfx('menu_select.wav');
+        setState(() => _openedWeaponCodex = entry);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111824).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isUnlocked ? entry.themeColor.withOpacity(0.65) : Colors.white12,
+            width: isUnlocked ? 1.5 : 1.0,
+          ),
+          boxShadow: isUnlocked
+              ? [
+                  BoxShadow(
+                    color: entry.themeColor.withOpacity(0.18),
+                    blurRadius: 10,
+                  )
+                ]
+              : [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Row: Icon, Name, Classification
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: entry.themeColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: entry.themeColor.withOpacity(0.6)),
+                  ),
+                  child: Center(
+                    child: Icon(entry.icon, color: entry.themeColor, size: 24),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        entry.classification.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: entry.themeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isUnlocked)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.orange.withOpacity(0.6)),
+                    ),
+                    child: const Text(
+                      'BLOQUEADA',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            // Manufacturer
+            Text(
+              'FABRICANTE: ${entry.manufacturer}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Rajdhani',
+                fontSize: 11,
+                color: Colors.white.withOpacity(0.55),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // Short summary of lore
+            Expanded(
+              child: Text(
+                entry.loreDescription,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 11.5,
+                  height: 1.25,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+            ),
+
+            const Divider(color: Colors.white10, height: 10),
+
+            // Evolution preview & Action
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, size: 12, color: Color(0xFFFFD700)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          entry.evolvedName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFFD700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: entry.themeColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: entry.themeColor.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.menu_book_rounded, size: 11, color: entry.themeColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'DOSSIÊ',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: entry.themeColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeaponDossierLightbox(WeaponCodexEntry entry) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          setState(() => _openedWeaponCodex = null);
+        },
+        child: Container(
+          color: Colors.black.withOpacity(0.94),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(24),
+          child: GestureDetector(
+            onTap: () {}, // Prevent closing when clicking inside modal
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 960, maxHeight: 620),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0C121C),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: entry.themeColor.withOpacity(0.85), width: 2.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: entry.themeColor.withOpacity(0.35),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Modal Header
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141D2B),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                      border: Border(bottom: BorderSide(color: entry.themeColor.withOpacity(0.4))),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: entry.themeColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(entry.icon, color: entry.themeColor, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    entry.name.toUpperCase(),
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: entry.themeColor.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: entry.themeColor.withOpacity(0.5)),
+                                    ),
+                                    child: Text(
+                                      entry.classification.toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: entry.themeColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'FABRICANTE: ${entry.manufacturer.toUpperCase()}',
+                                style: TextStyle(
+                                  fontFamily: 'Rajdhani',
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.65),
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Close Button
+                        IconButton(
+                          onPressed: () {
+                            widget.game.playSfx('menu_select.wav');
+                            setState(() => _openedWeaponCodex = null);
+                          },
+                          icon: const Icon(Icons.close, color: Colors.white70),
+                          tooltip: 'Fechar Dossiê',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Modal Body
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left Column: Schematics & Ratings (~320px)
+                          SizedBox(
+                            width: 320,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Hologram Emblem
+                                Container(
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF080D14),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: entry.themeColor.withOpacity(0.4)),
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        entry.themeColor.withOpacity(0.25),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      CustomPaint(
+                                        size: const Size(320, 160),
+                                        painter: _GridPatternPainter(entry.themeColor.withOpacity(0.1)),
+                                      ),
+                                      Icon(
+                                        entry.icon,
+                                        size: 64,
+                                        color: entry.themeColor,
+                                      ),
+                                      Positioned(
+                                        bottom: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.75),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: entry.themeColor.withOpacity(0.5)),
+                                          ),
+                                          child: Text(
+                                            entry.damageType.toUpperCase(),
+                                            style: TextStyle(
+                                              fontFamily: 'Rajdhani',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1.0,
+                                              color: entry.themeColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Ratings Bars
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF131A26),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'AVALIAÇÃO TÁTICA DE COMBATE',
+                                        style: TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildRatingRow('DANO BRUTO', entry.damageRating, entry.themeColor),
+                                      _buildRatingRow('CADÊNCIA', entry.fireRateRating, entry.themeColor),
+                                      _buildRatingRow('ALCANCE', entry.rangeRating, entry.themeColor),
+                                      _buildRatingRow('COMPLEXIDADE', entry.difficultyRating, Colors.amber),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Technical Specifications
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF131A26),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'ESPECIFICAÇÕES DE ENGENHARIA',
+                                        style: TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.0,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        entry.technicalSpecs,
+                                        style: TextStyle(
+                                          fontFamily: 'Rajdhani',
+                                          fontSize: 12.5,
+                                          height: 1.3,
+                                          color: Colors.white.withOpacity(0.85),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 18),
+
+                          // Right Column: Lore & Evolution
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Lore Section
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF131A26),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          Icon(Icons.history_edu_rounded, size: 16, color: Color(0xFF00E5FF)),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'HISTÓRICO MILITAR & LORE DIEGÉTICA',
+                                            style: TextStyle(
+                                              fontFamily: 'Orbitron',
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1.0,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        entry.loreDescription,
+                                        style: TextStyle(
+                                          fontFamily: 'Rajdhani',
+                                          fontSize: 13.5,
+                                          height: 1.45,
+                                          color: Colors.white.withOpacity(0.92),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Pilot Quote Box
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: entry.themeColor.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: entry.themeColor.withOpacity(0.35)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        entry.pilotQuote,
+                                        style: TextStyle(
+                                          fontFamily: 'Rajdhani',
+                                          fontSize: 13.5,
+                                          fontStyle: FontStyle.italic,
+                                          height: 1.3,
+                                          color: Colors.white.withOpacity(0.95),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          '— ${entry.pilotQuoteAuthor}',
+                                          style: TextStyle(
+                                            fontFamily: 'Orbitron',
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: entry.themeColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Legendary Super-Evolution Card
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFFFFD700).withOpacity(0.18),
+                                        const Color(0xFF131A26),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.6), width: 1.5),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: const [
+                                              Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 18),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'SUPER-EVOLUÇÃO LENDÁRIA',
+                                                style: TextStyle(
+                                                  fontFamily: 'Orbitron',
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 1.2,
+                                                  color: Color(0xFFFFD700),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFD700).withOpacity(0.25),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: const Color(0xFFFFD700)),
+                                            ),
+                                            child: const Text(
+                                              'MK MAX + SINERGIA',
+                                              style: TextStyle(
+                                                fontFamily: 'Orbitron',
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFFFFD700),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        entry.evolvedName,
+                                        style: const TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.2,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.link, size: 14, color: Color(0xFFFF80AB)),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              'PASSIVA NECESSÁRIA: ${entry.synergyPassiveTitle}',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontFamily: 'Rajdhani',
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFFFF80AB),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        entry.evolutionDescription,
+                                        style: TextStyle(
+                                          fontFamily: 'Rajdhani',
+                                          fontSize: 13,
+                                          height: 1.35,
+                                          color: Colors.white.withOpacity(0.9),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingRow(String label, int rating, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Rajdhani',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withOpacity(0.7),
+            ),
+          ),
+          Row(
+            children: List.generate(5, (index) {
+              return Icon(
+                index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                size: 13,
+                color: index < rating ? color : Colors.white24,
+              );
+            }),
+          ),
+        ],
+      ),
+    );
   }
 }
 
