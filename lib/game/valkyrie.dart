@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'weapons.dart';
 
 enum ValkyrieShipDesign {
+  zephyrBlade,  // Kaede: Ultra-sleek needle interceptor with swept katana-wings (Cyber Cyan/Midnight)
   solBlaze,     // Lyra: Aerodynamic twin-engine vanguard interceptor (Orange/Crimson)
   aegisPrism,   // Selene: High-tech crystalline prism with shield pylons (Cyan/Silver)
   eclipseFang,  // Vesper: Forward-swept wing stealth heavy fighter (Black/Magenta)
@@ -80,6 +81,38 @@ class Valkyrie {
   });
 
   static final List<Valkyrie> roster = [
+    // 0. KAEDE - The Voidblade Ace (Protagonista Principal)
+    Valkyrie(
+      id: 'kaede',
+      name: 'Kaede',
+      callsign: 'Shadow Lotus',
+      title: 'Voidblade Ace Pilot',
+      bio: 'Linhagem lendária de caçadoras de precisão do Cinturão de Kuiper. Silenciosa, esguia e com foco cirúrgico no cockpit, transforma combates espaciais em uma dança letal de lâminas taquiônicas.',
+      quote: '"Mente serena, gatilho limpo. O vácuo não perdoa hesitação."',
+      shipName: 'AV-00 Muramasa',
+      shipDesign: ValkyrieShipDesign.zephyrBlade,
+      baseHull: 85.0,
+      baseShield: 65.0,
+      speedMultiplier: 1.35,
+      magnetRadiusMultiplier: 1.25,
+      critChance: 0.20,
+      startingWeaponName: 'Tachyon Katana',
+      startingWeaponDesc: 'Lâminas de corte dimensional de altíssima velocidade com perfuração em linha.',
+      specialAbilityName: 'Phantom Slash',
+      specialAbilityDesc: 'Teletransporte para frente com 3.0s de invulnerabilidade e surto omnidirecional de 16 lâminas de vácuo.',
+      createStartingWeapon: () => TachyonKatana(),
+      speedRating: 5,
+      defenseRating: 2,
+      firepowerRating: 5,
+      primaryColor: const Color(0xFF00E5FF), // Cyber Cyan
+      accentColor: const Color(0xFF0D1B2A),  // Midnight Carbon
+      hudNeutralAsset: 'assets/art/valkyries/kaede/hud_neutral.png',
+      hudDamagedAsset: 'assets/art/valkyries/kaede/hud_damaged.png',
+      hudUltimateAsset: 'assets/art/valkyries/kaede/hud_ultimate.png',
+      hangarFullBodyAsset: 'assets/art/valkyries/kaede/hangar_fullbody.png',
+      shipAsset: 'assets/art/valkyries/kaede/ship_topdown.png',
+    ),
+
     // 1. LYRA - The Solar Vanguard
     Valkyrie(
       id: 'lyra',

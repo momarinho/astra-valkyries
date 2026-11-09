@@ -547,14 +547,18 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     // Handle active dash
     if (dashActiveTimer > 0) {
       dashActiveTimer = math.max(0.0, dashActiveTimer - dt);
-      final speed = (valkyrie?.id == 'lyra')
-          ? 520.0
-          : (valkyrie?.id == 'vesper' ? 440.0 : GameConstants.playerDashSpeed);
+      final speed = (valkyrie?.id == 'kaede')
+          ? 540.0
+          : (valkyrie?.id == 'lyra'
+              ? 520.0
+              : (valkyrie?.id == 'vesper' ? 440.0 : GameConstants.playerDashSpeed));
       velocity = dashDirection * speed;
       position += velocity * dt;
       enforceSectorBounds(dt);
 
-      final ghostColor = (valkyrie?.id == 'vesper') ? const Color(0xFFE040FB) : const Color(0xFFFF9100);
+      final ghostColor = (valkyrie?.id == 'kaede')
+          ? const Color(0xFF00E5FF)
+          : ((valkyrie?.id == 'vesper') ? const Color(0xFFE040FB) : const Color(0xFFFF9100));
       game.world.add(
         DashGhost(
           position: position,
@@ -945,6 +949,47 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     if (valkyrie != null) {
       switch (valkyrie!.shipDesign) {
+        case ValkyrieShipDesign.zephyrBlade:
+          // Kaede: Ultra-sleek needle interceptor with razor swept-back katana wings
+          final path = Path()
+            ..moveTo(0, -radius * 1.30) // Sharp needle apex
+            ..lineTo(-radius * 0.16, -radius * 0.65) // Fuselage taper L
+            ..lineTo(-radius * 0.32, -radius * 0.35) // Leading canard
+            ..lineTo(-radius * 0.20, -radius * 0.15)
+            ..lineTo(-radius * 0.95, radius * 0.50) // Razor wingtip L (katana blade)
+            ..lineTo(-radius * 0.50, radius * 0.38) // Trailing edge notch
+            ..lineTo(-radius * 0.22, radius * 0.90) // Sub-light thruster L
+            ..lineTo(0, radius * 0.60) // Tail centerline
+            ..lineTo(radius * 0.22, radius * 0.90) // Sub-light thruster R
+            ..lineTo(radius * 0.50, radius * 0.38) // Trailing edge notch
+            ..lineTo(radius * 0.95, radius * 0.50) // Razor wingtip R
+            ..lineTo(radius * 0.20, -radius * 0.15)
+            ..lineTo(radius * 0.32, -radius * 0.35)
+            ..lineTo(radius * 0.16, -radius * 0.65)
+            ..close();
+          canvas.drawPath(path, fillPaint);
+          Glow.heroStrokePath(canvas, path, const Color(0xFF00E5FF), width: GameConstants.lineWidth);
+
+          // Sleek Cyan Cockpit Canopy (Streamlined diamond)
+          final canopy = Path()
+            ..moveTo(0, -radius * 0.85)
+            ..lineTo(-radius * 0.12, -radius * 0.20)
+            ..lineTo(0, radius * 0.15)
+            ..lineTo(radius * 0.12, -radius * 0.20)
+            ..close();
+          canvas.drawPath(canopy, accentPaint);
+
+          // Energy Katana Edge Lines
+          final bladeEdgeL = Path()
+            ..moveTo(-radius * 0.20, -radius * 0.15)
+            ..lineTo(-radius * 0.95, radius * 0.50);
+          final bladeEdgeR = Path()
+            ..moveTo(radius * 0.20, -radius * 0.15)
+            ..lineTo(radius * 0.95, radius * 0.50);
+          Glow.strokePath(canvas, bladeEdgeL, const Color(0xFF80D8FF), width: 1.5, intensity: 0.9);
+          Glow.strokePath(canvas, bladeEdgeR, const Color(0xFF80D8FF), width: 1.5, intensity: 0.9);
+          return;
+
         case ValkyrieShipDesign.solBlaze:
           // Lyra: High-speed swept interceptor with aggressive forward canards
           final path = Path()

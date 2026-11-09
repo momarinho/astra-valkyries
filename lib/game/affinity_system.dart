@@ -129,6 +129,7 @@ class ValkyrieAffinity {
 /// Gerenciador Central de Afinidade e Galeria de Memórias
 class AffinityManager {
   final Map<String, ValkyrieAffinity> _affinities = {
+    'kaede': ValkyrieAffinity(valkyrieId: 'kaede'),
     'lyra': ValkyrieAffinity(valkyrieId: 'lyra'),
     'selene': ValkyrieAffinity(valkyrieId: 'selene'),
     'vesper': ValkyrieAffinity(valkyrieId: 'vesper'),
@@ -247,6 +248,32 @@ class AffinityManager {
 
   /// Diálogos Dinâmicos Reativos por Nível de Elo
   static final Map<String, List<PilotDialogue>> dialogues = {
+    'kaede': [
+      const PilotDialogue(
+        minBondLevel: 1,
+        text: '"A lâmina e a nave devem ser uma só. Estou pronta quando você estiver, Comandante."',
+      ),
+      const PilotDialogue(
+        minBondLevel: 1,
+        text: '"O vácuo é silencioso... Esse silêncio me acalma antes de cada corte."',
+      ),
+      const PilotDialogue(
+        minBondLevel: 2,
+        text: '"Você tem uma calma rara sob fogo cruzado. Pilotar ao seu lado é quase meditativo."',
+      ),
+      const PilotDialogue(
+        minBondLevel: 3,
+        text: '"Sabe... eu sempre voei sozinha. Mas quando suas mãos estão no controle tático, sinto que posso alcançar qualquer estrela."',
+      ),
+      const PilotDialogue(
+        minBondLevel: 4,
+        text: '"Soltei meu cabelo... no hangar, só com você aqui, não preciso manter a postura de ferro de uma espadachim."',
+      ),
+      const PilotDialogue(
+        minBondLevel: 5,
+        text: '"Minha espada e meu coração pertencem a você, Comandante. Onde você for, eu cortarei o seu caminho."',
+      ),
+    ],
     'lyra': [
       const PilotDialogue(
         minBondLevel: 1,
@@ -337,6 +364,8 @@ class AffinityManager {
     if (lastBoss != null && lastBoss.isNotEmpty) {
       if (wasVictory) {
         switch (valkyrieId) {
+          case 'kaede':
+            return '"$lastBoss caiu com um corte limpo. Nenhuma hesitação, nenhum atraso, Comandante."';
           case 'selene':
             return '"O padrão de ataque de $lastBoss foi completamente decodificado. Uma vitória cirúrgica, Comandante."';
           case 'vesper':
@@ -348,6 +377,8 @@ class AffinityManager {
         }
       } else {
         switch (valkyrieId) {
+          case 'kaede':
+            return '"A lâmina errou por um milímetro contra $lastBoss... Meditarei sobre essa falha e não errarei de novo."';
           case 'selene':
             return '"Recalibrando escudos após o confronto com $lastBoss. Ajustei a matriz de fase para não sermos surpreendidos novamente."';
           case 'vesper':

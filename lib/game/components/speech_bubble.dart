@@ -49,6 +49,8 @@ class SpeechBubbleComponent extends PositionComponent
     switch (trigger) {
       case SpeechTrigger.hyperspaceJump:
         switch (valkyrieId) {
+          case 'kaede':
+            return 'Salto de dobra concluído. Respiração firme... corte no primeiro instante.';
           case 'selene':
             return 'Sensores quânticos calibrados. Iniciando varredura tática do setor.';
           case 'vesper':
@@ -61,6 +63,8 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.bossArrival:
         switch (valkyrieId) {
+          case 'kaede':
+            return 'Assinatura de combate confirmada. Cortarei suas defesas em um só golpe.';
           case 'selene':
             return 'Assinatura de massa colossal detectada! Mantenham distância segura!';
           case 'vesper':
@@ -73,6 +77,8 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.criticalHull:
         switch (valkyrieId) {
+          case 'kaede':
+            return 'Casco sob estresse crítico... Hora de acelerar o pulso e não hesitar.';
           case 'selene':
             return 'Alerta vermelho! Integridade estrutural abaixo de 25%! Preciso de reparos!';
           case 'vesper':
@@ -85,6 +91,8 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.superWeapon:
         switch (valkyrieId) {
+          case 'kaede':
+            return 'Lâmina de Tácions desembainhada... Juízo Dimensional do Vazio!';
           case 'selene':
             return 'Limitadores removidos! Liberando feixe de Zero Absoluto!';
           case 'vesper':
@@ -97,6 +105,8 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.flawlessVictory:
         switch (valkyrieId) {
+          case 'kaede':
+            return 'Nenhum movimento desperdiçado. A lâmina permanece afiada.';
           case 'selene':
             return 'Alvo neutralizado com 100% de integridade. Cálculos perfeitos.';
           case 'vesper':

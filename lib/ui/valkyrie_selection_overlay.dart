@@ -2390,6 +2390,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     children: [
                       _buildGalleryFilterChip('all', 'TODAS'),
                       const SizedBox(width: 8),
+                      _buildGalleryFilterChip('kaede', 'KAEDE'),
+                      const SizedBox(width: 8),
                       _buildGalleryFilterChip('lyra', 'LYRA'),
                       const SizedBox(width: 8),
                       _buildGalleryFilterChip('selene', 'SELENE'),

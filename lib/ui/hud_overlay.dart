@@ -423,13 +423,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                       ),
                                       child: Center(
                                         child: Icon(
-                                          valkyrie.shipDesign == ValkyrieShipDesign.solBlaze
-                                              ? Icons.local_fire_department
-                                              : (valkyrie.shipDesign == ValkyrieShipDesign.aegisPrism
-                                                  ? Icons.shield
-                                                  : (valkyrie.shipDesign == ValkyrieShipDesign.originPrime
-                                                      ? Icons.auto_awesome
-                                                      : Icons.all_inclusive)),
+                                          valkyrie.shipDesign == ValkyrieShipDesign.zephyrBlade
+                                              ? Icons.flash_on
+                                              : (valkyrie.shipDesign == ValkyrieShipDesign.solBlaze
+                                                  ? Icons.local_fire_department
+                                                  : (valkyrie.shipDesign == ValkyrieShipDesign.aegisPrism
+                                                      ? Icons.shield
+                                                      : (valkyrie.shipDesign == ValkyrieShipDesign.originPrime
+                                                          ? Icons.auto_awesome
+                                                          : Icons.all_inclusive))),
                                           color: valkyrie.accentColor,
                                           size: 28,
                                         ),

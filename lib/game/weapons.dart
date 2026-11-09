@@ -99,6 +99,9 @@ abstract class Weapon {
       case 'void_mines':
         return 'Minas magnéticas de contenção usadas por caçadoras furtivas. '
             'Flutuam silenciosamente no rastro da nave, aguardando perseguidores gananciosos demais.';
+      case 'tachyon_katana':
+        return 'Forjada nos estaleiros orbitais de Kyoto-7. Esta lâmina condensa táquions em uma fita de plasma '
+            'de espessura atômica. Dizem que seu corte rasga a geometria do vácuo antes mesmo do dedo tocar o gatilho.';
       default:
         return 'Relíquia bélica registrada nos arquivos confidenciais do Protocolo Void.';
     }
@@ -117,6 +120,7 @@ abstract class Weapon {
     'inferno_cone',
     'valkyrie_wingmen',
     'void_mines',
+    'tachyon_katana',
   ];
 
   static Weapon createById(String id) {
@@ -145,6 +149,8 @@ abstract class Weapon {
         return ValkyrieWingmen();
       case 'void_mines':
         return VoidClusterMines();
+      case 'tachyon_katana':
+        return TachyonKatana();
       default:
         return Blaster();
     }
@@ -1005,5 +1011,120 @@ class VoidClusterMines extends Weapon {
   void applyEvolution() {
     cooldown = 0.85;
     damage = 95.0;
+  }
+}
+
+/// 13. Tachyon Katana -> Void Muramasa (Lâminas de Corte Dimensional de Alta Velocidade)
+class TachyonKatana extends Weapon {
+  TachyonKatana()
+      : super(
+          id: 'tachyon_katana',
+          name: 'Tachyon Katana',
+          evolvedName: 'Void Muramasa',
+          cooldown: 0.55,
+          recoil: 3.5,
+          muzzleFlashSize: 9.0,
+          damage: 22.0,
+        );
+
+  @override
+  bool fire(PlayerComponent player) {
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
+
+    // Super-Evolution: Void Muramasa (Triple cutting dimensional slashes with infinite pierce)
+    if (isEvolved) {
+      final right = Vector2(-player.forward.y, player.forward.x);
+      for (final offset in [-12.0, 0.0, 12.0]) {
+        final spawnPos = player.position + player.forward * player.radius + right * offset;
+        final bullet = BulletComponent(
+          position: spawnPos,
+          radius: 5.5,
+          velocity: player.forward * (GameConstants.playerShootSpeed + 180.0),
+          lifeTimer: GameConstants.shotLifetimeSeconds * 1.4,
+          damage: effectiveDamage,
+          color: const Color(0xFF00E5FF), // Cyber Cyan Blade
+          piercesLeft: 99, // Dimensional infinite pierce
+        );
+        player.game.world.add(bullet);
+      }
+      return true;
+    }
+
+    if (level >= 3) {
+      // 3 diverging slashes
+      final angles = [-14.0, 0.0, 14.0];
+      for (final angleDeg in angles) {
+        final angleRad = angleDeg * math.pi / 180.0;
+        final shootAngle = player.angle + angleRad;
+        final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
+        final bullet = BulletComponent(
+          position: player.position + player.forward * player.radius,
+          radius: 4.2,
+          velocity: dir * (GameConstants.playerShootSpeed + 90.0),
+          lifeTimer: GameConstants.shotLifetimeSeconds * 1.1,
+          damage: effectiveDamage,
+          color: const Color(0xFF00F0FF),
+          piercesLeft: 4,
+        );
+        player.game.world.add(bullet);
+      }
+      return true;
+    }
+
+    if (level == 2) {
+      // Dual parallel slashes
+      final right = Vector2(-player.forward.y, player.forward.x);
+      for (final offset in [-7.0, 7.0]) {
+        final spawnPos = player.position + player.forward * player.radius + right * offset;
+        final bullet = BulletComponent(
+          position: spawnPos,
+          radius: 3.8,
+          velocity: player.forward * (GameConstants.playerShootSpeed + 60.0),
+          lifeTimer: GameConstants.shotLifetimeSeconds,
+          damage: effectiveDamage,
+          color: const Color(0xFF00E5FF),
+          piercesLeft: 3,
+        );
+        player.game.world.add(bullet);
+      }
+      return true;
+    }
+
+    // Level 1: Single razor blade of tachyon plasma
+    final bullet = BulletComponent(
+      position: player.position + player.forward * player.radius,
+      radius: 3.5,
+      velocity: player.forward * (GameConstants.playerShootSpeed + 45.0),
+      lifeTimer: GameConstants.shotLifetimeSeconds,
+      damage: effectiveDamage,
+      color: const Color(0xFF00E5FF),
+      piercesLeft: 2,
+    );
+    player.game.world.add(bullet);
+    return true;
+  }
+
+  @override
+  void applyUpgradeStats() {
+    if (level == 2) {
+      cooldown = 0.45;
+      recoil = 2.5;
+      damage = 35.0;
+      muzzleFlashSize = 11.0;
+    } else if (level >= 3) {
+      cooldown = 0.38;
+      recoil = 1.5;
+      damage = 48.0;
+      muzzleFlashSize = 13.0;
+    }
+  }
+
+  @override
+  void applyEvolution() {
+    cooldown = 0.20;
+    recoil = 1.0;
+    damage = 110.0;
+    muzzleFlashSize = 16.0;
   }
 }

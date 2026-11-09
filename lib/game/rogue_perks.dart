@@ -132,6 +132,14 @@ class WeaponSynergy {
       evolutionDescription: 'Deploys 3 rear dark-matter cluster mines that freeze and rupture pursuing hordes.',
       evolutionIcon: Icons.brightness_low_rounded,
     ),
+    WeaponSynergy(
+      weaponId: 'tachyon_katana',
+      passiveId: 'passive_overdrive',
+      passiveTitle: 'Void Catalyst',
+      evolvedName: 'Void Muramasa',
+      evolutionDescription: 'Triple dimensional plasma slashes cutting through reality with infinite line penetration.',
+      evolutionIcon: Icons.flash_on_rounded,
+    ),
   ];
 
   static WeaponSynergy? findByWeaponId(String weaponId) {

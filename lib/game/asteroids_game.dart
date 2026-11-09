@@ -2210,6 +2210,30 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     triggerSpeechBubble(SpeechTrigger.superWeapon);
 
     switch (selectedValkyrie.id) {
+      case 'kaede':
+        // Phantom Slash: 3.0s invulnerability, instant 500px forward blink & 16-way radial tachyon katana blades
+        player.invulnerableTimer = 3.0;
+        player.position += player.forward * 120.0;
+        player.velocity = player.forward * 480.0;
+        triggerScreenShake(duration: 0.4, intensity: 10.0);
+        const bladesCount = 16;
+        const stepKaede = (2 * math.pi) / bladesCount;
+        for (int i = 0; i < bladesCount; i++) {
+          final ang = i * stepKaede;
+          final dir = Vector2(math.cos(ang), math.sin(ang));
+          final bullet = BulletComponent(
+            position: player.position + dir * (player.radius + 4.0),
+            radius: 4.5,
+            velocity: dir * 580.0,
+            lifeTimer: 0.85,
+            damage: 55.0,
+            color: const Color(0xFF00E5FF),
+            piercesLeft: 99,
+          );
+          world.add(bullet);
+        }
+        break;
+
       case 'lyra':
         // Hyper-Overdrive Dash: 300% thrust boost, 3.5s invulnerability, fires blazing plasma spread trail
         player.invulnerableTimer = 3.5;

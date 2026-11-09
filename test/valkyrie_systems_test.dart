@@ -14,23 +14,27 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Astra Valkyries Pilot & Vessel Roster Tests', () {
-    test('Roster contains the 3 primary archetypes: Lyra, Selene, Vesper', () {
-      expect(Valkyrie.roster.length, equals(3));
+    test('Roster contains the 4 primary archetypes: Kaede (Protagonist), Lyra, Selene, Vesper', () {
+      expect(Valkyrie.roster.length, equals(4));
 
       final ids = Valkyrie.roster.map((v) => v.id).toList();
-      expect(ids, containsAll(['lyra', 'selene', 'vesper']));
+      expect(ids, containsAll(['kaede', 'lyra', 'selene', 'vesper']));
+      expect(Valkyrie.defaultValkyrie.id, equals('kaede'));
     });
 
     test('Each Valkyrie defines unique ship designs, weapons and distinct stat multipliers', () {
+      final kaede = Valkyrie.findById('kaede');
       final lyra = Valkyrie.findById('lyra');
       final selene = Valkyrie.findById('selene');
       final vesper = Valkyrie.findById('vesper');
 
+      expect(kaede.shipDesign, equals(ValkyrieShipDesign.zephyrBlade));
       expect(lyra.shipDesign, equals(ValkyrieShipDesign.solBlaze));
       expect(selene.shipDesign, equals(ValkyrieShipDesign.aegisPrism));
       expect(vesper.shipDesign, equals(ValkyrieShipDesign.eclipseFang));
 
-      // Speed multipliers reflect archetypes (Lyra vanguard is fastest)
+      // Kaede (flagship agile ace) is fastest
+      expect(kaede.speedMultiplier, greaterThan(lyra.speedMultiplier));
       expect(lyra.speedMultiplier, greaterThan(selene.speedMultiplier));
 
       // Selene tactician has largest magnet radius for Stardust collection
@@ -41,6 +45,7 @@ void main() {
       expect(vesper.critChance, greaterThan(selene.critChance));
 
       // Starting weapons can be instantiated
+      expect(kaede.createStartingWeapon(), isA<TachyonKatana>());
       expect(lyra.createStartingWeapon(), isNotNull);
       expect(selene.createStartingWeapon(), isNotNull);
       expect(vesper.createStartingWeapon(), isNotNull);

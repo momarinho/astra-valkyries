@@ -98,9 +98,10 @@ void main() {
         InfernoPlasmaCone(),
         ValkyrieWingmen(),
         VoidClusterMines(),
+        TachyonKatana(),
       ];
 
-      expect(WeaponSynergy.allSynergies.length, equals(12));
+      expect(WeaponSynergy.allSynergies.length, equals(13));
 
       for (final w in allWeapons) {
         expect(w.fire(player), isTrue, reason: 'Weapon ${w.id} should fire at MK 1');
