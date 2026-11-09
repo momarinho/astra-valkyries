@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/weapons.dart';
 
 enum PerkType {
@@ -235,160 +236,162 @@ class RoguePerkGenerator {
       }
     }
 
-    // 1. New Arsenal Weapons (if not yet unlocked in current run)
-    if (!player.unlockedWeapons.containsKey('blaster')) {
-      standardPool.add(
-        RoguePerk(
-          id: 'new_blaster',
-          title: 'Pulse Blaster',
-          description: 'Precision twin-bolt plasma cannon with high projectile speed and balanced power. [Sinergia: Void Catalyst]',
-          type: PerkType.newWeapon,
-          rarity: PerkRarity.common,
-          icon: Icons.flash_on,
-          accentColor: const Color(0xFFFF5722),
-          onSelect: (g) {
-            g.player.addWeapon(Blaster());
-          },
-        ),
-      );
-    }
-
-    if (!player.unlockedWeapons.containsKey('spread_shot')) {
-      standardPool.add(
-        RoguePerk(
-          id: 'new_spread_shot',
-          title: 'Spread Cannon',
-          description: 'Fires a 3-way fan of plasma projectiles covering a wide frontal arc. [Sinergia: Aegis Capacitor]',
-          type: PerkType.newWeapon,
-          rarity: PerkRarity.rare,
-          icon: Icons.grain,
-          accentColor: const Color(0xFF00E676),
-          onSelect: (g) {
-            g.player.addWeapon(SpreadShot());
-          },
-        ),
-      );
-    }
-
-    if (!player.unlockedWeapons.containsKey('rapid_fire')) {
-      standardPool.add(
-        RoguePerk(
-          id: 'new_rapid_fire',
-          title: 'Phase Laser',
-          description: 'High-frequency photon beam with blazing fire rate and line piercing. [Sinergia: Overclocked Emitters]',
-          type: PerkType.newWeapon,
-          rarity: PerkRarity.rare,
-          icon: Icons.fast_forward,
-          accentColor: const Color(0xFF2979FF),
-          onSelect: (g) {
-            g.player.addWeapon(RapidFire());
-          },
-        ),
-      );
-    }
-
-    if (!player.unlockedWeapons.containsKey('bomb_launcher')) {
-      standardPool.add(
-        RoguePerk(
-          id: 'new_bomb_launcher',
-          title: 'Antimatter Torpedo',
-          description: 'Heavy explosive warheads detonating in a massive destructive shockwave. [Sinergia: Magnetic Harvester]',
-          type: PerkType.newWeapon,
-          rarity: PerkRarity.epic,
-          icon: Icons.gps_fixed,
-          accentColor: const Color(0xFFFF6D00),
-          onSelect: (g) {
-            g.player.addWeapon(BombLauncher());
-          },
-        ),
-      );
-    }
-
-    // 1B. Phase 2 Expanded Arsenal (8 New Elemental & Orbital Weapons)
-    final expandedWeapons = <(String id, String title, String desc, PerkRarity rarity, IconData icon, Color color)>[
-      (
-        'aegis_sawblades',
-        'Aegis Sawblades',
-        'Lâminas orbitais que giram ao redor da nave bloqueando tiros e serrando enxames. [Sinergia: Aegis Capacitor]',
-        PerkRarity.rare,
-        Icons.rotate_right_rounded,
-        const Color(0xFF00E5FF),
-      ),
-      (
-        'tesla_arc',
-        'Tesla Arc Cannon',
-        'Corrente elétrica que salta entre múltiplos inimigos aplicando ⚡ Ion Shock. [Sinergia: Overclocked Emitters]',
-        PerkRarity.rare,
-        Icons.electric_bolt_rounded,
-        const Color(0xFF80D8FF),
-      ),
-      (
-        'quantum_chakram',
-        'Quantum Chakram',
-        'Disco bumerangue que atravessa inimigos na ida e volta com 165% de dano. [Sinergia: Quantum Thrusters]',
-        PerkRarity.rare,
-        Icons.all_out_rounded,
-        const Color(0xFF00E676),
-      ),
-      (
-        'repulsor_aura',
-        'Repulsor Gravity Aura',
-        'Pulso gravitacional 360° que aplica 🟣 Void Rupture e empurra enxames. [Sinergia: Magnetic Harvester]',
-        PerkRarity.rare,
-        Icons.radar_rounded,
-        const Color(0xFFE040FB),
-      ),
-      (
-        'solar_lance',
-        'Solar Thermal Lance',
-        'Feixe laser contínuo de fusão que perfura alvos aplicando 🔥 Solar Burn. [Sinergia: Void Catalyst]',
-        PerkRarity.epic,
-        Icons.wb_sunny_rounded,
-        const Color(0xFFFF5722),
-      ),
-      (
-        'inferno_cone',
-        'Inferno Plasma Cone',
-        'Lança-chamas espacial em cone que incinera hordas com 🔥 Solar Burn. [Sinergia: Void Catalyst]',
-        PerkRarity.common,
-        Icons.local_fire_department_rounded,
-        const Color(0xFFFF9100),
-      ),
-      (
-        'valkyrie_wingmen',
-        'Valkyrie Wingmen',
-        'Drones aliados autônomos que escoltam a nave e caçam inimigos próximos. [Sinergia: Overclocked Emitters]',
-        PerkRarity.epic,
-        Icons.flight_class_rounded,
-        const Color(0xFF00B0FF),
-      ),
-      (
-        'void_mines',
-        'Void Cluster Mines',
-        'Minas traseiras de matéria escura ideais para Kiting na ré (🟣 Void Rupture). [Sinergia: Quantum Thrusters]',
-        PerkRarity.rare,
-        Icons.brightness_low_rounded,
-        const Color(0xFFAA00FF),
-      ),
-    ];
-
-    for (final wInfo in expandedWeapons) {
-      if (!player.unlockedWeapons.containsKey(wInfo.$1) &&
-          game.isWeaponUnlockedInPool(wInfo.$1)) {
+    // 1. New Arsenal Weapons (if not yet unlocked and inventory has free slots - Vampire Survivors 5 slots max)
+    if (player.activeWeapons.length < PlayerComponent.maxArsenalSlots) {
+      if (!player.unlockedWeapons.containsKey('blaster')) {
         standardPool.add(
           RoguePerk(
-            id: 'new_${wInfo.$1}',
-            title: wInfo.$2,
-            description: wInfo.$3,
+            id: 'new_blaster',
+            title: 'Pulse Blaster',
+            description: 'Precision twin-bolt plasma cannon with high projectile speed and balanced power. [Sinergia: Void Catalyst]',
             type: PerkType.newWeapon,
-            rarity: wInfo.$4,
-            icon: wInfo.$5,
-            accentColor: wInfo.$6,
+            rarity: PerkRarity.common,
+            icon: Icons.flash_on,
+            accentColor: const Color(0xFFFF5722),
             onSelect: (g) {
-              g.player.addWeapon(Weapon.createById(wInfo.$1));
+              g.player.addWeapon(Blaster());
             },
           ),
         );
+      }
+
+      if (!player.unlockedWeapons.containsKey('spread_shot')) {
+        standardPool.add(
+          RoguePerk(
+            id: 'new_spread_shot',
+            title: 'Spread Cannon',
+            description: 'Fires a 3-way fan of plasma projectiles covering a wide frontal arc. [Sinergia: Aegis Capacitor]',
+            type: PerkType.newWeapon,
+            rarity: PerkRarity.rare,
+            icon: Icons.grain,
+            accentColor: const Color(0xFF00E676),
+            onSelect: (g) {
+              g.player.addWeapon(SpreadShot());
+            },
+          ),
+        );
+      }
+
+      if (!player.unlockedWeapons.containsKey('rapid_fire')) {
+        standardPool.add(
+          RoguePerk(
+            id: 'new_rapid_fire',
+            title: 'Phase Laser',
+            description: 'High-frequency photon beam with blazing fire rate and line piercing. [Sinergia: Overclocked Emitters]',
+            type: PerkType.newWeapon,
+            rarity: PerkRarity.rare,
+            icon: Icons.fast_forward,
+            accentColor: const Color(0xFF2979FF),
+            onSelect: (g) {
+              g.player.addWeapon(RapidFire());
+            },
+          ),
+        );
+      }
+
+      if (!player.unlockedWeapons.containsKey('bomb_launcher')) {
+        standardPool.add(
+          RoguePerk(
+            id: 'new_bomb_launcher',
+            title: 'Antimatter Torpedo',
+            description: 'Heavy explosive warheads detonating in a massive destructive shockwave. [Sinergia: Magnetic Harvester]',
+            type: PerkType.newWeapon,
+            rarity: PerkRarity.epic,
+            icon: Icons.gps_fixed,
+            accentColor: const Color(0xFFFF6D00),
+            onSelect: (g) {
+              g.player.addWeapon(BombLauncher());
+            },
+          ),
+        );
+      }
+
+      // 1B. Phase 2 Expanded Arsenal (8 New Elemental & Orbital Weapons)
+      final expandedWeapons = <(String id, String title, String desc, PerkRarity rarity, IconData icon, Color color)>[
+        (
+          'aegis_sawblades',
+          'Aegis Sawblades',
+          'Lâminas orbitais que giram ao redor da nave bloqueando tiros e serrando enxames. [Sinergia: Aegis Capacitor]',
+          PerkRarity.rare,
+          Icons.rotate_right_rounded,
+          const Color(0xFF00E5FF),
+        ),
+        (
+          'tesla_arc',
+          'Tesla Arc Cannon',
+          'Corrente elétrica que salta entre múltiplos inimigos aplicando ⚡ Ion Shock. [Sinergia: Overclocked Emitters]',
+          PerkRarity.rare,
+          Icons.electric_bolt_rounded,
+          const Color(0xFF80D8FF),
+        ),
+        (
+          'quantum_chakram',
+          'Quantum Chakram',
+          'Disco bumerangue que atravessa inimigos na ida e volta com 165% de dano. [Sinergia: Quantum Thrusters]',
+          PerkRarity.rare,
+          Icons.all_out_rounded,
+          const Color(0xFF00E676),
+        ),
+        (
+          'repulsor_aura',
+          'Repulsor Gravity Aura',
+          'Pulso gravitacional 360° que aplica 🟣 Void Rupture e empurra enxames. [Sinergia: Magnetic Harvester]',
+          PerkRarity.rare,
+          Icons.radar_rounded,
+          const Color(0xFFE040FB),
+        ),
+        (
+          'solar_lance',
+          'Solar Thermal Lance',
+          'Feixe laser contínuo de fusão que perfura alvos aplicando 🔥 Solar Burn. [Sinergia: Void Catalyst]',
+          PerkRarity.epic,
+          Icons.wb_sunny_rounded,
+          const Color(0xFFFF5722),
+        ),
+        (
+          'inferno_cone',
+          'Inferno Plasma Cone',
+          'Lança-chamas espacial em cone que incinera hordas com 🔥 Solar Burn. [Sinergia: Void Catalyst]',
+          PerkRarity.common,
+          Icons.local_fire_department_rounded,
+          const Color(0xFFFF9100),
+        ),
+        (
+          'valkyrie_wingmen',
+          'Valkyrie Wingmen',
+          'Drones aliados autônomos que escoltam a nave e caçam inimigos próximos. [Sinergia: Overclocked Emitters]',
+          PerkRarity.epic,
+          Icons.flight_class_rounded,
+          const Color(0xFF00B0FF),
+        ),
+        (
+          'void_mines',
+          'Void Cluster Mines',
+          'Minas traseiras de matéria escura ideais para Kiting na ré (🟣 Void Rupture). [Sinergia: Quantum Thrusters]',
+          PerkRarity.rare,
+          Icons.brightness_low_rounded,
+          const Color(0xFFAA00FF),
+        ),
+      ];
+
+      for (final wInfo in expandedWeapons) {
+        if (!player.unlockedWeapons.containsKey(wInfo.$1) &&
+            game.isWeaponUnlockedInPool(wInfo.$1)) {
+          standardPool.add(
+            RoguePerk(
+              id: 'new_${wInfo.$1}',
+              title: wInfo.$2,
+              description: wInfo.$3,
+              type: PerkType.newWeapon,
+              rarity: wInfo.$4,
+              icon: wInfo.$5,
+              accentColor: wInfo.$6,
+              onSelect: (g) {
+                g.player.addWeapon(Weapon.createById(wInfo.$1));
+              },
+            ),
+          );
+        }
       }
     }
 

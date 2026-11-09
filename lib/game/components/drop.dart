@@ -145,7 +145,7 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         break;
 
       case DropType.health:
-        final healAmount = (game.player.maxHp * 0.30).clamp(25.0, 45.0);
+        const healAmount = 20.0;
         game.player.heal(healAmount);
         game.spawnFloatingText(
           position,

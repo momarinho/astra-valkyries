@@ -196,7 +196,7 @@ class Blaster extends Weapon {
           radius: GameConstants.shotRadius,
           velocity: player.forward * (GameConstants.playerShootSpeed + 40.0),
           lifeTimer: GameConstants.shotLifetimeSeconds,
-          damage: effectiveDamage,
+          damage: effectiveDamage * 0.60,
           piercesLeft: player.pierceCount,
         );
         player.game.world.add(bullet);
@@ -225,9 +225,9 @@ class Blaster extends Weapon {
       damage = 75.0;
       muzzleFlashSize = 10.0;
     } else if (level >= 3) {
-      cooldown = 0.35;
+      cooldown = 0.45;
       recoil = 5.0;
-      damage = 100.0;
+      damage = 85.0;
       muzzleFlashSize = 12.0;
     }
   }
@@ -271,7 +271,7 @@ class SpreadShot extends Weapon {
           radius: 4.8,
           velocity: direction * speed,
           lifeTimer: 0.85,
-          damage: effectiveDamage,
+          damage: effectiveDamage * 0.55,
           color: const Color(0xFFFF5252), // Flak Red
           piercesLeft: 2,
         );
@@ -288,6 +288,7 @@ class SpreadShot extends Weapon {
     final speedMultiplier = 1.0 + (level - 1) * 0.12;
     final baseSpeed = GameConstants.playerShootSpeed * 0.95 * speedMultiplier;
     final lifeTime = 0.75 + (level - 1) * 0.06;
+    final pelletDamage = level >= 3 ? effectiveDamage * 0.60 : effectiveDamage;
 
     for (final angleDeg in angles) {
       final angleRad = angleDeg * math.pi / 180.0;
@@ -303,7 +304,7 @@ class SpreadShot extends Weapon {
         radius: 3.5 + (level >= 3 ? 0.8 : 0.0),
         velocity: direction * baseSpeed,
         lifeTimer: lifeTime,
-        damage: effectiveDamage,
+        damage: pelletDamage,
         piercesLeft: player.pierceCount,
       );
       player.game.world.add(bullet);
@@ -319,9 +320,9 @@ class SpreadShot extends Weapon {
       damage = 42.0;
       muzzleFlashSize = 13.0;
     } else if (level >= 3) {
-      cooldown = 0.52;
+      cooldown = 0.62;
       recoil = 6.0;
-      damage = 55.0;
+      damage = 50.0;
       muzzleFlashSize = 15.0;
     }
   }
@@ -388,9 +389,9 @@ class RapidFire extends Weapon {
       damage = 26.0;
       muzzleFlashSize = 8.0;
     } else if (level >= 3) {
-      cooldown = 0.14;
-      recoil = 1.5;
-      damage = 34.0;
+      cooldown = 0.18;
+      recoil = 1.8;
+      damage = 30.0;
       muzzleFlashSize = 9.0;
     }
   }
@@ -454,7 +455,7 @@ class BombLauncher extends Weapon {
     }
 
     final velocity = fireDir * speed;
-    final explosionRadius = (isEvolved ? 150.0 : 95.0) + (level - 1) * 20.0;
+    final explosionRadius = (isEvolved ? 140.0 : 95.0) + (level - 1) * 15.0;
 
     final bomb = BombComponent(
       position: player.position + fireDir * player.radius,
@@ -475,18 +476,18 @@ class BombLauncher extends Weapon {
       damage = 240.0;
       muzzleFlashSize = 22.0;
     } else if (level >= 3) {
-      cooldown = 1.00;
-      recoil = 10.0;
-      damage = 320.0;
-      muzzleFlashSize = 26.0;
+      cooldown = 1.25;
+      recoil = 12.0;
+      damage = 270.0;
+      muzzleFlashSize = 25.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 1.25;
+    cooldown = 0.95;
     recoil = 8.0;
-    damage = 420.0;
+    damage = 340.0;
     muzzleFlashSize = 28.0;
   }
 }
@@ -535,17 +536,17 @@ class AegisSawblades extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 3.2;
-      damage = 62.0;
+      damage = 45.0;
     } else if (level >= 3) {
-      cooldown = 2.6;
-      damage = 85.0;
+      cooldown = 2.8;
+      damage = 55.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 2.0;
-    damage = 135.0;
+    cooldown = 2.2;
+    damage = 75.0;
   }
 }
 
@@ -638,18 +639,18 @@ class TeslaArcCannon extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.72;
-      damage = 68.0;
+      cooldown = 0.75;
+      damage = 52.0;
     } else if (level >= 3) {
-      cooldown = 0.56;
-      damage = 90.0;
+      cooldown = 0.62;
+      damage = 64.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.36;
-    damage = 140.0;
+    cooldown = 0.48;
+    damage = 90.0;
   }
 }
 
@@ -692,17 +693,17 @@ class QuantumChakram extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 1.05;
-      damage = 75.0;
+      damage = 68.0;
     } else if (level >= 3) {
-      cooldown = 0.90;
-      damage = 95.0;
+      cooldown = 0.95;
+      damage = 52.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.80;
-    damage = 125.0;
+    cooldown = 0.85;
+    damage = 62.0;
   }
 }
 
@@ -738,18 +739,18 @@ class RepulsorGravityAura extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 1.25;
-      damage = 58.0;
+      cooldown = 1.20;
+      damage = 48.0;
     } else if (level >= 3) {
       cooldown = 1.05;
-      damage = 75.0;
+      damage = 60.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.95;
-    damage = 110.0;
+    cooldown = 0.90;
+    damage = 85.0;
   }
 }
 
@@ -818,18 +819,18 @@ class SolarThermalLance extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.50;
-      damage = 105.0;
+      cooldown = 0.58;
+      damage = 78.0;
     } else if (level >= 3) {
-      cooldown = 0.38;
-      damage = 135.0;
+      cooldown = 0.46;
+      damage = 98.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.24;
-    damage = 195.0;
+    cooldown = 0.35;
+    damage = 135.0;
   }
 }
 
@@ -874,18 +875,18 @@ class InfernoPlasmaCone extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.22;
-      damage = 32.0;
+      cooldown = 0.24;
+      damage = 24.0;
     } else if (level >= 3) {
-      cooldown = 0.16;
-      damage = 44.0;
+      cooldown = 0.20;
+      damage = 28.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.11;
-    damage = 68.0;
+    cooldown = 0.16;
+    damage = 36.0;
   }
 }
 
@@ -928,17 +929,17 @@ class ValkyrieWingmen extends Weapon {
   void applyUpgradeStats() {
     if (level == 2) {
       cooldown = 4.0;
-      damage = 46.0;
+      damage = 34.0;
     } else if (level >= 3) {
-      cooldown = 3.5;
-      damage = 60.0;
+      cooldown = 3.6;
+      damage = 42.0;
     }
   }
 
   @override
   void applyEvolution() {
     cooldown = 3.0;
-    damage = 88.0;
+    damage = 58.0;
   }
 }
 
@@ -980,17 +981,17 @@ class VoidClusterMines extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 1.15;
-      damage = 150.0;
+      cooldown = 1.20;
+      damage = 125.0;
     } else if (level >= 3) {
-      cooldown = 0.92;
-      damage = 195.0;
+      cooldown = 1.05;
+      damage = 110.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.68;
-    damage = 275.0;
+    cooldown = 0.85;
+    damage = 135.0;
   }
 }

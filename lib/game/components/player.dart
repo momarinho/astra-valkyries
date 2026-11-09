@@ -84,6 +84,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     hp = (hp + amount).clamp(0.0, maxHp);
   }
 
+  static const int maxArsenalSlots = 5;
+
   final List<Weapon> activeWeapons = [];
   final Map<String, Weapon> unlockedWeapons = {};
 
@@ -179,6 +181,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
   void addWeapon(Weapon newWeapon) {
     if (!unlockedWeapons.containsKey(newWeapon.id)) {
+      if (activeWeapons.length >= maxArsenalSlots) {
+        return;
+      }
       unlockedWeapons[newWeapon.id] = newWeapon;
       activeWeapons.add(newWeapon);
       newWeapon.currentCooldown = 0.0;

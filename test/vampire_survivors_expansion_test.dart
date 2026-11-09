@@ -201,4 +201,53 @@ void main() {
       expect(find.text('ASTRAEA'), findsWidgets);
     });
   });
+
+  group('Vampire Survivors Arsenal & Health Economy Calibration Tests', () {
+    test('Player arsenal caps at 5 slots and perk generator stops offering new weapons', () {
+      final game = AsteroidsGame();
+      final player = PlayerComponent(position: Vector2.zero())..customGame = game;
+      game.player = player;
+
+      expect(PlayerComponent.maxArsenalSlots, equals(5));
+      // Player starts with Blaster (slot 1)
+      expect(player.activeWeapons.length, equals(1));
+      expect(player.activeWeapons.first.level, equals(1));
+
+      // Fill remaining 4 slots
+      player.addWeapon(SpreadShot());
+      player.addWeapon(RapidFire());
+      player.addWeapon(BombLauncher());
+      player.addWeapon(AegisSawblades());
+
+      expect(player.activeWeapons.length, equals(5));
+
+      // Attempting to add a 6th weapon is blocked
+      player.addWeapon(TeslaArcCannon());
+      expect(player.activeWeapons.length, equals(5));
+      expect(player.unlockedWeapons.containsKey('tesla_arc'), isFalse);
+
+      // Upgrading an existing weapon still succeeds
+      player.addWeapon(Blaster());
+      expect(player.activeWeapons.first.level, equals(2));
+
+      // Perk generator should ONLY offer upgrades or passives, never newWeapon
+      final perks = RoguePerkGenerator.generateChoices(game);
+      expect(perks.any((p) => p.type == PerkType.newWeapon), isFalse,
+          reason: 'When player has 5 weapons, no newWeapon perks should appear');
+    });
+
+    test('Calibrated weapon power curves maintain smooth progression without exponential early spikes', () {
+      final blaster = Blaster();
+      expect(blaster.damage, equals(60.0));
+      blaster.upgrade(); // Lv 2
+      expect(blaster.damage, equals(75.0));
+      expect(blaster.cooldown, equals(0.50));
+      blaster.upgrade(); // Lv 3
+      expect(blaster.damage, equals(85.0));
+      expect(blaster.cooldown, equals(0.45));
+      blaster.evolve();
+      expect(blaster.damage, equals(150.0));
+      expect(blaster.cooldown, equals(0.16));
+    });
+  });
 }

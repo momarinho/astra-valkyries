@@ -422,18 +422,19 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     if (activeDrops < 3 && random.nextDouble() < dropChance) {
       final roll = random.nextDouble();
       final hpRatio = game.player.hpPercent;
-      final healthThreshold = hpRatio < 0.5 ? 0.65 : 0.85;
 
       DropType dropType;
-      if (roll >= healthThreshold) {
+      // Vampire Survivors style: Asteroides comuns nunca dropam vida.
+      // Apenas titãs gigantes (> 55px) com jogador em perigo crítico (< 25% HP) têm 6% de chance de nanites de reparo.
+      if (radius >= 55.0 && hpRatio < 0.25 && random.nextDouble() < 0.06) {
         dropType = DropType.health;
       } else if (roll < 0.35) {
         dropType = DropType.lunarSample;
       } else if (roll < 0.60) {
         dropType = DropType.rareHelium;
-      } else if (roll < 0.78) {
+      } else if (roll < 0.80) {
         dropType = DropType.shield;
-      } else if (roll < 0.90) {
+      } else if (roll < 0.92) {
         dropType = DropType.darkMatter;
       } else {
         dropType = DropType.vortexSurge; // Raro Drop Especial estilo Vampire Survivors
