@@ -273,6 +273,16 @@ abstract class BiomeMapArchitect {
 
   Vector2 getMerchantPosition() => Vector2(1580, 2400);
 
+  /// Verifica se uma posição está a uma distância segura de todos os POIs e do Ponto de Spawn (2400, 2400).
+  bool isClearOfPois(Vector2 pos, List<MapNode> nodes, [double minDistance = 280.0]) {
+    // Spawn seguro: raio de 520px ao redor do centro 2400,2400
+    if (pos.distanceTo(Vector2(2400, 2400)) < 520.0) return false;
+    for (final node in nodes) {
+      if (pos.distanceTo(node.position) < minDistance) return false;
+    }
+    return true;
+  }
+
   void buildBiomeSpecificGeometry(
     AsteroidsGame game,
     Sector sector,
@@ -288,7 +298,7 @@ abstract class BiomeMapArchitect {
   }
 }
 
-/// 1. BIOMA 1: Cinturão de Mineração de Vesta (2 Anéis Concêntricos + Docas Laterais)
+/// 1. BIOMA 1: Cinturão de Mineração de Vesta (Cordilheiras de Asteroides e Docas Industriais Procedurais)
 class VestaBeltMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.vesta;
@@ -300,31 +310,58 @@ class VestaBeltMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // Vigas do Anel Interno de Mineração (mantendo o centro 2400,2400 livre)
-    final ringWalls = <(Vector2 pos, Vector2 size)>[
-      (Vector2(1850, 1750), Vector2(300, 28)),
-      (Vector2(2950, 1750), Vector2(300, 28)),
-      (Vector2(1750, 2950), Vector2(28, 300)),
-      (Vector2(3050, 2950), Vector2(28, 300)),
-      // Docas Industriais Oeste e Leste (como na Imagem Modelo 1)
-      (Vector2(720, 2150), Vector2(340, 30)),
-      (Vector2(720, 2650), Vector2(340, 30)),
-      (Vector2(4080, 2150), Vector2(340, 30)),
-      (Vector2(4080, 2650), Vector2(340, 30)),
+    // Cordilheiras de Asteroides Procedurais por Seed:
+    // 4 braços de cordilheira radial que subdividem os quadrantes em desfiladeiros cósmicos
+    final angles = [math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4];
+    final center = Vector2(2400, 2400);
+
+    for (var i = 0; i < angles.length; i++) {
+      final baseAngle = angles[i] + (random.nextDouble() - 0.5) * 0.35;
+      final distSteps = [850.0, 1380.0, 1880.0];
+
+      for (var d = 0; d < distSteps.length; d++) {
+        final dist = distSteps[d] + (random.nextDouble() - 0.5) * 120.0;
+        final pos = center + Vector2(math.cos(baseAngle) * dist, math.sin(baseAngle) * dist);
+
+        if (!isClearOfPois(pos, nodes, 320.0)) continue;
+
+        final isHoriz = (i + d) % 2 == 0;
+        final wallLength = 260.0 + random.nextDouble() * 160.0;
+        final wallThick = 28.0 + random.nextDouble() * 8.0;
+        final wallSize = isHoriz ? Vector2(wallLength, wallThick) : Vector2(wallThick, wallLength);
+
+        game.world.add(
+          MegastructureWallComponent(
+            position: pos,
+            wallSize: wallSize,
+            wallColor: const Color(0xFF00E5FF),
+          ),
+        );
+      }
+    }
+
+    // Docas Industriais Periféricas com Variação por Seed
+    final dockOffsets = [
+      Vector2(750 + (random.nextDouble() - 0.5) * 100, 2150 + (random.nextDouble() - 0.5) * 100),
+      Vector2(750 + (random.nextDouble() - 0.5) * 100, 2650 + (random.nextDouble() - 0.5) * 100),
+      Vector2(4050 + (random.nextDouble() - 0.5) * 100, 2150 + (random.nextDouble() - 0.5) * 100),
+      Vector2(4050 + (random.nextDouble() - 0.5) * 100, 2650 + (random.nextDouble() - 0.5) * 100),
     ];
-    for (final w in ringWalls) {
-      game.world.add(
-        MegastructureWallComponent(
-          position: w.$1,
-          wallSize: w.$2,
-          wallColor: const Color(0xFF00E5FF),
-        ),
-      );
+    for (final dp in dockOffsets) {
+      if (isClearOfPois(dp, nodes, 260.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: dp,
+            wallSize: Vector2(320 + random.nextDouble() * 60, 30),
+            wallColor: const Color(0xFF00E5FF),
+          ),
+        );
+      }
     }
   }
 }
 
-/// 2. BIOMA 2A: Forja Solar de Hélio (Duas Asas Industriais + 5 Pontes Solares + Jatos de Fogo)
+/// 2. BIOMA 2A: Forja Solar de Hélio (Condutores de Plasma, Jatos Térmicos e Fornalhas Procedurais)
 class HeliosForgeMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.orion;
@@ -336,62 +373,83 @@ class HeliosForgeMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // Muralhas da Refinaria Horizontal (Asa Oeste da Fornalha & Asa Leste de Fundição)
-    final forgeWalls = <(Vector2 pos, Vector2 size)>[
-      (Vector2(1550, 1380), Vector2(680, 34)),
-      (Vector2(1550, 3420), Vector2(680, 34)),
-      (Vector2(3250, 1380), Vector2(680, 34)),
-      (Vector2(3250, 3420), Vector2(680, 34)),
+    // 1. Muralhas da Refinaria e Condutores de Plasma Procedurais
+    final conduitBases = [
+      (Vector2(1550, 1380), Vector2(620, 34)),
+      (Vector2(1550, 3420), Vector2(620, 34)),
+      (Vector2(3250, 1380), Vector2(620, 34)),
+      (Vector2(3250, 3420), Vector2(620, 34)),
       (Vector2(1180, 2000), Vector2(34, 420)),
       (Vector2(3620, 2800), Vector2(34, 420)),
+      (Vector2(2400, 1350), Vector2(360, 32)),
+      (Vector2(2400, 3450), Vector2(360, 32)),
     ];
-    for (final w in forgeWalls) {
-      game.world.add(
-        MegastructureWallComponent(
-          position: w.$1,
-          wallSize: w.$2,
-          wallColor: const Color(0xFFFF9100),
-        ),
-      );
+
+    for (final c in conduitBases) {
+      final pos = _jitter(c.$1, random, 80.0);
+      if (isClearOfPois(pos, nodes, 280.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: pos,
+            wallSize: c.$2,
+            wallColor: const Color(0xFFFF9100),
+          ),
+        );
+      }
     }
 
-    // Jatos de Propulsão Solar (SolarFlameJetComponent) da Imagem Modelo 2A
-    final jets = <(Vector2 pos, double angle)>[
+    // 2. Jatos de Propulsão Solar Procedurais nos Ângulos da Usina
+    final jetPlacements = [
       (Vector2(3520, 2150), math.pi),
       (Vector2(3520, 2650), math.pi),
       (Vector2(1450, 3360), math.pi / 2),
+      (Vector2(1280, 1450), 0.0),
+      (Vector2(2400, 1150), math.pi / 2),
     ];
-    for (final j in jets) {
-      game.world.add(
-        SolarFlameJetComponent(
-          position: j.$1,
-          jetAngle: j.$2,
-          jetLength: 260.0,
-        ),
-      );
+    for (final j in jetPlacements) {
+      final jPos = _jitter(j.$1, random, 90.0);
+      if (isClearOfPois(jPos, nodes, 240.0)) {
+        game.world.add(
+          SolarFlameJetComponent(
+            position: jPos,
+            jetAngle: j.$2,
+            jetLength: 260.0 + random.nextDouble() * 60.0,
+          ),
+        );
+      }
     }
 
-    // Fissuras de Magma Solar
-    final m1 = Vector2(1420, 2400);
-    final m2 = Vector2(3380, 1750);
-    game.world.add(MagmaHazardComponent(position: m1, radius: 220.0));
-    game.world.add(MagmaHazardComponent(position: m2, radius: 200.0));
-    nodes.add(
-      MapNode(
-        id: 'magma_hazard_1',
-        type: MapNodeType.magmaHazard,
-        position: m1,
-        label: 'FORNALHA OCTOGONAL DE PLASMA',
-        description: 'Núcleo térmico da refinaria solar de Hélio.',
-        icon: Icons.whatshot,
-        primaryColor: const Color(0xFFFF5722),
-        isDiscovered: false,
-      ),
-    );
+    // 3. Fornalhas e Fissuras de Magma Solar Procedurais
+    final magmaSpawns = [
+      Vector2(1420, 2400),
+      Vector2(3380, 1750),
+      Vector2(2400, 3250),
+    ];
+    var magmaId = 1;
+    for (final m in magmaSpawns) {
+      final mPos = _jitter(m, random, 90.0);
+      if (isClearOfPois(mPos, nodes, 260.0)) {
+        final radius = 180.0 + random.nextDouble() * 60.0;
+        game.world.add(MagmaHazardComponent(position: mPos, radius: radius));
+        nodes.add(
+          MapNode(
+            id: 'magma_hazard_$magmaId',
+            type: MapNodeType.magmaHazard,
+            position: mPos,
+            label: 'FORNALHA DE PLASMA #$magmaId',
+            description: 'Núcleo térmico da refinaria solar de Hélio.',
+            icon: Icons.whatshot,
+            primaryColor: const Color(0xFFFF5722),
+            isDiscovered: false,
+          ),
+        );
+        magmaId++;
+      }
+    }
   }
 }
 
-/// 3. BIOMA 2B: Abismo Criogênico de Caelum (Domo Térmico Central + Labirinto de Gelo)
+/// 3. BIOMA 2B: Abismo Criogênico de Caelum (Domo Térmico Central + Labirinto de Gelo Procedural)
 class CryoAbyssMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.cryoAbyss;
@@ -406,7 +464,7 @@ class CryoAbyssMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // 1. Domo Térmico Dourado no Centro Exato (2400, 2400) — igual à Imagem Modelo 2B!
+    // 1. Domo Térmico Dourado no Centro Exato (2400, 2400) — refúgio seguro de calor
     game.world.add(
       ThermalDomeComponent(
         position: Vector2(2400, 2400),
@@ -414,28 +472,42 @@ class CryoAbyssMapBuilder extends BiomeMapArchitect {
       ),
     );
 
-    // 2. Paredes de Gelo Cristalino formando o Labirinto Glacial ao redor do Domo
-    final iceWalls = <(Vector2 pos, Vector2 size)>[
+    // 2. Paredes de Gelo Cristalino formando Labirinto Glacial Procedural por Seed
+    final iceWallBases = [
       (Vector2(1720, 1950), Vector2(340, 30)),
       (Vector2(3080, 1950), Vector2(340, 30)),
       (Vector2(1720, 2850), Vector2(340, 30)),
       (Vector2(3080, 2850), Vector2(340, 30)),
       (Vector2(1420, 2400), Vector2(30, 480)),
       (Vector2(3380, 2400), Vector2(30, 480)),
+      (Vector2(2400, 1650), Vector2(400, 30)),
+      (Vector2(2400, 3150), Vector2(400, 30)),
     ];
-    for (final w in iceWalls) {
-      game.world.add(
-        MegastructureWallComponent(
-          position: w.$1,
-          wallSize: w.$2,
-          wallColor: const Color(0xFF80D8FF),
-        ),
-      );
+    for (final w in iceWallBases) {
+      final pos = _jitter(w.$1, random, 80.0);
+      if (isClearOfPois(pos, nodes, 280.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: pos,
+            wallSize: w.$2,
+            wallColor: const Color(0xFF80D8FF),
+          ),
+        );
+      }
     }
 
     // 3. Zonas de Neblina Criogênica e Minas Estelares de Gelo nas alas laterais
-    game.world.add(CryoMistZoneComponent(position: Vector2(1180, 2400), radius: 380.0));
-    game.world.add(CryoMistZoneComponent(position: Vector2(3620, 2400), radius: 380.0));
+    final mistSpawns = [
+      Vector2(1180, 2400),
+      Vector2(3620, 2400),
+      Vector2(2400, 1220),
+    ];
+    for (final m in mistSpawns) {
+      final mPos = _jitter(m, random, 80.0);
+      if (isClearOfPois(mPos, nodes, 260.0)) {
+        game.world.add(CryoMistZoneComponent(position: mPos, radius: 340.0 + random.nextDouble() * 60.0));
+      }
+    }
 
     final cryoMineCoords = [
       Vector2(1880, 2320),
@@ -446,12 +518,15 @@ class CryoAbyssMapBuilder extends BiomeMapArchitect {
       Vector2(2480, 2920),
     ];
     for (final pos in cryoMineCoords) {
-      game.world.add(CryoMineComponent(position: pos));
+      final mPos = _jitter(pos, random, 60.0);
+      if (isClearOfPois(mPos, nodes, 180.0)) {
+        game.world.add(CryoMineComponent(position: mPos));
+      }
     }
   }
 }
 
-/// 4. BIOMA 3A: Cemitério da Frota Aegis (Cascos de Encouraçados + Vazamento Esmeralda)
+/// 4. BIOMA 3A: Cemitério da Frota Aegis (Cascos de Encouraçados + Corredores Procedurais)
 class AegisGraveyardMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.graveyard;
@@ -463,46 +538,57 @@ class AegisGraveyardMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // Paredes dos Cascos Rasgados de Encouraçados (Casco Oeste e Casco Leste)
-    final hullWalls = <(Vector2 pos, Vector2 size)>[
+    // Cascos Rasgados de Encouraçados Gerados Proceduralmente por Seed
+    final hullWalls = [
       (Vector2(1450, 1550), Vector2(560, 32)),
       (Vector2(1450, 3250), Vector2(560, 32)),
-      (Vector2(1150, 2400), Vector2(32, 900)),
+      (Vector2(1150, 2400), Vector2(32, 840)),
       (Vector2(3350, 1550), Vector2(560, 32)),
       (Vector2(3350, 3250), Vector2(560, 32)),
-      (Vector2(3650, 2400), Vector2(32, 900)),
+      (Vector2(3650, 2400), Vector2(32, 840)),
+      (Vector2(2400, 1420), Vector2(440, 32)),
+      (Vector2(2400, 3380), Vector2(440, 32)),
     ];
     for (final w in hullWalls) {
-      game.world.add(
-        MegastructureWallComponent(
-          position: w.$1,
-          wallSize: w.$2,
-          wallColor: const Color(0xFF00E676),
-        ),
-      );
+      final pos = _jitter(w.$1, random, 80.0);
+      if (isClearOfPois(pos, nodes, 280.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: pos,
+            wallSize: w.$2,
+            wallColor: const Color(0xFF00E676),
+          ),
+        );
+      }
     }
 
-    // Rio de Radiação Esmeralda no Casco Oeste (ReactorLeakHazardComponent)
-    game.world.add(ReactorLeakHazardComponent(position: Vector2(1450, 2050), radius: 190.0));
-    game.world.add(ReactorLeakHazardComponent(position: Vector2(1450, 2750), radius: 190.0));
+    // Rio de Radiação Esmeralda (ReactorLeakHazardComponent)
+    for (final leakBase in [Vector2(1450, 2050), Vector2(1450, 2750), Vector2(3350, 2400)]) {
+      final lPos = _jitter(leakBase, random, 70.0);
+      if (isClearOfPois(lPos, nodes, 240.0)) {
+        game.world.add(ReactorLeakHazardComponent(position: lPos, radius: 190.0));
+      }
+    }
 
-    // Minas Magnéticas no Pátio Central e Torretas Derelict no Casco Leste
+    // Minas Magnéticas e Torretas Derelict
     for (final m in [
       Vector2(2150, 2150),
       Vector2(2650, 2150),
       Vector2(2150, 2650),
       Vector2(2650, 2650),
     ]) {
-      game.world.add(ProximityMineComponent(position: m));
+      final mPos = _jitter(m, random, 40.0);
+      game.world.add(ProximityMineComponent(position: mPos));
     }
 
     for (final t in [Vector2(3350, 1950), Vector2(3350, 2850)]) {
-      game.world.add(DerelictTurretComponent(position: t));
+      final tPos = _jitter(t, random, 40.0);
+      game.world.add(DerelictTurretComponent(position: tPos));
     }
   }
 }
 
-/// 5. BIOMA 3B: Colmeia Xeno-Biológica de Nêmesis (Zero Metal — 100% Paredes Orgânicas & Alcobas)
+/// 5. BIOMA 3B: Colmeia Xeno-Biológica de Nêmesis (Paredes Orgânicas Regenerativas & Alcobas)
 class XenoHiveMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.xenoHive;
@@ -522,42 +608,55 @@ class XenoHiveMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // Câmaras Celulares feitas 100% de Paredes de Biomassa Viva Regenerativa
-    final bioWalls = <(Vector2 pos, Vector2 size)>[
+    // Câmaras Celulares de Biomassa Viva Regenerativa Procedurais
+    final bioWalls = [
       (Vector2(1950, 1850), Vector2(320, 34)),
       (Vector2(2850, 1850), Vector2(320, 34)),
       (Vector2(1950, 2950), Vector2(320, 34)),
       (Vector2(2850, 2950), Vector2(320, 34)),
       (Vector2(1650, 2400), Vector2(34, 380)),
       (Vector2(3150, 2400), Vector2(34, 380)),
+      (Vector2(2400, 1550), Vector2(360, 34)),
+      (Vector2(2400, 3250), Vector2(360, 34)),
     ];
     for (final bw in bioWalls) {
-      game.world.add(
-        OrganicBiomassWallComponent(
-          position: bw.$1,
-          wallSize: bw.$2,
-        ),
-      );
+      final pos = _jitter(bw.$1, random, 70.0);
+      if (isClearOfPois(pos, nodes, 280.0)) {
+        game.world.add(
+          OrganicBiomassWallComponent(
+            position: pos,
+            wallSize: bw.$2,
+          ),
+        );
+      }
     }
 
-    // Ninhos de Casulos Xeno e Poças de Ácido Bio-Corrosivo nas Alcobas
-    for (final c in [
+    // Casulos Xeno e Poças de Ácido Bio-Corrosivo
+    final cocoonPositions = [
       Vector2(1350, 1550),
       Vector2(3450, 1550),
       Vector2(1350, 3250),
       Vector2(3450, 3250),
       Vector2(2050, 2250),
       Vector2(2750, 2550),
-    ]) {
-      game.world.add(XenoCocoonComponent(position: c));
+    ];
+    for (final c in cocoonPositions) {
+      final cPos = _jitter(c, random, 80.0);
+      if (isClearOfPois(cPos, nodes, 180.0)) {
+        game.world.add(XenoCocoonComponent(position: cPos));
+      }
     }
 
-    game.world.add(AcidPoolHazardComponent(position: Vector2(1450, 2400), radius: 165.0));
-    game.world.add(AcidPoolHazardComponent(position: Vector2(3350, 2400), radius: 165.0));
+    for (final poolBase in [Vector2(1450, 2400), Vector2(3350, 2400)]) {
+      final pPos = _jitter(poolBase, random, 70.0);
+      if (isClearOfPois(pPos, nodes, 240.0)) {
+        game.world.add(AcidPoolHazardComponent(position: pPos, radius: 165.0));
+      }
+    }
   }
 }
 
-/// 6. BIOMA 4 & 5: Horizonte de Eventos & O Trono do Vazio (Catedral Astrolábio Circular)
+/// 6. BIOMA 4 & 5: Horizonte de Eventos & O Trono do Vazio (Catedral Astrolábio Circular Procedural)
 class VoidThroneMapBuilder extends BiomeMapArchitect {
   @override
   final SectorId sectorId;
@@ -571,37 +670,45 @@ class VoidThroneMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // Colunatas Monolíticas de Obsidiana e Ouro Branco ao redor do Astrolábio
-    final monoliths = <(Vector2 pos, Vector2 size)>[
+    // Colunatas Monolíticas de Obsidiana e Ouro Branco em Padrão Harmônico
+    final monolithBases = [
       (Vector2(1750, 1750), Vector2(280, 30)),
       (Vector2(3050, 1750), Vector2(280, 30)),
       (Vector2(1750, 3050), Vector2(280, 30)),
       (Vector2(3050, 3050), Vector2(280, 30)),
+      (Vector2(2400, 1500), Vector2(340, 30)),
+      (Vector2(2400, 3300), Vector2(340, 30)),
     ];
-    for (final m in monoliths) {
-      game.world.add(
-        MegastructureWallComponent(
-          position: m.$1,
-          wallSize: m.$2,
-          wallColor: const Color(0xFFFFD700),
-        ),
-      );
+    for (final m in monolithBases) {
+      final pos = _jitter(m.$1, random, 60.0);
+      if (isClearOfPois(pos, nodes, 280.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: pos,
+            wallSize: m.$2,
+            wallColor: const Color(0xFFFFD700),
+          ),
+        );
+      }
     }
 
-    // 4 Fendas/Piras Gravitacionais dos Arquitetos nos pontos diagonais do Astrolábio
-    for (final riftPos in [
+    // Fendas/Piras Gravitacionais dos Arquitetos
+    for (final riftBase in [
       Vector2(1950, 1950),
       Vector2(2850, 1950),
       Vector2(1950, 2850),
       Vector2(2850, 2850),
     ]) {
-      game.world.add(
-        SingularityRiftComponent(
-          position: riftPos,
-          pullRadius: 160.0,
-          duration: 0.8,
-        ),
-      );
+      final rPos = _jitter(riftBase, random, 60.0);
+      if (isClearOfPois(rPos, nodes, 200.0)) {
+        game.world.add(
+          SingularityRiftComponent(
+            position: rPos,
+            pullRadius: 160.0,
+            duration: 0.8,
+          ),
+        );
+      }
     }
   }
 }

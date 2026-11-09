@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
@@ -36,10 +38,12 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
   double _hudAccumulator = 0.0;
   double _lastHp = -1.0;
   Duration _lastElapsed = Duration.zero;
+  bool _showTouchControls = false;
 
   @override
   void initState() {
     super.initState();
+    _showTouchControls = kIsWeb ? true : (!Platform.isLinux && !Platform.isMacOS && !Platform.isWindows);
     _lastScore = widget.game.score;
     _displayScore = widget.game.score.toDouble();
     try {
@@ -360,266 +364,300 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
           ),
         ),
 
-          // Top Left: Pilot Mini-Avatar & Tactical Cockpit Status
+          // Top Left: Unified Pilot Status Frame (Avatar, Hull HP Bar, Shield, Callsign, Score & Compact Arsenal)
           Positioned(
             top: 0,
             left: 0,
             child: IgnorePointer(
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Layer 1: Reactive Mini-Avatar Box
                   Container(
-                    width: 72,
-                    height: 72,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.75),
+                      color: const Color(0xFF060A13).withOpacity(0.88),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: avatarGlowColor,
-                        width: 2.0,
+                        color: avatarGlowColor.withOpacity(0.6),
+                        width: 1.4,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: avatarGlowColor.withOpacity(0.4),
+                          color: avatarGlowColor.withOpacity(0.22),
                           blurRadius: 12,
                           spreadRadius: 1,
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Pilot portrait with fallback to procedural pilot emblem
-                          Image.asset(
-                            currentAvatarAsset,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      valkyrie.primaryColor.withOpacity(0.4),
-                                      Colors.black.withOpacity(0.9),
-                                    ],
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    valkyrie.shipDesign == ValkyrieShipDesign.solBlaze
-                                        ? Icons.local_fire_department
-                                        : (valkyrie.shipDesign == ValkyrieShipDesign.aegisPrism
-                                            ? Icons.shield
-                                            : (valkyrie.shipDesign == ValkyrieShipDesign.originPrime
-                                                ? Icons.auto_awesome
-                                                : Icons.all_inclusive)),
-                                    color: valkyrie.accentColor,
-                                    size: 36,
-                                  ),
-                                ),
-                              );
-                            },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Pilot Mini-Avatar Box (56x56)
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: avatarGlowColor, width: 1.5),
                           ),
-                          // Subtle scanlines overlay
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.white.withOpacity(0.04),
-                                  Colors.black.withOpacity(0.35),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Mini Status Tag at bottom of avatar
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              color: Colors.black.withOpacity(0.8),
-                              padding: const EdgeInsets.symmetric(vertical: 1.5),
-                              child: Text(
-                                statusExpression,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontFamily: 'Orbitron',
-                                  fontSize: 6.5,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                  color: avatarGlowColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-
-                  // Pilot Name, Callsign, Vessel & Score
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Score row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 3),
-                            child: Text(
-                              'SCORE',
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2.0,
-                                color: Colors.white.withOpacity(0.6),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Transform.scale(
-                            scale: 1.0 + 0.12 * _scorePulse,
-                            alignment: Alignment.bottomLeft,
-                            child: Text(
-                              _formatScore(_displayScore.round()),
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontVariations: const [FontVariation('wght', 800)],
-                                fontSize: 24,
-                                color: Color.lerp(Colors.white, valkyrie.accentColor, _scorePulse * 0.8),
-                                shadows: [
-                                  Shadow(
-                                    color: valkyrie.primaryColor.withOpacity(0.7 + _scorePulse * 0.3),
-                                    blurRadius: 8 + _scorePulse * 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-
-                      // Pilot Callout Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: valkyrie.primaryColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: valkyrie.primaryColor.withOpacity(0.6)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              valkyrie.name.toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: valkyrie.accentColor,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '// ${valkyrie.callsign.toUpperCase()}',
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white.withOpacity(0.7),
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-
-                      // Vessel Info & Active Arsenal Size
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            valkyrie.shipName,
-                            style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 10.5,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: valkyrie.primaryColor.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: valkyrie.primaryColor.withOpacity(0.6),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Text(
-                              'ARSENAL: ${player.activeWeapons.length} GUNS',
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.bold,
-                                color: valkyrie.accentColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFB300).withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: const Color(0xFFFFB300).withOpacity(0.6),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(9),
+                            child: Stack(
+                              fit: StackFit.expand,
                               children: [
-                                const Icon(Icons.build_circle_rounded, color: Color(0xFFFFB300), size: 10),
-                                const SizedBox(width: 3),
-                                Text(
-                                  '${game.runCredits}c',
-                                  style: const TextStyle(
-                                    fontFamily: 'Orbitron',
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFFFB300),
+                                Image.asset(
+                                  currentAvatarAsset,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        gradient: RadialGradient(
+                                          colors: [
+                                            valkyrie.primaryColor.withOpacity(0.4),
+                                            Colors.black.withOpacity(0.9),
+                                          ],
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          valkyrie.shipDesign == ValkyrieShipDesign.solBlaze
+                                              ? Icons.local_fire_department
+                                              : (valkyrie.shipDesign == ValkyrieShipDesign.aegisPrism
+                                                  ? Icons.shield
+                                                  : (valkyrie.shipDesign == ValkyrieShipDesign.originPrime
+                                                      ? Icons.auto_awesome
+                                                      : Icons.all_inclusive)),
+                                          color: valkyrie.accentColor,
+                                          size: 28,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0.85),
+                                    padding: const EdgeInsets.symmetric(vertical: 1.0),
+                                    child: Text(
+                                      statusExpression,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 6.0,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                        color: avatarGlowColor,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Pilot Telemetry Details
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Pilot Name & Callsign
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  valkyrie.name.toUpperCase(),
+                                  style: TextStyle(
+                                    fontFamily: 'Orbitron',
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: valkyrie.accentColor,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '// ${valkyrie.callsign.toUpperCase()}',
+                                  style: TextStyle(
+                                    fontFamily: 'Rajdhani',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white.withOpacity(0.7),
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+
+                            // Hull Integrity HP Bar
+                            _buildHullHpBar(player, valkyrie),
+                            const SizedBox(height: 3),
+
+                            // Score & Shield Status
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'SCORE',
+                                  style: TextStyle(
+                                    fontFamily: 'Rajdhani',
+                                    fontSize: 11.0,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                    color: Colors.white.withOpacity(0.65),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Transform.scale(
+                                  scale: 1.0 + 0.10 * _scorePulse,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    _formatScore(_displayScore.round()),
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14.0,
+                                      color: Color.lerp(Colors.white, valkyrie.accentColor, _scorePulse * 0.8),
+                                    ),
+                                  ),
+                                ),
+                                if (isInvulnerable) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF00E5FF).withOpacity(0.25),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: const Color(0xFF00E5FF), width: 0.8),
+                                    ),
+                                    child: Text(
+                                      'SHIELD: ${invulTime.toStringAsFixed(1)}s',
+                                      style: const TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: 8.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF00E5FF),
+                                        letterSpacing: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // Compact Active Arsenal Icons (Vampire Survivors / Hades style)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: player.activeWeapons.map((w) {
+                      final isReady = w.currentCooldown <= 0;
+                      final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
+                      final progress = (1.0 - (w.currentCooldown / maxCd)).clamp(0.0, 1.0);
+                      final isMax = w.level >= w.maxLevel;
+
+                      return Container(
+                        margin: const EdgeInsets.only(right: 5),
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(
+                            color: w.isEvolved
+                                ? const Color(0xFFFFD700)
+                                : (isMax ? const Color(0xFFFFB300) : (isReady ? valkyrie.accentColor.withOpacity(0.65) : Colors.white24)),
+                            width: (w.isEvolved || isMax) ? 1.4 : 1.0,
+                          ),
+                          boxShadow: (w.isEvolved || isMax)
+                              ? [
+                                  BoxShadow(
+                                    color: (w.isEvolved ? const Color(0xFFFFD700) : const Color(0xFFFFB300)).withOpacity(0.35),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(
+                              _getWeaponIcon(w),
+                              size: 16,
+                              color: w.isEvolved
+                                  ? const Color(0xFFFFD700)
+                                  : (isMax ? const Color(0xFFFFB300) : valkyrie.accentColor),
+                            ),
+                            Positioned(
+                              top: 1,
+                              right: 2,
+                              child: Text(
+                                w.isEvolved ? 'EVO' : (isMax ? 'MAX' : '${w.level}'),
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 6.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: w.isEvolved
+                                      ? const Color(0xFFFFD700)
+                                      : (isMax ? const Color(0xFFFFB300) : Colors.white70),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: 2.5,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white10,
+                                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(6)),
+                                ),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: progress,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isReady
+                                          ? (w.isEvolved || isMax ? const Color(0xFFFFD700) : Colors.greenAccent)
+                                          : Colors.orangeAccent,
+                                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(6)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Top Right: Pilot Hull Integrity (HP Bar), Shield Gauge, FPS & Pause
+          // Top Right: Mission Telemetry (Timer, Credits, Pause & Tactical Radar)
           Positioned(
             top: 0,
             right: 0,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -628,13 +666,35 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                     _buildSectorTimerBadge(),
                     const SizedBox(width: 8),
 
-                    // FPS & Engine Performance Diagnostics
-                    _buildFpsDiagnosticBadge(),
+                    // Stardust Credits Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFFFB300).withOpacity(0.6),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.stars_rounded, color: Color(0xFFFFB300), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${game.runCredits}c',
+                            style: const TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 11.0,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFFB300),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(width: 8),
-
-                    // Hull / Life Bar
-                    _buildHullHpBar(player, valkyrie),
-                    const SizedBox(width: 10),
 
                     // Pause Button
                     GestureDetector(
@@ -642,16 +702,16 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                         game.togglePause();
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.75),
+                          color: Colors.black.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white24),
+                          border: Border.all(color: Colors.white24, width: 1.2),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.pause, color: Colors.white70, size: 16),
+                            Icon(Icons.pause, color: Colors.white70, size: 14),
                             SizedBox(width: 4),
                             Text(
                               'PAUSE',
@@ -671,65 +731,29 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 ),
                 const SizedBox(height: 8),
 
-                // Shield Status
-                if (isInvulnerable)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00E5FF).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFF00E5FF)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00E5FF).withOpacity(0.3),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      'SHIELD: ${invulTime.toStringAsFixed(1)}s',
-                      style: const TextStyle(
-                        fontFamily: 'Orbitron',
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF00E5FF),
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ),
-
-                // Vortex Surge Floor Drop Status (Vampire Survivors style)
+                // Vortex Surge Floor Drop Status (if active)
                 if (player.vortexSurgeTimer > 0) ...[
-                  const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                     decoration: BoxDecoration(
                       color: const Color(0xFFD500F9).withOpacity(0.25),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: const Color(0xFFD500F9)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFD500F9).withOpacity(0.4),
-                          blurRadius: 8,
-                        ),
-                      ],
                     ),
                     child: Text(
-                      '🌀 VORTEX SURGE: ${player.vortexSurgeTimer.toStringAsFixed(1)}s',
+                      '🌀 SURGE: ${player.vortexSurgeTimer.toStringAsFixed(1)}s',
                       style: const TextStyle(
                         fontFamily: 'Orbitron',
-                        fontSize: 10,
+                        fontSize: 9.0,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFFD500F9),
-                        letterSpacing: 1.0,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 6),
                 ],
 
-                const SizedBox(height: 10),
-
-                // Tactical Mini-Radar & Spatial Navigation (Tap or Key M to open full Tactical Map)
+                // Tactical Mini-Radar & Spatial Navigation
                 GestureDetector(
                   onTap: () {
                     widget.game.openTacticalMap();
@@ -907,338 +931,309 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
               ),
             ),
 
-          // Top-Left (Sub-Dossier): Active Arsenal Cards (Vampire Survivors Multi-Weapon Stack)
-          Positioned(
-            top: 86,
-            left: 0,
-            child: IgnorePointer(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: player.activeWeapons.map((w) {
-                  final isReady = w.currentCooldown <= 0;
-                  final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
-                  final progress = (1.0 - (w.currentCooldown / maxCd)).clamp(0.0, 1.0);
-                  final isMax = w.level >= w.maxLevel;
 
-                  return Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.85),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isMax
-                            ? const Color(0xFFFFD700).withOpacity(0.8)
-                            : (isReady ? valkyrie.accentColor.withOpacity(0.6) : Colors.white24),
-                        width: isMax ? 1.4 : 1.0,
+
+          // Desktop Tactical Keyhints Banner (centered at bottom)
+          if (!_showTouchControls)
+            Positioned(
+              bottom: 8,
+              left: 12,
+              right: 12,
+              child: IgnorePointer(
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF040711).withOpacity(0.78),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white12, width: 0.8),
                       ),
-                      boxShadow: isMax
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFFFFD700).withOpacity(0.25),
-                                blurRadius: 6,
-                              ),
-                            ]
-                          : null,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildKeyHintBadge('WASD', 'MOVER'),
+                          const SizedBox(width: 8),
+                          _buildKeyHintBadge('ESPAÇO', 'DASH'),
+                          const SizedBox(width: 8),
+                          _buildKeyHintBadge('Q', 'ESPECIAL'),
+                          const SizedBox(width: 8),
+                          _buildKeyHintBadge('BOTÃO ESQ', 'MIRA/TIRO'),
+                          const SizedBox(width: 8),
+                          _buildKeyHintBadge('M', 'MAPA'),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              (w.isEvolved ? (w.evolvedName ?? w.name) : w.name).toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: w.isEvolved ? 8.5 : 9.0,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                                color: w.isEvolved
-                                    ? const Color(0xFFFFD700)
-                                    : (isMax ? const Color(0xFFFFB300) : Colors.white),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: w.isEvolved
-                                    ? const Color(0xFFFFD700).withValues(alpha: 0.35)
-                                    : (isMax
-                                        ? const Color(0xFFFFB300).withValues(alpha: 0.25)
-                                        : valkyrie.primaryColor.withValues(alpha: 0.25)),
-                                borderRadius: BorderRadius.circular(3),
-                                border: w.isEvolved ? Border.all(color: const Color(0xFFFFD700), width: 0.8) : null,
-                              ),
-                              child: Text(
-                                w.isEvolved ? 'EVO' : (isMax ? 'MAX' : 'MK ${w.level}'),
-                                style: TextStyle(
-                                  fontFamily: 'Orbitron',
-                                  fontSize: 7.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: w.isEvolved
-                                      ? const Color(0xFFFFD700)
-                                      : (isMax ? const Color(0xFFFFB300) : valkyrie.accentColor),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        // Weapon Cooldown Bar
-                        Container(
-                          width: 52,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: Colors.white12,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: progress,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isReady
-                                      ? (isMax ? const Color(0xFFFFD700) : Colors.greenAccent)
-                                      : Colors.orangeAccent,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Touch Controls Toggle (bottom-left)
+          Positioned(
+            bottom: _showTouchControls ? 136 : 8,
+            left: 8,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showTouchControls = !_showTouchControls;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF070B14).withOpacity(0.75),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.white24, width: 0.8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _showTouchControls ? Icons.keyboard_rounded : Icons.sports_esports_rounded,
+                      color: Colors.white70,
+                      size: 13,
                     ),
-                  );
-                }).toList(),
+                    const SizedBox(width: 4),
+                    Text(
+                      _showTouchControls ? 'KEYBOARD' : 'TOUCH',
+                      style: const TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 9.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
 
-          // Bottom Left: Always-Visible Interactive Virtual Joystick (Touch, Mouse & Keyboard Feedback)
-          Positioned(
-            bottom: 12,
-            left: 12,
-            child: _buildVirtualJoystick(game, valkyrie),
-          ),
-
-          // Bottom Right: Mobile-First Thumb Action Cluster (Dash, Overdrive, Manual Shoot)
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 1. Thruster Dash Button
-                GestureDetector(
-                  onTap: () {
-                    player.dash();
-                    widget.game.playSfx('dash.wav');
-                  },
-                  child: Builder(
-                    builder: (context) {
-                      final isVesper = player.valkyrie?.id == 'vesper';
-                      final isReady = isVesper ? (player.dashCharges > 0) : (dashCooldown <= 0);
-                      final progress = isReady
-                          ? 1.0
-                          : (1.0 - (dashCooldown / (isVesper ? 1.8 : GameConstants.playerDashCooldownSeconds))).clamp(0.0, 1.0);
-                      final dashLabel = isVesper
-                          ? (player.dashCharges > 0 ? '${player.dashCharges}x DASH' : '${dashCooldown.toStringAsFixed(1)}s')
-                          : (isReady ? 'DASH' : '${dashCooldown.toStringAsFixed(1)}s');
-                      return Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF070B14).withOpacity(0.88),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isReady ? Colors.cyanAccent : Colors.white24,
-                            width: isReady ? 2.0 : 1.2,
-                          ),
-                          boxShadow: isReady
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.cyanAccent.withOpacity(0.35),
-                                    blurRadius: 10,
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              value: progress,
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                isReady ? Colors.cyanAccent : Colors.orangeAccent,
-                              ),
-                              backgroundColor: Colors.transparent,
-                            ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.bolt_rounded,
-                                  color: isReady ? Colors.cyanAccent : Colors.white38,
-                                  size: 24,
-                                ),
-                                Text(
-                                  dashLabel,
-                                  style: TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 9.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: isReady ? Colors.cyanAccent : Colors.white38,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(width: 14),
-
-                // 2. Overdrive / Special Ultimate Button
-                GestureDetector(
-                  onTap: () {
-                    widget.game.triggerSpecial();
-                  },
-                  child: Builder(
-                    builder: (context) {
-                      final isReady = widget.game.specialAvailable;
-                      final pulse = isReady
-                          ? (math.sin(DateTime.now().millisecondsSinceEpoch / 180) + 1) / 2
-                          : 0.0;
-
-                      return Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: isReady
-                              ? valkyrie.primaryColor.withOpacity(0.28 + pulse * 0.15)
-                              : const Color(0xFF070B14).withOpacity(0.88),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isReady
-                                ? valkyrie.primaryColor.withOpacity(0.9 + pulse * 0.1)
-                                : Colors.white24,
-                            width: isReady ? 2.8 : 1.5,
-                          ),
-                          boxShadow: isReady
-                              ? [
-                                  BoxShadow(
-                                    color: valkyrie.primaryColor.withOpacity(0.5 + pulse * 0.3),
-                                    blurRadius: 14 + pulse * 6,
-                                    spreadRadius: 1.5,
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              isReady ? Icons.auto_awesome : Icons.lock_outline,
-                              color: isReady ? const Color(0xFFFFD700) : Colors.white30,
-                              size: 28,
-                            ),
-                            Text(
-                              isReady ? 'SPECIAL' : 'RECHARGE',
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: 8.0,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.8,
-                                color: isReady ? const Color(0xFFFFD700) : Colors.white30,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(width: 14),
-
-                // 3. Aim Lock (Strafe Kiting) + Manual Shoot Burst Button
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      widget.game.isAimLocked = !widget.game.isAimLocked;
-                    });
-                    player.shoot();
-                  },
-                  onLongPressStart: (_) {
-                    setState(() {
-                      widget.game.mobileShootPressed = true;
-                    });
-                    player.shoot();
-                  },
-                  onLongPressEnd: (_) {
-                    setState(() {
-                      widget.game.mobileShootPressed = false;
-                    });
-                  },
-                  child: Builder(
-                    builder: (context) {
-                      final isLocked = widget.game.isAimLocked || widget.game.mobileShootPressed;
-                      final activeColor = isLocked ? const Color(0xFFFF1744) : Colors.amberAccent;
-                      return Container(
-                        width: 62,
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: isLocked
-                              ? const Color(0xFFFF1744).withValues(alpha: 0.24)
-                              : const Color(0xFF070B14).withValues(alpha: 0.88),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: activeColor.withValues(alpha: isLocked ? 0.95 : 0.8),
-                            width: isLocked ? 2.4 : 1.8,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: activeColor.withValues(alpha: isLocked ? 0.55 : 0.25),
-                              blurRadius: isLocked ? 14 : 8,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              isLocked ? Icons.lock_rounded : Icons.gps_fixed_rounded,
-                              color: activeColor,
-                              size: 23,
-                            ),
-                            Text(
-                              isLocked ? 'LOCKED' : 'LOCK/FIRE',
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: 7.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.4,
-                                color: activeColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+          // Bottom Left: Interactive Virtual Joystick (Visible when touch controls active)
+          if (_showTouchControls)
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: _buildVirtualJoystick(game, valkyrie),
             ),
-          ),
+
+          // Bottom Right: Mobile Action Buttons (Visible when touch controls active)
+          if (_showTouchControls)
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 1. Thruster Dash Button
+                  GestureDetector(
+                    onTap: () {
+                      player.dash();
+                      widget.game.playSfx('dash.wav');
+                    },
+                    child: Builder(
+                      builder: (context) {
+                        final isVesper = player.valkyrie?.id == 'vesper';
+                        final isReady = isVesper ? (player.dashCharges > 0) : (dashCooldown <= 0);
+                        final progress = isReady
+                            ? 1.0
+                            : (1.0 - (dashCooldown / (isVesper ? 1.8 : GameConstants.playerDashCooldownSeconds))).clamp(0.0, 1.0);
+                        final dashLabel = isVesper
+                            ? (player.dashCharges > 0 ? '${player.dashCharges}x DASH' : '${dashCooldown.toStringAsFixed(1)}s')
+                            : (isReady ? 'DASH' : '${dashCooldown.toStringAsFixed(1)}s');
+                        return Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF070B14).withOpacity(0.88),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isReady ? Colors.cyanAccent : Colors.white24,
+                              width: isReady ? 2.0 : 1.2,
+                            ),
+                            boxShadow: isReady
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.cyanAccent.withOpacity(0.35),
+                                      blurRadius: 10,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                value: progress,
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isReady ? Colors.cyanAccent : Colors.orangeAccent,
+                                ),
+                                backgroundColor: Colors.transparent,
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.bolt_rounded,
+                                    color: isReady ? Colors.cyanAccent : Colors.white38,
+                                    size: 24,
+                                  ),
+                                  Text(
+                                    dashLabel,
+                                    style: TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: 9.0,
+                                      fontWeight: FontWeight.bold,
+                                      color: isReady ? Colors.cyanAccent : Colors.white38,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // 2. Overdrive / Special Ultimate Button
+                  GestureDetector(
+                    onTap: () {
+                      widget.game.triggerSpecial();
+                    },
+                    child: Builder(
+                      builder: (context) {
+                        final isReady = widget.game.specialAvailable;
+                        final pulse = isReady
+                            ? (math.sin(DateTime.now().millisecondsSinceEpoch / 180) + 1) / 2
+                            : 0.0;
+
+                        return Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: isReady
+                                ? valkyrie.primaryColor.withOpacity(0.28 + pulse * 0.15)
+                                : const Color(0xFF070B14).withOpacity(0.88),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isReady
+                                  ? valkyrie.primaryColor.withOpacity(0.9 + pulse * 0.1)
+                                  : Colors.white24,
+                              width: isReady ? 2.8 : 1.5,
+                            ),
+                            boxShadow: isReady
+                                ? [
+                                    BoxShadow(
+                                      color: valkyrie.primaryColor.withOpacity(0.5 + pulse * 0.3),
+                                      blurRadius: 14 + pulse * 6,
+                                      spreadRadius: 1.5,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isReady ? Icons.auto_awesome : Icons.lock_outline,
+                                color: isReady ? const Color(0xFFFFD700) : Colors.white30,
+                                size: 28,
+                              ),
+                              Text(
+                                isReady ? 'SPECIAL' : 'RECHARGE',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 8.0,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.8,
+                                  color: isReady ? const Color(0xFFFFD700) : Colors.white30,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // 3. Aim Lock (Strafe Kiting) + Manual Shoot Burst Button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        widget.game.isAimLocked = !widget.game.isAimLocked;
+                      });
+                      player.shoot();
+                    },
+                    onLongPressStart: (_) {
+                      setState(() {
+                        widget.game.mobileShootPressed = true;
+                      });
+                      player.shoot();
+                    },
+                    onLongPressEnd: (_) {
+                      setState(() {
+                        widget.game.mobileShootPressed = false;
+                      });
+                    },
+                    child: Builder(
+                      builder: (context) {
+                        final isLocked = widget.game.isAimLocked || widget.game.mobileShootPressed;
+                        final activeColor = isLocked ? const Color(0xFFFF1744) : Colors.amberAccent;
+                        return Container(
+                          width: 62,
+                          height: 62,
+                          decoration: BoxDecoration(
+                            color: isLocked
+                                ? const Color(0xFFFF1744).withValues(alpha: 0.24)
+                                : const Color(0xFF070B14).withValues(alpha: 0.88),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: activeColor.withValues(alpha: isLocked ? 0.95 : 0.8),
+                              width: isLocked ? 2.4 : 1.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: activeColor.withValues(alpha: isLocked ? 0.55 : 0.25),
+                                blurRadius: isLocked ? 14 : 8,
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isLocked ? Icons.lock_rounded : Icons.gps_fixed_rounded,
+                                color: activeColor,
+                                size: 23,
+                              ),
+                              Text(
+                                isLocked ? 'LOCKED' : 'LOCK/FIRE',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.4,
+                                  color: activeColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Layer 2: Comms Radio Holographic Dialogue Transmission Box at Sortie Launch
           if (game.showLaunchTransmission)
@@ -1661,6 +1656,52 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     );
   }
 
+  IconData _getWeaponIcon(dynamic w) {
+    final name = (w.name as String).toLowerCase();
+    if (name.contains('laser')) return Icons.flare_rounded;
+    if (name.contains('plasma') || name.contains('cannon')) return Icons.local_fire_department_rounded;
+    if (name.contains('shield') || name.contains('barrier') || name.contains('prism')) return Icons.shield_rounded;
+    if (name.contains('lance') || name.contains('graviton')) return Icons.gps_fixed_rounded;
+    if (name.contains('singularity') || name.contains('vortex')) return Icons.all_inclusive_rounded;
+    if (name.contains('mine')) return Icons.radio_button_checked_rounded;
+    return Icons.auto_awesome_rounded;
+  }
+
+  Widget _buildKeyHintBadge(String keyText, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white24, width: 0.8),
+          ),
+          child: Text(
+            keyText,
+            style: const TextStyle(
+              fontFamily: 'Orbitron',
+              fontSize: 8.5,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Rajdhani',
+            fontSize: 9.5,
+            fontWeight: FontWeight.bold,
+            color: Colors.white.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHullHpBar(PlayerComponent player, Valkyrie valkyrie) {
     final hp = player.hp;
     final maxHp = player.maxHp;
@@ -1676,21 +1717,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     }
 
     return Container(
-      width: 190,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      width: 175,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.black.withOpacity(0.75),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: hpColor.withOpacity(0.7),
-          width: 1.2,
+          color: hpColor.withOpacity(0.6),
+          width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: hpColor.withOpacity(0.25),
-            blurRadius: 8,
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1702,13 +1737,13 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.shield_outlined, size: 12, color: hpColor),
-                  const SizedBox(width: 4),
+                  Icon(Icons.shield_outlined, size: 11, color: hpColor),
+                  const SizedBox(width: 3),
                   Text(
                     'HULL',
                     style: TextStyle(
                       fontFamily: 'Rajdhani',
-                      fontSize: 10.0,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.0,
                       color: Colors.white.withOpacity(0.8),
@@ -1720,23 +1755,23 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 '${hp.toInt()}/${maxHp.toInt()} HP',
                 style: TextStyle(
                   fontFamily: 'Orbitron',
-                  fontSize: 9.5,
+                  fontSize: 9.0,
                   fontWeight: FontWeight.bold,
                   color: hpColor,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2.5),
           // Progress bar
           Container(
-            height: 6,
+            height: 5,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(2.5),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(2.5),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionallySizedBox(
@@ -1749,7 +1784,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       boxShadow: [
                         BoxShadow(
                           color: hpColor.withOpacity(0.8),
-                          blurRadius: 6,
+                          blurRadius: 4,
                         ),
                       ],
                     ),
