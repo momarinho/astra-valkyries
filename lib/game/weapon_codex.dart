@@ -45,21 +45,21 @@ class WeaponCodexEntry {
   });
 
   static const List<WeaponCodexEntry> allEntries = [
-    // 1. Tachyon Katana (Arma da Protagonista Kaede)
+    // 1. Tachyon Katana (Arma da Protagonista KBR-01 // Codename Kimberly)
     WeaponCodexEntry(
       id: 'tachyon_katana',
       name: 'Tachyon Katana',
       evolvedName: 'Void Muramasa',
-      manufacturer: 'Laboratórios de Engenharia Espacial de Kyoto-7',
+      manufacturer: 'Laboratórios de Engenharia Espacial de Kyoto-7 // Projeto KBR',
       damageType: 'Corte Quântico Taquiônico',
-      classification: 'Lâmina de Corte Dimensional',
+      classification: 'Lâmina de Corte Dimensional & Apara Ativa',
       loreDescription:
-          'Forjada na fornalha orbital de Kyoto-7 sob gravidade zero. Condensa um feixe de táquions em uma fita de plasma com espessura de um único átomo. Na física do vácuo, sua lâmina viaja mais rápido que a luz ambiente, rasgando o espaço-tempo e fatiando asteroides e cascos de titanite antes mesmo do reflexo visual alcançar a retina do inimigo.',
+          'Forjada na fornalha orbital de Kyoto-7 sob gravidade zero como arma exclusiva da unidade KBR-01. Condensa um feixe de táquions em uma lâmina crescente de plasma com espessura monomolecular. Seus arcos cortantes desintegram disparos inimigos em pleno ar (Tachyon Parry) e rasgam formações hostis com precisão cirúrgica.',
       technicalSpecs:
-          'Lâmina monomolecular de táquions pressurizados com velocidade de ejeção de 520 px/s e penetração natural em linha reta. Gera micro-fissuras no vácuo ao fatiar alvos maciços.',
+          'Lâmina monomolecular de táquions pressurizados com velocidade de ejeção de 520 px/s, anulação frontal de projéteis e penetração contínua em arco.',
       pilotQuote:
-          '"Uma espada no espaço não é anacronismo quando seu fio corta a própria distância entre você e a vitória."',
-      pilotQuoteAuthor: 'Tenente Kaede (Shadow Lotus)',
+          '"Uma espada no espaço não é anacronismo quando seu corte apara a morte e abre caminho para a vitória."',
+      pilotQuoteAuthor: 'Pilota KBR-01 (Shadow Lotus)',
       evolutionTitle: 'Juízo Dimensional do Vazio',
       evolutionDescription:
           'Atinge a ressonância do Trono do Vazio, disparando lâminas dimensionais triplas contínuas que atravessam a tela de ponta a ponta com penetração infinita.',
@@ -356,7 +356,7 @@ class WeaponCodexEntry {
           'Enxame de 2 a 3 drones escoltas em voo sincronizado. Rastreamento térmico automático de alvos com rajadas de interceptação preventiva.',
       pilotQuote:
           '"Eu nunca voo sozinha. As vozes delas nos meus fones me avisam de qualquer ameaça antes mesmo dos meus sensores."',
-      pilotQuoteAuthor: 'Tenente Kaede (Shadow Lotus)',
+      pilotQuoteAuthor: 'Pilota KBR-01 (Shadow Lotus)',
       evolutionTitle: 'Seraphim Drone Squadron',
       evolutionDescription:
           'Mobiliza 4 caças Seraphim dourados de interceptação de alta manobrabilidade com canhões gêmeos ionizados.',

@@ -49,8 +49,9 @@ class SpeechBubbleComponent extends PositionComponent
     switch (trigger) {
       case SpeechTrigger.hyperspaceJump:
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
-            return 'Salto de dobra concluído. Respiração firme... corte no primeiro instante.';
+            return 'Salto de dobra concluído. Protocolo KBR ativo... corte no primeiro instante.';
           case 'selene':
             return 'Sensores quânticos calibrados. Iniciando varredura tática do setor.';
           case 'vesper':
@@ -63,8 +64,9 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.bossArrival:
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
-            return 'Assinatura de combate confirmada. Cortarei suas defesas em um só golpe.';
+            return 'Assinatura de combate confirmada. Protocolo KBR cortará suas defesas em um só golpe.';
           case 'selene':
             return 'Assinatura de massa colossal detectada! Mantenham distância segura!';
           case 'vesper':
@@ -77,8 +79,9 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.criticalHull:
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
-            return 'Casco sob estresse crítico... Hora de acelerar o pulso e não hesitar.';
+            return 'Casco sob estresse crítico... Protocolo KBR em sobretensão, não posso hesitar.';
           case 'selene':
             return 'Alerta vermelho! Integridade estrutural abaixo de 25%! Preciso de reparos!';
           case 'vesper':
@@ -91,6 +94,7 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.superWeapon:
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
             return 'Lâmina de Tácions desembainhada... Juízo Dimensional do Vazio!';
           case 'selene':
@@ -105,8 +109,9 @@ class SpeechBubbleComponent extends PositionComponent
         }
       case SpeechTrigger.flawlessVictory:
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
-            return 'Nenhum movimento desperdiçado. A lâmina permanece afiada.';
+            return 'Nenhum movimento desperdiçado. Protocolo KBR concluído com corte limpo.';
           case 'selene':
             return 'Alvo neutralizado com 100% de integridade. Cálculos perfeitos.';
           case 'vesper':

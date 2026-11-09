@@ -9,6 +9,7 @@ import 'components/asteroid.dart';
 import 'components/enemy_ship.dart';
 import 'components/sector_boss.dart';
 import 'components/advanced_weapons.dart';
+import 'components/katana_slash.dart';
 
 abstract class Weapon {
   final String id;
@@ -1032,76 +1033,92 @@ class TachyonKatana extends Weapon {
     final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 
-    // Super-Evolution: Void Muramasa (Triple cutting dimensional slashes with infinite pierce)
+    // Super-Evolution: Void Muramasa (Três cortes transcendentais do vazio com alcance massivo e anulação de projéteis)
     if (isEvolved) {
-      final right = Vector2(-player.forward.y, player.forward.x);
-      for (final offset in [-12.0, 0.0, 12.0]) {
-        final spawnPos = player.position + player.forward * player.radius + right * offset;
-        final bullet = BulletComponent(
-          position: spawnPos,
-          radius: 5.5,
-          velocity: player.forward * (GameConstants.playerShootSpeed + 180.0),
-          lifeTimer: GameConstants.shotLifetimeSeconds * 1.4,
-          damage: effectiveDamage,
-          color: const Color(0xFF00E5FF), // Cyber Cyan Blade
+      final angles = [-15.0, 0.0, 15.0];
+      for (final angleDeg in angles) {
+        final angleRad = angleDeg * math.pi / 180.0;
+        final shootAngle = player.angle + angleRad;
+        final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
+        final slash = KatanaSlashComponent(
+          position: player.position + dir * (player.radius + 14.0),
+          angle: shootAngle,
+          velocity: dir * (GameConstants.playerShootSpeed + 160.0),
+          lifeTimer: 0.85,
+          damage: effectiveDamage * 1.35,
+          slashWidth: 92.0,
+          slashHeight: 28.0,
+          slashColor: const Color(0xFFE040FB), // Void Muramasa Violet
+          coreColor: const Color(0xFF00E5FF),  // Tachyon Core Cyan
           piercesLeft: 99, // Dimensional infinite pierce
+          isVoidMuramasa: true,
         );
-        player.game.world.add(bullet);
+        player.game.world.add(slash);
       }
       return true;
     }
 
     if (level >= 3) {
-      // 3 diverging slashes
+      // 3 sweeping crescent blades em cone frontal
       final angles = [-14.0, 0.0, 14.0];
       for (final angleDeg in angles) {
         final angleRad = angleDeg * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
         final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
-        final bullet = BulletComponent(
-          position: player.position + player.forward * player.radius,
-          radius: 4.2,
-          velocity: dir * (GameConstants.playerShootSpeed + 90.0),
-          lifeTimer: GameConstants.shotLifetimeSeconds * 1.1,
+        final slash = KatanaSlashComponent(
+          position: player.position + dir * (player.radius + 12.0),
+          angle: shootAngle,
+          velocity: dir * (GameConstants.playerShootSpeed + 100.0),
+          lifeTimer: 0.75,
           damage: effectiveDamage,
-          color: const Color(0xFF00F0FF),
-          piercesLeft: 4,
+          slashWidth: 64.0,
+          slashHeight: 20.0,
+          slashColor: const Color(0xFF00E5FF),
+          piercesLeft: 6,
         );
-        player.game.world.add(bullet);
+        player.game.world.add(slash);
       }
       return true;
     }
 
     if (level == 2) {
-      // Dual parallel slashes
+      // Dual crossing crescent slashes (X-Slash estético de corte duplo)
+      final offsets = [-10.0, 10.0];
+      final angles = [-7.0, 7.0];
       final right = Vector2(-player.forward.y, player.forward.x);
-      for (final offset in [-7.0, 7.0]) {
-        final spawnPos = player.position + player.forward * player.radius + right * offset;
-        final bullet = BulletComponent(
-          position: spawnPos,
-          radius: 3.8,
-          velocity: player.forward * (GameConstants.playerShootSpeed + 60.0),
-          lifeTimer: GameConstants.shotLifetimeSeconds,
+      for (int i = 0; i < 2; i++) {
+        final angleRad = angles[i] * math.pi / 180.0;
+        final shootAngle = player.angle + angleRad;
+        final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
+        final slash = KatanaSlashComponent(
+          position: player.position + player.forward * (player.radius + 10.0) + right * offsets[i],
+          angle: shootAngle,
+          velocity: dir * (GameConstants.playerShootSpeed + 80.0),
+          lifeTimer: 0.70,
           damage: effectiveDamage,
-          color: const Color(0xFF00E5FF),
-          piercesLeft: 3,
+          slashWidth: 54.0,
+          slashHeight: 18.0,
+          slashColor: const Color(0xFF00E5FF),
+          piercesLeft: 4,
         );
-        player.game.world.add(bullet);
+        player.game.world.add(slash);
       }
       return true;
     }
 
-    // Level 1: Single razor blade of tachyon plasma
-    final bullet = BulletComponent(
-      position: player.position + player.forward * player.radius,
-      radius: 3.5,
-      velocity: player.forward * (GameConstants.playerShootSpeed + 45.0),
-      lifeTimer: GameConstants.shotLifetimeSeconds,
+    // Level 1: Lâmina crescente frontal taquiônica com corte limpo e apara de tiros
+    final slash = KatanaSlashComponent(
+      position: player.position + player.forward * (player.radius + 10.0),
+      angle: player.angle,
+      velocity: player.forward * (GameConstants.playerShootSpeed + 65.0),
+      lifeTimer: 0.65,
       damage: effectiveDamage,
-      color: const Color(0xFF00E5FF),
-      piercesLeft: 2,
+      slashWidth: 46.0,
+      slashHeight: 16.0,
+      slashColor: const Color(0xFF00E5FF),
+      piercesLeft: 3,
     );
-    player.game.world.add(bullet);
+    player.game.world.add(slash);
     return true;
   }
 

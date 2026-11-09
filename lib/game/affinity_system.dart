@@ -129,16 +129,18 @@ class ValkyrieAffinity {
 /// Gerenciador Central de Afinidade e Galeria de Memórias
 class AffinityManager {
   final Map<String, ValkyrieAffinity> _affinities = {
-    'kaede': ValkyrieAffinity(valkyrieId: 'kaede'),
+    'kbr_01': ValkyrieAffinity(valkyrieId: 'kbr_01'),
+    'kaede': ValkyrieAffinity(valkyrieId: 'kbr_01'),
     'lyra': ValkyrieAffinity(valkyrieId: 'lyra'),
     'selene': ValkyrieAffinity(valkyrieId: 'selene'),
     'vesper': ValkyrieAffinity(valkyrieId: 'vesper'),
   };
 
   ValkyrieAffinity getAffinity(String valkyrieId) {
+    final normalized = (valkyrieId == 'kaede' || valkyrieId == 'kbr' || valkyrieId == 'kimberly') ? 'kbr_01' : valkyrieId;
     return _affinities.putIfAbsent(
-      valkyrieId,
-      () => ValkyrieAffinity(valkyrieId: valkyrieId),
+      normalized,
+      () => ValkyrieAffinity(valkyrieId: normalized),
     );
   }
 
@@ -244,36 +246,71 @@ class AffinityManager {
       requiredBondLevel: 5,
       themeColor: Color(0xFFAA00FF),
     ),
+
+    // --- KBR-01 (Protagonista // Protocol Kimberly) ---
+    const SecretMemory(
+      id: 'kbr_cg_1',
+      valkyrieId: 'kbr_01',
+      title: 'Lótus no Hangar',
+      subtitle: 'Memória de Recruta // Meditação de Espadachim',
+      description: 'KBR-01 em silêncio absoluto no hangar da AV-00 Muramasa, concentrando energia taquiônica antes de desembaínhar sua lâmina no vácuo.',
+      imageAsset: 'assets/art/valkyries/kbr_01/hangar_fullbody.png',
+      requiredBondLevel: 1,
+      themeColor: Color(0xFF00E5FF),
+    ),
+    const SecretMemory(
+      id: 'kbr_cg_2',
+      valkyrieId: 'kbr_01',
+      title: 'Desconexão do Protocolo',
+      subtitle: 'Pinup Confidencial // Respiração Íntima',
+      description: 'Longe dos sistemas de mira e das diretrizes militares, a piloto KBR-01 descansa com seu longo cabelo negro solto nos seus ombros.',
+      imageAsset: 'assets/art/valkyries/kbr_01/pinup_memory_1.jpg',
+      requiredBondLevel: 3,
+      themeColor: Color(0xFF00B0FF),
+    ),
+    const SecretMemory(
+      id: 'kbr_cg_3',
+      valkyrieId: 'kbr_01',
+      title: 'Corte do Infinito',
+      subtitle: 'Votos Eternos // Elo Inabalável',
+      description: 'A espadachim mais rápida do cosmos promete que sua espada sempre cortará a escuridão para proteger você.',
+      imageAsset: 'assets/art/valkyries/kbr_01/pinup_memory_2.jpg',
+      requiredBondLevel: 5,
+      themeColor: Color(0xFF00E5FF),
+    ),
+  ];
+
+  static const List<PilotDialogue> _kbrDialogues = [
+    PilotDialogue(
+      minBondLevel: 1,
+      text: '"Protocolo KBR ativo. A lâmina e a nave são uma só. Pronta quando você ordenar, Comandante."',
+    ),
+    PilotDialogue(
+      minBondLevel: 1,
+      text: '"O vácuo é silencioso... Esse silêncio me acalma antes de cada corte."',
+    ),
+    PilotDialogue(
+      minBondLevel: 2,
+      text: '"Você tem uma calma rara sob fogo cruzado. Pilotar ao seu lado é quase meditativo."',
+    ),
+    PilotDialogue(
+      minBondLevel: 3,
+      text: '"Sabe... eu sempre voei sob códigos táticos estritos. Mas com você no comando, sinto que posso alcançar qualquer estrela."',
+    ),
+    PilotDialogue(
+      minBondLevel: 4,
+      text: '"No hangar, longe dos monitores de combate... você é a única pessoa com quem não preciso ser apenas a arma KBR."',
+    ),
+    PilotDialogue(
+      minBondLevel: 5,
+      text: '"Minha espada e meu coração pertencem a você, Comandante. Onde você for, eu cortarei o seu caminho."',
+    ),
   ];
 
   /// Diálogos Dinâmicos Reativos por Nível de Elo
   static final Map<String, List<PilotDialogue>> dialogues = {
-    'kaede': [
-      const PilotDialogue(
-        minBondLevel: 1,
-        text: '"A lâmina e a nave devem ser uma só. Estou pronta quando você estiver, Comandante."',
-      ),
-      const PilotDialogue(
-        minBondLevel: 1,
-        text: '"O vácuo é silencioso... Esse silêncio me acalma antes de cada corte."',
-      ),
-      const PilotDialogue(
-        minBondLevel: 2,
-        text: '"Você tem uma calma rara sob fogo cruzado. Pilotar ao seu lado é quase meditativo."',
-      ),
-      const PilotDialogue(
-        minBondLevel: 3,
-        text: '"Sabe... eu sempre voei sozinha. Mas quando suas mãos estão no controle tático, sinto que posso alcançar qualquer estrela."',
-      ),
-      const PilotDialogue(
-        minBondLevel: 4,
-        text: '"Soltei meu cabelo... no hangar, só com você aqui, não preciso manter a postura de ferro de uma espadachim."',
-      ),
-      const PilotDialogue(
-        minBondLevel: 5,
-        text: '"Minha espada e meu coração pertencem a você, Comandante. Onde você for, eu cortarei o seu caminho."',
-      ),
-    ],
+    'kbr_01': _kbrDialogues,
+    'kaede': _kbrDialogues,
     'lyra': [
       const PilotDialogue(
         minBondLevel: 1,
@@ -364,8 +401,9 @@ class AffinityManager {
     if (lastBoss != null && lastBoss.isNotEmpty) {
       if (wasVictory) {
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
-            return '"$lastBoss caiu com um corte limpo. Nenhuma hesitação, nenhum atraso, Comandante."';
+            return '"$lastBoss caiu com um corte limpo. Protocolo KBR concluído sem atrasos, Comandante."';
           case 'selene':
             return '"O padrão de ataque de $lastBoss foi completamente decodificado. Uma vitória cirúrgica, Comandante."';
           case 'vesper':
@@ -377,8 +415,9 @@ class AffinityManager {
         }
       } else {
         switch (valkyrieId) {
+          case 'kbr_01':
           case 'kaede':
-            return '"A lâmina errou por um milímetro contra $lastBoss... Meditarei sobre essa falha e não errarei de novo."';
+            return '"A lâmina taquiônica errou por um milímetro contra $lastBoss... Meditarei sobre essa falha e recalibrarei o Protocolo KBR."';
           case 'selene':
             return '"Recalibrando escudos após o confronto com $lastBoss. Ajustei a matriz de fase para não sermos surpreendidos novamente."';
           case 'vesper':

@@ -56,8 +56,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
   String _getAfterActionQuote(String pilotId, bool isVictory) {
     if (isVictory) {
       switch (pilotId) {
+        case 'kbr_01':
         case 'kaede':
-          return '"A lâmina encontrou o seu destino. Setor pacificado, Comandante. Podemos prosseguir."';
+          return '"Protocolo KBR executado com corte limpo. Setor pacificado, Comandante. Podemos prosseguir."';
         case 'lyra':
           return '"Target neutralized and sector cleared! Nobody outflies the Sol-Blaze, Commander!"';
         case 'selene':
@@ -69,8 +70,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
       }
     }
     switch (pilotId) {
+      case 'kbr_01':
       case 'kaede':
-        return '"Hesitei por uma fração de segundo... Não se repetirá. Vamos restaurar a Muramasa."';
+        return '"Hesitei por uma fração de segundo... Não se repetirá. Recalibrando os sistemas da KBR-01."';
       case 'lyra':
         return '"We\'ll come back with hotter thrusters next time, Commander! Don\'t count us out yet!"';
       case 'selene':

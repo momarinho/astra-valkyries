@@ -38,6 +38,7 @@ import 'components/advanced_weapons.dart';
 import 'components/dead_cells_biome.dart';
 import 'components/living_biomes.dart';
 import 'components/speech_bubble.dart';
+import 'components/katana_slash.dart';
 import 'map/sector_map_data.dart';
 import 'map/sector_map_generator.dart';
 import 'weapons.dart';
@@ -2212,26 +2213,31 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     switch (selectedValkyrie.id) {
       case 'kaede':
-        // Phantom Slash: 3.0s invulnerability, instant 500px forward blink & 16-way radial tachyon katana blades
-        player.invulnerableTimer = 3.0;
-        player.position += player.forward * 120.0;
-        player.velocity = player.forward * 480.0;
-        triggerScreenShake(duration: 0.4, intensity: 10.0);
+      case 'kbr':
+      case 'kbr_01':
+      case 'kimberly':
+        // Phantom Slash: 3.5s invulnerability, instant 140px forward blink & 16-way radial tachyon katana blades
+        player.invulnerableTimer = 3.5;
+        player.position += player.forward * 140.0;
+        player.velocity = player.forward * 450.0;
+        triggerScreenShake(duration: 0.5, intensity: 12.0);
         const bladesCount = 16;
-        const stepKaede = (2 * math.pi) / bladesCount;
+        const stepBlades = (2 * math.pi) / bladesCount;
         for (int i = 0; i < bladesCount; i++) {
-          final ang = i * stepKaede;
+          final ang = i * stepBlades;
           final dir = Vector2(math.cos(ang), math.sin(ang));
-          final bullet = BulletComponent(
-            position: player.position + dir * (player.radius + 4.0),
-            radius: 4.5,
-            velocity: dir * 580.0,
-            lifeTimer: 0.85,
-            damage: 55.0,
-            color: const Color(0xFF00E5FF),
+          final slash = KatanaSlashComponent(
+            position: player.position + dir * (player.radius + 6.0),
+            angle: ang + math.pi / 2,
+            velocity: dir * 640.0,
+            lifeTimer: 0.95,
+            damage: 65.0,
+            slashWidth: 72.0,
+            slashHeight: 22.0,
+            slashColor: const Color(0xFF00E5FF),
             piercesLeft: 99,
           );
-          world.add(bullet);
+          world.add(slash);
         }
         break;
 

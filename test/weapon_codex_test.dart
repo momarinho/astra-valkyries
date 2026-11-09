@@ -45,7 +45,7 @@ void main() {
       expect(katana, isNotNull);
       expect(katana!.name, equals('Tachyon Katana'));
       expect(katana.evolvedName, equals('Void Muramasa'));
-      expect(katana.pilotQuoteAuthor, contains('Kaede'));
+      expect(katana.pilotQuoteAuthor, contains('KBR-01'));
 
       final nonExistent = WeaponCodexEntry.findById('non_existent_weapon');
       expect(nonExistent, isNull);

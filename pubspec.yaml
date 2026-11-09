@@ -70,6 +70,8 @@ flutter:
     - assets/art/valkyries/selene/
     - assets/art/valkyries/vesper/
     - assets/art/valkyries/astraea/
+    - assets/art/valkyries/kaede/
+    - assets/art/valkyries/kbr_01/
 
   # Fontes empacotadas (licença OFL) para funcionar 100% offline na feira:
   # - Orbitron (variável): títulos, placar e cronômetro

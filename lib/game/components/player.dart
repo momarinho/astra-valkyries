@@ -383,6 +383,113 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     if (dashCooldownTimer > 0) return;
 
+    if (vId == 'kaede' || vId == 'kbr' || vId == 'kbr_01' || vId == 'kimberly') {
+      // ⚔️ TACHYON SWORDMASTER: PHANTOM SHUNPO (Instant Dimensional Blink & Spatial Slice Corridor)
+      dashCooldownTimer = 1.9;
+      invulnerableTimer = 0.40;
+      dashDirection = forward.normalized();
+
+      final startPos = position.clone();
+      const blinkDistance = 220.0;
+      final targetPos = startPos + dashDirection * blinkDistance;
+
+      // 1. Leave dimensional afterimage echoes along the blink vector
+      for (double t = 0.0; t <= 1.0; t += 0.25) {
+        final ghostPos = startPos + (targetPos - startPos) * t;
+        game.world.add(
+          DashGhost(
+            position: ghostPos,
+            initialAngle: angle,
+            radius: radius,
+            ghostColor: const Color(0xFF00E5FF),
+          ),
+        );
+      }
+
+      // 2. Spatial Slice: Cut through all enemies, asteroids, and enemy bullets along the vector!
+      final sliceDamage = 68.0 * damageMultiplier;
+      final sliceVector = targetPos - startPos;
+      final sliceLen = sliceVector.length;
+      final sliceDir = sliceVector.normalized();
+
+      // Clear enemy bullets along the slash corridor (radius ~48px)
+      for (final bullet in game.world.children.whereType<EnemyBulletComponent>().toList()) {
+        final toBullet = bullet.position - startPos;
+        final proj = toBullet.dot(sliceDir);
+        if (proj >= -10.0 && proj <= sliceLen + 10.0) {
+          final perpDist = (toBullet - sliceDir * proj).length;
+          if (perpDist <= 48.0) {
+            bullet.removeFromParent();
+            game.spawnExplosionParticles(
+              position: bullet.position,
+              colorChoices: [const Color(0xFF00E5FF), Colors.white],
+              count: 4,
+              minSize: 1.5,
+              maxSize: 3.0,
+              minSpeed: 30,
+              maxSpeed: 80,
+            );
+          }
+        }
+      }
+
+      // Slice enemy ships along the corridor
+      for (final enemy in game.world.children.whereType<EnemyShipComponent>().toList()) {
+        final toEnemy = enemy.position - startPos;
+        final proj = toEnemy.dot(sliceDir);
+        if (proj >= -10.0 && proj <= sliceLen + 10.0) {
+          final perpDist = (toEnemy - sliceDir * proj).length;
+          if (perpDist <= 55.0) {
+            enemy.takeDamage(sliceDamage, enemy.position);
+            game.spawnFloatingText(
+              enemy.position + Vector2(0, -18),
+              'SHUNPO CUT!',
+              color: const Color(0xFF00E5FF),
+              fontSize: 13.0,
+            );
+            game.spawnExplosionParticles(
+              position: enemy.position,
+              colorChoices: [const Color(0xFF00E5FF), Colors.white],
+              count: 6,
+              minSize: 2.0,
+              maxSize: 4.0,
+              minSpeed: 40,
+              maxSpeed: 100,
+            );
+          }
+        }
+      }
+
+      // Slice asteroids along the corridor
+      for (final ast in game.world.children.whereType<AsteroidComponent>().toList()) {
+        final toAst = ast.position - startPos;
+        final proj = toAst.dot(sliceDir);
+        if (proj >= -10.0 && proj <= sliceLen + 10.0) {
+          final perpDist = (toAst - sliceDir * proj).length;
+          if (perpDist <= ast.radius + 35.0) {
+            final destroyed = ast.takeDamage(sliceDamage, ast.position);
+            game.spawnFloatingText(
+              ast.position + Vector2(0, -18),
+              'SHUNPO CUT!',
+              color: const Color(0xFF00E5FF),
+              fontSize: 13.0,
+            );
+            if (destroyed) {
+              game.playSfx('asteroid_split.wav');
+              game.onAsteroidDestroyed(ast.position, ast.scoreValue);
+            }
+          }
+        }
+      }
+
+      // Instant teleport to destination
+      position = targetPos;
+      enforceSectorBounds(0.01);
+      game.playSfx('dash.wav');
+      game.triggerScreenShake(duration: 0.15, intensity: 4.0);
+      return;
+    }
+
     if (vId == 'selene') {
       // 🔮 SELENE: QUANTUM PHASE BLINK
       // Instant spatial blink of 210px forward; phases clean through obstacles

@@ -81,14 +81,14 @@ class Valkyrie {
   });
 
   static final List<Valkyrie> roster = [
-    // 0. KAEDE - The Voidblade Ace (Protagonista Principal)
+    // 0. KBR-01 - The Voidblade Ace (Protagonista Principal - Codename: Kimberly)
     Valkyrie(
-      id: 'kaede',
-      name: 'Kaede',
+      id: 'kbr_01',
+      name: 'KBR-01',
       callsign: 'Shadow Lotus',
-      title: 'Voidblade Ace Pilot',
-      bio: 'Linhagem lendária de caçadoras de precisão do Cinturão de Kuiper. Silenciosa, esguia e com foco cirúrgico no cockpit, transforma combates espaciais em uma dança letal de lâminas taquiônicas.',
-      quote: '"Mente serena, gatilho limpo. O vácuo não perdoa hesitação."',
+      title: 'Voidblade Ace Pilot // Protocol Kimberly',
+      bio: 'Designação tática de elite KBR-01 ("Kimberly"). Silenciosa, esguia e com foco cirúrgico no cockpit, empunha lâminas taquiônicas capazes de aparar disparos inimigos em pleno voo e dobra o espaço com o passo dimensional Shunpo.',
+      quote: '"Protocolo KBR sincronizado. Cada fração de segundo no vácuo é um corte decisivo."',
       shipName: 'AV-00 Muramasa',
       shipDesign: ValkyrieShipDesign.zephyrBlade,
       baseHull: 85.0,
@@ -97,20 +97,20 @@ class Valkyrie {
       magnetRadiusMultiplier: 1.25,
       critChance: 0.20,
       startingWeaponName: 'Tachyon Katana',
-      startingWeaponDesc: 'Lâminas de corte dimensional de altíssima velocidade com perfuração em linha.',
+      startingWeaponDesc: 'Lâminas de corte crescente taquiônico que aparam e anulam projéteis inimigos.',
       specialAbilityName: 'Phantom Slash',
-      specialAbilityDesc: 'Teletransporte para frente com 3.0s de invulnerabilidade e surto omnidirecional de 16 lâminas de vácuo.',
+      specialAbilityDesc: 'Teletransporte para frente com 3.5s de invulnerabilidade e surto radial de 16 lâminas de vácuo.',
       createStartingWeapon: () => TachyonKatana(),
       speedRating: 5,
       defenseRating: 2,
       firepowerRating: 5,
       primaryColor: const Color(0xFF00E5FF), // Cyber Cyan
       accentColor: const Color(0xFF0D1B2A),  // Midnight Carbon
-      hudNeutralAsset: 'assets/art/valkyries/kaede/hud_neutral.png',
-      hudDamagedAsset: 'assets/art/valkyries/kaede/hud_damaged.png',
-      hudUltimateAsset: 'assets/art/valkyries/kaede/hud_ultimate.png',
-      hangarFullBodyAsset: 'assets/art/valkyries/kaede/hangar_fullbody.png',
-      shipAsset: 'assets/art/valkyries/kaede/ship_topdown.png',
+      hudNeutralAsset: 'assets/art/valkyries/kbr_01/hud_neutral.png',
+      hudDamagedAsset: 'assets/art/valkyries/kbr_01/hud_damaged.png',
+      hudUltimateAsset: 'assets/art/valkyries/kbr_01/hud_ultimate.png',
+      hangarFullBodyAsset: 'assets/art/valkyries/kbr_01/hangar_fullbody.png',
+      shipAsset: 'assets/art/valkyries/kbr_01/ship_topdown.png',
     ),
 
     // 1. LYRA - The Solar Vanguard
@@ -253,6 +253,12 @@ class Valkyrie {
   static Valkyrie get defaultValkyrie => roster.first;
 
   static Valkyrie findById(String id) {
+    if (id == 'kaede' || id == 'kbr' || id == 'kimberly') {
+      return allValkyries.firstWhere(
+        (v) => v.id == 'kbr_01',
+        orElse: () => defaultValkyrie,
+      );
+    }
     return allValkyries.firstWhere(
       (v) => v.id == id,
       orElse: () => defaultValkyrie,

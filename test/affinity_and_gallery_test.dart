@@ -88,14 +88,16 @@ void main() {
   });
 
   group('Sprint 5: Secret Memories & CG Gallery Domain Tests', () {
-    test('allMemories contains 9 total entries across Lyra, Selene, and Vesper', () {
+    test('allMemories contains 12 total entries across KBR-01, Lyra, Selene, and Vesper', () {
       final memories = AffinityManager.allMemories;
-      expect(memories.length, equals(9));
+      expect(memories.length, equals(12));
 
+      final kbrMemories = memories.where((m) => m.valkyrieId == 'kbr_01').toList();
       final lyraMemories = memories.where((m) => m.valkyrieId == 'lyra').toList();
       final seleneMemories = memories.where((m) => m.valkyrieId == 'selene').toList();
       final vesperMemories = memories.where((m) => m.valkyrieId == 'vesper').toList();
 
+      expect(kbrMemories.length, equals(3));
       expect(lyraMemories.length, equals(3));
       expect(seleneMemories.length, equals(3));
       expect(vesperMemories.length, equals(3));
