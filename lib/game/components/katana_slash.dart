@@ -101,6 +101,11 @@ class KatanaSlashComponent extends PositionComponent
         color: slashColor,
         fontSize: 12.0,
       );
+      if (piercesLeft > 0) {
+        piercesLeft--;
+      } else {
+        removeFromParent();
+      }
       return;
     }
 

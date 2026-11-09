@@ -75,10 +75,11 @@ void main() {
 
       final slashes = game.world.children.whereType<KatanaSlashComponent>().toList();
       expect(slashes.isNotEmpty, isTrue);
-      expect(slashes.first.damage, greaterThanOrEqualTo(20.0));
+      expect(slashes.first.damage, greaterThanOrEqualTo(12.0));
+      expect(slashes.first.slashWidth, lessThanOrEqualTo(32.0)); // Compact surgical area
     });
 
-    test('Evolved Void Muramasa fires 3 transcendent crescent blades with infinite pierce', () {
+    test('Evolved Void Muramasa fires 3 transcendent crescent blades with calibrated area', () {
       final katana = TachyonKatana()..isEvolved = true;
       player.setWeapon(katana);
 
@@ -89,9 +90,34 @@ void main() {
       expect(slashes.length, equals(3));
       for (final s in slashes) {
         expect(s.isVoidMuramasa, isTrue);
-        expect(s.piercesLeft, equals(99));
-        expect(s.slashWidth, greaterThanOrEqualTo(80.0));
+        expect(s.piercesLeft, equals(6));
+        expect(s.slashWidth, greaterThanOrEqualTo(50.0));
       }
+    });
+
+    test('Parrying an enemy bullet consumes pierce durability and dissipates when out of pierce', () {
+      final slash = KatanaSlashComponent(
+        position: Vector2(200, 200),
+        angle: 0.0,
+        velocity: Vector2(0, -300),
+        lifeTimer: 0.4,
+        piercesLeft: 1,
+      );
+      slash.game = game;
+      game.world.add(slash);
+
+      final enemyBullet = EnemyBulletComponent(
+        position: Vector2(200, 200),
+        radius: 4.0,
+        velocity: Vector2(0, 200),
+      );
+      enemyBullet.game = game;
+      game.world.add(enemyBullet);
+
+      slash.onCollisionStart({}, enemyBullet);
+
+      expect(enemyBullet.isRemoving || !enemyBullet.isMounted, isTrue);
+      expect(slash.isRemoving || !slash.isMounted, isTrue);
     });
 
     test('Phantom Shunpo Dash instantaneously blinks and slices obstacles in corridor', () {
@@ -114,7 +140,7 @@ void main() {
       player.dash();
 
       // Player must have instantly teleported forward
-      expect(player.position.distanceTo(initialPos), greaterThan(200.0));
+      expect(player.position.distanceTo(initialPos), greaterThanOrEqualTo(190.0));
 
       // Bullet in the corridor should be removed/sliced
       expect(bulletAhead.isRemoving || !bulletAhead.isMounted, isTrue);

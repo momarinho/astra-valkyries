@@ -428,16 +428,16 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       // Apenas titãs gigantes (> 55px) com jogador em perigo crítico (< 25% HP) têm 6% de chance de nanites de reparo.
       if (radius >= 55.0 && hpRatio < 0.25 && random.nextDouble() < 0.06) {
         dropType = DropType.health;
-      } else if (roll < 0.35) {
+      } else if (roll < 0.38) {
         dropType = DropType.lunarSample;
-      } else if (roll < 0.60) {
+      } else if (roll < 0.68) {
         dropType = DropType.rareHelium;
-      } else if (roll < 0.80) {
+      } else if (roll < 0.88) {
         dropType = DropType.shield;
-      } else if (roll < 0.92) {
+      } else if (roll < 0.98) {
         dropType = DropType.darkMatter;
       } else {
-        dropType = DropType.vortexSurge; // Raro Drop Especial estilo Vampire Survivors
+        dropType = DropType.vortexSurge; // Raro Drop Especial estilo Vampire Survivors (2% de chance)
       }
 
       final driftAngle = random.nextDouble() * 2 * math.pi;

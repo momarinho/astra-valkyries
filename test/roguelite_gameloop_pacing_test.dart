@@ -97,7 +97,7 @@ void main() {
       expect(game.player.hp, equals(game.player.maxHp));
     });
 
-    test('DropType.vortexSurge activates temporary 7.5s surge and expires properly', () {
+    test('DropType.vortexSurge activates temporary 3.5s surge and expires properly', () {
       final game = _createTestGame();
       final drop = DropComponent(position: Vector2(1000, 1000), type: DropType.vortexSurge);
       game.world.add(drop);
@@ -106,10 +106,10 @@ void main() {
 
       // Trigger collection
       drop.onCollisionStart({}, game.player);
-      expect(game.player.vortexSurgeTimer, equals(7.5));
+      expect(game.player.vortexSurgeTimer, equals(3.5));
 
-      // Advance by 8.0s -> timer should tick down to 0 and expire
-      game.player.update(8.0);
+      // Advance by 5.0s -> timer should tick down to 0 and expire
+      game.player.update(5.0);
       expect(game.player.vortexSurgeTimer, equals(0.0));
     });
   });

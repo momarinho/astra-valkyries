@@ -186,14 +186,14 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         break;
 
       case DropType.vortexSurge:
-        game.player.activateVortexSurge(7.5);
-        game.triggerScreenShake(duration: 0.45, intensity: 10.0);
+        game.player.activateVortexSurge(3.5);
+        game.triggerScreenShake(duration: 0.3, intensity: 6.0);
         game.spawnFloatingText(
           position,
-          "🌀 SOBRECARGA DE VÓRTICE! (7.5s)",
+          "🌀 SOBRECARGA DE VÓRTICE! (3.5s)",
           color: const Color(0xFFD500F9),
-          fontSize: 18.0,
-          velocity: Vector2(0, -38),
+          fontSize: 17.0,
+          velocity: Vector2(0, -36),
         );
         particleColor = const Color(0xFFD500F9);
         break;

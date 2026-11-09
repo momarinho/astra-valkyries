@@ -136,6 +136,17 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
   void activateVortexSurge(double duration) {
     vortexSurgeTimer = math.max(vortexSurgeTimer, duration);
+    // Dispara exatamente UMA Singularidade Tática no local ao coletar o drop
+    try {
+      game.world.add(
+        SingularityRiftComponent(
+          position: position.clone(),
+          pullRadius: 150.0,
+          damage: 220.0,
+          duration: 1.0,
+        ),
+      );
+    } catch (_) {}
   }
 
   void activateBloodOverdrive(double duration) {
@@ -390,7 +401,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       dashDirection = forward.normalized();
 
       final startPos = position.clone();
-      const blinkDistance = 220.0;
+      const blinkDistance = 200.0;
       final targetPos = startPos + dashDirection * blinkDistance;
 
       // 1. Leave dimensional afterimage echoes along the blink vector
@@ -406,19 +417,19 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         );
       }
 
-      // 2. Spatial Slice: Cut through all enemies, asteroids, and enemy bullets along the vector!
-      final sliceDamage = 68.0 * damageMultiplier;
+      // 2. Spatial Slice: Cut through enemies, asteroids, and bullets along the corridor
+      final sliceDamage = 38.0 * damageMultiplier;
       final sliceVector = targetPos - startPos;
       final sliceLen = sliceVector.length;
       final sliceDir = sliceVector.normalized();
 
-      // Clear enemy bullets along the slash corridor (radius ~48px)
+      // Clear enemy bullets along the slash corridor (radius ~36px)
       for (final bullet in game.world.children.whereType<EnemyBulletComponent>().toList()) {
         final toBullet = bullet.position - startPos;
         final proj = toBullet.dot(sliceDir);
-        if (proj >= -10.0 && proj <= sliceLen + 10.0) {
+        if (proj >= -8.0 && proj <= sliceLen + 8.0) {
           final perpDist = (toBullet - sliceDir * proj).length;
-          if (perpDist <= 48.0) {
+          if (perpDist <= 36.0) {
             bullet.removeFromParent();
             game.spawnExplosionParticles(
               position: bullet.position,
@@ -437,9 +448,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       for (final enemy in game.world.children.whereType<EnemyShipComponent>().toList()) {
         final toEnemy = enemy.position - startPos;
         final proj = toEnemy.dot(sliceDir);
-        if (proj >= -10.0 && proj <= sliceLen + 10.0) {
+        if (proj >= -8.0 && proj <= sliceLen + 8.0) {
           final perpDist = (toEnemy - sliceDir * proj).length;
-          if (perpDist <= 55.0) {
+          if (perpDist <= 40.0) {
             enemy.takeDamage(sliceDamage, enemy.position);
             game.spawnFloatingText(
               enemy.position + Vector2(0, -18),
@@ -464,9 +475,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       for (final ast in game.world.children.whereType<AsteroidComponent>().toList()) {
         final toAst = ast.position - startPos;
         final proj = toAst.dot(sliceDir);
-        if (proj >= -10.0 && proj <= sliceLen + 10.0) {
+        if (proj >= -8.0 && proj <= sliceLen + 8.0) {
           final perpDist = (toAst - sliceDir * proj).length;
-          if (perpDist <= ast.radius + 35.0) {
+          if (perpDist <= ast.radius + 20.0) {
             final destroyed = ast.takeDamage(sliceDamage, ast.position);
             game.spawnFloatingText(
               ast.position + Vector2(0, -18),
@@ -624,24 +635,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       }
     }
 
-    // Temporary Floor Drop: Vortex Surge (Vampire Survivors Nduja Fritta style)
+    // Temporary Floor Drop: Vortex Surge (Ativação única na coleta + status temporário)
     if (vortexSurgeTimer > 0) {
       vortexSurgeTimer = math.max(0.0, vortexSurgeTimer - dt);
-      _vortexSurgePulseTimer -= dt;
-      if (_vortexSurgePulseTimer <= 0) {
-        _vortexSurgePulseTimer = 0.65;
-        final rng = math.Random();
-        final a = rng.nextDouble() * 2 * math.pi;
-        final offset = Vector2(math.cos(a), math.sin(a)) * (radius + 55.0);
-        game.world.add(
-          SingularityRiftComponent(
-            position: position + offset,
-            pullRadius: 135.0,
-            damage: 160.0,
-            duration: 0.60,
-          ),
-        );
-      }
     }
 
     // Temporary Blood Overdrive (Pacto de Santuário / Frenesi Tático)

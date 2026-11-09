@@ -1022,10 +1022,10 @@ class TachyonKatana extends Weapon {
           id: 'tachyon_katana',
           name: 'Tachyon Katana',
           evolvedName: 'Void Muramasa',
-          cooldown: 0.55,
-          recoil: 3.5,
-          muzzleFlashSize: 9.0,
-          damage: 22.0,
+          cooldown: 0.60,
+          recoil: 2.0,
+          muzzleFlashSize: 6.0,
+          damage: 14.0, // Calibrado: dano inicial moderado e justo
         );
 
   @override
@@ -1033,24 +1033,24 @@ class TachyonKatana extends Weapon {
     final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 
-    // Super-Evolution: Void Muramasa (Três cortes transcendentais do vazio com alcance massivo e anulação de projéteis)
+    // Super-Evolution: Void Muramasa (Três cortes transcendentais com alcance e área calibrados)
     if (isEvolved) {
-      final angles = [-15.0, 0.0, 15.0];
+      final angles = [-12.0, 0.0, 12.0];
       for (final angleDeg in angles) {
         final angleRad = angleDeg * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
         final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
         final slash = KatanaSlashComponent(
-          position: player.position + dir * (player.radius + 14.0),
+          position: player.position + dir * (player.radius + 10.0),
           angle: shootAngle,
-          velocity: dir * (GameConstants.playerShootSpeed + 160.0),
-          lifeTimer: 0.85,
-          damage: effectiveDamage * 1.35,
-          slashWidth: 92.0,
-          slashHeight: 28.0,
+          velocity: dir * 450.0,
+          lifeTimer: 0.44, // Alcance calibrado ~195px
+          damage: effectiveDamage * 1.25,
+          slashWidth: 52.0,
+          slashHeight: 16.0,
           slashColor: const Color(0xFFE040FB), // Void Muramasa Violet
           coreColor: const Color(0xFF00E5FF),  // Tachyon Core Cyan
-          piercesLeft: 99, // Dimensional infinite pierce
+          piercesLeft: 6,
           isVoidMuramasa: true,
         );
         player.game.world.add(slash);
@@ -1059,22 +1059,22 @@ class TachyonKatana extends Weapon {
     }
 
     if (level >= 3) {
-      // 3 sweeping crescent blades em cone frontal
-      final angles = [-14.0, 0.0, 14.0];
+      // 3 sweeping crescent blades em cone compacto
+      final angles = [-11.0, 0.0, 11.0];
       for (final angleDeg in angles) {
         final angleRad = angleDeg * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
         final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
         final slash = KatanaSlashComponent(
-          position: player.position + dir * (player.radius + 12.0),
+          position: player.position + dir * (player.radius + 8.0),
           angle: shootAngle,
-          velocity: dir * (GameConstants.playerShootSpeed + 100.0),
-          lifeTimer: 0.75,
+          velocity: dir * 400.0,
+          lifeTimer: 0.38, // Alcance ~150px
           damage: effectiveDamage,
-          slashWidth: 64.0,
-          slashHeight: 20.0,
+          slashWidth: 38.0,
+          slashHeight: 14.0,
           slashColor: const Color(0xFF00E5FF),
-          piercesLeft: 6,
+          piercesLeft: 3,
         );
         player.game.world.add(slash);
       }
@@ -1082,41 +1082,41 @@ class TachyonKatana extends Weapon {
     }
 
     if (level == 2) {
-      // Dual crossing crescent slashes (X-Slash estético de corte duplo)
-      final offsets = [-10.0, 10.0];
-      final angles = [-7.0, 7.0];
+      // Dual crossing crescent slashes (Corte duplo compacto)
+      final offsets = [-6.0, 6.0];
+      final angles = [-5.0, 5.0];
       final right = Vector2(-player.forward.y, player.forward.x);
       for (int i = 0; i < 2; i++) {
         final angleRad = angles[i] * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
         final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
         final slash = KatanaSlashComponent(
-          position: player.position + player.forward * (player.radius + 10.0) + right * offsets[i],
+          position: player.position + player.forward * (player.radius + 8.0) + right * offsets[i],
           angle: shootAngle,
-          velocity: dir * (GameConstants.playerShootSpeed + 80.0),
-          lifeTimer: 0.70,
+          velocity: dir * 370.0,
+          lifeTimer: 0.36, // Alcance ~130px
           damage: effectiveDamage,
-          slashWidth: 54.0,
-          slashHeight: 18.0,
+          slashWidth: 32.0,
+          slashHeight: 12.0,
           slashColor: const Color(0xFF00E5FF),
-          piercesLeft: 4,
+          piercesLeft: 2,
         );
         player.game.world.add(slash);
       }
       return true;
     }
 
-    // Level 1: Lâmina crescente frontal taquiônica com corte limpo e apara de tiros
+    // Level 1: Lâmina crescente frontal taquiônica cirúrgica de alcance médio
     final slash = KatanaSlashComponent(
-      position: player.position + player.forward * (player.radius + 10.0),
+      position: player.position + player.forward * (player.radius + 8.0),
       angle: player.angle,
-      velocity: player.forward * (GameConstants.playerShootSpeed + 65.0),
-      lifeTimer: 0.65,
+      velocity: player.forward * 340.0,
+      lifeTimer: 0.35, // Alcance cirúrgico de ~120px
       damage: effectiveDamage,
-      slashWidth: 46.0,
-      slashHeight: 16.0,
+      slashWidth: 26.0,
+      slashHeight: 10.0,
       slashColor: const Color(0xFF00E5FF),
-      piercesLeft: 3,
+      piercesLeft: 1, // Consumido na primeira apara ou impacto
     );
     player.game.world.add(slash);
     return true;
@@ -1125,23 +1125,23 @@ class TachyonKatana extends Weapon {
   @override
   void applyUpgradeStats() {
     if (level == 2) {
-      cooldown = 0.45;
-      recoil = 2.5;
-      damage = 35.0;
-      muzzleFlashSize = 11.0;
+      cooldown = 0.50;
+      recoil = 1.8;
+      damage = 20.0;
+      muzzleFlashSize = 7.0;
     } else if (level >= 3) {
-      cooldown = 0.38;
-      recoil = 1.5;
-      damage = 48.0;
-      muzzleFlashSize = 13.0;
+      cooldown = 0.42;
+      recoil = 1.2;
+      damage = 28.0;
+      muzzleFlashSize = 9.0;
     }
   }
 
   @override
   void applyEvolution() {
-    cooldown = 0.20;
+    cooldown = 0.32;
     recoil = 1.0;
-    damage = 110.0;
-    muzzleFlashSize = 16.0;
+    damage = 42.0;
+    muzzleFlashSize = 12.0;
   }
 }
