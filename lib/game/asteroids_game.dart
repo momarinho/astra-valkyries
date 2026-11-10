@@ -48,6 +48,7 @@ import 'scientist.dart';
 import 'valkyrie.dart';
 import 'rogue_perks.dart';
 import 'roguelite_systems.dart';
+import '../services/achievement_service.dart';
 import 'meta_progression.dart';
 import 'affinity_system.dart';
 import 'sector.dart';
@@ -57,6 +58,18 @@ import 'package:asteroids/services/api_service.dart';
 import 'package:asteroids/services/localization_service.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
+
+class BossCinematicData {
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  BossCinematicData({
+    required this.title,
+    required this.subtitle,
+    this.color = const Color(0xFFFF1744),
+  });
+}
 
 enum GameState {
   menu,
@@ -229,6 +242,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void onBossDefeatedSpeechCheck() {
+    AchievementService.unlock('first_blood');
     if (flawlessBossKill) {
       unlockMilestone('ach_flawless_titan');
       triggerSpeechBubble(SpeechTrigger.flawlessVictory);
@@ -636,6 +650,24 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   static const double ultimateChargeMax = 1.0;
   double ultimateChargeRate = 1.0 / 40.0; // 40s recarga passiva
 
+  // Sprint 42: Apresentação Cinematográfica de Chefes
+  final ValueNotifier<BossCinematicData?> bossCinematicNotifier = ValueNotifier(null);
+
+  void triggerBossCinematicIntro({
+    required String title,
+    required String subtitle,
+    Color color = const Color(0xFFFF1744),
+  }) {
+    playSfx('boss_spawn.wav');
+    triggerScreenShake(duration: 0.85, intensity: 20.0);
+    bossCinematicNotifier.value = BossCinematicData(title: title, subtitle: subtitle, color: color);
+    Future.delayed(const Duration(milliseconds: 2800), () {
+      if (bossCinematicNotifier.value?.title == title) {
+        bossCinematicNotifier.value = null;
+      }
+    });
+  }
+
   void gainUltimateCharge(double amount) {
     if (state != GameState.playing || specialAvailable) return;
     ultimateCharge = (ultimateCharge + amount).clamp(0.0, 1.0);
@@ -776,6 +808,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     currentChestRewards = _generateChestRewards(itemCount);
+    if (itemCount >= 3) {
+      AchievementService.unlock('lucky_jackpot');
+    }
 
     pauseEngine();
     _safeAddOverlay('chest');
@@ -2279,6 +2314,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final accentColor = selectedValkyrie.accentColor;
     final abilityName = selectedValkyrie.specialAbilityName;
 
+    // Sprint 41: Conquistas de Habilidades Únicas
+    if (selectedValkyrie.id == 'lyra') {
+      AchievementService.unlock('corona_supernova');
+    } else if (selectedValkyrie.id == 'selene') {
+      AchievementService.unlock('absolute_zero');
+    } else if (selectedValkyrie.id == 'vesper') {
+      AchievementService.unlock('void_singularity');
+    }
+
     // Visual shockwave particles
     spawnExplosionParticles(
       position: player.position,
@@ -2499,6 +2543,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void completeMission({required bool survived}) {
     if (state != GameState.playing) return;
+
+    if (score >= 25000) {
+      AchievementService.unlock('void_apex_pilot');
+    }
 
     missionSurvived = survived;
     lastRunWasVictory = survived;

@@ -17,10 +17,12 @@ import 'ui/chest_overlay.dart';
 import 'ui/tactical_map_overlay.dart';
 import 'ui/star_chart_overlay.dart';
 import 'services/localization_service.dart';
+import 'services/achievement_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await I18n.init();
+  await AchievementService.load();
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,

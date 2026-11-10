@@ -59,8 +59,11 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     await super.onLoad();
     add(CircleHitbox());
     game.activeBoss = this;
-    game.playSfx('powerup.wav');
-    game.triggerScreenShake(duration: 0.8, intensity: 20.0);
+    game.triggerBossCinematicIntro(
+      title: 'ENCOURAÇADO LEVIATÃ // TITAN DREADNOUGHT',
+      subtitle: 'SOBERANO DOS ESCOMBROS DE TITÃ • NÍVEL AMEAÇA TITÃ',
+      color: const Color(0xFFFF1744),
+    );
   }
 
   @override

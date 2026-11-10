@@ -10,6 +10,7 @@ import 'components/enemy_ship.dart';
 import 'components/sector_boss.dart';
 import 'components/advanced_weapons.dart';
 import 'components/katana_slash.dart';
+import '../services/achievement_service.dart';
 
 abstract class Weapon {
   final String id;
@@ -54,6 +55,7 @@ abstract class Weapon {
     if (!canEvolve) return false;
     isEvolved = true;
     applyEvolution();
+    AchievementService.unlock('transcendence');
     return true;
   }
 
@@ -1040,6 +1042,7 @@ class TachyonKatana extends Weapon {
   @override
   bool fire(PlayerComponent player) {
     player.customGame?.playSfx('katana_slash.wav');
+    AchievementService.unlock('blade_master');
     final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 

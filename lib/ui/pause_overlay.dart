@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/services/localization_service.dart';
+import 'package:asteroids/services/achievement_service.dart';
 
 class PauseOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -143,7 +144,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                       const SizedBox(height: 14),
 
-                      // Tab Toggle: Mission Status vs Cosmic Grimoire
+                      // Tab Toggle: Mission Status vs Cosmic Grimoire vs Achievements
                       Row(
                         children: [
                           Expanded(
@@ -166,19 +167,21 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 child: Center(
                                   child: Text(
                                     I18n.t('pause.tab_status'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
-                                      fontSize: 10,
+                                      fontSize: 9,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
-                                      letterSpacing: 1.0,
+                                      letterSpacing: 0.6,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -199,12 +202,49 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 child: Center(
                                   child: Text(
                                     I18n.t('pause.tab_grimoire'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
-                                      fontSize: 10,
+                                      fontSize: 9,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFFFFD700),
-                                      letterSpacing: 1.0,
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => _activeTab = 2);
+                                game.playSfx('menu_select.wav');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: _activeTab == 2
+                                      ? const Color(0xFF64FFDA).withValues(alpha: 0.22)
+                                      : Colors.white.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _activeTab == 2 ? const Color(0xFF64FFDA) : Colors.white12,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    I18n.t('pause.tab_achievements'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF64FFDA),
+                                      letterSpacing: 0.6,
                                     ),
                                   ),
                                 ),
@@ -218,6 +258,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                       if (_activeTab == 1)
                         _buildCosmicGrimoire(game)
+                      else if (_activeTab == 2)
+                        _buildAchievementsTab()
                       else
                         // Round Summary Box
                         Container(
@@ -727,6 +769,142 @@ class _PauseOverlayState extends State<PauseOverlay> {
               ),
             );
           }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementsTab() {
+    final unlocked = AchievementService.unlockedCount;
+    final total = AchievementService.totalCount;
+    final pct = (AchievementService.progressFraction * 100).toInt();
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 280),
+      child: Column(
+        children: [
+          // Header Progress Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'PROGRESSO DE CONQUISTAS',
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFFD700),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    Text(
+                      '$unlocked / $total ($pct%)',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: total == 0 ? 0.0 : unlocked / total,
+                    minHeight: 5,
+                    backgroundColor: Colors.white12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Scrollable list of achievements
+          Expanded(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: AchievementService.all.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              itemBuilder: (context, index) {
+                final ach = AchievementService.all[index];
+                final isUnlocked = AchievementService.isUnlocked(ach.id);
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isUnlocked
+                        ? ach.color.withOpacity(0.12)
+                        : Colors.white.withOpacity(0.02),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isUnlocked ? ach.color.withOpacity(0.5) : Colors.white10,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isUnlocked ? ach.color.withOpacity(0.2) : Colors.white10,
+                          border: Border.all(
+                            color: isUnlocked ? ach.color : Colors.white24,
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Icon(
+                          isUnlocked ? ach.icon : Icons.lock_outline_rounded,
+                          size: 16,
+                          color: isUnlocked ? ach.color : Colors.white38,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ach.title,
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 10.0,
+                                fontWeight: FontWeight.bold,
+                                color: isUnlocked ? Colors.white : Colors.white38,
+                              ),
+                            ),
+                            Text(
+                              ach.description,
+                              style: TextStyle(
+                                fontFamily: 'Rajdhani',
+                                fontSize: 10.0,
+                                color: isUnlocked ? Colors.white70 : Colors.white30,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isUnlocked)
+                        const Icon(Icons.check_circle_rounded, color: Color(0xFF64FFDA), size: 16),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

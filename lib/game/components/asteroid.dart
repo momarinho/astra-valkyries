@@ -10,6 +10,7 @@ import 'xp_orb.dart';
 import 'magma_hazard.dart';
 import 'enemy_ship.dart';
 import 'advanced_weapons.dart';
+import '../../services/achievement_service.dart';
 
 enum AsteroidVariant {
   standard,    // Rocha cinza-azulada que divide em menores
@@ -427,6 +428,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         maxSpeed: 240.0,
       );
       game.addRunCredits(35);
+      AchievementService.unlock('titanium_tycoon');
       game.spawnFloatingText(
         position + Vector2(0, -25),
         '⛏️ VEIO DE TITÂNIO EXTRAÍDO! (+35 SUCATA)',

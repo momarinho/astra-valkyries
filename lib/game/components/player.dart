@@ -13,6 +13,7 @@ import 'asteroid.dart';
 import 'enemy_ship.dart';
 import 'enemy_bullet.dart';
 import 'sector_boss.dart';
+import '../../services/achievement_service.dart';
 import 'joystick.dart';
 import 'cosmic_nebula.dart';
 import 'living_biomes.dart';
@@ -218,6 +219,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       unlockedWeapons[newWeapon.id] = newWeapon;
       activeWeapons.add(newWeapon);
       newWeapon.currentCooldown = 0.0;
+      if (activeWeapons.length >= 3) {
+        AchievementService.unlock('arsenal_master');
+      }
     } else {
       unlockedWeapons[newWeapon.id]!.upgrade();
     }

@@ -18,6 +18,7 @@ import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/chest.dart';
 import 'package:asteroids/game/components/phase4_biome_elements.dart';
 import 'package:asteroids/game/map/sector_map_data.dart';
+import 'package:asteroids/services/achievement_service.dart';
 
 class HudOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -1450,8 +1451,239 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 ),
               ),
             ),
+
+          // Sprint 42: Apresentação Cinematográfica de Chefes
+          _buildBossCinematicBanner(),
+
+          // Sprint 41: Notificação Pop-up de Conquistas (Toast)
+          _buildAchievementToast(),
         ],
       ),
+    );
+  }
+
+  Widget _buildBossCinematicBanner() {
+    return ValueListenableBuilder<BossCinematicData?>(
+      valueListenable: widget.game.bossCinematicNotifier,
+      builder: (context, bossData, _) {
+        if (bossData == null) return const SizedBox.shrink();
+        return Positioned.fill(
+          child: IgnorePointer(
+            child: Stack(
+              children: [
+                // Faixa Cinematográfica Superior (Letterbox)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 52,
+                  child: Container(color: Colors.black.withOpacity(0.92)),
+                ),
+                // Faixa Cinematográfica Inferior (Letterbox)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 52,
+                  child: Container(color: Colors.black.withOpacity(0.92)),
+                ),
+                // Banner Central de Alerta de Chefe Colossal
+                Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutBack,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: 0.85 + 0.15 * scale,
+                        child: Opacity(
+                          opacity: scale.clamp(0.0, 1.0),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 580),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0A0204).withOpacity(0.94),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: bossData.color, width: 2.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: bossData.color.withOpacity(0.6),
+                            blurRadius: 28,
+                            spreadRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.warning_rounded, color: bossData.color, size: 22),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  '⚠️ CLASSIFIED HOSTILE DETECTED ⚠️',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'Orbitron',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2.0,
+                                    color: bossData.color,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.warning_rounded, color: bossData.color, size: 22),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            bossData.title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 22.0,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 3.5,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(color: Color(0xFFFF1744), blurRadius: 16),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            bossData.subtitle,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Rajdhani',
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.8,
+                              color: bossData.color.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAchievementToast() {
+    return ValueListenableBuilder<GameAchievement?>(
+      valueListenable: AchievementService.latestUnlocked,
+      builder: (context, achievement, _) {
+        if (achievement == null) return const SizedBox.shrink();
+        return Positioned(
+          top: 24,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            child: Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 380),
+                curve: Curves.easeOutBack,
+                builder: (context, anim, child) {
+                  return Transform.translate(
+                    offset: Offset(0, -30 * (1.0 - anim)),
+                    child: Opacity(
+                      opacity: anim.clamp(0.0, 1.0),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF070B19).withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: achievement.color, width: 1.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: achievement.color.withOpacity(0.4),
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: achievement.color.withOpacity(0.2),
+                          border: Border.all(color: achievement.color, width: 1.4),
+                        ),
+                        child: Icon(achievement.icon, color: achievement.color, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '🏆 CONQUISTA DESBLOQUEADA',
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 9.0,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                                color: achievement.color,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              achievement.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            Text(
+                              achievement.description,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Rajdhani',
+                                fontSize: 10.5,
+                                color: Colors.white.withOpacity(0.75),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1864,12 +2096,17 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
   Widget _buildTacticalRadar(PlayerComponent player, Valkyrie valkyrie) {
     final playerPos = player.position;
     final asteroidBlips = <Offset>[];
+    final titaniumBlips = <Offset>[];
     try {
       final asteroids = widget.game.world.children.whereType<AsteroidComponent>();
       for (final a in asteroids) {
         final offset = a.position - playerPos;
         if (offset.length <= GameConstants.radarRange) {
-          asteroidBlips.add(Offset(offset.x, offset.y));
+          if (a.variant == AsteroidVariant.titanium) {
+            titaniumBlips.add(Offset(offset.x, offset.y));
+          } else {
+            asteroidBlips.add(Offset(offset.x, offset.y));
+          }
         }
       }
     } catch (_) {}
@@ -2033,6 +2270,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 playerAngle: player.angle,
                 playerColor: valkyrie.primaryColor,
                 asteroidBlips: asteroidBlips,
+                titaniumBlips: titaniumBlips,
                 cometBlip: cometBlip,
                 stationOffset: stationOffset,
                 stationSecured: stationSecured,
@@ -2100,6 +2338,7 @@ class _RadarScopePainter extends CustomPainter {
   final double playerAngle;
   final Color playerColor;
   final List<Offset> asteroidBlips;
+  final List<Offset> titaniumBlips;
   final Offset? cometBlip;
   final Offset? stationOffset;
   final bool stationSecured;
@@ -2118,6 +2357,7 @@ class _RadarScopePainter extends CustomPainter {
     required this.playerAngle,
     required this.playerColor,
     required this.asteroidBlips,
+    this.titaniumBlips = const [],
     required this.cometBlip,
     required this.stationOffset,
     required this.stationSecured,
@@ -2191,6 +2431,30 @@ class _RadarScopePainter extends CustomPainter {
       final blipPos = center + Offset(normX, normY);
       if ((blipPos - center).distance <= radius * 0.95) {
         canvas.drawCircle(blipPos, 1.8, astPaint);
+      }
+    }
+
+    // Titanium Vein blips (Sprint 43: luminous cyan diamond with glow)
+    final titaniumPaint = Paint()
+      ..color = const Color(0xFF00E5FF)
+      ..style = PaintingStyle.fill;
+    final titaniumGlowPaint = Paint()
+      ..color = const Color(0xFF00E5FF).withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    for (final offset in titaniumBlips) {
+      final normX = (offset.dx / maxRange) * (radius * 0.88);
+      final normY = (offset.dy / maxRange) * (radius * 0.88);
+      final blipPos = center + Offset(normX, normY);
+      if ((blipPos - center).distance <= radius * 0.95) {
+        final dPath = Path()
+          ..moveTo(blipPos.dx, blipPos.dy - 3.2)
+          ..lineTo(blipPos.dx + 3.2, blipPos.dy)
+          ..lineTo(blipPos.dx, blipPos.dy + 3.2)
+          ..lineTo(blipPos.dx - 3.2, blipPos.dy)
+          ..close();
+        canvas.drawPath(dPath, titaniumPaint);
+        canvas.drawCircle(blipPos, 4.8, titaniumGlowPaint);
       }
     }
 
