@@ -4,13 +4,20 @@ import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/services/localization_service.dart';
 
-class SettingsOverlay extends StatelessWidget {
+class SettingsOverlay extends StatefulWidget {
   final AsteroidsGame game;
 
   const SettingsOverlay({super.key, required this.game});
 
   @override
+  State<SettingsOverlay> createState() => _SettingsOverlayState();
+}
+
+class _SettingsOverlayState extends State<SettingsOverlay> {
+  @override
   Widget build(BuildContext context) {
+    final game = widget.game;
+
     return Focus(
       autofocus: true,
       onKeyEvent: (node, event) {
@@ -100,7 +107,7 @@ class SettingsOverlay extends StatelessWidget {
                               isSelected: I18n.isPt,
                               onTap: () async {
                                 await I18n.setLocale(AppLocale.ptBr);
-                                (context as Element).markNeedsBuild();
+                                setState(() {});
                               },
                             ),
                           ),
@@ -113,7 +120,7 @@ class SettingsOverlay extends StatelessWidget {
                               isSelected: I18n.isEn,
                               onTap: () async {
                                 await I18n.setLocale(AppLocale.enUs);
-                                (context as Element).markNeedsBuild();
+                                setState(() {});
                               },
                             ),
                           ),
@@ -140,8 +147,9 @@ class SettingsOverlay extends StatelessWidget {
                         title: I18n.t('settings.control_vector'),
                         subtitle: I18n.t('settings.control_vector_desc'),
                         onTap: () {
-                          game.useDirectionalControls = false;
-                          (context as Element).markNeedsBuild();
+                          setState(() {
+                            game.useDirectionalControls = false;
+                          });
                         },
                       ),
                       const SizedBox(height: 8),
@@ -151,14 +159,104 @@ class SettingsOverlay extends StatelessWidget {
                         title: I18n.t('settings.control_directional'),
                         subtitle: I18n.t('settings.control_directional_desc'),
                         onTap: () {
-                          game.useDirectionalControls = true;
-                          (context as Element).markNeedsBuild();
+                          setState(() {
+                            game.useDirectionalControls = true;
+                          });
                         },
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Section 2: Movement Presets
+                      // Section 2: Audio Mixer Dashboard (Sprint 50)
+                      Text(
+                        I18n.t('settings.audio_mixer'),
+                        style: const TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: Color(0xFFE040FB),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(14.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildVolumeSlider(
+                              label: I18n.t('settings.master'),
+                              icon: Icons.volume_up_rounded,
+                              value: game.masterVolume,
+                              color: const Color(0xFFE040FB),
+                              onChanged: (val) {
+                                setState(() {
+                                  game.updateAudioMix(master: val);
+                                });
+                              },
+                            ),
+                            const Divider(color: Colors.white10, height: 16),
+                            _buildVolumeSlider(
+                              label: I18n.t('settings.bgm'),
+                              icon: Icons.music_note_rounded,
+                              value: game.bgmVolume,
+                              color: Colors.cyanAccent,
+                              onChanged: (val) {
+                                setState(() {
+                                  game.updateAudioMix(bgm: val);
+                                });
+                              },
+                            ),
+                            const Divider(color: Colors.white10, height: 16),
+                            _buildVolumeSlider(
+                              label: I18n.t('settings.sfx'),
+                              icon: Icons.graphic_eq_rounded,
+                              value: game.sfxVolume,
+                              color: const Color(0xFFFFD700),
+                              onChanged: (val) {
+                                setState(() {
+                                  game.updateAudioMix(sfx: val);
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  game.playSfx('purchase.wav');
+                                },
+                                icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                                label: Text(
+                                  I18n.t('settings.test_sfx'),
+                                  style: const TextStyle(
+                                    fontFamily: 'Orbitron',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFFFD700),
+                                  side: const BorderSide(color: Color(0xFFFFD700)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Section 3: Movement Presets
                       Text(
                         I18n.select(
                           pt: 'CALIBRAGEM DE PROPULSÃO // FÍSICA DE VOO',
@@ -180,8 +278,9 @@ class SettingsOverlay extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 8.0),
                           child: InkWell(
                             onTap: () {
-                              game.selectedMovementPresetIndex = index;
-                              (context as Element).markNeedsBuild();
+                              setState(() {
+                                game.selectedMovementPresetIndex = index;
+                              });
                             },
                             borderRadius: BorderRadius.circular(8),
                             child: Container(
@@ -296,6 +395,65 @@ class SettingsOverlay extends StatelessWidget {
     );
   }
 
+  Widget _buildVolumeSlider({
+    required String label,
+    required IconData icon,
+    required double value,
+    required Color color,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 11.5,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '${(value * 100).round()}%',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: color,
+            inactiveTrackColor: Colors.white24,
+            thumbColor: Colors.white,
+            overlayColor: color.withValues(alpha: 0.2),
+            trackHeight: 3.5,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.5),
+          ),
+          child: Slider(
+            value: value.clamp(0.0, 1.0),
+            min: 0.0,
+            max: 1.0,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildLanguageOption({
     required BuildContext context,
     required AppLocale locale,
@@ -315,25 +473,28 @@ class SettingsOverlay extends StatelessWidget {
             width: isSelected ? 1.8 : 1.0,
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(locale.flag, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 8),
-            Text(
-              locale.label,
-              style: TextStyle(
-                fontFamily: 'Orbitron',
-                fontSize: 11.5,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? const Color(0xFF64FFDA) : Colors.white70,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(locale.flag, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Text(
+                locale.label,
+                style: TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? const Color(0xFF64FFDA) : Colors.white70,
+                ),
               ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF64FFDA), size: 16),
+              if (isSelected) ...[
+                const SizedBox(width: 6),
+                const Icon(Icons.check_circle_rounded, color: Color(0xFF64FFDA), size: 16),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

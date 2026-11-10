@@ -389,6 +389,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                         ),
                       ),
 
+                      // Sprint 49: Tela de Celebração & Comendas de Honra Tática
+                      _buildCommendationBadges(game),
+
                       const SizedBox(height: 18),
 
                       // Pilot Debrief / After-Action Dialogue Card
@@ -756,5 +759,159 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
       ),
     ),
   );
-}
+  }
+
+  Widget _buildCommendationBadges(AsteroidsGame game) {
+    if (!game.missionSurvived && !game.campaignCompleted) {
+      return const SizedBox.shrink();
+    }
+
+    final badges = <Map<String, dynamic>>[];
+
+    // 🛡️ Untouchable (3 lives intact)
+    if (game.lives >= 3) {
+      badges.add({
+        'icon': Icons.shield_rounded,
+        'title': I18n.t('game_over.badge_untouchable'),
+        'desc': I18n.t('game_over.badge_untouchable_desc'),
+        'color': const Color(0xFF64FFDA),
+      });
+    }
+
+    // ⚔️ Cosmic Reaper (> 35 kills)
+    if (game.runEnemiesKilled >= 35) {
+      badges.add({
+        'icon': Icons.flash_on_rounded,
+        'title': I18n.t('game_over.badge_reaper'),
+        'desc': I18n.t('game_over.badge_reaper_desc'),
+        'color': const Color(0xFFFF5252),
+      });
+    }
+
+    // 💎 Mining Baron (> 250 scrap)
+    if (game.runCredits >= 250) {
+      badges.add({
+        'icon': Icons.diamond_rounded,
+        'title': I18n.t('game_over.badge_baron'),
+        'desc': I18n.t('game_over.badge_baron_desc'),
+        'color': const Color(0xFFFFD700),
+      });
+    }
+
+    // 👑 Void Apex (> 20000 pts)
+    if (game.score >= 20000) {
+      badges.add({
+        'icon': Icons.workspace_premium_rounded,
+        'title': I18n.t('game_over.badge_apex'),
+        'desc': I18n.t('game_over.badge_apex_desc'),
+        'color': const Color(0xFFE040FB),
+      });
+    }
+
+    if (badges.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C101B).withOpacity(0.92),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1.4),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.12),
+            blurRadius: 16,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.military_tech_rounded, color: Color(0xFFFFD700), size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  I18n.t('game_over.commendations_title'),
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFD700),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFFD700), width: 1.0),
+                ),
+                child: Text(
+                  '${badges.length} CONCEDIDAS',
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 9.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFD700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...badges.map((b) {
+            final color = b['color'] as Color;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color, width: 1.2),
+                    ),
+                    child: Icon(b['icon'] as IconData, color: color, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          b['title'] as String,
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                        Text(
+                          b['desc'] as String,
+                          style: const TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: 11.5,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }

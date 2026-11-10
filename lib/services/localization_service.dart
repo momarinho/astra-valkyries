@@ -203,9 +203,23 @@ class I18n {
     'settings.control_directional': 'DIRECIONAL 360° (TWIN-STICK / ROGUELIKE)',
     'settings.control_directional_desc': 'WASD movem a nave diretamente na direção pressionada estilo Vampire Survivors.',
     'settings.audio_header': 'ÁUDIO & TRILHA SONORA',
+    'settings.audio_mixer': 'PAINEL DE MIXAGEM DE ÁUDIO',
+    'settings.master': 'Volume Geral (Master)',
     'settings.bgm': 'Música de Fundo (BGM)',
     'settings.sfx': 'Efeitos Sonoros (SFX)',
+    'settings.test_sfx': 'TESTAR EFEITO SONORO',
     'settings.close': 'VOLTAR',
+
+    // Game Over & Commendations
+    'game_over.commendations_title': 'COMENDAS DE HONRA TÁTICA',
+    'game_over.badge_untouchable': 'IMACULADA // UNTOUCHABLE',
+    'game_over.badge_untouchable_desc': 'Vitória perfeita sem perder nenhuma vida extra',
+    'game_over.badge_reaper': 'CEIFADORA CÓSMICA // COSMIC REAPER',
+    'game_over.badge_reaper_desc': 'Mais de 35 naves inimigas abatidas na incursão',
+    'game_over.badge_baron': 'BARONESA DO TITÂNIO // MINING BARON',
+    'game_over.badge_baron_desc': 'Mais de 250 de sucata cósmica resgatada',
+    'game_over.badge_apex': 'ÁPICE DO VAZIO // VOID APEX',
+    'game_over.badge_apex_desc': 'Desempenho lendário de Rank S (> 20.000 pts)',
 
     // Level Up Overlay
     'level_up.badge': 'NÍVEL SUPERADO! • NÍVEL {level}',
@@ -371,9 +385,23 @@ class I18n {
     'settings.control_directional': '360° DIRECTIONAL (TWIN-STICK / ROGUELIKE)',
     'settings.control_directional_desc': 'WASD moves ship directly in pressed direction, Vampire Survivors style.',
     'settings.audio_header': 'AUDIO & SOUNDTRACK',
+    'settings.audio_mixer': 'AUDIO MIXER DASHBOARD',
+    'settings.master': 'Master Volume',
     'settings.bgm': 'Background Music (BGM)',
     'settings.sfx': 'Sound Effects (SFX)',
+    'settings.test_sfx': 'TEST SOUND EFFECT',
     'settings.close': 'BACK',
+
+    // Game Over & Commendations
+    'game_over.commendations_title': 'TACTICAL HONORS & COMMENDATIONS',
+    'game_over.badge_untouchable': 'IMACULADA // UNTOUCHABLE',
+    'game_over.badge_untouchable_desc': 'Flawless sortie with zero extra lives lost',
+    'game_over.badge_reaper': 'CEIFADORA CÓSMICA // COSMIC REAPER',
+    'game_over.badge_reaper_desc': 'Over 35 hostile vessels destroyed in sortie',
+    'game_over.badge_baron': 'BARONESA DO TITÂNIO // MINING BARON',
+    'game_over.badge_baron_desc': 'Over 250 cosmic scrap and titanium salvaged',
+    'game_over.badge_apex': 'ÁPICE DO VAZIO // VOID APEX',
+    'game_over.badge_apex_desc': 'Legendary S-Rank sortie (> 20,000 pts)',
 
     // Level Up Overlay
     'level_up.badge': 'LEVEL UP! • LEVEL {level}',

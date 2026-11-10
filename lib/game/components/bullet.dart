@@ -22,6 +22,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
   int piercesLeft;
   final ElementalStatus elementalStatus;
   final Weapon? weaponSource;
+  double _evolvedTrailTimer = 0.0;
 
   BulletComponent({
     required Vector2 position,
@@ -50,6 +51,25 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
     super.update(dt);
     position += velocity * dt;
     wrapAround();
+
+    // Sprint 51: Partículas de rastro para projéteis de armas Super-Evoluídas
+    if (weaponSource?.isEvolved == true) {
+      _evolvedTrailTimer += dt;
+      if (_evolvedTrailTimer >= 0.04) {
+        _evolvedTrailTimer = 0.0;
+        try {
+          game.spawnExplosionParticles(
+            position: position,
+            colorChoices: [color ?? const Color(0xFFFFD700), Colors.white],
+            count: 1,
+            minSize: 1.2,
+            maxSize: 2.4,
+            minSpeed: 15.0,
+            maxSpeed: 45.0,
+          );
+        } catch (_) {}
+      }
+    }
     
     lifeTimer -= dt;
     if (lifeTimer <= 0) {
@@ -246,6 +266,15 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     // Sem cor explícita, o tiro assume a cor-tema da valquíria piloto.
     final tint = color ?? game.selectedValkyrie.primaryColor;
+
+    // Sprint 51: Corona de energia luminosa para disparos super-evoluídos
+    if (weaponSource?.isEvolved == true) {
+      final coronaPaint = Paint()
+        ..color = tint.withValues(alpha: 0.45)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0);
+      canvas.drawCircle(Offset.zero, radius * 1.5, coronaPaint);
+    }
+
     Glow.orb(canvas, Offset.zero, radius * 0.85, tint);
   }
 }

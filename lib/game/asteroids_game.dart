@@ -242,6 +242,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void onBossDefeatedSpeechCheck() {
+    // Sprint 52: Camera Punch Zoom ao derrubar chefe colossal
+    setCameraZoom(1.18);
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      setCameraZoom(1.0);
+    });
     AchievementService.unlock('first_blood');
     if (flawlessBossKill) {
       unlockMilestone('ach_flawless_titan');
@@ -473,6 +478,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (state == GameState.starChart) {
       overlays.remove('starChart');
       state = GameState.playing;
+      _safeAddOverlay('hud');
       resumeEngine();
       gameFocusNode?.requestFocus();
     }
@@ -660,10 +666,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }) {
     playSfx('boss_spawn.wav');
     triggerScreenShake(duration: 0.85, intensity: 20.0);
+    setCameraZoom(1.12);
     bossCinematicNotifier.value = BossCinematicData(title: title, subtitle: subtitle, color: color);
     Future.delayed(const Duration(milliseconds: 2800), () {
       if (bossCinematicNotifier.value?.title == title) {
         bossCinematicNotifier.value = null;
+        setCameraZoom(1.0);
       }
     });
   }
@@ -771,6 +779,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     playSfx('purchase.wav');
     overlays.remove('levelUp');
     state = GameState.playing;
+    _safeAddOverlay('hud');
     resumeEngine();
     gameFocusNode?.requestFocus();
   }
@@ -964,6 +973,51 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   double shakeDuration = 0.0;
   double shakeIntensity = 0.0;
   double hitStopTimer = 0.0;
+
+  // Sprint 50: Painel de Mixagem de Áudio
+  double masterVolume = 1.0;
+  double sfxVolume = 1.0;
+  double bgmVolume = 0.8;
+
+  // Sprint 52: Zoom Dinâmico de Câmera de Combate
+  double targetCameraZoom = 1.0;
+
+  void setCameraZoom(double zoom) {
+    targetCameraZoom = zoom.clamp(0.8, 1.5);
+  }
+
+  double get effectiveBgmVolume => (bgmVolume * masterVolume).clamp(0.0, 1.0);
+
+  void updateAudioMix({double? master, double? sfx, double? bgm}) {
+    if (master != null) masterVolume = master.clamp(0.0, 1.0);
+    if (sfx != null) sfxVolume = sfx.clamp(0.0, 1.0);
+    if (bgm != null) bgmVolume = bgm.clamp(0.0, 1.0);
+
+    try {
+      if (FlameAudio.bgm.isPlaying) {
+        FlameAudio.bgm.audioPlayer.setVolume(effectiveBgmVolume).catchError((_) {});
+      }
+    } catch (_) {}
+    saveAudioSettings();
+  }
+
+  Future<void> saveAudioSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('audio_master_volume', masterVolume);
+      await prefs.setDouble('audio_sfx_volume', sfxVolume);
+      await prefs.setDouble('audio_bgm_volume', bgmVolume);
+    } catch (_) {}
+  }
+
+  Future<void> loadAudioSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      masterVolume = prefs.getDouble('audio_master_volume') ?? 1.0;
+      sfxVolume = prefs.getDouble('audio_sfx_volume') ?? 1.0;
+      bgmVolume = prefs.getDouble('audio_bgm_volume') ?? 0.8;
+    } catch (_) {}
+  }
   
   double lowHealthWarnTimer = 0.0;
 
@@ -1005,6 +1059,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     try {
       initSfxPlayers();
+      await loadAudioSettings();
     } catch (_) {}
 
     // Add StarfieldComponent, SectorBoundaryComponent, and Sector POIs first
@@ -1576,6 +1631,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       shakeTimer = math.max(0.0, shakeTimer - dt);
     }
 
+    // Sprint 52: Interpolação suave do Zoom Dinâmico de Câmera
+    if ((camera.viewfinder.zoom - targetCameraZoom).abs() > 0.001) {
+      camera.viewfinder.zoom += (targetCameraZoom - camera.viewfinder.zoom) * (dt * 3.5).clamp(0.0, 1.0);
+    }
+
     // Science Fair 180-second (3-minute) countdown timer & Celestial Events
     if (state == GameState.playing) {
       if (!specialAvailable && ultimateCharge < 1.0) {
@@ -1896,6 +1956,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (state == GameState.starChart) {
       overlays.remove('starChart');
       state = GameState.playing;
+      _safeAddOverlay('hud');
       resumeEngine();
       gameFocusNode?.requestFocus();
     }
@@ -2050,16 +2111,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     try {
       // Dynamic volume & micro-pitch jitter to eliminate audio fatigue on automatic fire
-      final double volume;
+      final double baseVol = (name == 'shoot.wav') ? 0.32 : 1.0;
+      final double effectiveVolume = (baseVol * sfxVolume * masterVolume).clamp(0.0, 1.0);
       if (name == 'shoot.wav') {
-        volume = 0.32; // Blended comfortably into the acoustic mix
         final pitch = 0.93 + math.Random().nextDouble() * 0.14; // Subtle pitch jitter
         player.setPlaybackRate(pitch);
       } else {
-        volume = 1.0;
         player.setPlaybackRate(1.0);
       }
-      await player.play(AssetSource(name), volume: volume);
+      await player.play(AssetSource(name), volume: effectiveVolume);
     } catch (_) {}
   }
 

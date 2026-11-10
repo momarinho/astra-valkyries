@@ -1463,12 +1463,12 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
   }
 
   Widget _buildBossCinematicBanner() {
-    return ValueListenableBuilder<BossCinematicData?>(
-      valueListenable: widget.game.bossCinematicNotifier,
-      builder: (context, bossData, _) {
-        if (bossData == null) return const SizedBox.shrink();
-        return Positioned.fill(
-          child: IgnorePointer(
+    return Positioned.fill(
+      child: ValueListenableBuilder<BossCinematicData?>(
+        valueListenable: widget.game.bossCinematicNotifier,
+        builder: (context, bossData, _) {
+          if (bossData == null) return const SizedBox.shrink();
+          return IgnorePointer(
             child: Stack(
               children: [
                 // Faixa Cinematográfica Superior (Letterbox)
@@ -1576,22 +1576,22 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
   Widget _buildAchievementToast() {
-    return ValueListenableBuilder<GameAchievement?>(
-      valueListenable: AchievementService.latestUnlocked,
-      builder: (context, achievement, _) {
-        if (achievement == null) return const SizedBox.shrink();
-        return Positioned(
-          top: 24,
-          left: 0,
-          right: 0,
-          child: IgnorePointer(
+    return Positioned(
+      top: 24,
+      left: 0,
+      right: 0,
+      child: ValueListenableBuilder<GameAchievement?>(
+        valueListenable: AchievementService.latestUnlocked,
+        builder: (context, achievement, _) {
+          if (achievement == null) return const SizedBox.shrink();
+          return IgnorePointer(
             child: Center(
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
@@ -1681,9 +1681,9 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
