@@ -16,6 +16,7 @@ import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'package:asteroids/game/components/living_biomes.dart';
 import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/breakable_prop.dart';
+import 'package:asteroids/game/components/indoor_environment.dart';
 import '../sector_map_data.dart';
 
 /// Interface base dos Arquitetos Modulares de Bioma (Sprint 25).
@@ -258,6 +259,9 @@ abstract class BiomeMapArchitect {
     // 8. Objetos Quebráveis do Cenário (Sprint 29 — Estilo Vampire Survivors: Barris, Cristais, Cargas)
     _spawnBreakableProps(game, sector, random, nodes);
 
+    // 9. Câmaras de Quarentena Indoor (Sprint 30 — Hangar Fechado, Portas Blindadas & Combate Confinado)
+    _spawnLockdownChamber(game, sector, random, nodes);
+
     return SectorMapData(
       sector: sector,
       seed: seed,
@@ -372,6 +376,45 @@ abstract class BiomeMapArchitect {
             type: BreakablePropType.fusionCell,
           ),
         );
+      }
+    }
+  }
+
+  void _spawnLockdownChamber(
+    AsteroidsGame game,
+    Sector sector,
+    math.Random random,
+    List<MapNode> nodes,
+  ) {
+    // Escolhe uma posição estratégica nos quadrantes industriais afastados do centro
+    final chamberPositions = [
+      Vector2(3250, 1650),
+      Vector2(1550, 3150),
+      Vector2(3250, 3150),
+      Vector2(1550, 1650),
+    ]..shuffle(random);
+
+    for (final pos in chamberPositions) {
+      if (isClearOfPois(pos, nodes, 450.0)) {
+        final chamber = LockdownChamberComponent(
+          position: pos,
+          chamberSize: Vector2(760.0, 700.0),
+          chamberName: 'COMPLEXO DE CONTENÇÃO // ${sector.name.toUpperCase()}',
+        );
+        game.world.add(chamber);
+        nodes.add(
+          MapNode(
+            id: 'lockdown_chamber',
+            type: MapNodeType.lockdownChamber,
+            position: pos,
+            label: 'CÂMARA DE QUARENTENA // ${sector.name.toUpperCase()}',
+            description: 'Entre para ativar o protocolo de contenção, eliminar a horda e desbloquear o Baú Dourado.',
+            icon: Icons.shield_outlined,
+            primaryColor: const Color(0xFF00E676),
+            isDiscovered: false,
+          ),
+        );
+        break;
       }
     }
   }

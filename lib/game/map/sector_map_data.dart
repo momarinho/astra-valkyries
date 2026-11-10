@@ -19,6 +19,7 @@ enum MapNodeType {
   cursedShrine,
   relicPedestal,
   stasisCoffin,
+  lockdownChamber,
 }
 
 class MapNode {

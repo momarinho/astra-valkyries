@@ -11,6 +11,7 @@ import 'package:asteroids/game/components/boss_lair.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'package:asteroids/game/components/living_biomes.dart';
 import 'package:asteroids/game/components/breakable_prop.dart';
+import 'package:asteroids/game/components/indoor_environment.dart';
 import 'sector_map_data.dart';
 import 'biomes/biome_map_builders.dart';
 export 'biomes/biome_map_builders.dart';
@@ -70,7 +71,10 @@ class SectorMapGenerator {
         child is AcidPoolHazardComponent ||
         child is RelicPedestalComponent ||
         child is StasisCoffinComponent ||
-        child is BreakablePropComponent);
+        child is BreakablePropComponent ||
+        child is ModularFloorComponent ||
+        child is BlastDoorComponent ||
+        child is LockdownChamberComponent);
     for (final p in List.from(oldPois)) {
       p.removeFromParent();
     }
