@@ -158,10 +158,16 @@ abstract class BiomeMapArchitect {
       ),
     );
 
-    // 4. Cargueiros Abandonados (Caixas Pretas)
+    // 4. Cargueiros Abandonados (Caixas Pretas) distribuídos proceduralmente por Seed
     final wreckPositions = [
-      Vector2(1750 + random.nextDouble() * 200, 3250 + random.nextDouble() * 200),
-      Vector2(3050 - random.nextDouble() * 200, 1550 + random.nextDouble() * 200),
+      Vector2(
+        center.x + (random.nextBool() ? 1100 : -1100) + (random.nextDouble() - 0.5) * 350,
+        center.y + (random.nextBool() ? 1100 : -1100) + (random.nextDouble() - 0.5) * 350,
+      ),
+      Vector2(
+        center.x + (random.nextBool() ? 1600 : -1600) + (random.nextDouble() - 0.5) * 400,
+        center.y + (random.nextBool() ? -1400 : 1400) + (random.nextDouble() - 0.5) * 400,
+      ),
     ];
     for (var i = 0; i < wreckPositions.length; i++) {
       final pos = wreckPositions[i];
@@ -180,11 +186,12 @@ abstract class BiomeMapArchitect {
       );
     }
 
-    // 5. Nebulosas Cósmicas Dinâmicas (Sprint 20)
-    final n1 = Vector2(3350, 3250);
-    final n2 = Vector2(1450, 3150);
+    // 5. Nebulosa Iônica Dinâmica
+    final n1 = Vector2(
+      center.x + (random.nextBool() ? 1350 : -1350),
+      center.y + (random.nextBool() ? 1350 : -1350),
+    );
     game.world.add(CosmicNebulaComponent(position: n1, type: NebulaType.ionCloud, radius: 420.0));
-    game.world.add(CosmicNebulaComponent(position: n2, type: NebulaType.darkMatter, radius: 420.0));
     nodes.add(
       MapNode(
         id: 'nebula_ion',
@@ -198,17 +205,87 @@ abstract class BiomeMapArchitect {
       ),
     );
 
-    // 6. Cofre Cronometrado (< 02:00), Mercador Errante e Santuário Amaldiçoado
-    final gatePos = Vector2(2400, 1520);
+    // 6. Sockets Cardinais Dinâmicos (Sorteados por Seed):
+    // Mercador Errante, Cofre Cronometrado, Santuário Amaldiçoado e Câmara de Quarentena
+    final cardinalSockets = getCardinalSockets()..shuffle(random);
+    final merchantPos = (sector.id == SectorId.cryoAbyss)
+        ? getMerchantPosition()
+        : _jitter(cardinalSockets[0], random, 80.0);
+    final timedVaultPos = _jitter(cardinalSockets[1], random, 80.0);
+    final shrinePos = _jitter(cardinalSockets[2], random, 80.0);
+    final chamberPos = _jitter(cardinalSockets[3], random, 80.0);
+
+    // 6A. Mercador Errante do Vazio (Posto de Contrabando com Piso Modular & Contêineres)
+    game.world.add(
+      ModularFloorComponent(
+        position: merchantPos,
+        size: Vector2(360, 280),
+        floorAccent: const Color(0xFFFFB300),
+      ),
+    );
+    game.world.add(
+      StationStructureComponent(
+        position: merchantPos + Vector2(-155, 0),
+        size: Vector2(34, 180),
+        spriteAsset: 'buildingCorridor.png',
+        isSolid: true,
+      ),
+    );
+    game.world.add(
+      StationStructureComponent(
+        position: merchantPos + Vector2(155, 0),
+        size: Vector2(34, 180),
+        spriteAsset: 'buildingCorridor.png',
+        isSolid: true,
+      ),
+    );
+    game.world.add(VoidMerchantComponent(position: merchantPos));
+    game.world.add(BreakablePropComponent(position: merchantPos + Vector2(-80, -70), type: BreakablePropType.cargoCrate));
+    game.world.add(BreakablePropComponent(position: merchantPos + Vector2(80, -70), type: BreakablePropType.cargoCrate));
+    game.world.add(BreakablePropComponent(position: merchantPos + Vector2(0, 75), type: BreakablePropType.explosiveBarrel));
+    nodes.add(
+      MapNode(
+        id: 'void_merchant',
+        type: MapNodeType.voidMerchant,
+        position: merchantPos,
+        label: 'MERCADOR ERRANTE DO VAZIO',
+        description: 'Troque Sucata por reparo imediato (+45 HP) e armamento tático.',
+        icon: Icons.storefront_rounded,
+        primaryColor: const Color(0xFFFFB300),
+        isDiscovered: false,
+      ),
+    );
+
+    // 6B. Cofre Cronometrado (< 02:00) com Portão Laser de Contenção Orientado
+    final vaultDir = (timedVaultPos - center).normalized();
+    final gatePos = timedVaultPos - vaultDir * 230.0;
+    final isGateHorizontal = vaultDir.y.abs() > vaultDir.x.abs();
     game.world.add(
       LaserContainmentGateComponent(
         position: gatePos,
         length: 260.0,
-        isHorizontal: true,
+        isHorizontal: isGateHorizontal,
       ),
     );
-
-    final timedVaultPos = Vector2(2400, 1180);
+    final gatePerp = Vector2(-vaultDir.y, vaultDir.x);
+    game.world.add(
+      StationStructureComponent(
+        position: gatePos + gatePerp * 140.0,
+        size: Vector2(40, 40),
+        spriteAsset: 'spaceStation_017.png',
+        isSolid: true,
+        beaconColor: const Color(0xFFFF1744),
+      ),
+    );
+    game.world.add(
+      StationStructureComponent(
+        position: gatePos - gatePerp * 140.0,
+        size: Vector2(40, 40),
+        spriteAsset: 'spaceStation_017.png',
+        isSolid: true,
+        beaconColor: const Color(0xFFFF1744),
+      ),
+    );
     game.world.add(TimedVaultComponent(position: timedVaultPos));
     nodes.add(
       MapNode(
@@ -223,23 +300,19 @@ abstract class BiomeMapArchitect {
       ),
     );
 
-    final merchantPos = getMerchantPosition();
-    game.world.add(VoidMerchantComponent(position: merchantPos));
-    nodes.add(
-      MapNode(
-        id: 'void_merchant',
-        type: MapNodeType.voidMerchant,
-        position: merchantPos,
-        label: 'MERCADOR ERRANTE DO VAZIO',
-        description: 'Troque Sucata por reparo imediato (+45 HP) e armamento tático.',
-        icon: Icons.storefront_rounded,
-        primaryColor: const Color(0xFFFFB300),
-        isDiscovered: false,
+    // 6C. Santuário Amaldiçoado do Vazio (Caverna de Matéria Escura)
+    game.world.add(CosmicNebulaComponent(position: shrinePos, type: NebulaType.darkMatter, radius: 400.0));
+    game.world.add(
+      StationStructureComponent(
+        position: shrinePos + Vector2(0, -90),
+        size: Vector2(70, 70),
+        spriteAsset: 'craterLarge.png',
+        isSolid: false,
       ),
     );
-
-    final shrinePos = Vector2(3220, 2400);
     game.world.add(CursedShrineComponent(position: shrinePos));
+    game.world.add(BreakablePropComponent(position: shrinePos + Vector2(-65, 50), type: BreakablePropType.oreCrystal));
+    game.world.add(BreakablePropComponent(position: shrinePos + Vector2(65, 50), type: BreakablePropType.oreCrystal));
     nodes.add(
       MapNode(
         id: 'cursed_shrine',
@@ -253,14 +326,31 @@ abstract class BiomeMapArchitect {
       ),
     );
 
+    // 6D. Câmara de Quarentena Indoor (Complexo de Contenção com Portas Blindadas)
+    final chamber = LockdownChamberComponent(
+      position: chamberPos,
+      chamberSize: Vector2(760.0, 700.0),
+      chamberName: 'COMPLEXO DE CONTENÇÃO // ${sector.name.toUpperCase()}',
+    );
+    game.world.add(chamber);
+    nodes.add(
+      MapNode(
+        id: 'lockdown_chamber',
+        type: MapNodeType.lockdownChamber,
+        position: chamberPos,
+        label: 'CÂMARA DE QUARENTENA // ${sector.name.toUpperCase()}',
+        description: 'Entre para ativar o protocolo de contenção, eliminar a horda e desbloquear o Baú Dourado.',
+        icon: Icons.shield_outlined,
+        primaryColor: const Color(0xFF00E676),
+        isDiscovered: false,
+      ),
+    );
+
     // 7. Geometria Exclusiva do Bioma (Paredes, Câmaras e Perigos da Imagem Modelo)
     buildBiomeSpecificGeometry(game, sector, random, nodes);
 
     // 8. Objetos Quebráveis do Cenário (Sprint 29 — Estilo Vampire Survivors: Barris, Cristais, Cargas)
     _spawnBreakableProps(game, sector, random, nodes);
-
-    // 9. Câmaras de Quarentena Indoor (Sprint 30 — Hangar Fechado, Portas Blindadas & Combate Confinado)
-    _spawnLockdownChamber(game, sector, random, nodes);
 
     return SectorMapData(
       sector: sector,
@@ -277,6 +367,13 @@ abstract class BiomeMapArchitect {
         Vector2(3850, 950),  // Extremo Nordeste
         Vector2(950, 3850),  // Extremo Sudoeste
         Vector2(3850, 3850), // Extremo Sudeste
+      ];
+
+  List<Vector2> getCardinalSockets() => [
+        Vector2(2400, 1180), // Norte
+        Vector2(3620, 2400), // Leste
+        Vector2(2400, 3620), // Sul
+        Vector2(1180, 2400), // Oeste
       ];
 
   Vector2 getMerchantPosition() => Vector2(1580, 2400);
@@ -386,6 +483,8 @@ abstract class BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
+    if (nodes.any((n) => n.type == MapNodeType.lockdownChamber)) return;
+
     // Escolhe uma posição estratégica nos quadrantes industriais afastados do centro
     final chamberPositions = [
       Vector2(3250, 1650),
@@ -432,26 +531,57 @@ class VestaBeltMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // Cordilheiras de Asteroides Procedurais por Seed:
-    // 4 braços de cordilheira radial que subdividem os quadrantes em desfiladeiros cósmicos
-    final angles = [math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4];
     final center = Vector2(2400, 2400);
 
+    // 1. Ponto de Inserção Central: Ruínas de Antena de Comunicação e Balizas de Navegação
+    game.world.add(
+      StationStructureComponent(
+        position: center,
+        size: Vector2(110, 110),
+        spriteAsset: 'satelliteDishLarge.png',
+        isSolid: false,
+        beaconColor: const Color(0xFF00E5FF),
+      ),
+    );
+    game.world.add(
+      StationStructureComponent(
+        position: center + Vector2(-130, -130),
+        size: Vector2(44, 44),
+        spriteAsset: 'spaceStation_017.png',
+        isSolid: true,
+        beaconColor: const Color(0xFF00E5FF),
+      ),
+    );
+    game.world.add(
+      StationStructureComponent(
+        position: center + Vector2(130, 130),
+        size: Vector2(44, 44),
+        spriteAsset: 'spaceStation_017.png',
+        isSolid: true,
+        beaconColor: const Color(0xFF00E5FF),
+      ),
+    );
+
+    // 2. Cordilheiras de Asteroides Procedurais por Seed:
+    // 4 braços de cordilheira radial que subdividem os quadrantes em desfiladeiros cósmicos
+    final angles = [math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4];
+
     for (var i = 0; i < angles.length; i++) {
-      final baseAngle = angles[i] + (random.nextDouble() - 0.5) * 0.35;
-      final distSteps = [850.0, 1380.0, 1880.0];
+      final baseAngle = angles[i] + (random.nextDouble() - 0.5) * 0.28;
+      final distSteps = [920.0, 1420.0, 1880.0];
 
       for (var d = 0; d < distSteps.length; d++) {
-        final dist = distSteps[d] + (random.nextDouble() - 0.5) * 120.0;
+        final dist = distSteps[d] + (random.nextDouble() - 0.5) * 100.0;
         final pos = center + Vector2(math.cos(baseAngle) * dist, math.sin(baseAngle) * dist);
 
-        if (!isClearOfPois(pos, nodes, 320.0)) continue;
+        if (!isClearOfPois(pos, nodes, 300.0)) continue;
 
         final isHoriz = (i + d) % 2 == 0;
-        final wallLength = 260.0 + random.nextDouble() * 160.0;
-        final wallThick = 28.0 + random.nextDouble() * 8.0;
+        final wallLength = 280.0 + random.nextDouble() * 140.0;
+        final wallThick = 34.0 + random.nextDouble() * 8.0;
         final wallSize = isHoriz ? Vector2(wallLength, wallThick) : Vector2(wallThick, wallLength);
 
+        // Muralha de megastrutura da cordilheira
         game.world.add(
           MegastructureWallComponent(
             position: pos,
@@ -459,10 +589,40 @@ class VestaBeltMapBuilder extends BiomeMapArchitect {
             wallColor: const Color(0xFF00E5FF),
           ),
         );
+
+        // Módulos industriais da estação fixados na rocha
+        game.world.add(
+          StationStructureComponent(
+            position: pos + Vector2(isHoriz ? 0 : 35, isHoriz ? 35 : 0),
+            size: Vector2(42, 42),
+            spriteAsset: (d == 1) ? 'metalStructureCross.png' : 'spaceStation_001.png',
+            isSolid: true,
+            beaconColor: const Color(0xFFFFB300),
+          ),
+        );
+
+        // Se for o passo intermediário (d == 1), cria um Atalho Secreto com veios de minério e barril
+        if (d == 1) {
+          final chokepointPos = pos + Vector2(isHoriz ? 160 : 0, isHoriz ? 0 : 160);
+          if (isClearOfPois(chokepointPos, nodes, 160.0)) {
+            game.world.add(
+              BreakablePropComponent(
+                position: chokepointPos,
+                type: BreakablePropType.oreCrystal,
+              ),
+            );
+            game.world.add(
+              BreakablePropComponent(
+                position: chokepointPos + Vector2(35, 0),
+                type: BreakablePropType.explosiveBarrel,
+              ),
+            );
+          }
+        }
       }
     }
 
-    // Docas Industriais Periféricas com Variação por Seed
+    // 3. Docas Industriais Periféricas com Variação por Seed
     final dockOffsets = [
       Vector2(750 + (random.nextDouble() - 0.5) * 100, 2150 + (random.nextDouble() - 0.5) * 100),
       Vector2(750 + (random.nextDouble() - 0.5) * 100, 2650 + (random.nextDouble() - 0.5) * 100),
@@ -474,8 +634,16 @@ class VestaBeltMapBuilder extends BiomeMapArchitect {
         game.world.add(
           MegastructureWallComponent(
             position: dp,
-            wallSize: Vector2(320 + random.nextDouble() * 60, 30),
+            wallSize: Vector2(340 + random.nextDouble() * 70, 32),
             wallColor: const Color(0xFF00E5FF),
+          ),
+        );
+        game.world.add(
+          StationStructureComponent(
+            position: dp + Vector2(0, 24),
+            size: Vector2(46, 46),
+            spriteAsset: 'pipeCorner.png',
+            isSolid: true,
           ),
         );
       }
@@ -747,7 +915,7 @@ class AegisGraveyardMapBuilder extends BiomeMapArchitect {
     ];
     for (final w in hullWalls) {
       final pos = _jitter(w.$1, random, 80.0);
-      if (isClearOfPois(pos, nodes, 280.0)) {
+      if (isClearOfPois(pos, nodes, 190.0)) {
         game.world.add(
           MegastructureWallComponent(
             position: pos,

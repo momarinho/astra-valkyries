@@ -600,3 +600,271 @@ class LockdownChamberComponent extends PositionComponent
     }
   }
 }
+
+/// 4. Estrutura Modular de Estação Espacial (Kenney CC0 — Hangar, Antenas, Módulos e Conectores)
+class StationStructureComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final String spriteAsset;
+  final bool isSolid;
+  final Color beaconColor;
+  ui.Image? _spriteImage;
+  double _beaconTimer = 0.0;
+
+  StationStructureComponent({
+    required Vector2 position,
+    required Vector2 size,
+    required this.spriteAsset,
+    this.isSolid = true,
+    this.beaconColor = const Color(0xFF00E5FF),
+    double angle = 0.0,
+  }) : super(
+          position: position.clone(),
+          size: size.clone(),
+          anchor: Anchor.center,
+          angle: angle,
+          priority: -35,
+        );
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    if (isSolid) {
+      add(RectangleHitbox(size: size));
+    }
+    try {
+      final path = spriteAsset.startsWith('assets/')
+          ? spriteAsset
+          : 'assets/art/environment/$spriteAsset';
+      final byteData = await rootBundle.load(path);
+      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
+      final frame = await codec.getNextFrame();
+      _spriteImage = frame.image;
+    } catch (_) {
+      _spriteImage = null;
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _beaconTimer += dt;
+    if (isSolid && game.state == GameState.playing) {
+      _resolvePhysicalCollisions();
+    }
+  }
+
+  void _resolvePhysicalCollisions() {
+    try {
+      final p = game.player;
+      final halfW = size.x / 2 + 18.0;
+      final halfH = size.y / 2 + 18.0;
+      final dx = p.position.x - position.x;
+      final dy = p.position.y - position.y;
+      if (dx.abs() < halfW && dy.abs() < halfH) {
+        final overlapX = halfW - dx.abs();
+        final overlapY = halfH - dy.abs();
+        final signX = dx == 0 ? 1.0 : dx.sign;
+        final signY = dy == 0 ? 1.0 : dy.sign;
+        if (overlapX < overlapY) {
+          p.position.x += signX * (overlapX + 1.0);
+          p.velocity.x = 0;
+        } else {
+          p.position.y += signY * (overlapY + 1.0);
+          p.velocity.y = 0;
+        }
+      }
+    } catch (_) {}
+
+    for (final child in game.world.children) {
+      if (child is AsteroidComponent && !child.isRemoving) {
+        final halfW = size.x / 2 + child.radius;
+        final halfH = size.y / 2 + child.radius;
+        final dx = child.position.x - position.x;
+        final dy = child.position.y - position.y;
+        if (dx.abs() < halfW && dy.abs() < halfH) {
+          final overlapX = halfW - dx.abs();
+          final overlapY = halfH - dy.abs();
+          final signX = dx == 0 ? 1.0 : dx.sign;
+          final signY = dy == 0 ? 1.0 : dy.sign;
+          if (overlapX < overlapY) {
+            child.position.x += signX * (overlapX + 1.0);
+            child.velocity.x = signX * child.velocity.x.abs() * 0.8;
+          } else {
+            child.position.y += signY * (overlapY + 1.0);
+            child.velocity.y = signY * child.velocity.y.abs() * 0.8;
+          }
+        }
+      }
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+
+    if (_spriteImage != null) {
+      final src = Rect.fromLTWH(
+        0,
+        0,
+        _spriteImage!.width.toDouble(),
+        _spriteImage!.height.toDouble(),
+      );
+      final paint = Paint()..filterQuality = FilterQuality.medium;
+      canvas.drawImageRect(_spriteImage!, src, rect, paint);
+    } else {
+      final bgPaint = Paint()..color = const Color(0xFF1E293B);
+      canvas.drawRect(rect, bgPaint);
+      final borderPaint = Paint()
+        ..color = beaconColor.withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawRect(rect, borderPaint);
+    }
+
+    // Sinalizadores luminosos LED
+    final pulse = 0.5 + 0.5 * math.sin(_beaconTimer * 3.5);
+    final beaconPaint = Paint()
+      ..color = beaconColor.withValues(alpha: 0.3 + 0.7 * pulse)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(const Offset(6, 6), 3.0, beaconPaint);
+    canvas.drawCircle(Offset(size.x - 6, size.y - 6), 3.0, beaconPaint);
+  }
+}
+
+/// 5. Barreira de Recife de Asteroides (Cânions e Desfiladeiros Cósmicos intransponíveis)
+class AsteroidReefComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final List<({Offset offset, double radius, double craterScale})> clusters;
+  final Color oreGlowColor;
+  ui.Image? _craterImage;
+
+  AsteroidReefComponent({
+    required Vector2 position,
+    required Vector2 size,
+    required this.clusters,
+    this.oreGlowColor = const Color(0xFF00E5FF),
+  }) : super(
+          position: position.clone(),
+          size: size.clone(),
+          anchor: Anchor.center,
+          priority: -36,
+        );
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(RectangleHitbox(size: size));
+    try {
+      final byteData = await rootBundle.load('assets/art/environment/crater.png');
+      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
+      final frame = await codec.getNextFrame();
+      _craterImage = frame.image;
+    } catch (_) {}
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state == GameState.playing) {
+      _resolvePhysicalCollisions();
+    }
+  }
+
+  void _resolvePhysicalCollisions() {
+    try {
+      final p = game.player;
+      final halfW = size.x / 2 + 16.0;
+      final halfH = size.y / 2 + 16.0;
+      final dx = p.position.x - position.x;
+      final dy = p.position.y - position.y;
+      if (dx.abs() < halfW && dy.abs() < halfH) {
+        final overlapX = halfW - dx.abs();
+        final overlapY = halfH - dy.abs();
+        final signX = dx == 0 ? 1.0 : dx.sign;
+        final signY = dy == 0 ? 1.0 : dy.sign;
+        if (overlapX < overlapY) {
+          p.position.x += signX * (overlapX + 1.0);
+          p.velocity.x = 0;
+        } else {
+          p.position.y += signY * (overlapY + 1.0);
+          p.velocity.y = 0;
+        }
+      }
+    } catch (_) {}
+
+    for (final child in game.world.children) {
+      if (child is AsteroidComponent && !child.isRemoving) {
+        final halfW = size.x / 2 + child.radius;
+        final halfH = size.y / 2 + child.radius;
+        final dx = child.position.x - position.x;
+        final dy = child.position.y - position.y;
+        if (dx.abs() < halfW && dy.abs() < halfH) {
+          final overlapX = halfW - dx.abs();
+          final overlapY = halfH - dy.abs();
+          final signX = dx == 0 ? 1.0 : dx.sign;
+          final signY = dy == 0 ? 1.0 : dy.sign;
+          if (overlapX < overlapY) {
+            child.position.x += signX * (overlapX + 1.0);
+            child.velocity.x = signX * child.velocity.x.abs() * 0.8;
+          } else {
+            child.position.y += signY * (overlapY + 1.0);
+            child.velocity.y = signY * child.velocity.y.abs() * 0.8;
+          }
+        }
+      }
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+
+    // 1. Sombra volumétrica de profundidade do recife
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.70)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.x, size.y), shadowPaint);
+
+    // 2. Rocha maciça densa de asteroide
+    final rockPaint = Paint()
+      ..color = const Color(0xFF263238)
+      ..style = PaintingStyle.fill;
+    final edgePaint = Paint()
+      ..color = const Color(0xFF455A64)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    for (final cluster in clusters) {
+      final cPos = cluster.offset;
+      canvas.drawCircle(cPos, cluster.radius, rockPaint);
+      canvas.drawCircle(cPos, cluster.radius, edgePaint);
+
+      if (_craterImage != null) {
+        final crSize = cluster.radius * cluster.craterScale;
+        final dst = Rect.fromCenter(center: cPos, width: crSize, height: crSize);
+        final src = Rect.fromLTWH(
+          0,
+          0,
+          _craterImage!.width.toDouble(),
+          _craterImage!.height.toDouble(),
+        );
+        canvas.drawImageRect(
+          _craterImage!,
+          src,
+          dst,
+          Paint()..filterQuality = FilterQuality.medium,
+        );
+      }
+    }
+
+    // 3. Veios de minério luminescentes interligados
+    final orePaint = Paint()
+      ..color = oreGlowColor.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    for (int i = 0; i < clusters.length - 1; i++) {
+      canvas.drawLine(clusters[i].offset, clusters[i + 1].offset, orePaint);
+    }
+  }
+}

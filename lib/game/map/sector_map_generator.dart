@@ -74,7 +74,9 @@ class SectorMapGenerator {
         child is BreakablePropComponent ||
         child is ModularFloorComponent ||
         child is BlastDoorComponent ||
-        child is LockdownChamberComponent);
+        child is LockdownChamberComponent ||
+        child is StationStructureComponent ||
+        child is AsteroidReefComponent);
     for (final p in List.from(oldPois)) {
       p.removeFromParent();
     }

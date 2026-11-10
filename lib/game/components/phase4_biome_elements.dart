@@ -143,8 +143,9 @@ class BiomeBackdropComponent extends PositionComponent
       final dstRect = Rect.fromLTWH(offsetX, offsetY, viewW, viewH);
 
       // Opacidade balanceada do backdrop para não ofuscar naves inimigas e asteroides
+      final bgAlpha = sectorId == SectorId.vesta ? 0.08 : 0.30;
       final bgPaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.38)
+        ..color = Colors.white.withValues(alpha: bgAlpha)
         ..filterQuality = FilterQuality.medium;
       canvas.drawImageRect(_backdropImage!, srcRect, dstRect, bgPaint);
 
@@ -216,25 +217,15 @@ class BiomeBackdropComponent extends PositionComponent
         ).createShader(Rect.fromCircle(center: planetCenter, radius: 620)),
     );
 
-    // 2. Dois Anéis Concêntricos de Mineração (650px e 1350px) e Passarelas Douradas (Camada 1)
-    final ringPaint = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.14)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 26.0;
-    canvas.drawCircle(center, 650, ringPaint);
-    canvas.drawCircle(center, 1350, ringPaint);
-
-    // Passarelas industriais radiais ligando o Anel Interno ao Anel Externo
-    final catwalkPaint = Paint()
-      ..color = const Color(0xFFFFB300).withValues(alpha: 0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 18.0;
-    for (int i = 0; i < 8; i++) {
-      final a = i * (math.pi / 4);
-      final p1 = Offset(center.dx + math.cos(a) * 650, center.dy + math.sin(a) * 650);
-      final p2 = Offset(center.dx + math.cos(a) * 1350, center.dy + math.sin(a) * 1350);
-      canvas.drawLine(p1, p2, catwalkPaint);
-    }
+    // 2. Halo de Nebulosa e Campo de Poeira Cósmica de Cinturão de Mineração
+    final dustPaint1 = Paint()
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.05)
+      ..style = PaintingStyle.fill;
+    final dustPaint2 = Paint()
+      ..color = const Color(0xFFFF9100).withValues(alpha: 0.04)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(const Offset(3400, 1600), 750, dustPaint1);
+    canvas.drawCircle(const Offset(1600, 3400), 750, dustPaint2);
   }
 
   void _renderHeliosForgeBackdrop(Canvas canvas, Offset center) {
