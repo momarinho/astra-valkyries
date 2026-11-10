@@ -227,6 +227,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
   }
 
+  void removeWeapon(String weaponId) {
+    unlockedWeapons.remove(weaponId);
+    activeWeapons.removeWhere((w) => w.id == weaponId);
+  }
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();

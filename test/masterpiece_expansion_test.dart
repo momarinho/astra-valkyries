@@ -19,6 +19,7 @@ import 'package:asteroids/ui/pause_overlay.dart';
 import 'package:asteroids/ui/game_over_overlay.dart';
 import 'package:asteroids/ui/title_screen_overlay.dart';
 import 'package:asteroids/services/localization_service.dart';
+import 'package:asteroids/services/secret_grimoire_service.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();
@@ -192,6 +193,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final game = _createTestGame();
+      SecretGrimoireService.discoverAllForTest();
 
       await tester.pumpWidget(
         MaterialApp(
@@ -202,9 +204,13 @@ void main() {
 
       expect(find.text('✨ GRIMÓRIO CÓSMICO'), findsOneWidget);
       await tester.tap(find.text('✨ GRIMÓRIO CÓSMICO'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
+      final grimoireScrollable = find.byType(Scrollable).last;
+      await tester.scrollUntilVisible(find.textContaining('SUPERNOVA ANNIHILATOR'), 50.0, scrollable: grimoireScrollable);
       expect(find.textContaining('SUPERNOVA ANNIHILATOR'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.textContaining('SINGULARITY RIFT TORPEDO'), 50.0, scrollable: grimoireScrollable);
       expect(find.textContaining('SINGULARITY RIFT TORPEDO'), findsOneWidget);
 
       // Verify Victory Screen in GameOverOverlay

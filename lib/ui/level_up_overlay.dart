@@ -69,6 +69,23 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
         event.logicalKey == LogicalKeyboardKey.space ||
         event.logicalKey == LogicalKeyboardKey.numpadEnter) {
       _selectPerk(_selectedIndex);
+    } else if (event.logicalKey == LogicalKeyboardKey.keyR) {
+      if (widget.game.rerollLevelUpChoices()) {
+        setState(() {
+          _selectedIndex = 0;
+        });
+      }
+    } else if (event.logicalKey == LogicalKeyboardKey.keyB) {
+      if (choices.isNotEmpty) {
+        final perkToBanish = choices[_selectedIndex.clamp(0, choices.length - 1)];
+        if (widget.game.banishLevelUpPerk(perkToBanish)) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        }
+      }
+    } else if (event.logicalKey == LogicalKeyboardKey.keyS) {
+      widget.game.skipLevelUp();
     }
   }
 
@@ -220,6 +237,11 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                         ),
 
                         const SizedBox(height: 18),
+
+                        // Sprint 54: Barra de Ações Táticas de Agência (Reroll, Banish, Skip)
+                        _buildTacticalActionBar(),
+
+                        const SizedBox(height: 14),
 
                         // Mobile / Touch Interaction Prompt
                         Container(
@@ -438,6 +460,108 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTacticalActionBar() {
+    final game = widget.game;
+    final choices = game.currentLevelUpChoices;
+    final canReroll = game.runRerollsRemaining > 0;
+    final canBanish = game.runBanishesRemaining > 0 && choices.isNotEmpty;
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Reroll Button
+          OutlinedButton.icon(
+            key: const Key('level_up_reroll_button'),
+            onPressed: canReroll
+                ? () {
+                    if (game.rerollLevelUpChoices()) {
+                      setState(() {
+                        _selectedIndex = 0;
+                      });
+                    }
+                  }
+                : null,
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: Text(
+              '[R] ${I18n.t('level_up.reroll', {'count': '${game.runRerollsRemaining}'})}',
+              style: const TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF00E5FF),
+              disabledForegroundColor: Colors.white24,
+              side: BorderSide(color: canReroll ? const Color(0xFF00E5FF) : Colors.white12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Banish Button
+          OutlinedButton.icon(
+            key: const Key('level_up_banish_button'),
+            onPressed: canBanish
+                ? () {
+                    final perkToBanish = choices[_selectedIndex.clamp(0, choices.length - 1)];
+                    if (game.banishLevelUpPerk(perkToBanish)) {
+                      setState(() {
+                        _selectedIndex = 0;
+                      });
+                    }
+                  }
+                : null,
+            icon: const Icon(Icons.delete_sweep_rounded, size: 16),
+            label: Text(
+              '[B] ${I18n.t('level_up.banish', {'count': '${game.runBanishesRemaining}'})}',
+              style: const TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFFF5252),
+              disabledForegroundColor: Colors.white24,
+              side: BorderSide(color: canBanish ? const Color(0xFFFF5252) : Colors.white12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Skip Button
+          OutlinedButton.icon(
+            key: const Key('level_up_skip_button'),
+            onPressed: () {
+              game.skipLevelUp();
+            },
+            icon: const Icon(Icons.fast_forward_rounded, size: 16),
+            label: Text(
+              '[S] ${I18n.t('level_up.skip')}',
+              style: const TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFFFB300),
+              side: const BorderSide(color: Color(0xFFFFB300)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
       ),
     );
   }

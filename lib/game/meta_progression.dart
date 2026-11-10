@@ -86,6 +86,28 @@ class MetaProgression {
       costs: [200, 500, 1000, 2000],
       effectDescription: _describeLuck,
     ),
+    // 6. Tactical Re-Roll Chips (Vampire Survivors Style)
+    MetaUpgradeDef(
+      id: 'rerolls',
+      title: 'TACTICAL RE-ROLL CHIPS',
+      subtitle: 'Allows re-rolling Level-Up module choices during a sortie',
+      icon: Icons.refresh_rounded,
+      color: Color(0xFF00E5FF),
+      maxLevel: 3,
+      costs: [250, 600, 1200],
+      effectDescription: _describeRerolls,
+    ),
+    // 7. Void Purge Protocol (Banish)
+    MetaUpgradeDef(
+      id: 'banish',
+      title: 'VOID PURGE PROTOCOL (BANISH)',
+      subtitle: 'Permanently purges unwanted tactical modules from appearing this sortie',
+      icon: Icons.delete_sweep_rounded,
+      color: Color(0xFFFF5252),
+      maxLevel: 2,
+      costs: [400, 950],
+      effectDescription: _describeBanish,
+    ),
   ];
 
   static String _describeHull(int lvl) {
@@ -113,6 +135,16 @@ class MetaProgression {
     return '+${lvl * 10}% Chance for 3x & 5x Chest Jackpots';
   }
 
+  static String _describeRerolls(int lvl) {
+    if (lvl == 0) return 'Standard Module Lock (0 Rerolls)';
+    return '+$lvl Reroll${lvl > 1 ? 's' : ''} per sortie';
+  }
+
+  static String _describeBanish(int lvl) {
+    if (lvl == 0) return 'No Purge Protocol (0 Banishes)';
+    return '+$lvl Perk Banish${lvl > 1 ? 'es' : ''} per sortie';
+  }
+
   // Saved levels for each upgrade id
   final Map<String, int> levels = {
     'hull': 0,
@@ -120,6 +152,8 @@ class MetaProgression {
     'thrusters': 0,
     'targeting': 0,
     'luck': 0,
+    'rerolls': 0,
+    'banish': 0,
   };
 
   int getLevel(String id) => levels[id] ?? 0;
@@ -132,6 +166,8 @@ class MetaProgression {
   double get critChanceBonus => getLevel('targeting') * 0.04;
   double get damageBonusMultiplier => getLevel('targeting') * 0.06;
   double get jackpotChanceBonus => getLevel('luck') * 0.10;
+  int get rerollsCount => getLevel('rerolls');
+  int get banishCount => getLevel('banish');
 
   Future<void> loadFromPrefs() async {
     try {

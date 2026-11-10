@@ -24,12 +24,12 @@ void main() {
   );
 
   group('Sprint 4: MetaProgression Core Domain Tests', () {
-    test('MetaProgression initializes with 5 core upgrade definitions at level 0', () {
+    test('MetaProgression initializes with 7 core upgrade definitions at level 0', () {
       final meta = MetaProgression();
-      expect(MetaProgression.allUpgrades.length, equals(5));
+      expect(MetaProgression.allUpgrades.length, equals(7));
 
       final ids = MetaProgression.allUpgrades.map((u) => u.id).toList();
-      expect(ids, containsAll(['hull', 'magnet', 'thrusters', 'targeting', 'luck']));
+      expect(ids, containsAll(['hull', 'magnet', 'thrusters', 'targeting', 'luck', 'rerolls', 'banish']));
 
       for (final id in ids) {
         expect(meta.getLevel(id), equals(0));

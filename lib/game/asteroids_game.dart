@@ -50,6 +50,7 @@ import 'rogue_perks.dart';
 import 'roguelite_systems.dart';
 import '../services/achievement_service.dart';
 import '../services/sound_engine.dart';
+import '../services/secret_grimoire_service.dart';
 import 'meta_progression.dart';
 import 'affinity_system.dart';
 import 'sector.dart';
@@ -785,6 +786,51 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     gameFocusNode?.requestFocus();
   }
 
+  // Sprint 54: Agência de Level-Up estilo Vampire Survivors (Reroll, Banish, Skip)
+  int runRerollsRemaining = 0;
+  int runBanishesRemaining = 0;
+  final Set<String> runBanishedPerkIds = {};
+
+  bool rerollLevelUpChoices() {
+    if (runRerollsRemaining <= 0) return false;
+    runRerollsRemaining--;
+    playSfx('purchase.wav');
+    currentLevelUpChoices = RoguePerkGenerator.generateChoices(this, count: 3);
+    return true;
+  }
+
+  bool banishLevelUpPerk(RoguePerk perk) {
+    if (runBanishesRemaining <= 0) return false;
+    runBanishesRemaining--;
+    runBanishedPerkIds.add(perk.id);
+    playSfx('bomb_explode.wav');
+    currentLevelUpChoices = RoguePerkGenerator.generateChoices(this, count: 3);
+    return true;
+  }
+
+  void skipLevelUp() {
+    playSfx('powerup.wav');
+    if (player.hp < player.maxHp) {
+      player.heal(35.0);
+      try {
+        spawnFloatingText(
+          player.position + Vector2(0, -20),
+          '+35 HP',
+          color: const Color(0xFF00E676),
+          fontSize: 13.0,
+        );
+      } catch (_) {}
+    }
+    state = GameState.playing;
+    addRunCredits(50);
+    try {
+      overlays.remove('levelUp');
+      _safeAddOverlay('hud');
+      resumeEngine();
+      gameFocusNode?.requestFocus();
+    } catch (_) {}
+  }
+
   // Vampire Survivors Dopamine Chest & Jackpot Rewards
   List<ChestReward> currentChestRewards = [];
 
@@ -1105,6 +1151,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   Future<void> loadPersistentDataFromPrefs() async {
     try {
       await I18n.init();
+      await SecretGrimoireService.init();
       final prefs = await SharedPreferences.getInstance();
       totalCredits = prefs.getInt('persistent_credits') ?? 0;
       hyperModeUnlocked = prefs.getBool('hyper_mode_unlocked') ?? true;
@@ -1456,6 +1503,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     activePassives.clear();
     activeMutations.clear();
     flawlessBossKill = true;
+    runRerollsRemaining = metaProgression.rerollsCount;
+    runBanishesRemaining = metaProgression.banishCount;
+    runBanishedPerkIds.clear();
 
     // Sprint 27: Reseta contadores de feitos da run
     runAsteroidsDestroyed = 0;

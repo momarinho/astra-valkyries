@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/services/achievement_service.dart';
+import 'package:asteroids/services/secret_grimoire_service.dart';
+import 'package:asteroids/game/rogue_perks.dart';
 
 class PauseOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -621,154 +623,278 @@ class _PauseOverlayState extends State<PauseOverlay> {
   }
 
   Widget _buildCosmicGrimoire(AsteroidsGame game) {
-    final recipes = [
+    final discovered = SecretGrimoireService.discoveredCount;
+    final total = SecretGrimoireService.totalCount;
+    final pct = (SecretGrimoireService.progressFraction * 100).toInt();
+
+    // 1. Super-Unions
+    final superUnions = [
       (
-        weaponId: 'blaster',
-        weaponName: 'Pulse Blaster (MK 3)',
-        passiveId: 'passive_overdrive',
-        passiveName: 'Void Catalyst',
-        evolvedName: 'Supernova Annihilator',
+        key: 'union_void_singularity',
+        name: 'Void Singularity Nova',
+        req1: 'Pulse Blaster (MK 3)',
+        req2: 'Void Cluster Mines (MK 3)',
+        hasReq1: game.player.unlockedWeapons['blaster']?.level == 3,
+        hasReq2: game.player.unlockedWeapons['void_mines']?.level == 3,
+        isEquipped: game.player.unlockedWeapons.containsKey('union_void_singularity'),
         desc: I18n.select(
-          pt: 'Feixes contínuos de plasma solar que incineram frotas inteiras.',
-          en: 'Dual continuous golden plasma beams incinerating entire fleets.',
+          pt: 'Fusão de Blaster e Minas do Vazio. Libera 1 slot de arma e dispara feixes quânticos.',
+          en: 'Fuses Blaster and Void Mines. Frees 1 arsenal slot and fires quantum singularity beams.',
         ),
       ),
       (
-        weaponId: 'spread_shot',
-        weaponName: 'Spread Cannon (MK 3)',
-        passiveId: 'passive_shield_recharge',
-        passiveName: 'Aegis Capacitor',
-        evolvedName: 'Hyperion Flak Storm',
+        key: 'union_thunderstorm',
+        name: 'Thunderstorm Core Melter',
+        req1: 'Solar Thermal Lance (MK 3)',
+        req2: 'Tesla Arc Cannon (MK 3)',
+        hasReq1: game.player.unlockedWeapons['solar_lance']?.level == 3,
+        hasReq2: game.player.unlockedWeapons['tesla_arc']?.level == 3,
+        isEquipped: game.player.unlockedWeapons.containsKey('union_thunderstorm'),
         desc: I18n.select(
-          pt: 'Tempestade de 10 fragmentos ionizados em anel de 360 graus.',
-          en: 'Storm of 10 ionized fragments in a 360-degree perimeter ring.',
-        ),
-      ),
-      (
-        weaponId: 'rapid_fire',
-        weaponName: 'Phase Laser (MK 3)',
-        passiveId: 'passive_fire_rate',
-        passiveName: 'Overclocked Emitters',
-        evolvedName: 'Absolute Zero Tachyon Beam',
-        desc: I18n.select(
-          pt: 'Fluxo criogênico perfurante com penetração linear infinita.',
-          en: 'Cryogenic piercing stream with infinite linear penetration.',
-        ),
-      ),
-      (
-        weaponId: 'bomb_launcher',
-        weaponName: 'Antimatter Torpedo (MK 3)',
-        passiveId: 'passive_magnet',
-        passiveName: 'Magnetic Harvester',
-        evolvedName: 'Singularity Rift Torpedo',
-        desc: I18n.select(
-          pt: 'Torpedo quântico gerando fendas gravitacionais de buraco negro.',
-          en: 'Quantum torpedo spawning gravitational black hole rifts.',
+          pt: 'Fusão de Lance Solar e Canhão Tesla. Libera 1 slot e emite raios solares bifurcados.',
+          en: 'Fuses Solar Lance and Tesla Arc. Frees 1 slot and emits branched solar lightning.',
         ),
       ),
     ];
 
     return Container(
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.35)),
-      ),
+      constraints: const BoxConstraints(maxHeight: 285),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            I18n.select(
-              pt: 'RECEITAS DE HIPER-EVOLUÇÃO // ARSENAL',
-              en: 'HYPER-EVOLUTION RECIPES // ARMORY',
+          // Header Progress Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.35)),
             ),
-            style: const TextStyle(
-              fontFamily: 'Orbitron',
-              fontSize: 10.5,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFFFD700),
-              letterSpacing: 1.1,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        I18n.select(
+                          pt: 'GRIMÓRIO // SEGREDOS REVELADOS',
+                          en: 'GRIMOIRE // SECRETS DISCOVERED',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFFD700),
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$discovered / $total ($pct%)',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: SecretGrimoireService.progressFraction,
+                    backgroundColor: Colors.white12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                    minHeight: 5,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
-          ...recipes.map((r) {
-            final weaponMatch = game.player.activeWeapons.where((w) => w.id == r.weaponId).toList();
-            final hasWeapon = weaponMatch.isNotEmpty;
-            final isMaxWeapon = hasWeapon && weaponMatch.first.level >= weaponMatch.first.maxLevel;
-            final isEvolved = hasWeapon && weaponMatch.first.isEvolved;
-            final hasPassive = game.activePassives.contains(r.passiveId);
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isEvolved
-                    ? const Color(0xFFFFD700).withValues(alpha: 0.14)
-                    : Colors.black.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isEvolved
-                      ? const Color(0xFFFFD700)
-                      : (isMaxWeapon && hasPassive ? const Color(0xFF00E676) : Colors.white12),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '★ ${r.evolvedName.toUpperCase()}',
+          Expanded(
+            child: ListView(
+              children: [
+                // Super-Unions Section
+                ...superUnions.map((u) {
+                  final isDiscovered = SecretGrimoireService.isDiscovered(u.key);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: u.isEquipped
+                          ? const Color(0xFFE040FB).withOpacity(0.20)
+                          : (isDiscovered ? Colors.black.withOpacity(0.45) : Colors.white.withOpacity(0.02)),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: u.isEquipped
+                            ? const Color(0xFFE040FB)
+                            : (isDiscovered ? const Color(0xFFFFD700).withOpacity(0.5) : Colors.white12),
+                        width: isDiscovered ? 1.2 : 0.8,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                isDiscovered ? '★ SUPER-UNIÃO: ${u.name.toUpperCase()}' : '★ ??? [SUPER-UNIÃO SECRETA]',
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 10.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDiscovered ? const Color(0xFFE040FB) : Colors.white38,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: (u.isEquipped ? const Color(0xFFE040FB) : Colors.white10),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                u.isEquipped ? 'EQUIPADA!' : (isDiscovered ? 'LIBERA 1 SLOT' : 'SEGREDO'),
+                                style: const TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 8.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          isDiscovered
+                              ? '${u.hasReq1 ? "✅" : "⬜"} ${u.req1}  +  ${u.hasReq2 ? "✅" : "⬜"} ${u.req2}'
+                              : '⬜ ??? + ⬜ ??? (Funda 2 armas nível máximo em combate)',
                           style: TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                            color: isEvolved ? const Color(0xFFFFD700) : Colors.white,
+                            fontFamily: 'Rajdhani',
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.w600,
+                            color: isDiscovered ? const Color(0xFF64FFDA) : Colors.white30,
                           ),
                         ),
-                      ),
-                      Text(
-                        isEvolved
-                            ? I18n.select(pt: 'EVOLUÍDA!', en: 'EVOLVED!')
+                        if (isDiscovered)
+                          Text(
+                            u.desc,
+                            style: const TextStyle(
+                              fontFamily: 'Rajdhani',
+                              fontSize: 10.5,
+                              color: Colors.white60,
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                // Standard 13 Weapon Evolutions
+                ...WeaponSynergy.allSynergies.map((s) {
+                  final isDiscovered = SecretGrimoireService.isDiscovered(s.weaponId);
+                  final weaponMatch = game.player.activeWeapons.where((w) => w.id == s.weaponId).toList();
+                  final hasWeapon = weaponMatch.isNotEmpty;
+                  final isMaxWeapon = hasWeapon && weaponMatch.first.level >= weaponMatch.first.maxLevel;
+                  final isEvolved = hasWeapon && weaponMatch.first.isEvolved;
+                  final hasPassive = game.activePassives.contains(s.passiveId);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isEvolved
+                          ? const Color(0xFFFFD700).withOpacity(0.14)
+                          : (isDiscovered ? Colors.black.withOpacity(0.45) : Colors.white.withOpacity(0.02)),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isEvolved
+                            ? const Color(0xFFFFD700)
                             : (isMaxWeapon && hasPassive
-                                ? I18n.select(pt: 'PRONTA!', en: 'READY!')
-                                : I18n.select(pt: 'BLOQUEADA', en: 'LOCKED')),
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.bold,
-                          color: isEvolved
-                              ? const Color(0xFFFFD700)
-                              : (isMaxWeapon && hasPassive ? const Color(0xFF00E676) : Colors.white38),
-                        ),
+                                ? const Color(0xFF00E676)
+                                : (isDiscovered ? Colors.white24 : Colors.white10)),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${hasWeapon ? "✅" : "⬜"} ${r.weaponName}  +  ${hasPassive ? "✅" : "⬜"} ${r.passiveName}',
-                    style: const TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.cyanAccent,
                     ),
-                  ),
-                  Text(
-                    r.desc,
-                    style: const TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 10.5,
-                      color: Colors.white60,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                isDiscovered
+                                    ? '★ ${s.evolvedName.toUpperCase()}'
+                                    : (hasWeapon ? '★ ${s.weaponId.toUpperCase()} + ??? [SEGREDO]' : '★ ??? [SEGREDO DO VAZIO]'),
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 10.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: isEvolved
+                                      ? const Color(0xFFFFD700)
+                                      : (isDiscovered ? Colors.white : Colors.white38),
+                                ),
+                              ),
+                            ),
+                            Text(
+                              isEvolved
+                                  ? I18n.select(pt: 'EVOLUÍDA!', en: 'EVOLVED!')
+                                  : (isMaxWeapon && hasPassive
+                                      ? I18n.select(pt: 'PRONTA!', en: 'READY!')
+                                      : (isDiscovered
+                                          ? I18n.select(pt: 'DESCOBERTA', en: 'KNOWN')
+                                          : I18n.select(pt: 'OCULTO', en: 'HIDDEN'))),
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.bold,
+                                color: isEvolved
+                                    ? const Color(0xFFFFD700)
+                                    : (isMaxWeapon && hasPassive
+                                        ? const Color(0xFF00E676)
+                                        : (isDiscovered ? Colors.cyanAccent : Colors.white24)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          isDiscovered
+                              ? '${hasWeapon ? "✅" : "⬜"} ${s.weaponId.toUpperCase()} (MK 3)  +  ${hasPassive ? "✅" : "⬜"} ${s.passiveTitle}'
+                              : (hasWeapon
+                                  ? '✅ ${s.weaponId.toUpperCase()} (MK 3)  +  ⬜ ??? [Módulo Desconhecido]'
+                                  : '⬜ ??? + ⬜ ??? [Descubra fundindo em combate]'),
+                          style: TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.w600,
+                            color: isDiscovered ? Colors.cyanAccent : Colors.white38,
+                          ),
+                        ),
+                        if (isDiscovered)
+                          Text(
+                            s.evolutionDescription,
+                            style: const TextStyle(
+                              fontFamily: 'Rajdhani',
+                              fontSize: 10.5,
+                              color: Colors.white60,
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                  );
+                }),
+              ],
+            ),
+          ),
         ],
       ),
     );

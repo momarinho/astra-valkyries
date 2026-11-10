@@ -11,6 +11,7 @@ import 'components/sector_boss.dart';
 import 'components/advanced_weapons.dart';
 import 'components/katana_slash.dart';
 import '../services/achievement_service.dart';
+import '../services/secret_grimoire_service.dart';
 
 abstract class Weapon {
   final String id;
@@ -56,6 +57,7 @@ abstract class Weapon {
     isEvolved = true;
     applyEvolution();
     AchievementService.unlock('transcendence');
+    SecretGrimoireService.discover(id);
     return true;
   }
 
@@ -1161,4 +1163,128 @@ class TachyonKatana extends Weapon {
     damage = 42.0;
     muzzleFlashSize = 12.0;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 56: Super-Uniões de Armas Duplas (Vampire Survivors Style)
+// ---------------------------------------------------------------------------
+
+class VoidSingularityNova extends Weapon {
+  VoidSingularityNova()
+      : super(
+          id: 'union_void_singularity',
+          name: 'Void Singularity Nova',
+          evolvedName: 'Void Singularity Nova ★',
+          cooldown: 0.38,
+          recoil: 8.0,
+          muzzleFlashSize: 14.0,
+          damage: 85.0,
+        ) {
+    isEvolved = true;
+  }
+
+  @override
+  bool fire(PlayerComponent player) {
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
+
+    // Disparos duplos frontais de matéria negra com perfuração infinita
+    final right = Vector2(-player.forward.y, player.forward.x);
+    for (final offset in [-10.0, 10.0]) {
+      final spawnPos = player.position + player.forward * player.radius + right * offset;
+      final bullet = BulletComponent(
+        position: spawnPos,
+        radius: 6.5,
+        velocity: player.forward * (GameConstants.playerShootSpeed + 160.0),
+        lifeTimer: GameConstants.shotLifetimeSeconds * 1.4,
+        damage: effectiveDamage,
+        color: const Color(0xFFE040FB),
+        piercesLeft: 99,
+        weaponSource: this,
+      );
+      player.game.world.add(bullet);
+    }
+
+    // Mina traseira gravitacional
+    final minePos = player.position - player.forward * (player.radius + 14.0);
+    final bulletMine = BulletComponent(
+      position: minePos,
+      radius: 8.5,
+      velocity: -player.forward * 45.0,
+      lifeTimer: 3.5,
+      damage: effectiveDamage * 1.5,
+      color: const Color(0xFF7C4DFF),
+      piercesLeft: 4,
+      weaponSource: this,
+    );
+    player.game.world.add(bulletMine);
+
+    player.game.playSfx('shoot.wav');
+    return true;
+  }
+
+  @override
+  void applyUpgradeStats() {}
+
+  @override
+  void applyEvolution() {}
+}
+
+class ThunderstormCoreMelter extends Weapon {
+  ThunderstormCoreMelter()
+      : super(
+          id: 'union_thunderstorm',
+          name: 'Thunderstorm Core Melter',
+          evolvedName: 'Thunderstorm Core Melter ★',
+          cooldown: 0.28,
+          recoil: 6.0,
+          muzzleFlashSize: 16.0,
+          damage: 68.0,
+        ) {
+    isEvolved = true;
+  }
+
+  @override
+  bool fire(PlayerComponent player) {
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
+
+    // Feixe colossal solar central com penetração infinita
+    final beamBullet = BulletComponent(
+      position: player.position + player.forward * (player.radius + 10.0),
+      radius: 9.0,
+      velocity: player.forward * (GameConstants.playerShootSpeed + 220.0),
+      lifeTimer: GameConstants.shotLifetimeSeconds * 1.6,
+      damage: effectiveDamage * 1.6,
+      color: const Color(0xFFFFD700),
+      piercesLeft: 99,
+      weaponSource: this,
+    );
+    player.game.world.add(beamBullet);
+
+    // Relâmpagos ramificados laterais para esquerda e direita
+    for (final angleOffset in [-0.45, 0.45]) {
+      final dir = player.forward.clone()..rotate(angleOffset);
+      final arcBullet = BulletComponent(
+        position: player.position + dir * player.radius,
+        radius: 5.5,
+        velocity: dir * (GameConstants.playerShootSpeed + 140.0),
+        lifeTimer: 0.9,
+        damage: effectiveDamage,
+        color: const Color(0xFF80D8FF),
+        piercesLeft: 4,
+        weaponSource: this,
+      );
+      player.game.world.add(arcBullet);
+    }
+
+    player.game.playSfx('shoot.wav');
+    return true;
+  }
+
+  @override
+  void applyUpgradeStats() {}
+
+  @override
+  void applyEvolution() {}
 }

@@ -225,6 +225,13 @@ class I18n {
     'level_up.badge': 'NÍVEL SUPERADO! • NÍVEL {level}',
     'level_up.subtitle': 'SELECIONE 1 MÓDULO DE EXPANSÃO TÁTICA',
     'level_up.keyhint': '1 / 2 / 3 ou Clique para selecionar',
+    'level_up.reroll': 'REROLL ({count})',
+    'level_up.banish': 'BANIR ({count})',
+    'level_up.skip': 'PULAR (+35 HP / +50c)',
+    'meta.reroll_title': 'CHIPS DE RE-ROLL TÁTICO',
+    'meta.reroll_subtitle': 'Permite reembaralhar opções de módulos no Level-Up',
+    'meta.banish_title': 'PURGA DO VAZIO // BANISH',
+    'meta.banish_subtitle': 'Exclui permanentemente módulos indesejados da incursão',
 
     // Perk Types & Rarities
     'perk_type.new_weapon': 'NOVA ARMA',
@@ -407,6 +414,13 @@ class I18n {
     'level_up.badge': 'LEVEL UP! • LEVEL {level}',
     'level_up.subtitle': 'CHOOSE 1 TACTICAL EXPANSION MODULE',
     'level_up.keyhint': '1 / 2 / 3 or Click to select',
+    'level_up.reroll': 'REROLL ({count})',
+    'level_up.banish': 'BANISH ({count})',
+    'level_up.skip': 'SKIP (+35 HP / +50c)',
+    'meta.reroll_title': 'TACTICAL RE-ROLL CHIPS',
+    'meta.reroll_subtitle': 'Allows re-rolling Level-Up module choices',
+    'meta.banish_title': 'VOID PURGE PROTOCOL (BANISH)',
+    'meta.banish_subtitle': 'Permanently purges unwanted modules from sortie',
 
     // Perk Types & Rarities
     'perk_type.new_weapon': 'NEW WEAPON',

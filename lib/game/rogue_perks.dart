@@ -4,6 +4,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/services/localization_service.dart';
+import 'package:asteroids/services/secret_grimoire_service.dart';
 
 enum PerkType {
   newWeapon,
@@ -268,6 +269,59 @@ class RoguePerkGenerator {
           );
         }
       }
+    }
+
+    // 0B. Super-Uniões de Armas Duplas (Vampire Survivors Style Unions)
+    // União 1: Void Singularity Nova (Blaster MK 3 + Void Mines MK 3)
+    if (player.unlockedWeapons['blaster']?.level == 3 &&
+        player.unlockedWeapons['void_mines']?.level == 3 &&
+        !player.unlockedWeapons.containsKey('union_void_singularity')) {
+      priorityPool.add(
+        RoguePerk(
+          id: 'union_void_singularity',
+          title: '🌌 SUPER-UNIÃO: VOID SINGULARITY NOVA',
+          descriptionPt: 'Funde Pulse Blaster e Void Mines em uma super-arma estelar que dispara feixes e minas de singularidade, LIBERANDO 1 SLOT DE ARMA!',
+          descriptionEn: 'Fuses Pulse Blaster and Void Mines into a stellar super-weapon, FREEING 1 ARSENAL SLOT!',
+          type: PerkType.evolution,
+          rarity: PerkRarity.legendary,
+          icon: Icons.all_inclusive_rounded,
+          accentColor: const Color(0xFFE040FB),
+          onSelect: (g) {
+            g.player.removeWeapon('blaster');
+            g.player.removeWeapon('void_mines');
+            g.player.addWeapon(VoidSingularityNova());
+            SecretGrimoireService.discover('union_void_singularity');
+            g.playSfx('boss_spawn.wav');
+            g.triggerScreenShake(duration: 0.8, intensity: 16.0);
+          },
+        ),
+      );
+    }
+
+    // União 2: Thunderstorm Core Melter (Solar Lance MK 3 + Tesla Arc MK 3)
+    if (player.unlockedWeapons['solar_lance']?.level == 3 &&
+        player.unlockedWeapons['tesla_arc']?.level == 3 &&
+        !player.unlockedWeapons.containsKey('union_thunderstorm')) {
+      priorityPool.add(
+        RoguePerk(
+          id: 'union_thunderstorm',
+          title: '⚡ SUPER-UNIÃO: THUNDERSTORM CORE MELTER',
+          descriptionPt: 'Funde Solar Lance e Tesla Arc Cannon em um feixe colossal de plasma solar bifurcado em relâmpagos, LIBERANDO 1 SLOT DE ARMA!',
+          descriptionEn: 'Fuses Solar Lance and Tesla Arc into a colossal sunbeam branched in lightning, FREEING 1 ARSENAL SLOT!',
+          type: PerkType.evolution,
+          rarity: PerkRarity.legendary,
+          icon: Icons.electric_bolt_rounded,
+          accentColor: const Color(0xFFFFD700),
+          onSelect: (g) {
+            g.player.removeWeapon('solar_lance');
+            g.player.removeWeapon('tesla_arc');
+            g.player.addWeapon(ThunderstormCoreMelter());
+            SecretGrimoireService.discover('union_thunderstorm');
+            g.playSfx('boss_spawn.wav');
+            g.triggerScreenShake(duration: 0.8, intensity: 16.0);
+          },
+        ),
+      );
     }
 
     // 1. New Arsenal Weapons (if not yet unlocked and inventory has free slots - Vampire Survivors 5 slots max)
@@ -566,9 +620,11 @@ class RoguePerkGenerator {
     );
 
     // Combine priority choices (evolutions) first, then shuffle the rest
-    standardPool.shuffle();
-    final result = <RoguePerk>[...priorityPool];
-    for (final perk in standardPool) {
+    // Sprint 54: Respeita o protocolo de purga do vazio (Banish)
+    final filteredStandard = standardPool.where((p) => !game.runBanishedPerkIds.contains(p.id)).toList();
+    filteredStandard.shuffle();
+    final result = <RoguePerk>[...priorityPool.where((p) => !game.runBanishedPerkIds.contains(p.id))];
+    for (final perk in filteredStandard) {
       if (result.length >= count) break;
       result.add(perk);
     }
