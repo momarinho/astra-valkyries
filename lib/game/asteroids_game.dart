@@ -10,6 +10,7 @@ import 'package:asteroids/constants.dart';
 import 'components/player.dart';
 import 'components/asteroid_field.dart';
 import 'components/particle.dart';
+import 'components/particle_system.dart';
 import 'components/asteroid.dart';
 import 'components/comet.dart';
 import 'components/bullet.dart';
@@ -94,6 +95,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   LevelManager? levelManager;
   SectorBoss? activeBoss;
   late final GameJoystick joystick;
+  final FastParticlePoolComponent particlePool = FastParticlePoolComponent();
 
   // Real-time Engine FPS & Diagnostics
   double currentFps = 60.0;
@@ -628,8 +630,28 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   bool missionSurvived = false;
   String? participantName;
 
-  // Feature 1: One-time Special Ability per run
+  // Feature 1: Special Ability & HoloCure Ultimate Charge System
   bool specialAvailable = true;
+  double ultimateCharge = 1.0;
+  static const double ultimateChargeMax = 1.0;
+  double ultimateChargeRate = 1.0 / 40.0; // 40s recarga passiva
+
+  void gainUltimateCharge(double amount) {
+    if (state != GameState.playing || specialAvailable) return;
+    ultimateCharge = (ultimateCharge + amount).clamp(0.0, 1.0);
+    if (ultimateCharge >= 1.0) {
+      specialAvailable = true;
+      playSfx('powerup.wav');
+      try {
+        spawnFloatingText(
+          player.position + Vector2(0, -42),
+          '⚡ ULTIMATE PRONTA! [SPACE]',
+          color: const Color(0xFFFFD700),
+          fontSize: 15.0,
+        );
+      } catch (_) {}
+    }
+  }
 
   // Feature 2: Scientific Samples Collected
   int samplesCollected = 0;
@@ -657,6 +679,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   void addXp(int amount) {
     if (state != GameState.playing) return;
+    gainUltimateCharge(amount * 0.003);
     final effective = isHyperMode ? (amount * 1.5).round() : amount;
     runXp += effective;
     if (runXp >= runXpNextLevel) {
@@ -951,6 +974,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Add StarfieldComponent, SectorBoundaryComponent, and Sector POIs first
     world.add(StarfieldComponent());
     world.add(SectorBoundaryComponent());
+    world.add(particlePool);
     _initSectorPois();
 
     // Add PlayerComponent (starts in center of the large sector)
@@ -1463,6 +1487,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
     activeBoss = null;
     voidReaperSpawned = false;
+    particlePool.clear();
   }
 
   void _initSectorPois() {
@@ -1511,6 +1536,21 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Science Fair 180-second (3-minute) countdown timer & Celestial Events
     if (state == GameState.playing) {
+      if (!specialAvailable && ultimateCharge < 1.0) {
+        ultimateCharge = (ultimateCharge + dt * ultimateChargeRate).clamp(0.0, 1.0);
+        if (ultimateCharge >= 1.0) {
+          specialAvailable = true;
+          playSfx('powerup.wav');
+          try {
+            spawnFloatingText(
+              player.position + Vector2(0, -42),
+              '⚡ ULTIMATE PRONTA! [SPACE]',
+              color: const Color(0xFFFFD700),
+              fontSize: 15.0,
+            );
+          } catch (_) {}
+        }
+      }
       timeRemaining -= dt;
       if (showLaunchTransmission) {
         launchTransmissionTimer -= dt;
@@ -1573,13 +1613,19 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void render(Canvas canvas) {
     if (shakeTimer > 0) {
       final random = math.Random();
-      final progress = shakeTimer / shakeDuration;
-      final currentIntensity = shakeIntensity * progress;
-      final dx = -currentIntensity + random.nextDouble() * currentIntensity * 2;
-      final dy = -currentIntensity + random.nextDouble() * currentIntensity * 2;
-      
+      final progress = (shakeTimer / math.max(0.001, shakeDuration)).clamp(0.0, 1.0);
+      final decay = progress * progress; // Decaimento quadrático de trauma (Nova Drift benchmark)
+      final currentIntensity = shakeIntensity * decay;
+      final dx = (-1.0 + random.nextDouble() * 2.0) * currentIntensity;
+      final dy = (-1.0 + random.nextDouble() * 2.0) * currentIntensity;
+      final angle = (-1.0 + random.nextDouble() * 2.0) * (currentIntensity * 0.0012);
+
       canvas.save();
-      canvas.translate(dx, dy);
+      final cx = size.x * 0.5;
+      final cy = size.y * 0.5;
+      canvas.translate(cx + dx, cy + dy);
+      canvas.rotate(angle);
+      canvas.translate(-cx, -cy);
       super.render(canvas);
       canvas.restore();
     } else {
@@ -1991,9 +2037,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void triggerScreenShake({required double duration, required double intensity}) {
-    shakeTimer = duration;
-    shakeDuration = duration;
-    shakeIntensity = intensity;
+    shakeIntensity = math.max(shakeIntensity, intensity).clamp(1.0, 36.0);
+    shakeDuration = math.max(shakeDuration, duration).clamp(0.05, 3.0);
+    shakeTimer = math.max(shakeTimer, duration);
   }
 
   void spawnExplosionParticles({
@@ -2005,26 +2051,29 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     required double minSpeed,
     required double maxSpeed,
   }) {
-    final random = math.Random();
-    for (var i = 0; i < count; i++) {
-      final color = colorChoices[random.nextInt(colorChoices.length)];
-      final angle = random.nextDouble() * 2 * math.pi;
-      final speed = minSpeed + random.nextDouble() * (maxSpeed - minSpeed);
-      
-      final velocity = Vector2(math.cos(angle), math.sin(angle))..scale(speed);
-      final size = minSize + random.nextDouble() * (maxSize - minSize);
-      final lifetime = 0.3 + random.nextDouble() * 0.5; // 0.3 to 0.8 seconds
+    particlePool.spawnExplosion(
+      position: position,
+      colorChoices: colorChoices,
+      count: count,
+      minSize: minSize,
+      maxSize: maxSize,
+      minSpeed: minSpeed,
+      maxSpeed: maxSpeed,
+    );
+  }
 
-      world.add(
-        ParticleComponent(
-          position: position,
-          velocity: velocity,
-          color: color,
-          initialSize: size,
-          initialLifetime: lifetime,
-        ),
-      );
-    }
+  void spawnSparks({
+    required Vector2 position,
+    required Color color,
+    int count = 8,
+    double speed = 140.0,
+  }) {
+    particlePool.spawnSparks(
+      position: position,
+      color: color,
+      count: count,
+      speed: speed,
+    );
   }
 
   void buyItem(String itemId) {
@@ -2184,8 +2233,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void triggerSpecial() {
     if (!specialAvailable || state != GameState.playing) return;
     specialAvailable = false;
+    ultimateCharge = 0.0;
     playSfx('powerup.wav');
-    triggerScreenShake(duration: 0.6, intensity: 16.0);
+    triggerScreenShake(duration: 0.8, intensity: 20.0);
 
     final primaryColor = selectedValkyrie.primaryColor;
     final accentColor = selectedValkyrie.accentColor;
@@ -2200,11 +2250,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         Colors.white,
         Colors.amberAccent,
       ],
-      count: 45,
+      count: 50,
       minSize: 3.0,
-      maxSize: 6.0,
-      minSpeed: 100.0,
-      maxSpeed: 350.0,
+      maxSize: 6.5,
+      minSpeed: 120.0,
+      maxSpeed: 380.0,
     );
 
     // Floating text indicator
@@ -2221,12 +2271,13 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       case 'kbr':
       case 'kbr_01':
       case 'kimberly':
-        // Phantom Slash: 3.5s invulnerability, instant 140px forward blink & 16-way radial tachyon katana blades
-        player.invulnerableTimer = 3.5;
-        player.position += player.forward * 140.0;
-        player.velocity = player.forward * 450.0;
-        triggerScreenShake(duration: 0.5, intensity: 12.0);
-        const bladesCount = 16;
+        // Kaede / KBR-01: Tempest of Thousand Petals / Blade Storm
+        // 4.0s invulnerabilidade, blink frontal de 180px e vórtice radial de 24 lâminas taquiônicas
+        player.invulnerableTimer = 4.0;
+        player.position += player.forward * 180.0;
+        player.velocity = player.forward * 480.0;
+        triggerScreenShake(duration: 0.75, intensity: 18.0);
+        const bladesCount = 24;
         const stepBlades = (2 * math.pi) / bladesCount;
         for (int i = 0; i < bladesCount; i++) {
           final ang = i * stepBlades;
@@ -2234,11 +2285,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           final slash = KatanaSlashComponent(
             position: player.position + dir * (player.radius + 6.0),
             angle: ang + math.pi / 2,
-            velocity: dir * 640.0,
-            lifeTimer: 0.95,
-            damage: 65.0,
-            slashWidth: 72.0,
-            slashHeight: 22.0,
+            velocity: dir * 680.0,
+            lifeTimer: 1.1,
+            damage: 85.0,
+            slashWidth: 84.0,
+            slashHeight: 26.0,
             slashColor: const Color(0xFF00E5FF),
             piercesLeft: 99,
           );
@@ -2247,15 +2298,24 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         break;
 
       case 'lyra':
-        // Hyper-Overdrive Dash: 300% thrust boost, 3.5s invulnerability, fires blazing plasma spread trail
+        // Lyra: Corona Supernova / Solar Flare
+        // 3.5s invulnerabilidade, anula tiros inimigos em 500px e dispara 36 labaredas solares perfurantes
         player.invulnerableTimer = 3.5;
         player.velocity += player.forward * 450.0;
+        triggerScreenShake(duration: 0.85, intensity: 20.0);
+        final enemyBullets = world.children.whereType<EnemyBulletComponent>().toList();
+        for (final b in enemyBullets) {
+          if (b.position.distanceToSquared(player.position) <= 500.0 * 500.0) {
+            b.removeFromParent();
+            spawnSparks(position: b.position, color: const Color(0xFFFF9800), count: 5);
+          }
+        }
         final waves = [
-          (speed: 600.0, angleOffset: 0.0, color: const Color(0xFFFF5722)),
-          (speed: 520.0, angleOffset: math.pi / 10, color: const Color(0xFFFF9800)),
-          (speed: 440.0, angleOffset: -math.pi / 10, color: const Color(0xFFFFEB3B)),
+          (speed: 640.0, angleOffset: 0.0, color: const Color(0xFFFF5722)),
+          (speed: 540.0, angleOffset: math.pi / 12, color: const Color(0xFFFF9800)),
+          (speed: 460.0, angleOffset: -math.pi / 12, color: const Color(0xFFFFEB3B)),
         ];
-        const bulletsPerWave = 10;
+        const bulletsPerWave = 12;
         const step = (2 * math.pi) / bulletsPerWave;
         for (final wave in waves) {
           for (int i = 0; i < bulletsPerWave; i++) {
@@ -2263,10 +2323,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
             final dir = Vector2(math.cos(ang), math.sin(ang));
             final bullet = BulletComponent(
               position: player.position + dir * (player.radius + 2.0),
-              radius: 3.0,
+              radius: 4.0,
               velocity: dir * wave.speed,
-              lifeTimer: 0.65,
-              damage: 22.0,
+              lifeTimer: 0.85,
+              damage: 35.0,
               color: wave.color,
             );
             world.add(bullet);
@@ -2275,19 +2335,25 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         break;
 
       case 'selene':
-        // Singularity Barrier: 5.0s impenetrable barrier + 20 piercing photon beams
-        player.invulnerableTimer = 5.0;
-        const beamCount = 20;
+        // Selene: Absolute Zero Cryo Stasis & Singularity Barrier
+        // 6.0s barreira impenetrável + congela todos inimigos visíveis por 4.5s + 28 feixes fotônicos
+        player.invulnerableTimer = 6.0;
+        triggerScreenShake(duration: 0.65, intensity: 16.0);
+        for (final e in world.children.whereType<EnemyShipComponent>()) {
+          e.cryoFreezeTimer = 4.5;
+          spawnSparks(position: e.position, color: const Color(0xFF80D8FF), count: 6);
+        }
+        const beamCount = 28;
         final stepSelene = (2 * math.pi) / beamCount;
         for (int i = 0; i < beamCount; i++) {
           final ang = i * stepSelene;
           final dir = Vector2(math.cos(ang), math.sin(ang));
           final bullet = BulletComponent(
             position: player.position + dir * player.radius,
-            radius: 3.5,
-            velocity: dir * 520.0,
-            lifeTimer: 0.9,
-            damage: 28.0,
+            radius: 4.0,
+            velocity: dir * 550.0,
+            lifeTimer: 1.0,
+            damage: 36.0,
             color: const Color(0xFF00E5FF),
           );
           world.add(bullet);
@@ -2295,19 +2361,50 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         break;
 
       case 'vesper':
-        // Void Nova Detonation: Massive 320px radius bomb explosion doing 350 damage + 2.5s shield
-        player.invulnerableTimer = 2.5;
+        // Vesper: Void Horizon Singularity & Gravitational XP Siphon
+        // 3.5s escudo + implosão de antimatéria de 420px (600 dmg) + vácuo gravitacional de orbes de XP
+        player.invulnerableTimer = 3.5;
+        triggerScreenShake(duration: 1.1, intensity: 26.0);
         world.add(
           BombExplosionComponent(
             position: player.position.clone(),
-            maxRadius: 320.0,
-            damage: 350.0,
+            maxRadius: 420.0,
+            damage: 600.0,
           ),
         );
+        for (final orb in world.children.whereType<XpOrbComponent>()) {
+          orb.velocity = (player.position - orb.position).normalized() * 550.0;
+        }
         break;
 
+      case 'astraea':
       default:
-        player.invulnerableTimer = 3.0;
+        // Astraea: Genesis Nova / Sovereign Orbital Matrix
+        // 5.0s invulnerabilidade, anula projéteis em 600px + 36 lasers estelares imperiais
+        player.invulnerableTimer = 5.0;
+        triggerScreenShake(duration: 1.2, intensity: 28.0);
+        final enemyBulletsAstraea = world.children.whereType<EnemyBulletComponent>().toList();
+        for (final b in enemyBulletsAstraea) {
+          if (b.position.distanceToSquared(player.position) <= 600.0 * 600.0) {
+            b.removeFromParent();
+            spawnSparks(position: b.position, color: const Color(0xFFFFD700), count: 6);
+          }
+        }
+        const astraeaLaserCount = 36;
+        final stepAstraea = (2 * math.pi) / astraeaLaserCount;
+        for (int i = 0; i < astraeaLaserCount; i++) {
+          final ang = i * stepAstraea;
+          final dir = Vector2(math.cos(ang), math.sin(ang));
+          final bullet = BulletComponent(
+            position: player.position + dir * player.radius,
+            radius: 4.5,
+            velocity: dir * 600.0,
+            lifeTimer: 1.1,
+            damage: 48.0,
+            color: const Color(0xFFFFD700),
+          );
+          world.add(bullet);
+        }
         break;
     }
   }

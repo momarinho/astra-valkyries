@@ -270,7 +270,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       // Standard rock: preenchimento opaco escuro para ocluir estrelas/bioma + borda luminosa nítida
       final rockFill = Paint()
         ..color = isFlashing
-            ? Colors.redAccent.withValues(alpha: 0.35)
+            ? Colors.white.withValues(alpha: 0.90)
             : const Color(0xFF0C101A).withValues(alpha: 0.88)
         ..style = PaintingStyle.fill;
       canvas.drawPath(path, rockFill);
@@ -278,7 +278,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       Glow.strokePath(
         canvas,
         path,
-        isFlashing ? Colors.redAccent : const Color(0xFFDDEBFF),
+        isFlashing ? Colors.white : const Color(0xFFDDEBFF),
         width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.4,
         intensity: isFlashing ? 1.7 : 1.1,
       );

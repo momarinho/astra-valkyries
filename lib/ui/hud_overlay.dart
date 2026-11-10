@@ -1147,54 +1147,71 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                     child: Builder(
                       builder: (context) {
                         final isReady = widget.game.specialAvailable;
+                        final charge = widget.game.ultimateCharge;
                         final pulse = isReady
                             ? (math.sin(DateTime.now().millisecondsSinceEpoch / 180) + 1) / 2
                             : 0.0;
 
-                        return Container(
-                          width: 70,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: isReady
-                                ? valkyrie.primaryColor.withOpacity(0.28 + pulse * 0.15)
-                                : const Color(0xFF070B14).withOpacity(0.88),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isReady
-                                  ? valkyrie.primaryColor.withOpacity(0.9 + pulse * 0.1)
-                                  : Colors.white24,
-                              width: isReady ? 2.8 : 1.5,
-                            ),
-                            boxShadow: isReady
-                                ? [
-                                    BoxShadow(
-                                      color: valkyrie.primaryColor.withOpacity(0.5 + pulse * 0.3),
-                                      blurRadius: 14 + pulse * 6,
-                                      spreadRadius: 1.5,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                isReady ? Icons.auto_awesome : Icons.lock_outline,
-                                color: isReady ? const Color(0xFFFFD700) : Colors.white30,
-                                size: 28,
-                              ),
-                              Text(
-                                isReady ? 'SPECIAL' : 'RECHARGE',
-                                style: TextStyle(
-                                  fontFamily: 'Orbitron',
-                                  fontSize: 8.0,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
-                                  color: isReady ? const Color(0xFFFFD700) : Colors.white30,
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            if (!isReady)
+                              SizedBox(
+                                width: 72,
+                                height: 72,
+                                child: CircularProgressIndicator(
+                                  value: charge,
+                                  strokeWidth: 3.0,
+                                  backgroundColor: Colors.white10,
+                                  valueColor: AlwaysStoppedAnimation<Color>(valkyrie.primaryColor),
                                 ),
                               ),
-                            ],
-                          ),
+                            Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                color: isReady
+                                    ? valkyrie.primaryColor.withOpacity(0.28 + pulse * 0.15)
+                                    : const Color(0xFF070B14).withOpacity(0.88),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isReady
+                                      ? valkyrie.primaryColor.withOpacity(0.9 + pulse * 0.1)
+                                      : Colors.white24,
+                                  width: isReady ? 2.8 : 1.5,
+                                ),
+                                boxShadow: isReady
+                                    ? [
+                                        BoxShadow(
+                                          color: valkyrie.primaryColor.withOpacity(0.5 + pulse * 0.3),
+                                          blurRadius: 14 + pulse * 6,
+                                          spreadRadius: 1.5,
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    isReady ? Icons.auto_awesome : Icons.bolt,
+                                    color: isReady ? const Color(0xFFFFD700) : valkyrie.primaryColor.withOpacity(0.65),
+                                    size: 26,
+                                  ),
+                                  Text(
+                                    isReady ? 'ULTIMATE' : '${(charge * 100).toInt()}%',
+                                    style: TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 8.0,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.8,
+                                      color: isReady ? const Color(0xFFFFD700) : Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),

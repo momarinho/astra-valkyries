@@ -55,6 +55,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double muzzleFlashTimer = 0.0;
   double muzzleFlashSize = 0.0;
   double _soundCooldownTimer = 0.0;
+  double hitFlashTimer = 0.0;
+  double seleneShieldRegenTimer = 0.0;
+  double lyraThrustTime = 0.0;
 
   // Balanced Dash System: charges and recharge (Vesper has 2 charges)
   int dashCharges = 1;
@@ -284,6 +287,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     final actualDamage = adjustedDamage.clamp(5.0, 999.0);
     hp = math.max(0.0, hp - actualDamage);
+    hitFlashTimer = 0.12;
+    seleneShieldRegenTimer = 0.0;
 
     game.triggerScreenShake(duration: 0.35, intensity: math.min(18.0, 8.0 + actualDamage * 0.25));
     game.spawnFloatingText(
@@ -619,6 +624,25 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
     muzzleFlashTimer = math.max(0.0, muzzleFlashTimer - dt);
     _soundCooldownTimer = math.max(0.0, _soundCooldownTimer - dt);
+    hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
+
+    // Selene Passive: Shield Regenerator (regenera 5 HP/s após 4s sem dano)
+    if (valkyrie?.id == 'selene') {
+      seleneShieldRegenTimer += dt;
+      if (seleneShieldRegenTimer >= 4.0 && hp < maxHp) {
+        hp = math.min(maxHp, hp + 5.0 * dt);
+      }
+    }
+
+    // Lyra Passive: Afterburner Overdrive (+15% velocidade após 1.2s acelerando)
+    if (valkyrie?.id == 'lyra' && isThrusting) {
+      lyraThrustTime = math.min(3.0, lyraThrustTime + dt);
+      if (lyraThrustTime >= 1.2) {
+        velocity += forward * (60.0 * dt);
+      }
+    } else {
+      lyraThrustTime = 0.0;
+    }
 
     // Auto-fire routine for all active weapons (Vampire Survivors style)
     for (final w in activeWeapons) {
@@ -630,8 +654,24 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           final effectiveCooldown = w.cooldown * game.rogueFireRateMultiplier * cooldownMultiplier;
           w.currentCooldown = effectiveCooldown;
 
-          // Micro-recoil (subtle physical kickback without impeding steering)
-          velocity -= forward * (w.recoil * 0.15);
+          // Newtonian Recoil Kickback (Nova Drift game feel)
+          double recoilKick = w.recoil;
+          if (w.recoil >= 15.0) {
+            recoilKick *= 1.5; // Torpedo / Bomb: heavy kickback (-33 impulse)
+            game.triggerScreenShake(duration: 0.08, intensity: math.min(6.0, w.recoil * 0.25));
+          } else if (w.recoil >= 8.0) {
+            recoilKick *= 1.2; // Shotgun / Spread cannon (-17 impulse)
+            game.triggerScreenShake(duration: 0.05, intensity: 2.5);
+          } else if (w.recoil > 0) {
+            recoilKick *= 0.9;
+          }
+          velocity -= forward * recoilKick;
+
+          // Tachyon Katana forward lunging slice
+          if (w.id == 'tachyon_katana') {
+            velocity += forward * 55.0; // Kinetic forward lunging slice
+            game.triggerScreenShake(duration: 0.10, intensity: 3.5);
+          }
 
           muzzleFlashTimer = 0.05;
           muzzleFlashSize = math.max(muzzleFlashSize, w.muzzleFlashSize);
@@ -834,11 +874,14 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
 
     final isSpecial = keys.contains(LogicalKeyboardKey.keyE) ||
+        keys.contains(LogicalKeyboardKey.keyQ) ||
         keys.contains(LogicalKeyboardKey.gameButtonX) ||
         keys.contains(LogicalKeyboardKey.gameButtonY) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyE) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyQ) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonX) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonY);
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonY) ||
+        (game.specialAvailable && (keys.contains(LogicalKeyboardKey.space) || HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.space)));
 
     if (isSpecial) {
       game.triggerSpecial();
@@ -933,8 +976,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
   @override
   void render(Canvas canvas) {
-    // Blinking effect when invulnerable
-    if (isInvulnerable()) {
+    final isHitFlashing = hitFlashTimer > 0;
+    // Blinking effect when invulnerable (não pisca durante o hit-flash branco)
+    if (!isHitFlashing && isInvulnerable()) {
       final milliseconds = DateTime.now().millisecondsSinceEpoch;
       if (milliseconds % 200 < 100) {
         return; // Skip rendering
@@ -1028,16 +1072,17 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void _renderShip(Canvas canvas) {
-    final primary = valkyrie?.primaryColor ?? scientist?.primaryColor ?? Colors.white;
-    final accent = valkyrie?.accentColor ?? scientist?.accentColor ?? Colors.cyanAccent;
+    final isHitFlashing = hitFlashTimer > 0;
+    final primary = isHitFlashing ? Colors.white : (valkyrie?.primaryColor ?? scientist?.primaryColor ?? Colors.white);
+    final accent = isHitFlashing ? Colors.white : (valkyrie?.accentColor ?? scientist?.accentColor ?? Colors.cyanAccent);
 
     final accentPaint = Paint()
       ..color = accent
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..style = isHitFlashing ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = isHitFlashing ? 2.5 : 1.5;
 
     final fillPaint = Paint()
-      ..color = primary.withOpacity(0.12)
+      ..color = isHitFlashing ? Colors.white.withOpacity(0.92) : primary.withOpacity(0.12)
       ..style = PaintingStyle.fill;
 
     // Thruster flames if accelerating forward

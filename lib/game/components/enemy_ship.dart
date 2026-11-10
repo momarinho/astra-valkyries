@@ -118,6 +118,15 @@ class EnemyShipComponent extends PositionComponent
 
   bool hasStatus(ElementalStatus status) => (activeStatuses[status] ?? 0.0) > 0.0;
 
+  double get cryoFreezeTimer => activeStatuses[ElementalStatus.cryoFreeze] ?? 0.0;
+  set cryoFreezeTimer(double duration) {
+    if (duration > 0) {
+      applyElementalStatus(ElementalStatus.cryoFreeze, duration: duration);
+    } else {
+      activeStatuses.remove(ElementalStatus.cryoFreeze);
+    }
+  }
+
   void applyElementalStatus(ElementalStatus status, {double duration = 4.0}) {
     if (status == ElementalStatus.none || hp <= 0) return;
 
@@ -644,14 +653,11 @@ class EnemyShipComponent extends PositionComponent
     hitFlashTimer = 0.12;
 
     try {
-      game.spawnExplosionParticles(
+      game.spawnSparks(
         position: hitPos,
-        colorChoices: [Colors.white, const Color(0xFFFF1744), Colors.amber],
-        count: 3,
-        minSize: 1.5,
-        maxSize: 3.0,
-        minSpeed: 30.0,
-        maxSpeed: 80.0,
+        color: Colors.white,
+        count: 5,
+        speed: 130.0,
       );
     } catch (_) {}
 
@@ -678,6 +684,10 @@ class EnemyShipComponent extends PositionComponent
     } catch (_) {}
     game.playSfx('asteroid_split.wav');
     game.addScore(scoreValue);
+    try {
+      final isEliteEnemy = type == EnemyType.eliteCommander || type == EnemyType.carrierHive;
+      game.gainUltimateCharge(isEliteEnemy ? 0.05 : 0.015);
+    } catch (_) {}
 
     // Award scrap credits based on enemy tier
     final int scrapReward;
@@ -970,7 +980,7 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawLine(Offset(0, radius * 0.4), Offset(0, radius * (0.7 + 0.4 * thrustPulse)), thrustPaint);
 
     final bodyPaint = Paint()
-      ..color = const Color(0xFF1B0B24).withValues(alpha: 0.95)
+      ..color = isFlashing ? Colors.white : const Color(0xFF1B0B24).withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, bodyPaint);
 
@@ -1011,7 +1021,7 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawLine(Offset(radius * 0.3, radius * 0.6), Offset(radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), thrustPaint);
 
     final bodyPaint = Paint()
-      ..color = const Color(0xFF280738).withValues(alpha: 0.95)
+      ..color = isFlashing ? Colors.white : const Color(0xFF280738).withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, bodyPaint);
 
@@ -1053,7 +1063,7 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawLine(Offset(0, radius * 0.6), Offset(0, radius * (1.0 + 0.5 * thrustPulse)), thrustPaint);
 
     final bodyPaint = Paint()
-      ..color = const Color(0xFF2B0B0E).withValues(alpha: 0.95)
+      ..color = isFlashing ? Colors.white : const Color(0xFF2B0B0E).withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, bodyPaint);
 
@@ -1088,7 +1098,7 @@ class EnemyShipComponent extends PositionComponent
     );
 
     final bodyPaint = Paint()
-      ..color = const Color(0xFF100E2B).withValues(alpha: 0.95)
+      ..color = isFlashing ? Colors.white : const Color(0xFF100E2B).withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, bodyPaint);
 
@@ -1133,7 +1143,7 @@ class EnemyShipComponent extends PositionComponent
     );
 
     final bodyPaint = Paint()
-      ..color = const Color(0xFF180A28).withValues(alpha: 0.95)
+      ..color = isFlashing ? Colors.white : const Color(0xFF180A28).withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, bodyPaint);
 
@@ -1176,7 +1186,7 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFF0A1E2E).withValues(alpha: 0.95)
+        ..color = isFlashing ? Colors.white : const Color(0xFF0A1E2E).withValues(alpha: 0.95)
         ..style = PaintingStyle.fill,
     );
     final strokeColor = isFlashing ? flashColor : const Color(0xFF00E5FF);
