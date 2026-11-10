@@ -6,6 +6,7 @@ import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
+import 'breakable_prop.dart';
 import 'enemy_ship.dart';
 import 'enemy_bullet.dart';
 import 'sector_boss.dart';
@@ -152,6 +153,8 @@ class KatanaSlashComponent extends PositionComponent
         );
       }
     } else if (other is CargoWreckComponent) {
+      other.takeDamage(dealtDamage, position);
+    } else if (other is BreakablePropComponent) {
       other.takeDamage(dealtDamage, position);
     } else if (other is SectorBoss) {
       other.takeDamage(dealtDamage, position);

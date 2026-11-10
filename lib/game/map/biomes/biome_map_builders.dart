@@ -15,6 +15,7 @@ import 'package:asteroids/game/components/boss_lair.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'package:asteroids/game/components/living_biomes.dart';
 import 'package:asteroids/game/components/enemy_ship.dart';
+import 'package:asteroids/game/components/breakable_prop.dart';
 import '../sector_map_data.dart';
 
 /// Interface base dos Arquitetos Modulares de Bioma (Sprint 25).
@@ -254,6 +255,9 @@ abstract class BiomeMapArchitect {
     // 7. Geometria Exclusiva do Bioma (Paredes, Câmaras e Perigos da Imagem Modelo)
     buildBiomeSpecificGeometry(game, sector, random, nodes);
 
+    // 8. Objetos Quebráveis do Cenário (Sprint 29 — Estilo Vampire Survivors: Barris, Cristais, Cargas)
+    _spawnBreakableProps(game, sector, random, nodes);
+
     return SectorMapData(
       sector: sector,
       seed: seed,
@@ -295,6 +299,81 @@ abstract class BiomeMapArchitect {
       (base.x + (rng.nextDouble() - 0.5) * range).clamp(520.0, GameConstants.sectorWidth - 520.0),
       (base.y + (rng.nextDouble() - 0.5) * range).clamp(520.0, GameConstants.sectorHeight - 520.0),
     );
+  }
+
+  void _spawnBreakableProps(
+    AsteroidsGame game,
+    Sector sector,
+    math.Random random,
+    List<MapNode> nodes,
+  ) {
+    const mapW = GameConstants.sectorWidth;
+    const mapH = GameConstants.sectorHeight;
+
+    // Distribuição de Props Destrutíveis estilo Vampire Survivors
+    // Veios de Minério Cristalino (Stardust + Moedas)
+    for (int i = 0; i < 12; i++) {
+      final pos = Vector2(
+        600.0 + random.nextDouble() * (mapW - 1200.0),
+        600.0 + random.nextDouble() * (mapH - 1200.0),
+      );
+      if (isClearOfPois(pos, nodes, 180.0)) {
+        game.world.add(
+          BreakablePropComponent(
+            position: pos,
+            type: BreakablePropType.oreCrystal,
+          ),
+        );
+      }
+    }
+
+    // Barris Explosivos (Dano em Área e Reação em Cadeia)
+    for (int i = 0; i < 8; i++) {
+      final pos = Vector2(
+        650.0 + random.nextDouble() * (mapW - 1300.0),
+        650.0 + random.nextDouble() * (mapH - 1300.0),
+      );
+      if (isClearOfPois(pos, nodes, 180.0)) {
+        game.world.add(
+          BreakablePropComponent(
+            position: pos,
+            type: BreakablePropType.explosiveBarrel,
+          ),
+        );
+      }
+    }
+
+    // Contêineres de Carga Abandonados (Reparos de Casco e Escudos)
+    for (int i = 0; i < 5; i++) {
+      final pos = Vector2(
+        700.0 + random.nextDouble() * (mapW - 1400.0),
+        700.0 + random.nextDouble() * (mapH - 1400.0),
+      );
+      if (isClearOfPois(pos, nodes, 180.0)) {
+        game.world.add(
+          BreakablePropComponent(
+            position: pos,
+            type: BreakablePropType.cargoCrate,
+          ),
+        );
+      }
+    }
+
+    // Células de Fusão (EMP Nova)
+    for (int i = 0; i < 3; i++) {
+      final pos = Vector2(
+        750.0 + random.nextDouble() * (mapW - 1500.0),
+        750.0 + random.nextDouble() * (mapH - 1500.0),
+      );
+      if (isClearOfPois(pos, nodes, 180.0)) {
+        game.world.add(
+          BreakablePropComponent(
+            position: pos,
+            type: BreakablePropType.fusionCell,
+          ),
+        );
+      }
+    }
   }
 }
 

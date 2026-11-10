@@ -774,7 +774,10 @@ class EnemyShipComponent extends PositionComponent
 
     // Health capsule drop (Vampire Survivors balance):
     // Inimigos normais NUNCA dropam vida (0%). Apenas Elites têm 25% de chance (50% se HP < 25%).
-    final hpRatio = game.player.hpPercent;
+    double hpRatio = 1.0;
+    try {
+      hpRatio = game.player.hpPercent;
+    } catch (_) {}
     final healthChance = isElite ? (hpRatio < 0.25 ? 0.50 : 0.25) : 0.0;
     if (healthChance > 0 && math.Random().nextDouble() < healthChance) {
       game.world.add(

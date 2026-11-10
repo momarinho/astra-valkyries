@@ -18,6 +18,7 @@ import 'cosmic_nebula.dart';
 import 'living_biomes.dart';
 import 'speech_bubble.dart';
 import 'singularity_rift.dart';
+import 'breakable_prop.dart';
 
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? customGame;
@@ -49,6 +50,7 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   double invulnerableTimer = GameConstants.playerInvulnerableSeconds;
   double dashCooldownTimer = 0.0;
   double dashActiveTimer = 0.0;
+  bool get isDashing => dashActiveTimer > 0;
   Vector2 dashDirection = Vector2.zero();
   double muzzleFlashTimer = 0.0;
   double muzzleFlashSize = 0.0;
@@ -257,6 +259,13 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       takeHit(dmg);
     } else if (other is SectorBoss) {
       takeHit(45.0);
+    } else if (other is BreakablePropComponent) {
+      if (isDashing) {
+        other.takeDamage(45.0, other.position);
+      } else {
+        other.takeDamage(10.0, other.position);
+        velocity = -velocity * 0.4;
+      }
     }
   }
 

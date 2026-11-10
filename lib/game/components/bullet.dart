@@ -7,6 +7,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
+import 'breakable_prop.dart';
 import 'enemy_ship.dart';
 import 'sector_boss.dart';
 import 'advanced_weapons.dart';
@@ -108,6 +109,21 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         removeFromParent();
       }
     } else if (other is CargoWreckComponent) {
+      double dealtDamage = damage;
+      try {
+        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
+        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
+          dealtDamage *= 2.0;
+        }
+      } catch (_) {}
+
+      other.takeDamage(dealtDamage, position);
+      if (piercesLeft > 0) {
+        piercesLeft--;
+      } else {
+        removeFromParent();
+      }
+    } else if (other is BreakablePropComponent) {
       double dealtDamage = damage;
       try {
         final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);

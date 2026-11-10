@@ -10,6 +10,7 @@ import 'package:asteroids/game/components/derelict_turret.dart';
 import 'package:asteroids/game/components/boss_lair.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'package:asteroids/game/components/living_biomes.dart';
+import 'package:asteroids/game/components/breakable_prop.dart';
 import 'sector_map_data.dart';
 import 'biomes/biome_map_builders.dart';
 export 'biomes/biome_map_builders.dart';
@@ -68,7 +69,8 @@ class SectorMapGenerator {
         child is ReactorLeakHazardComponent ||
         child is AcidPoolHazardComponent ||
         child is RelicPedestalComponent ||
-        child is StasisCoffinComponent);
+        child is StasisCoffinComponent ||
+        child is BreakablePropComponent);
     for (final p in List.from(oldPois)) {
       p.removeFromParent();
     }

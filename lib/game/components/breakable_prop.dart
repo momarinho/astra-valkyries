@@ -1,0 +1,498 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+import 'package:flame/components.dart';
+import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:asteroids/constants.dart';
+import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/components/drop.dart';
+import 'package:asteroids/game/components/xp_orb.dart';
+import 'package:asteroids/game/components/enemy_ship.dart';
+import 'package:asteroids/game/components/enemy_bullet.dart';
+import 'package:asteroids/game/components/asteroid.dart';
+
+/// Tipos de objetos quebráveis no cenário (Sprint 29 — Estilo Vampire Survivors)
+enum BreakablePropType {
+  /// Barril Explosivo: detona em área ao ser destruído, causando dano em cadeia
+  explosiveBarrel,
+
+  /// Veio de Minério Cristalino: libera cristais de Stardust (XP) e Sucata (moedas)
+  oreCrystal,
+
+  /// Contêiner de Carga Abandonado: libera drops táticos (Reparo de HP, Escudo, Vórtice)
+  cargoCrate,
+
+  /// Célula de Fusão: emite uma onda EMP que destrói tiros inimigos e causa choque
+  fusionCell,
+}
+
+/// Componente de Cenário Destrutível com colisão física e drops táticos.
+/// Utiliza sprites modulares CC0 do Kenney com fallback vetorial dinâmico.
+class BreakablePropComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final BreakablePropType type;
+  double hp;
+  final double maxHp;
+  double hitFlashTimer = 0.0;
+  bool isDestroyed = false;
+  ui.Image? _spriteImage;
+
+  BreakablePropComponent({
+    required Vector2 position,
+    this.type = BreakablePropType.oreCrystal,
+    double? customHp,
+  })  : maxHp = customHp ?? _defaultHpForType(type),
+        hp = customHp ?? _defaultHpForType(type),
+        super(
+          position: position.clone(),
+          size: _defaultSizeForType(type),
+          anchor: Anchor.center,
+        );
+
+  static double _defaultHpForType(BreakablePropType type) {
+    switch (type) {
+      case BreakablePropType.explosiveBarrel:
+        return 24.0;
+      case BreakablePropType.oreCrystal:
+        return 38.0;
+      case BreakablePropType.cargoCrate:
+        return 50.0;
+      case BreakablePropType.fusionCell:
+        return 30.0;
+    }
+  }
+
+  static Vector2 _defaultSizeForType(BreakablePropType type) {
+    switch (type) {
+      case BreakablePropType.explosiveBarrel:
+        return Vector2(38.0, 44.0);
+      case BreakablePropType.oreCrystal:
+        return Vector2(46.0, 42.0);
+      case BreakablePropType.cargoCrate:
+        return Vector2(48.0, 44.0);
+      case BreakablePropType.fusionCell:
+        return Vector2(44.0, 36.0);
+    }
+  }
+
+  String get _assetPathForType {
+    switch (type) {
+      case BreakablePropType.explosiveBarrel:
+        return 'assets/art/environment/barrelLarge.png';
+      case BreakablePropType.oreCrystal:
+        return 'assets/art/environment/rocksOre.png';
+      case BreakablePropType.cargoCrate:
+        return 'assets/art/environment/metalStructure.png';
+      case BreakablePropType.fusionCell:
+        return 'assets/art/environment/spaceStation_017.png';
+    }
+  }
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(RectangleHitbox(size: size));
+
+    // Carregamento resiliente do sprite CC0 via rootBundle
+    try {
+      final byteData = await rootBundle.load(_assetPathForType);
+      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
+      final frame = await codec.getNextFrame();
+      _spriteImage = frame.image;
+    } catch (_) {
+      _spriteImage = null;
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (hitFlashTimer > 0) {
+      hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
+    }
+  }
+
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollisionStart(intersectionPoints, other);
+    if (other is AsteroidComponent) {
+      final impactDmg = math.max(20.0, other.velocity.length * 0.4);
+      takeDamage(impactDmg, other.position);
+      other.takeDamage(impactDmg * 0.8, position);
+    }
+  }
+
+  /// Aplica dano ao objeto do cenário. Retorna true se foi destruído.
+  bool takeDamage(double damage, [Vector2? hitPos]) {
+    if (isDestroyed) return false;
+    hp -= damage;
+    hitFlashTimer = 0.12;
+
+    try {
+      game.spawnExplosionParticles(
+        position: hitPos ?? position,
+        colorChoices: _hitParticleColors,
+        count: 4,
+        minSize: 1.5,
+        maxSize: 3.0,
+        minSpeed: 25.0,
+        maxSpeed: 70.0,
+      );
+    } catch (_) {}
+
+    if (hp <= 0) {
+      onDestroyed(hitPos);
+      return true;
+    }
+    return false;
+  }
+
+  List<Color> get _hitParticleColors {
+    switch (type) {
+      case BreakablePropType.explosiveBarrel:
+        return [Colors.orange, Colors.redAccent, Colors.yellow];
+      case BreakablePropType.oreCrystal:
+        return [const Color(0xFF00E5FF), const Color(0xFFFFD700), Colors.white];
+      case BreakablePropType.cargoCrate:
+        return [const Color(0xFF90A4AE), const Color(0xFFFFB300), Colors.white];
+      case BreakablePropType.fusionCell:
+        return [const Color(0xFF00E5FF), const Color(0xFFE040FB), Colors.white];
+    }
+  }
+
+  void onDestroyed([Vector2? hitPos]) {
+    if (isDestroyed) return;
+    isDestroyed = true;
+
+    final triggerPos = hitPos ?? position;
+
+    switch (type) {
+      case BreakablePropType.explosiveBarrel:
+        _triggerBarrelExplosion(triggerPos);
+        break;
+      case BreakablePropType.oreCrystal:
+        _triggerOreShatter(triggerPos);
+        break;
+      case BreakablePropType.cargoCrate:
+        _triggerCrateBreak(triggerPos);
+        break;
+      case BreakablePropType.fusionCell:
+        _triggerFusionOverload(triggerPos);
+        break;
+    }
+
+    removeFromParent();
+  }
+
+  void _triggerBarrelExplosion(Vector2 triggerPos) {
+    const explosionRadius = 190.0;
+    const barrelDamage = 65.0;
+
+    try {
+      game.playSfx('asteroid_split.wav');
+      game.spawnFloatingText(
+        position + Vector2(0, -18),
+        'BOOM!',
+        color: const Color(0xFFFF3D00),
+        fontSize: 15.0,
+      );
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [
+          const Color(0xFFFF3D00),
+          const Color(0xFFFF9100),
+          const Color(0xFFFFEA00),
+          Colors.white,
+        ],
+        count: 22,
+        minSize: 2.0,
+        maxSize: 5.5,
+        minSpeed: 60.0,
+        maxSpeed: 210.0,
+      );
+    } catch (_) {}
+
+    // Dano em área para inimigos, asteroides e outros barris (reação em cadeia)
+    final children = List<Component>.from(game.world.children);
+    for (final child in children) {
+      if (child == this) continue;
+
+      if (child is EnemyShipComponent && !child.isRemoving) {
+        if (child.position.distanceTo(position) <= explosionRadius) {
+          child.takeDamage(barrelDamage, child.position);
+        }
+      } else if (child is AsteroidComponent && !child.isRemoving) {
+        if (child.position.distanceTo(position) <= explosionRadius) {
+          final destroyed = child.takeDamage(barrelDamage, child.position);
+          if (destroyed) {
+            try {
+              game.onAsteroidDestroyed(child.position, child.scoreValue);
+            } catch (_) {}
+          }
+        }
+      } else if (child is BreakablePropComponent && !child.isDestroyed && !child.isRemoving) {
+        if (child.position.distanceTo(position) <= explosionRadius) {
+          child.takeDamage(barrelDamage, child.position);
+        }
+      }
+    }
+
+    // Drop pequeno de Stardust no local da explosão
+    try {
+      game.world.add(
+        XpOrbComponent(
+          position: position,
+          type: XpOrbType.small,
+        ),
+      );
+    } catch (_) {}
+  }
+
+  void _triggerOreShatter(Vector2 triggerPos) {
+    try {
+      game.playSfx('asteroid_split.wav');
+      game.spawnFloatingText(
+        position + Vector2(0, -16),
+        '+30 CRÉDITOS',
+        color: const Color(0xFFFFD700),
+        fontSize: 13.0,
+      );
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [
+          const Color(0xFF00E5FF),
+          const Color(0xFFFFD700),
+          Colors.white,
+        ],
+        count: 14,
+        minSize: 2.0,
+        maxSize: 4.0,
+        minSpeed: 40.0,
+        maxSpeed: 120.0,
+      );
+      game.score += 150;
+    } catch (_) {}
+
+    // Libera 3 a 4 orbes de Stardust XP (estilo Vampire Survivors)
+    final rng = math.Random();
+    final count = 3 + rng.nextInt(2);
+    for (var i = 0; i < count; i++) {
+      final offset = Vector2(
+        (rng.nextDouble() - 0.5) * 36.0,
+        (rng.nextDouble() - 0.5) * 36.0,
+      );
+      try {
+        game.world.add(
+          XpOrbComponent(
+            position: position + offset,
+            type: i == 0 ? XpOrbType.medium : XpOrbType.small,
+          ),
+        );
+      } catch (_) {}
+    }
+  }
+
+  void _triggerCrateBreak(Vector2 triggerPos) {
+    try {
+      game.playSfx('chest_open.wav');
+      game.spawnFloatingText(
+        position + Vector2(0, -16),
+        'CARGA EXTRAÍDA',
+        color: const Color(0xFF00E5FF),
+        fontSize: 13.0,
+      );
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [const Color(0xFFFFB300), const Color(0xFF00E5FF), Colors.white],
+        count: 12,
+        minSize: 2.0,
+        maxSize: 4.5,
+        minSpeed: 30.0,
+        maxSpeed: 100.0,
+      );
+    } catch (_) {}
+
+    // Drop tático ponderado
+    final rng = math.Random();
+    final roll = rng.nextDouble();
+    try {
+      if (roll < 0.45) {
+        // Kit de Reparo de Casco (+1 Vida / HP)
+        game.world.add(DropComponent(position: position, type: DropType.health));
+      } else if (roll < 0.75) {
+        // Escudo Fotônico
+        game.world.add(DropComponent(position: position, type: DropType.shield));
+      } else {
+        // Sobrecarga de Vórtice / Matéria Rara
+        game.world.add(DropComponent(position: position, type: DropType.rareHelium));
+      }
+    } catch (_) {}
+  }
+
+  void _triggerFusionOverload(Vector2 triggerPos) {
+    const empRadius = 280.0;
+    const empDamage = 40.0;
+
+    try {
+      game.playSfx('asteroid_split.wav');
+      game.spawnFloatingText(
+        position + Vector2(0, -18),
+        'EMP NOVA!',
+        color: const Color(0xFF00E5FF),
+        fontSize: 14.0,
+      );
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [
+          const Color(0xFF00E5FF),
+          const Color(0xFFE040FB),
+          Colors.white,
+        ],
+        count: 24,
+        minSize: 2.0,
+        maxSize: 5.0,
+        minSpeed: 50.0,
+        maxSpeed: 180.0,
+      );
+    } catch (_) {}
+
+    // O pulso EMP vaporiza tiros inimigos e causa dano de choque nos inimigos no raio
+    final children = List<Component>.from(game.world.children);
+    for (final child in children) {
+      if (child is EnemyBulletComponent && !child.isRemoving) {
+        if (child.position.distanceTo(position) <= empRadius) {
+          child.removeFromParent();
+        }
+      } else if (child is EnemyShipComponent && !child.isRemoving) {
+        if (child.position.distanceTo(position) <= empRadius) {
+          child.takeDamage(empDamage, child.position);
+        }
+      }
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+
+    // 1. Renderiza o Sprite CC0 se disponível
+    if (_spriteImage != null) {
+      final srcRect = Rect.fromLTWH(
+        0,
+        0,
+        _spriteImage!.width.toDouble(),
+        _spriteImage!.height.toDouble(),
+      );
+      final dstRect = Rect.fromLTWH(0, 0, size.x, size.y);
+
+      canvas.drawImageRect(
+        _spriteImage!,
+        srcRect,
+        dstRect,
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+    } else {
+      // 2. Fallback Vetorial Detalhado e Temático
+      _renderFallbackVector(canvas);
+    }
+
+    // 3. Efeito de Flash Branco ao Sofrer Dano (Feedback tátil)
+    if (hitFlashTimer > 0) {
+      final flashOpacity = (hitFlashTimer / 0.12).clamp(0.0, 1.0) * 0.75;
+      final flashPaint = Paint()
+        ..color = Colors.white.withValues(alpha: flashOpacity)
+        ..style = PaintingStyle.fill;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.x, size.y),
+          const Radius.circular(5.0),
+        ),
+        flashPaint,
+      );
+    }
+  }
+
+  void _renderFallbackVector(Canvas canvas) {
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+
+    switch (type) {
+      case BreakablePropType.explosiveBarrel:
+        // Barril de combustível vermelho/alaranjado com faixas de perigo
+        final bgPaint = Paint()..color = const Color(0xFFD32F2F);
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6.0)), bgPaint);
+
+        final stripePaint = Paint()
+          ..color = const Color(0xFFFFD600)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.5;
+        canvas.drawLine(Offset(6, size.y * 0.35), Offset(size.x - 6, size.y * 0.35), stripePaint);
+        canvas.drawLine(Offset(6, size.y * 0.65), Offset(size.x - 6, size.y * 0.65), stripePaint);
+
+        // Borda metálica
+        final borderPaint = Paint()
+          ..color = const Color(0xFFFF5252)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0;
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(6.0)), borderPaint);
+        break;
+
+      case BreakablePropType.oreCrystal:
+        // Aglomerado rochoso com veios de minério ciano/dourado
+        final rockPaint = Paint()..color = const Color(0xFF263238);
+        final path = Path()
+          ..moveTo(size.x * 0.2, 0)
+          ..lineTo(size.x * 0.85, size.y * 0.1)
+          ..lineTo(size.x, size.y * 0.65)
+          ..lineTo(size.x * 0.7, size.y)
+          ..lineTo(size.x * 0.15, size.y * 0.9)
+          ..lineTo(0, size.y * 0.4)
+          ..close();
+        canvas.drawPath(path, rockPaint);
+
+        final veinPaint = Paint()
+          ..color = const Color(0xFF00E5FF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawLine(Offset(size.x * 0.3, size.y * 0.2), Offset(size.x * 0.7, size.y * 0.5), veinPaint);
+        canvas.drawLine(Offset(size.x * 0.4, size.y * 0.5), Offset(size.x * 0.6, size.y * 0.8), veinPaint);
+
+        // Brilho dourado
+        final goldPaint = Paint()
+          ..color = const Color(0xFFFFD700)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(size.x * 0.65, size.y * 0.35), 3.5, goldPaint);
+        break;
+
+      case BreakablePropType.cargoCrate:
+        // Contêiner industrial cinza-azulado com reforço angular
+        final cratePaint = Paint()..color = const Color(0xFF37474F);
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(4.0)), cratePaint);
+
+        final framePaint = Paint()
+          ..color = const Color(0xFFFFB300)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0;
+        canvas.drawRect(Rect.fromLTWH(4, 4, size.x - 8, size.y - 8), framePaint);
+        canvas.drawLine(const Offset(4, 4), Offset(size.x - 4, size.y - 4), framePaint);
+        break;
+
+      case BreakablePropType.fusionCell:
+        // Célula cilíndrica de alta energia com núcleo pulsante
+        final cellPaint = Paint()..color = const Color(0xFF1A237E);
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8.0)), cellPaint);
+
+        final corePaint = Paint()
+          ..color = const Color(0xFF00E5FF)
+          ..style = PaintingStyle.fill;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(size.x * 0.25, size.y * 0.25, size.x * 0.5, size.y * 0.5),
+            const Radius.circular(4.0),
+          ),
+          corePaint,
+        );
+        break;
+    }
+  }
+}
