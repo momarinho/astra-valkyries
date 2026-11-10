@@ -9,6 +9,7 @@ import 'enemy_ship.dart';
 import 'dreadnought_leviathan.dart';
 import 'ignis_wyrm.dart';
 import 'cryo_pod.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   static const int maxActiveEnemiesCap = 40; // Teto estrito (35 a 45 naves) para manter 60 FPS cravados
@@ -176,7 +177,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       }
       game.spawnFloatingText(
         pPos + Vector2(0, -75),
-        '🚨 ALERTA GERAL: O TITÃ DO SETOR EMERGIU DO HIPERESPAÇO! 🚨',
+        I18n.select(
+          pt: '🚨 ALERTA GERAL: O TITÃ DO SETOR EMERGIU DO HIPERESPAÇO! 🚨',
+          en: '🚨 SECTOR ALERT: SECTOR TITAN EMERGED FROM HYPERSPACE! 🚨',
+        ),
         color: const Color(0xFFFF1744),
         fontSize: 19.0,
       );

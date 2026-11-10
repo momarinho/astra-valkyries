@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/weapons.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 enum PerkType {
   newWeapon,
@@ -23,17 +24,23 @@ class WeaponSynergy {
   final String passiveId;
   final String passiveTitle;
   final String evolvedName;
-  final String evolutionDescription;
+  final String evolutionDescriptionPt;
+  final String? evolutionDescriptionEn;
   final IconData evolutionIcon;
+
+  String get evolutionDescription =>
+      I18n.isPt ? evolutionDescriptionPt : (evolutionDescriptionEn ?? evolutionDescriptionPt);
 
   const WeaponSynergy({
     required this.weaponId,
     required this.passiveId,
     required this.passiveTitle,
     required this.evolvedName,
-    required this.evolutionDescription,
+    String? evolutionDescription,
+    String? evolutionDescriptionPt,
+    this.evolutionDescriptionEn,
     required this.evolutionIcon,
-  });
+  }) : evolutionDescriptionPt = evolutionDescriptionPt ?? evolutionDescription ?? '';
 
   static const List<WeaponSynergy> allSynergies = [
     WeaponSynergy(
@@ -41,7 +48,8 @@ class WeaponSynergy {
       passiveId: 'passive_overdrive',
       passiveTitle: 'Void Catalyst',
       evolvedName: 'Supernova Annihilator',
-      evolutionDescription: 'Dual continuous imperial gold plasma beams with infinite pierce and catastrophic damage.',
+      evolutionDescriptionPt: 'Feixes gêmeos contínuos de plasma dourado imperial com perfuração infinita e dano catastrófico.',
+      evolutionDescriptionEn: 'Dual continuous imperial gold plasma beams with infinite pierce and catastrophic damage.',
       evolutionIcon: Icons.auto_awesome,
     ),
     WeaponSynergy(
@@ -49,7 +57,8 @@ class WeaponSynergy {
       passiveId: 'passive_shield_recharge',
       passiveTitle: 'Aegis Capacitor',
       evolvedName: 'Hyperion Flak Storm',
-      evolutionDescription: '10-way 360-degree perimeter flak ring annihilating all surrounding hostile swarms.',
+      evolutionDescriptionPt: 'Anel perimétrico de 10 tiros em 360 graus que aniquila todos os enxames ao redor.',
+      evolutionDescriptionEn: '10-way 360-degree perimeter flak ring annihilating all surrounding hostile swarms.',
       evolutionIcon: Icons.grain,
     ),
     WeaponSynergy(
@@ -57,7 +66,8 @@ class WeaponSynergy {
       passiveId: 'passive_fire_rate',
       passiveTitle: 'Overclocked Emitters',
       evolvedName: 'Absolute Zero Tachyon Beam',
-      evolutionDescription: 'Piercing cryogenic stream with blistering fire rate and infinite line penetration.',
+      evolutionDescriptionPt: 'Fluxo criogênico perfurante com cadência extrema e penetração linear infinita.',
+      evolutionDescriptionEn: 'Piercing cryogenic stream with blistering fire rate and infinite line penetration.',
       evolutionIcon: Icons.ac_unit,
     ),
     WeaponSynergy(
@@ -65,7 +75,8 @@ class WeaponSynergy {
       passiveId: 'passive_magnet',
       passiveTitle: 'Magnetic Harvester',
       evolvedName: 'Singularity Rift Torpedo',
-      evolutionDescription: 'Antimatter torpedoes detonating in gravitational black hole vortexes that pull and crush foes.',
+      evolutionDescriptionPt: 'Torpedos de antimatéria detonando vórtices gravitacionais de buraco negro que atraem e esmagam inimigos.',
+      evolutionDescriptionEn: 'Antimatter torpedoes detonating in gravitational black hole vortexes that pull and crush foes.',
       evolutionIcon: Icons.cyclone,
     ),
     WeaponSynergy(
@@ -73,7 +84,8 @@ class WeaponSynergy {
       passiveId: 'passive_shield_recharge',
       passiveTitle: 'Aegis Capacitor',
       evolvedName: 'Celestial Buzzsaw Ring',
-      evolutionDescription: '6 golden precursor sawblades orbiting at supersonic speed, shredding projectiles and enemies.',
+      evolutionDescriptionPt: '6 serras precursoras douradas orbitando em velocidade supersônica, triturando tiros e inimigos.',
+      evolutionDescriptionEn: '6 golden precursor sawblades orbiting at supersonic speed, shredding projectiles and enemies.',
       evolutionIcon: Icons.rotate_right_rounded,
     ),
     WeaponSynergy(
@@ -81,7 +93,8 @@ class WeaponSynergy {
       passiveId: 'passive_fire_rate',
       passiveTitle: 'Overclocked Emitters',
       evolvedName: 'Mjolnir Storm Conduit',
-      evolutionDescription: 'High-voltage chain lightning jumping across 8 targets and inflicting Ion Shock.',
+      evolutionDescriptionPt: 'Raios elétricos de alta voltagem saltando entre até 8 alvos e aplicando Choque Iônico.',
+      evolutionDescriptionEn: 'High-voltage chain lightning jumping across 8 targets and inflicting Ion Shock.',
       evolutionIcon: Icons.electric_bolt_rounded,
     ),
     WeaponSynergy(
@@ -89,7 +102,8 @@ class WeaponSynergy {
       passiveId: 'passive_thrust',
       passiveTitle: 'Quantum Thrusters',
       evolvedName: 'Chronos Eclipse Glaive',
-      evolutionDescription: 'Triple boomerang glaives that freeze enemies and deal 165% return damage.',
+      evolutionDescriptionPt: 'Lâminas bumerangue triplas que congelam inimigos e causam 165% de dano no retorno.',
+      evolutionDescriptionEn: 'Triple boomerang glaives that freeze enemies and deal 165% return damage.',
       evolutionIcon: Icons.all_out_rounded,
     ),
     WeaponSynergy(
@@ -97,7 +111,8 @@ class WeaponSynergy {
       passiveId: 'passive_magnet',
       passiveTitle: 'Magnetic Harvester',
       evolvedName: 'Event Horizon Nova Pulse',
-      evolutionDescription: 'Massive 360-degree gravitational shockwave inflicting Void Rupture and Cryo Freeze.',
+      evolutionDescriptionPt: 'Onda de choque gravitacional maciça de 360° aplicando Ruptura do Vazio e Congelamento.',
+      evolutionDescriptionEn: 'Massive 360-degree gravitational shockwave inflicting Void Rupture and Cryo Freeze.',
       evolutionIcon: Icons.radar_rounded,
     ),
     WeaponSynergy(
@@ -105,7 +120,8 @@ class WeaponSynergy {
       passiveId: 'passive_overdrive',
       passiveTitle: 'Void Catalyst',
       evolvedName: 'Helios Core Melter',
-      evolutionDescription: 'Colossal continuous starfire beam that melts armor and inflicts Solar Burn.',
+      evolutionDescriptionPt: 'Feixe estelar contínuo colossal que derrete blindagens e inflige Queimadura Solar.',
+      evolutionDescriptionEn: 'Colossal continuous starfire beam that melts armor and inflicts Solar Burn.',
       evolutionIcon: Icons.wb_sunny_rounded,
     ),
     WeaponSynergy(
@@ -113,7 +129,8 @@ class WeaponSynergy {
       passiveId: 'passive_overdrive',
       passiveTitle: 'Void Catalyst',
       evolvedName: 'Phoenix Dragon Breath',
-      evolutionDescription: '5-stream dragonfire plasma cone incinerating entire enemy squadrons.',
+      evolutionDescriptionPt: 'Cone de plasma de fogo de dragão com 5 feixes incinerando esquadrões hostis inteiros.',
+      evolutionDescriptionEn: '5-stream dragonfire plasma cone incinerating entire enemy squadrons.',
       evolutionIcon: Icons.local_fire_department_rounded,
     ),
     WeaponSynergy(
@@ -121,7 +138,8 @@ class WeaponSynergy {
       passiveId: 'passive_fire_rate',
       passiveTitle: 'Overclocked Emitters',
       evolvedName: 'Seraphim Drone Squadron',
-      evolutionDescription: '4 autonomous Seraphim combat drones firing high-velocity ionized volleys.',
+      evolutionDescriptionPt: '4 drones de combate Seraphim autônomos disparando salvas ionizadas de alta cadência.',
+      evolutionDescriptionEn: '4 autonomous Seraphim combat drones firing high-velocity ionized volleys.',
       evolutionIcon: Icons.flight_class_rounded,
     ),
     WeaponSynergy(
@@ -129,7 +147,8 @@ class WeaponSynergy {
       passiveId: 'passive_thrust',
       passiveTitle: 'Quantum Thrusters',
       evolvedName: 'Abyssal Minefield Matrix',
-      evolutionDescription: 'Deploys 3 rear dark-matter cluster mines that freeze and rupture pursuing hordes.',
+      evolutionDescriptionPt: 'Lança 3 minas traseiras de matéria escura que congelam e rompem hordas perseguidoras.',
+      evolutionDescriptionEn: 'Deploys 3 rear dark-matter cluster mines that freeze and rupture pursuing hordes.',
       evolutionIcon: Icons.brightness_low_rounded,
     ),
     WeaponSynergy(
@@ -137,7 +156,8 @@ class WeaponSynergy {
       passiveId: 'passive_overdrive',
       passiveTitle: 'Void Catalyst',
       evolvedName: 'Void Muramasa',
-      evolutionDescription: 'Triple dimensional plasma slashes cutting through reality with infinite line penetration.',
+      evolutionDescriptionPt: 'Cortes triplos dimensionais de plasma que rasgam a realidade com perfuração linear irrestrita.',
+      evolutionDescriptionEn: 'Triple dimensional plasma slashes cutting through reality with infinite line penetration.',
       evolutionIcon: Icons.flash_on_rounded,
     ),
   ];
@@ -153,47 +173,52 @@ class WeaponSynergy {
 class RoguePerk {
   final String id;
   final String title;
-  final String description;
+  final String descriptionPt;
+  final String? descriptionEn;
   final PerkType type;
   final PerkRarity rarity;
   final IconData icon;
   final Color accentColor;
   final void Function(AsteroidsGame game) onSelect;
 
+  String get description => I18n.isPt ? descriptionPt : (descriptionEn ?? descriptionPt);
+
   const RoguePerk({
     required this.id,
     required this.title,
-    required this.description,
+    String? description,
+    String? descriptionPt,
+    this.descriptionEn,
     required this.type,
     required this.rarity,
     required this.icon,
     required this.accentColor,
     required this.onSelect,
-  });
+  }) : descriptionPt = descriptionPt ?? description ?? '';
 
   String get typeLabel {
     switch (type) {
       case PerkType.newWeapon:
-        return 'NEW WEAPON';
+        return I18n.t('perk_type.new_weapon');
       case PerkType.upgradeWeapon:
-        return 'UPGRADE';
+        return I18n.t('perk_type.upgrade_weapon');
       case PerkType.passive:
-        return 'PASSIVE MODULE';
+        return I18n.t('perk_type.passive');
       case PerkType.evolution:
-        return '★ WEAPON EVOLUTION ★';
+        return I18n.t('perk_type.evolution');
     }
   }
 
   String get rarityLabel {
     switch (rarity) {
       case PerkRarity.common:
-        return 'COMMON';
+        return I18n.t('rarity.common');
       case PerkRarity.rare:
-        return 'RARE';
+        return I18n.t('rarity.rare');
       case PerkRarity.epic:
-        return 'EPIC';
+        return I18n.t('rarity.epic');
       case PerkRarity.legendary:
-        return 'LEGENDARY';
+        return I18n.t('rarity.legendary');
     }
   }
 
@@ -228,7 +253,8 @@ class RoguePerkGenerator {
             RoguePerk(
               id: 'evolve_$key',
               title: synergy.evolvedName.toUpperCase(),
-              description: synergy.evolutionDescription,
+              descriptionPt: synergy.evolutionDescriptionPt,
+              descriptionEn: synergy.evolutionDescriptionEn,
               type: PerkType.evolution,
               rarity: PerkRarity.legendary,
               icon: synergy.evolutionIcon,
@@ -251,7 +277,8 @@ class RoguePerkGenerator {
           RoguePerk(
             id: 'new_blaster',
             title: 'Pulse Blaster',
-            description: 'Precision twin-bolt plasma cannon with high projectile speed and balanced power. [Sinergia: Void Catalyst]',
+            descriptionPt: 'Canhão duplo de plasma de precisão com alta velocidade de projétil e poder equilibrado. [Sinergia: Void Catalyst]',
+            descriptionEn: 'Precision twin-bolt plasma cannon with high projectile speed and balanced power. [Synergy: Void Catalyst]',
             type: PerkType.newWeapon,
             rarity: PerkRarity.common,
             icon: Icons.flash_on,
@@ -268,7 +295,8 @@ class RoguePerkGenerator {
           RoguePerk(
             id: 'new_spread_shot',
             title: 'Spread Cannon',
-            description: 'Fires a 3-way fan of plasma projectiles covering a wide frontal arc. [Sinergia: Aegis Capacitor]',
+            descriptionPt: 'Dispara salva em leque cobrindo amplo arco frontal com dispersão de plasma. [Sinergia: Aegis Capacitor]',
+            descriptionEn: 'Fires a 3-way fan of plasma projectiles covering a wide frontal arc. [Synergy: Aegis Capacitor]',
             type: PerkType.newWeapon,
             rarity: PerkRarity.rare,
             icon: Icons.grain,
@@ -285,7 +313,8 @@ class RoguePerkGenerator {
           RoguePerk(
             id: 'new_rapid_fire',
             title: 'Phase Laser',
-            description: 'High-frequency photon beam with blazing fire rate and line piercing. [Sinergia: Overclocked Emitters]',
+            descriptionPt: 'Feixe fotônico de alta frequência com cadência avassaladora e perfuração linear. [Sinergia: Overclocked Emitters]',
+            descriptionEn: 'High-frequency photon beam with blazing fire rate and line piercing. [Synergy: Overclocked Emitters]',
             type: PerkType.newWeapon,
             rarity: PerkRarity.rare,
             icon: Icons.fast_forward,
@@ -302,7 +331,8 @@ class RoguePerkGenerator {
           RoguePerk(
             id: 'new_bomb_launcher',
             title: 'Antimatter Torpedo',
-            description: 'Heavy explosive warheads detonating in a massive destructive shockwave. [Sinergia: Magnetic Harvester]',
+            descriptionPt: 'Ogivas explosivas pesadas que detonam em uma onda de choque destrutiva em área. [Sinergia: Magnetic Harvester]',
+            descriptionEn: 'Heavy explosive warheads detonating in a massive destructive shockwave. [Synergy: Magnetic Harvester]',
             type: PerkType.newWeapon,
             rarity: PerkRarity.epic,
             icon: Icons.gps_fixed,
@@ -315,11 +345,12 @@ class RoguePerkGenerator {
       }
 
       // 1B. Phase 2 Expanded Arsenal (8 New Elemental & Orbital Weapons)
-      final expandedWeapons = <(String id, String title, String desc, PerkRarity rarity, IconData icon, Color color)>[
+      final expandedWeapons = <(String id, String title, String descPt, String descEn, PerkRarity rarity, IconData icon, Color color)>[
         (
           'aegis_sawblades',
           'Aegis Sawblades',
           'Lâminas orbitais que giram ao redor da nave bloqueando tiros e serrando enxames. [Sinergia: Aegis Capacitor]',
+          'Orbital sawblades that spin around the ship blocking projectiles and shredding swarms. [Synergy: Aegis Capacitor]',
           PerkRarity.rare,
           Icons.rotate_right_rounded,
           const Color(0xFF00E5FF),
@@ -327,7 +358,8 @@ class RoguePerkGenerator {
         (
           'tesla_arc',
           'Tesla Arc Cannon',
-          'Corrente elétrica que salta entre múltiplos inimigos aplicando ⚡ Ion Shock. [Sinergia: Overclocked Emitters]',
+          'Corrente elétrica que salta entre múltiplos inimigos aplicando Choque Iônico. [Sinergia: Overclocked Emitters]',
+          'Electric arc leaping between multiple hostiles inflicting Ion Shock. [Synergy: Overclocked Emitters]',
           PerkRarity.rare,
           Icons.electric_bolt_rounded,
           const Color(0xFF80D8FF),
@@ -336,6 +368,7 @@ class RoguePerkGenerator {
           'quantum_chakram',
           'Quantum Chakram',
           'Disco bumerangue que atravessa inimigos na ida e volta com 165% de dano. [Sinergia: Quantum Thrusters]',
+          'Boomerang disc cutting through hostiles outbound and returning with 165% damage. [Synergy: Quantum Thrusters]',
           PerkRarity.rare,
           Icons.all_out_rounded,
           const Color(0xFF00E676),
@@ -343,7 +376,8 @@ class RoguePerkGenerator {
         (
           'repulsor_aura',
           'Repulsor Gravity Aura',
-          'Pulso gravitacional 360° que aplica 🟣 Void Rupture e empurra enxames. [Sinergia: Magnetic Harvester]',
+          'Pulso gravitacional 360° que aplica Ruptura do Vazio e repele enxames. [Sinergia: Magnetic Harvester]',
+          '360° gravitational pulse inflicting Void Rupture and repelling hostile swarms. [Synergy: Magnetic Harvester]',
           PerkRarity.rare,
           Icons.radar_rounded,
           const Color(0xFFE040FB),
@@ -351,7 +385,8 @@ class RoguePerkGenerator {
         (
           'solar_lance',
           'Solar Thermal Lance',
-          'Feixe laser contínuo de fusão que perfura alvos aplicando 🔥 Solar Burn. [Sinergia: Void Catalyst]',
+          'Feixe laser contínuo de fusão que perfura alvos aplicando Queimadura Solar. [Sinergia: Void Catalyst]',
+          'Continuous fusion laser beam piercing hostiles and inflicting Solar Burn. [Synergy: Void Catalyst]',
           PerkRarity.epic,
           Icons.wb_sunny_rounded,
           const Color(0xFFFF5722),
@@ -359,7 +394,8 @@ class RoguePerkGenerator {
         (
           'inferno_cone',
           'Inferno Plasma Cone',
-          'Lança-chamas espacial em cone que incinera hordas com 🔥 Solar Burn. [Sinergia: Void Catalyst]',
+          'Lança-chamas espacial em cone que incinera hordas com Queimadura Solar. [Sinergia: Void Catalyst]',
+          'Cone plasma flamethrower incinerating swarms with Solar Burn. [Synergy: Void Catalyst]',
           PerkRarity.common,
           Icons.local_fire_department_rounded,
           const Color(0xFFFF9100),
@@ -368,6 +404,7 @@ class RoguePerkGenerator {
           'valkyrie_wingmen',
           'Valkyrie Wingmen',
           'Drones aliados autônomos que escoltam a nave e caçam inimigos próximos. [Sinergia: Overclocked Emitters]',
+          'Autonomous ally escort drones protecting the ship and hunting nearby enemies. [Synergy: Overclocked Emitters]',
           PerkRarity.epic,
           Icons.flight_class_rounded,
           const Color(0xFF00B0FF),
@@ -375,7 +412,8 @@ class RoguePerkGenerator {
         (
           'void_mines',
           'Void Cluster Mines',
-          'Minas traseiras de matéria escura ideais para Kiting na ré (🟣 Void Rupture). [Sinergia: Quantum Thrusters]',
+          'Minas traseiras de matéria escura ideais para Kiting na ré (Ruptura do Vazio). [Sinergia: Quantum Thrusters]',
+          'Rear dark-matter cluster mines ideal for reverse kiting (Void Rupture). [Synergy: Quantum Thrusters]',
           PerkRarity.rare,
           Icons.brightness_low_rounded,
           const Color(0xFFAA00FF),
@@ -389,11 +427,12 @@ class RoguePerkGenerator {
             RoguePerk(
               id: 'new_${wInfo.$1}',
               title: wInfo.$2,
-              description: wInfo.$3,
+              descriptionPt: wInfo.$3,
+              descriptionEn: wInfo.$4,
               type: PerkType.newWeapon,
-              rarity: wInfo.$4,
-              icon: wInfo.$5,
-              accentColor: wInfo.$6,
+              rarity: wInfo.$5,
+              icon: wInfo.$6,
+              accentColor: wInfo.$7,
               onSelect: (g) {
                 g.player.addWeapon(Weapon.createById(wInfo.$1));
               },
@@ -410,15 +449,19 @@ class RoguePerkGenerator {
       if (weapon.level < weapon.maxLevel) {
         final nextLvl = weapon.level + 1;
         final synergy = WeaponSynergy.findByWeaponId(key);
-        final synergyHint = synergy != null ? ' [Sinergia: ${synergy.passiveTitle}]' : '';
+        final synergyHintPt = synergy != null ? ' [Sinergia: ${synergy.passiveTitle}]' : '';
+        final synergyHintEn = synergy != null ? ' [Synergy: ${synergy.passiveTitle}]' : '';
 
         standardPool.add(
           RoguePerk(
             id: 'upgrade_${key}_$nextLvl',
             title: '${weapon.name.toUpperCase()} MK $nextLvl',
-            description: nextLvl == 3
-                ? 'Potência Máxima! Amplifica dano e cadência.$synergyHint'
-                : 'Aprimora velocidade de disparo e dano.$synergyHint',
+            descriptionPt: nextLvl == 3
+                ? 'Potência Máxima! Amplifica dano e cadência.$synergyHintPt'
+                : 'Aprimora velocidade de disparo e dano.$synergyHintPt',
+            descriptionEn: nextLvl == 3
+                ? 'Maximum Power! Amplifies damage and fire rate.$synergyHintEn'
+                : 'Improves firing speed and damage.$synergyHintEn',
             type: PerkType.upgradeWeapon,
             rarity: nextLvl == 3 ? PerkRarity.epic : PerkRarity.rare,
             icon: Icons.keyboard_double_arrow_up,
@@ -437,7 +480,8 @@ class RoguePerkGenerator {
       RoguePerk(
         id: 'passive_magnet',
         title: 'Magnetic Harvester',
-        description: 'Expande o raio de atração de Stardust em +40%. [Sinergia com Torpedo Antimatter]',
+        descriptionPt: 'Expande o raio de atração de Poeira Estelar em +40%. [Sinergia: Torpedo Antimatter]',
+        descriptionEn: 'Expands Stardust attraction radius by +40%. [Synergy: Antimatter Torpedo]',
         type: PerkType.passive,
         rarity: PerkRarity.common,
         icon: Icons.all_inclusive,
@@ -454,7 +498,8 @@ class RoguePerkGenerator {
       RoguePerk(
         id: 'passive_thrust',
         title: 'Quantum Thrusters',
-        description: 'Aumenta aceleração da nave em +20% e velocidade máxima.',
+        descriptionPt: 'Aumenta aceleração da nave em +20% e velocidade máxima.',
+        descriptionEn: 'Increases ship acceleration by +20% and maximum speed.',
         type: PerkType.passive,
         rarity: PerkRarity.common,
         icon: Icons.flight_takeoff,
@@ -471,7 +516,8 @@ class RoguePerkGenerator {
       RoguePerk(
         id: 'passive_shield_recharge',
         title: 'Aegis Capacitor',
-        description: 'Restaura +1 Vida e concede invulnerabilidade temporária. [Sinergia com Spread Cannon]',
+        descriptionPt: 'Restaura +1 Vida e concede invulnerabilidade temporária. [Sinergia: Spread Cannon]',
+        descriptionEn: 'Restores +1 Life and grants temporary invulnerability. [Synergy: Spread Cannon]',
         type: PerkType.passive,
         rarity: PerkRarity.rare,
         icon: Icons.shield,
@@ -488,7 +534,8 @@ class RoguePerkGenerator {
       RoguePerk(
         id: 'passive_fire_rate',
         title: 'Overclocked Emitters',
-        description: 'Reduz recarga de todas as armas em 15%. [Sinergia com Phase Laser]',
+        descriptionPt: 'Reduz recarga de todas as armas em 15%. [Sinergia: Phase Laser]',
+        descriptionEn: 'Reduces weapon cooldown by 15%. [Synergy: Phase Laser]',
         type: PerkType.passive,
         rarity: PerkRarity.rare,
         icon: Icons.bolt,
@@ -504,7 +551,8 @@ class RoguePerkGenerator {
       RoguePerk(
         id: 'passive_overdrive',
         title: 'Void Catalyst',
-        description: 'Gera Stardust passivo e concede +25% de dano a todas as armas. [Sinergia com Pulse Blaster]',
+        descriptionPt: 'Gera Poeira Estelar passiva e concede +25% de dano a todas as armas. [Sinergia: Pulse Blaster]',
+        descriptionEn: 'Generates passive Stardust and grants +25% damage to all weapons. [Synergy: Pulse Blaster]',
         type: PerkType.passive,
         rarity: PerkRarity.epic,
         icon: Icons.auto_awesome,

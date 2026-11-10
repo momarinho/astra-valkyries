@@ -103,7 +103,7 @@ void main() {
       await tester.pump();
 
       expect(find.textContaining('DREADNOUGHT LEVIATHAN // SECTOR TITAN'), findsOneWidget);
-      expect(find.textContaining('75% HULL'), findsOneWidget);
+      expect(find.textContaining('75%'), findsOneWidget);
     });
   });
 }

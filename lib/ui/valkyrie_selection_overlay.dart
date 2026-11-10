@@ -8,6 +8,7 @@ import 'package:asteroids/game/affinity_system.dart';
 import 'package:asteroids/game/sector.dart';
 import 'package:asteroids/game/roguelite_systems.dart';
 import 'package:asteroids/game/weapon_codex.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -378,9 +379,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 widget.game.changeState(GameState.menu);
               },
               icon: const Icon(Icons.arrow_back_rounded, size: 15, color: Colors.white),
-              label: const Text(
-                'MENU PRINCIPAL',
-                style: TextStyle(
+              label: Text(
+                I18n.t('hangar.back_menu'),
+                style: const TextStyle(
                   fontFamily: 'Orbitron',
                   fontSize: 10.5,
                   fontWeight: FontWeight.bold,
@@ -422,21 +423,21 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 children: [
                   _buildTabPill(
                     index: 0,
-                    label: isCompact ? 'SORTIE' : 'SORTIE // DECOLAR',
+                    label: isCompact ? I18n.select(pt: 'SORTIE', en: 'SORTIE') : I18n.t('hangar.tab_sortie'),
                     icon: Icons.rocket_launch_rounded,
                     activeColor: current.primaryColor,
                   ),
                   const SizedBox(width: 4),
                   _buildTabPill(
                     index: 1,
-                    label: isCompact ? 'OFICINA' : 'OFICINA // UPGRADES',
+                    label: isCompact ? I18n.select(pt: 'OFICINA', en: 'WORKSHOP') : I18n.t('hangar.tab_workshop'),
                     icon: Icons.precision_manufacturing_rounded,
                     activeColor: const Color(0xFFFFB300),
                   ),
                   const SizedBox(width: 4),
                   _buildTabPill(
                     index: 2,
-                    label: isCompact ? 'GALERIA' : 'GALERIA // MEMÓRIAS',
+                    label: isCompact ? I18n.select(pt: 'GALERIA', en: 'GALLERY') : I18n.t('hangar.tab_gallery'),
                     icon: Icons.auto_awesome_motion_rounded,
                     activeColor: const Color(0xFFFF4081),
                   ),
@@ -2063,9 +2064,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             Expanded(
               child: _buildInfoCard(
                 icon: Icons.flight,
-                label: 'VESSEL',
+                label: I18n.t('hangar.vessel'),
                 title: v.shipName,
-                desc: 'Base Hull: ${v.baseHull.toInt()} HP • Shield: ${v.baseShield.toInt()} SP',
+                desc: I18n.select(
+                  pt: 'Casco Base: ${v.baseHull.toInt()} HP • Escudo: ${v.baseShield.toInt()} SP',
+                  en: 'Base Hull: ${v.baseHull.toInt()} HP • Shield: ${v.baseShield.toInt()} SP',
+                ),
                 color: v.primaryColor,
               ),
             ),
@@ -2073,7 +2077,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             Expanded(
               child: _buildInfoCard(
                 icon: Icons.shield,
-                label: 'SPECIAL ABILITY',
+                label: I18n.t('hangar.special_ability'),
                 title: v.specialAbilityName,
                 desc: v.specialAbilityDesc,
                 color: v.accentColor,
@@ -2086,7 +2090,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
         _buildInfoCard(
           icon: Icons.flash_on,
-          label: 'STARTING WEAPON',
+          label: I18n.t('hangar.starting_weapon'),
           title: v.startingWeaponName,
           desc: v.startingWeaponDesc,
           color: Colors.amberAccent,

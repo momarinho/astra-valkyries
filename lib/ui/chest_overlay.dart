@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class ChestOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -57,8 +58,8 @@ class _ChestOverlayState extends State<ChestOverlay> with SingleTickerProviderSt
     final isTriple = rewards.length == 3;
 
     final title = isJackpot
-        ? 'SUPER JACKPOT! (5 REWARDS)'
-        : (isTriple ? 'GOLD SUPPLY CACHE (3 REWARDS)' : 'TACTICAL SUPPLY CACHE (1 REWARD)');
+        ? I18n.t('chest.jackpot')
+        : (isTriple ? I18n.t('chest.gold') : I18n.t('chest.standard'));
     final titleColor = isJackpot
         ? const Color(0xFFFFD700)
         : (isTriple ? const Color(0xFFFFB300) : const Color(0xFF80DEEA));
@@ -121,7 +122,7 @@ class _ChestOverlayState extends State<ChestOverlay> with SingleTickerProviderSt
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'ORBITAL DROP SECURED • REWARD PROTOCOL ENGAGED',
+                        I18n.t('chest.secured'),
                         style: TextStyle(
                           fontFamily: 'Rajdhani',
                           fontSize: 11,
@@ -227,12 +228,12 @@ class _ChestOverlayState extends State<ChestOverlay> with SingleTickerProviderSt
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.check_circle_outline, color: Colors.black, size: 20),
-                              SizedBox(width: 8),
+                            children: [
+                              const Icon(Icons.check_circle_outline, color: Colors.black, size: 20),
+                              const SizedBox(width: 8),
                               Text(
-                                'CLAIM & RESUME SORTIE',
-                                style: TextStyle(
+                                I18n.select(pt: 'RESGATAR E CONTINUAR', en: 'CLAIM & RESUME SORTIE'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.bold,

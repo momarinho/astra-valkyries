@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/rogue_perks.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class LevelUpOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -158,7 +159,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                                   const Icon(Icons.bolt, color: Colors.black, size: 20),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'LEVEL UP! • LEVEL $level',
+                                    I18n.t('level_up.badge', {'level': '$level'}),
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
                                       fontSize: 16,
@@ -176,7 +177,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                         const SizedBox(height: 10),
 
                         Text(
-                          'CHOOSE 1 TACTICAL EXPANSION MODULE',
+                          I18n.t('level_up.subtitle'),
                           style: TextStyle(
                             fontFamily: 'Rajdhani',
                             fontSize: 14,

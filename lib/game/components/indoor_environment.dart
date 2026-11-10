@@ -14,6 +14,7 @@ import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/chest.dart';
 import 'package:asteroids/game/components/xp_orb.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 /// 1. Piso Industrial Modular (Sprint 30 — Sub-piso metálico indoor com texturas CC0)
 class ModularFloorComponent extends PositionComponent
@@ -492,7 +493,10 @@ class LockdownChamberComponent extends PositionComponent
     try {
       game.spawnFloatingText(
         position + Vector2(0, -50),
-        'ALERTA // PROTOCOLO DE QUARENTENA ATIVADO',
+        I18n.select(
+          pt: 'ALERTA // PROTOCOLO DE QUARENTENA ATIVADO',
+          en: 'ALERT // QUARANTINE PROTOCOL ENGAGED',
+        ),
         color: const Color(0xFFFF1744),
         fontSize: 16.0,
       );

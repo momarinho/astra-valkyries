@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class SettingsOverlay extends StatelessWidget {
   final AsteroidsGame game;
@@ -48,19 +49,19 @@ class SettingsOverlay extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Title
+                      // Header & Title
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.tune_rounded, color: Colors.cyanAccent, size: 26),
-                              SizedBox(width: 10),
+                              const Icon(Icons.tune_rounded, color: Colors.cyanAccent, size: 26),
+                              const SizedBox(width: 10),
                               Text(
-                                'CONTROLES & FÍSICA',
-                                style: TextStyle(
+                                I18n.t('settings.title'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
-                                  fontSize: 20,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 2,
                                   color: Colors.white,
@@ -71,18 +72,62 @@ class SettingsOverlay extends StatelessWidget {
                           IconButton(
                             onPressed: () => game.changeState(game.previousMenuState),
                             icon: const Icon(Icons.close_rounded, color: Colors.white70),
-                            tooltip: 'Voltar',
+                            tooltip: I18n.t('settings.close'),
                           ),
                         ],
                       ),
                       const Divider(color: Colors.white24, height: 24),
 
-                      // Section 0: Control Mode (Formula 1 Tactical Reverse vs 360° Directional)
-                      const Text(
-                        'MODO DE PILOTAGEM // CONTROL SCHEME',
-                        style: TextStyle(
+                      // Section 0: Idioma // Language Selector
+                      Text(
+                        I18n.t('settings.language_header'),
+                        style: const TextStyle(
                           fontFamily: 'Orbitron',
-                          fontSize: 12.5,
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: Color(0xFF64FFDA),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          // PT-BR Option
+                          Expanded(
+                            child: _buildLanguageOption(
+                              context: context,
+                              locale: AppLocale.ptBr,
+                              isSelected: I18n.isPt,
+                              onTap: () async {
+                                await I18n.setLocale(AppLocale.ptBr);
+                                (context as Element).markNeedsBuild();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // EN-US Option
+                          Expanded(
+                            child: _buildLanguageOption(
+                              context: context,
+                              locale: AppLocale.enUs,
+                              isSelected: I18n.isEn,
+                              onTap: () async {
+                                await I18n.setLocale(AppLocale.enUs);
+                                (context as Element).markNeedsBuild();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Section 1: Modo de Pilotagem (Vector Reverse vs 360° Directional)
+                      Text(
+                        I18n.t('settings.control_scheme_header'),
+                        style: const TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 12.0,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
                           color: Color(0xFFFFD700),
@@ -92,8 +137,8 @@ class SettingsOverlay extends StatelessWidget {
                       _buildControlSchemeOption(
                         context: context,
                         isSelected: !game.useDirectionalControls,
-                        title: 'PROPULSÃO VETORIAL & RÉ TÁTICA (PADRÃO)',
-                        subtitle: 'W acelera, S dá ré atirando nos inimigos (Kiting) e A/D giram o nariz da nave',
+                        title: I18n.t('settings.control_vector'),
+                        subtitle: I18n.t('settings.control_vector_desc'),
                         onTap: () {
                           game.useDirectionalControls = false;
                           (context as Element).markNeedsBuild();
@@ -103,8 +148,8 @@ class SettingsOverlay extends StatelessWidget {
                       _buildControlSchemeOption(
                         context: context,
                         isSelected: game.useDirectionalControls,
-                        title: 'DIRECIONAL 360° (OPCIONAL)',
-                        subtitle: 'A nave aponta e acelera automaticamente na direção pressionada',
+                        title: I18n.t('settings.control_directional'),
+                        subtitle: I18n.t('settings.control_directional_desc'),
                         onTap: () {
                           game.useDirectionalControls = true;
                           (context as Element).markNeedsBuild();
@@ -113,12 +158,15 @@ class SettingsOverlay extends StatelessWidget {
 
                       const SizedBox(height: 20),
 
-                      // Section 1: Movement Presets
-                      const Text(
-                        'CALIBRAGEM DE PROPULSÃO // SHIP PHYSICS',
-                        style: TextStyle(
+                      // Section 2: Movement Presets
+                      Text(
+                        I18n.select(
+                          pt: 'CALIBRAGEM DE PROPULSÃO // FÍSICA DE VOO',
+                          en: 'THRUSTER CALIBRATION // FLIGHT PHYSICS',
+                        ),
+                        style: const TextStyle(
                           fontFamily: 'Orbitron',
-                          fontSize: 12.5,
+                          fontSize: 12.0,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
                           color: Colors.cyanAccent,
@@ -157,7 +205,7 @@ class SettingsOverlay extends StatelessWidget {
                                           preset.label.toUpperCase(),
                                           style: TextStyle(
                                             fontFamily: 'Orbitron',
-                                            fontSize: 13.5,
+                                            fontSize: 13.0,
                                             fontWeight: FontWeight.bold,
                                             color: isSelected ? Colors.cyanAccent : Colors.white,
                                           ),
@@ -165,7 +213,7 @@ class SettingsOverlay extends StatelessWidget {
                                         const SizedBox(height: 3),
                                         Text(
                                           'Acc: ${preset.acceleration.toInt()}  |  Max Speed: ${preset.maxSpeed.toInt()}  |  Friction: ${preset.friction.toStringAsFixed(1)}',
-                                          style: const TextStyle(fontSize: 12.0, color: Colors.white60),
+                                          style: const TextStyle(fontSize: 11.5, color: Colors.white60),
                                         ),
                                       ],
                                     ),
@@ -190,9 +238,9 @@ class SettingsOverlay extends StatelessWidget {
                                 game.changeState(GameState.menu);
                               },
                               icon: const Icon(Icons.home_rounded, size: 18),
-                              label: const Text(
-                                'MENU PRINCIPAL',
-                                style: TextStyle(
+                              label: Text(
+                                I18n.t('game_over.menu'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -216,9 +264,9 @@ class SettingsOverlay extends StatelessWidget {
                                 game.changeState(game.previousMenuState);
                               },
                               icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                              label: const Text(
-                                'SALVAR E VOLTAR',
-                                style: TextStyle(
+                              label: Text(
+                                I18n.select(pt: 'CONFIRMAR & VOLTAR', en: 'CONFIRM & RETURN'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -243,6 +291,49 @@ class SettingsOverlay extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption({
+    required BuildContext context,
+    required AppLocale locale,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF64FFDA).withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF64FFDA) : Colors.white12,
+            width: isSelected ? 1.8 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(locale.flag, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 8),
+            Text(
+              locale.label,
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? const Color(0xFF64FFDA) : Colors.white70,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF64FFDA), size: 16),
+            ],
+          ],
         ),
       ),
     );
@@ -281,7 +372,7 @@ class SettingsOverlay extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontFamily: 'Orbitron',
-                      fontSize: 12.5,
+                      fontSize: 12.0,
                       fontWeight: FontWeight.bold,
                       color: isSelected ? const Color(0xFFFFD700) : Colors.white,
                     ),
@@ -289,7 +380,7 @@ class SettingsOverlay extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 12.0, color: Colors.white70),
+                    style: const TextStyle(fontSize: 11.5, color: Colors.white70),
                   ),
                 ],
               ),

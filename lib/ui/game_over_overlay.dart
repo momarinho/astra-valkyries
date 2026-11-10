@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/ending_manager.dart';
 import 'package:asteroids/services/api_service.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class GameOverOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -129,9 +130,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                         child: Text(
                           (game.missionSurvived || game.campaignCompleted)
                               ? (game.campaignCompleted
-                                  ? '🏆 VICTORY // VOID SINGULARITY CONQUERED!'
-                                  : '🏆 MISSION ACCOMPLISHED // SECTOR SECURED!')
-                              : 'HULL COMPROMISED // SORTIE TERMINATED',
+                                  ? I18n.t('game_over.campaign_victory')
+                                  : I18n.t('game_over.victory'))
+                              : I18n.t('game_over.defeat'),
                           style: TextStyle(
                             fontFamily: 'Orbitron',
                             fontVariations: const [FontVariation('wght', 800)],
@@ -155,8 +156,14 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                       const SizedBox(height: 4),
                       Text(
                         (game.missionSurvived || game.campaignCompleted)
-                            ? 'All primary tactical objectives achieved. Returning to the Hangar in triumph!'
-                            : 'Vessel hull integrity collapsed under heavy asteroid bombardment.',
+                            ? I18n.select(
+                                pt: 'Todos os objetivos táticos cumpridos. Retornando ao Hangar triunfante!',
+                                en: 'All primary tactical objectives achieved. Returning to the Hangar in triumph!',
+                              )
+                            : I18n.select(
+                                pt: 'Integridade do casco colapsou sob bombardeio inimigo intenso.',
+                                en: 'Vessel hull integrity collapsed under heavy hostile bombardment.',
+                              ),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Rajdhani',
@@ -239,9 +246,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                             children: [
                               Column(
                                 children: [
-                                  const Text(
-                                    'FINAL SCORE',
-                                    style: TextStyle(
+                                  Text(
+                                    I18n.t('game_over.final_score'),
+                                    style: const TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 11,
                                       color: Colors.white54,
@@ -266,9 +273,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               const SizedBox(width: 24),
                               Column(
                                 children: [
-                                  const Text(
-                                    'LEVEL REACHED',
-                                    style: TextStyle(
+                                  Text(
+                                    I18n.t('game_over.level_reached'),
+                                    style: const TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 11,
                                       color: Colors.white54,
@@ -292,9 +299,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               const SizedBox(width: 24),
                               Column(
                                 children: [
-                                  const Text(
-                                    'PILOT',
-                                    style: TextStyle(
+                                  Text(
+                                    I18n.select(pt: 'PILOTA', en: 'PILOT'),
+                                    style: const TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 11,
                                       color: Colors.white54,
@@ -318,9 +325,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               const SizedBox(width: 24),
                               Column(
                                 children: [
-                                  const Text(
-                                    'COSMIC SCRAP',
-                                    style: TextStyle(
+                                  Text(
+                                    I18n.select(pt: 'CRÉDITOS', en: 'COSMIC SCRAP'),
+                                    style: const TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 11,
                                       color: Colors.white54,
@@ -367,7 +374,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                               Icon(Icons.military_tech, color: valkyrie.accentColor, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                'COMBAT RATING: ${_getCombatRating(score, game.runLevel)}',
+                                '${I18n.select(pt: "AVALIAÇÃO DE COMBATE", en: "COMBAT RATING")}: ${_getCombatRating(score, game.runLevel)}',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 11.5,
@@ -454,7 +461,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          'AFTER-ACTION DEBRIEF // ${valkyrie.name.toUpperCase()}',
+                                          I18n.t('game_over.debrief', {'pilot': valkyrie.name.toUpperCase()}),
                                           style: TextStyle(
                                             fontFamily: 'Orbitron',
                                             fontSize: 11.5,
@@ -499,9 +506,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                                 game.startGame();
                               },
                               icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text(
-                                'RETRY SORTIE',
-                                style: TextStyle(
+                              label: Text(
+                                I18n.t('game_over.retry'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -532,9 +539,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                                 game.changeState(GameState.valkyrieSelection);
                               },
                               icon: const Icon(Icons.precision_manufacturing_rounded, size: 17, color: Color(0xFFFFB300)),
-                              label: const Text(
-                                'LOJA & HANGAR',
-                                style: TextStyle(
+                              label: Text(
+                                I18n.t('game_over.shop_hangar'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.bold,
@@ -564,9 +571,9 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                                 game.changeState(GameState.menu);
                               },
                               icon: const Icon(Icons.home_rounded, size: 18),
-                              label: const Text(
-                                'MENU PRINCIPAL',
-                                style: TextStyle(
+                              label: Text(
+                                I18n.t('game_over.menu'),
+                                style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 11.5,
                                   letterSpacing: 0.8,

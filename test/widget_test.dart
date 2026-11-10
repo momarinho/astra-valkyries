@@ -9,6 +9,7 @@ import 'package:asteroids/game/scientist.dart';
 import 'package:asteroids/ui/science_intro_overlay.dart';
 import 'package:asteroids/ui/game_over_overlay.dart';
 import 'package:asteroids/ui/leaderboard_overlay.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 import 'package:asteroids/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -99,6 +100,7 @@ void main() {
     });
 
     testWidgets('GameOverOverlay responds to keyboard Enter key to retry', (tester) async {
+      I18n.setLocaleSync(AppLocale.enUs);
       await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();
       game.player = PlayerComponent(position: Vector2.zero());

@@ -6,6 +6,7 @@ import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/chest.dart';
 import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/valkyrie.dart';
+import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/ui/chest_overlay.dart';
 
 void main() {
@@ -61,6 +62,7 @@ void main() {
     });
 
     testWidgets('ChestOverlay renders jackpot cards and claim button', (tester) async {
+      I18n.setLocaleSync(AppLocale.enUs);
       await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();
       game.selectedValkyrie = Valkyrie.findById('lyra');

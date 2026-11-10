@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class PauseOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -14,7 +15,7 @@ class PauseOverlay extends StatefulWidget {
 
 class _PauseOverlayState extends State<PauseOverlay> {
   final FocusNode _focusNode = FocusNode();
-  int _selectedButtonIndex = 0; // 0 = Resume Sortie, 1 = Return to Hangar
+  int _selectedButtonIndex = 0; // 0 = Resume Sortie, 1 = Return to Hangar, 2 = Main Menu
   int _activeTab = 0; // 0 = Mission Status, 1 = Cosmic Grimoire
 
   @override
@@ -92,8 +93,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
                 child: Container(
-                  width: 460,
-                  padding: const EdgeInsets.symmetric(vertical: 28.0, horizontal: 28.0),
+                  width: 470,
+                  padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 26.0),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.90),
                     borderRadius: BorderRadius.circular(20),
@@ -117,11 +118,11 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         children: [
                           Icon(Icons.pause_circle_filled, color: valkyrie.primaryColor, size: 28),
                           const SizedBox(width: 8),
-                          const Text(
-                            'SORTIE PAUSED',
-                            style: TextStyle(
+                          Text(
+                            I18n.t('pause.title'),
+                            style: const TextStyle(
                               fontFamily: 'Orbitron',
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 2.5,
                               color: Colors.white,
@@ -130,9 +131,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'ESC / P: Resume  •  ▲/▼: Select  •  ENTER: Confirm',
-                        style: TextStyle(
+                      Text(
+                        I18n.t('pause.keyhints'),
+                        style: const TextStyle(
                           fontFamily: 'Rajdhani',
                           fontSize: 11,
                           color: Colors.white54,
@@ -162,10 +163,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     color: _activeTab == 0 ? valkyrie.primaryColor : Colors.white12,
                                   ),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'STATUS DA MISSÃO',
-                                    style: TextStyle(
+                                    I18n.t('pause.tab_status'),
+                                    style: const TextStyle(
                                       fontFamily: 'Orbitron',
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -195,10 +196,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     color: _activeTab == 1 ? const Color(0xFFFFD700) : Colors.white12,
                                   ),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    '✨ GRIMÓRIO CÓSMICO',
-                                    style: TextStyle(
+                                    I18n.t('pause.tab_grimoire'),
+                                    style: const TextStyle(
                                       fontFamily: 'Orbitron',
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -218,182 +219,182 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       if (_activeTab == 1)
                         _buildCosmicGrimoire(game)
                       else
-                      // Round Summary Box
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white12),
-                        ),
-                        child: Column(
-                          children: [
-                            // Pilot info
-                            Row(
-                              children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: valkyrie.accentColor, width: 1.5),
-                                  ),
-                                  child: ClipOval(
-                                    child: Image.asset(
-                                      valkyrie.hudNeutralAsset,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Icon(
-                                        Icons.rocket_launch,
-                                        color: valkyrie.primaryColor,
-                                        size: 28,
+                        // Round Summary Box
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Column(
+                            children: [
+                              // Pilot info
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: valkyrie.accentColor, width: 1.5),
+                                    ),
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        valkyrie.hudNeutralAsset,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(
+                                          Icons.rocket_launch,
+                                          color: valkyrie.primaryColor,
+                                          size: 28,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${valkyrie.name.toUpperCase()} // ${valkyrie.callsign.toUpperCase()}',
+                                          style: TextStyle(
+                                            fontFamily: 'Orbitron',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: valkyrie.primaryColor,
+                                            letterSpacing: 1.2,
+                                          ),
+                                        ),
+                                        Text(
+                                          valkyrie.shipName,
+                                          style: const TextStyle(
+                                            fontFamily: 'Rajdhani',
+                                            fontSize: 12,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const Divider(height: 20, color: Colors.white12),
+
+                              // Quick Stats Row
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  Column(
                                     children: [
                                       Text(
-                                        '${valkyrie.name.toUpperCase()} // ${valkyrie.callsign.toUpperCase()}',
-                                        style: TextStyle(
-                                          fontFamily: 'Orbitron',
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                          color: valkyrie.primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'VESSEL: ${valkyrie.shipName}',
+                                        I18n.t('hud.score'),
                                         style: const TextStyle(
                                           fontFamily: 'Rajdhani',
-                                          fontSize: 12,
-                                          color: Colors.white70,
+                                          fontSize: 11,
+                                          color: Colors.white54,
+                                          letterSpacing: 1.1,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '$score',
+                                        style: const TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-
-                            const Divider(height: 22, color: Colors.white12),
-
-                            // Stats: Score, Sector Level & Stardust
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Column(
-                                  children: [
-                                    const Text(
-                                      'SCORE',
-                                      style: TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 11,
-                                        color: Colors.white54,
-                                        letterSpacing: 1.1,
+                                  Container(width: 1, height: 32, color: Colors.white12),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        I18n.select(pt: 'NÍVEL', en: 'RUN LEVEL'),
+                                        style: const TextStyle(
+                                          fontFamily: 'Rajdhani',
+                                          fontSize: 11,
+                                          color: Colors.white54,
+                                          letterSpacing: 1.1,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      '$score',
-                                      style: const TextStyle(
-                                        fontFamily: 'Orbitron',
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'LV ${game.runLevel}',
+                                        style: TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: valkyrie.accentColor,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                Container(width: 1, height: 32, color: Colors.white12),
-                                Column(
-                                  children: [
-                                    const Text(
-                                      'RUN LEVEL',
-                                      style: TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 11,
-                                        color: Colors.white54,
-                                        letterSpacing: 1.1,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      'LV ${game.runLevel}',
-                                      style: TextStyle(
-                                        fontFamily: 'Orbitron',
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: valkyrie.accentColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(width: 1, height: 32, color: Colors.white12),
-                                Column(
-                                  children: [
-                                    const Text(
-                                      'STARDUST',
-                                      style: TextStyle(
-                                        fontFamily: 'Rajdhani',
-                                        fontSize: 11,
-                                        color: Colors.white54,
-                                        letterSpacing: 1.1,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      '${game.runXp}',
-                                      style: const TextStyle(
-                                        fontFamily: 'Orbitron',
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF00E5FF),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-
-                            const Divider(height: 20, color: Colors.white12),
-
-                            // Equipped Arsenal Badges
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              alignment: WrapAlignment.center,
-                              children: game.player.activeWeapons.map((w) {
-                                final isMax = w.level >= w.maxLevel;
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white10,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: isMax ? const Color(0xFFFFD700) : valkyrie.primaryColor.withOpacity(0.5),
-                                    ),
+                                    ],
                                   ),
-                                  child: Text(
-                                    '${w.name.toUpperCase()} (MK ${w.level})',
-                                    style: TextStyle(
-                                      fontFamily: 'Orbitron',
-                                      fontSize: 9.0,
-                                      fontWeight: FontWeight.bold,
-                                      color: isMax ? const Color(0xFFFFD700) : Colors.white,
-                                    ),
+                                  Container(width: 1, height: 32, color: Colors.white12),
+                                  Column(
+                                    children: [
+                                      Text(
+                                        I18n.select(pt: 'POEIRA', en: 'STARDUST'),
+                                        style: const TextStyle(
+                                          fontFamily: 'Rajdhani',
+                                          fontSize: 11,
+                                          color: Colors.white54,
+                                          letterSpacing: 1.1,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '${game.runXp}',
+                                        style: const TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF00E5FF),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
+                                ],
+                              ),
+
+                              const Divider(height: 20, color: Colors.white12),
+
+                              // Equipped Arsenal Badges
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                alignment: WrapAlignment.center,
+                                children: game.player.activeWeapons.map((w) {
+                                  final isMax = w.level >= w.maxLevel;
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white10,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isMax ? const Color(0xFFFFD700) : valkyrie.primaryColor.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '${w.name} ${w.isEvolved ? "★" : "MK ${w.level}"}',
+                                      style: TextStyle(
+                                        fontFamily: 'Rajdhani',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isMax ? const Color(0xFFFFD700) : Colors.white,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Action Button 1: Resume Sortie
                       Container(
@@ -419,10 +420,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           },
                           icon: const Icon(Icons.play_arrow, size: 22),
                           label: Text(
-                            _selectedButtonIndex == 0 ? '► RESUME SORTIE' : 'RESUME SORTIE',
+                            _selectedButtonIndex == 0 ? '► ${I18n.t('pause.resume')}' : I18n.t('pause.resume'),
                             style: const TextStyle(
                               fontFamily: 'Orbitron',
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
@@ -430,7 +431,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: valkyrie.primaryColor,
                             foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -439,7 +440,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
 
                       // Action Button 2: Abort Sortie (Return to Hangar / Workshop)
                       Container(
@@ -466,10 +467,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           },
                           icon: const Icon(Icons.rocket_launch_rounded, size: 18),
                           label: Text(
-                            _selectedButtonIndex == 1 ? '► RETURN TO HANGAR' : 'RETURN TO HANGAR',
+                            _selectedButtonIndex == 1 ? '► ${I18n.t('pause.hangar')}' : I18n.t('pause.hangar'),
                             style: TextStyle(
                               fontFamily: 'Orbitron',
-                              fontSize: 12.5,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.1,
                               color: _selectedButtonIndex == 1 ? Colors.white : Colors.white70,
@@ -481,7 +482,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                             side: BorderSide(
                               color: _selectedButtonIndex == 1 ? Colors.white70 : Colors.white24,
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -508,7 +509,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           },
                           icon: const Icon(Icons.home_rounded, size: 18),
                           label: Text(
-                            _selectedButtonIndex == 2 ? '► MENU PRINCIPAL' : 'MENU PRINCIPAL',
+                            _selectedButtonIndex == 2 ? '► ${I18n.t('pause.menu')}' : I18n.t('pause.menu'),
                             style: TextStyle(
                               fontFamily: 'Orbitron',
                               fontSize: 12.0,
@@ -530,6 +531,42 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 14),
+
+                      // Quick Language Switcher Bar at Pause Footer
+                      InkWell(
+                        onTap: () async {
+                          await I18n.toggleLocale();
+                          setState(() {});
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.language_rounded, size: 14, color: Color(0xFF64FFDA)),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${I18n.t('pause.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
+                                style: const TextStyle(
+                                  fontFamily: 'Rajdhani',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF64FFDA),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -542,38 +579,50 @@ class _PauseOverlayState extends State<PauseOverlay> {
   }
 
   Widget _buildCosmicGrimoire(AsteroidsGame game) {
-    const recipes = [
+    final recipes = [
       (
         weaponId: 'blaster',
-        weaponName: 'Twin Pulse Blaster (MK 3)',
+        weaponName: 'Pulse Blaster (MK 3)',
         passiveId: 'passive_overdrive',
-        passiveName: 'Overdrive Reactor',
+        passiveName: 'Void Catalyst',
         evolvedName: 'Supernova Annihilator',
-        desc: 'Feixes triplos de plasma solar que incineram frotas inteiras.',
+        desc: I18n.select(
+          pt: 'Feixes contínuos de plasma solar que incineram frotas inteiras.',
+          en: 'Dual continuous golden plasma beams incinerating entire fleets.',
+        ),
       ),
       (
         weaponId: 'spread_shot',
         weaponName: 'Spread Cannon (MK 3)',
         passiveId: 'passive_shield_recharge',
-        passiveName: 'Nano-Repair Matrix',
+        passiveName: 'Aegis Capacitor',
         evolvedName: 'Hyperion Flak Storm',
-        desc: 'Tempestade de 9 fragmentos perfurantes de alta cadência.',
+        desc: I18n.select(
+          pt: 'Tempestade de 10 fragmentos ionizados em anel de 360 graus.',
+          en: 'Storm of 10 ionized fragments in a 360-degree perimeter ring.',
+        ),
       ),
       (
         weaponId: 'rapid_fire',
-        weaponName: 'Tachyon Gattling (MK 3)',
+        weaponName: 'Phase Laser (MK 3)',
         passiveId: 'passive_fire_rate',
-        passiveName: 'Chrono Accelerator',
+        passiveName: 'Overclocked Emitters',
         evolvedName: 'Absolute Zero Tachyon Beam',
-        desc: 'Torrente contínua de táquions que atravessa múltiplos alvos.',
+        desc: I18n.select(
+          pt: 'Fluxo criogênico perfurante com penetração linear infinita.',
+          en: 'Cryogenic piercing stream with infinite linear penetration.',
+        ),
       ),
       (
         weaponId: 'bomb_launcher',
-        weaponName: 'Nova Launcher (MK 3)',
+        weaponName: 'Antimatter Torpedo (MK 3)',
         passiveId: 'passive_magnet',
-        passiveName: 'Graviton Attractor',
+        passiveName: 'Magnetic Harvester',
         evolvedName: 'Singularity Rift Torpedo',
-        desc: 'Torpedo quântico que gera fendas gravitacionais de matéria escura.',
+        desc: I18n.select(
+          pt: 'Torpedo quântico gerando fendas gravitacionais de buraco negro.',
+          en: 'Quantum torpedo spawning gravitational black hole rifts.',
+        ),
       ),
     ];
 
@@ -587,9 +636,12 @@ class _PauseOverlayState extends State<PauseOverlay> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'RECEITAS DE SUPERAÇÃO // EVOLUÇÕES DE ARSENAL',
-            style: TextStyle(
+          Text(
+            I18n.select(
+              pt: 'RECEITAS DE HIPER-EVOLUÇÃO // ARSENAL',
+              en: 'HYPER-EVOLUTION RECIPES // ARMORY',
+            ),
+            style: const TextStyle(
               fontFamily: 'Orbitron',
               fontSize: 10.5,
               fontWeight: FontWeight.bold,
@@ -638,8 +690,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       ),
                       Text(
                         isEvolved
-                            ? 'EVOLUÍDA!'
-                            : (isMaxWeapon && hasPassive ? 'PRONTA!' : 'BLOQUEADA'),
+                            ? I18n.select(pt: 'EVOLUÍDA!', en: 'EVOLVED!')
+                            : (isMaxWeapon && hasPassive
+                                ? I18n.select(pt: 'PRONTA!', en: 'READY!')
+                                : I18n.select(pt: 'BLOQUEADA', en: 'LOCKED')),
                         style: TextStyle(
                           fontFamily: 'Orbitron',
                           fontSize: 8.5,

@@ -5,6 +5,7 @@ import 'package:flame/components.dart' show Vector2;
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/map/sector_map_data.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 /// Holograma do Mapa Tático em Tela Cheia (Estilo Dead Cells / Metroidvania).
 /// Permite à piloto inspecionar o setor proceduralmente gerado,
@@ -98,7 +99,7 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'CARTA ESTELAR HOLOGRÁFICA // ${sector.name.toUpperCase()}',
+                              '${I18n.t('map.title')} // ${sector.name.toUpperCase()}',
                               style: TextStyle(
                                 fontFamily: 'Orbitron',
                                 fontSize: 16,
@@ -109,7 +110,7 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${sector.subtitle} • PILOTO: ${valkyrie.name.toUpperCase()} [${valkyrie.callsign}]',
+                              '${sector.subtitle} • ${I18n.select(pt: 'PILOTO', en: 'PILOT')}: ${valkyrie.name.toUpperCase()} [${valkyrie.callsign}]',
                               style: TextStyle(
                                 fontFamily: 'Rajdhani',
                                 fontSize: 12,
@@ -131,9 +132,9 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                       ),
                       onPressed: _closeMap,
                       icon: const Icon(Icons.close, size: 16),
-                      label: const Text(
-                        'FECHAR MAPA [ESC / M]',
-                        style: TextStyle(
+                      label: Text(
+                        I18n.t('map.close'),
+                        style: const TextStyle(
                           fontFamily: 'Orbitron',
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
@@ -227,7 +228,7 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'COVIL DO TITÃ: ',
+                            I18n.select(pt: 'COVIL DO TITÃ: ', en: 'LEVIATHAN LAIR: '),
                             style: const TextStyle(
                               fontFamily: 'Orbitron',
                               fontSize: 11,
@@ -237,7 +238,7 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                             ),
                           ),
                           Text(
-                            '${(distanceToBoss / 10).round()}m de distância',
+                            '${(distanceToBoss / 10).round()}m ${I18n.select(pt: 'de distância', en: 'distance')}',
                             style: TextStyle(
                               fontFamily: 'Rajdhani',
                               fontSize: 13,
@@ -255,7 +256,7 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                             Icon(Icons.radar_rounded, color: sector.primaryColor, size: 16),
                             const SizedBox(width: 6),
                             Text(
-                              'PONTOS DESCOBERTOS: ${mapData.discoveredNodesCount}/${mapData.totalDiscoverableNodes}',
+                              '${I18n.select(pt: 'PONTOS DESCOBERTOS', en: 'DISCOVERED SITES')}: ${mapData.discoveredNodesCount}/${mapData.totalDiscoverableNodes}',
                               style: TextStyle(
                                 fontFamily: 'Orbitron',
                                 fontSize: 10,
@@ -266,7 +267,7 @@ class _TacticalMapOverlayState extends State<TacticalMapOverlay> with SingleTick
                             ),
                             const SizedBox(width: 14),
                             Text(
-                              'COBERTURA: ${((mapData.exploredCells.length / (SectorMapData.gridResolution * SectorMapData.gridResolution)) * 100).toInt()}%',
+                              '${I18n.select(pt: 'COBERTURA', en: 'COVERAGE')}: ${((mapData.exploredCells.length / (SectorMapData.gridResolution * SectorMapData.gridResolution)) * 100).toInt()}%',
                               style: TextStyle(
                                 fontFamily: 'Rajdhani',
                                 fontSize: 12,

@@ -16,9 +16,11 @@ import 'ui/level_up_overlay.dart';
 import 'ui/chest_overlay.dart';
 import 'ui/tactical_map_overlay.dart';
 import 'ui/star_chart_overlay.dart';
+import 'services/localization_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await I18n.init();
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
@@ -71,29 +73,34 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GameWidget<AsteroidsGame>(
-        game: _game,
-        focusNode: _focusNode,
-        autofocus: true,
-        overlayBuilderMap: {
-          'valkyrieSelection': (context, game) => ValkyrieSelectionOverlay(game: game),
-          'menu': (context, game) => TitleScreenOverlay(game: game),
-          'settings': (context, game) => SettingsOverlay(game: game),
-          'hud': (context, game) => HudOverlay(game: game),
-          'shop': (context, game) => ShopOverlay(game: game),
-          'stageClear': (context, game) => StageClearOverlay(game: game),
-          'gameOver': (context, game) => GameOverOverlay(game: game),
-          'leaderboard': (context, game) => LeaderboardOverlay(game: game),
-          'weaponSelection': (context, game) => WeaponSelectionOverlay(game: game),
-          'pause': (context, game) => PauseOverlay(game: game),
-          'levelUp': (context, game) => LevelUpOverlay(game: game),
-          'chest': (context, game) => ChestOverlay(game: game),
-          'tacticalMap': (context, game) => TacticalMapOverlay(game: game),
-          'starChart': (context, game) => StarChartOverlay(game: game),
-        },
-        initialActiveOverlays: const ['menu'],
-      ),
+    return ValueListenableBuilder<AppLocale>(
+      valueListenable: I18n.localeNotifier,
+      builder: (context, locale, child) {
+        return Scaffold(
+          body: GameWidget<AsteroidsGame>(
+            game: _game,
+            focusNode: _focusNode,
+            autofocus: true,
+            overlayBuilderMap: {
+              'valkyrieSelection': (context, game) => ValkyrieSelectionOverlay(game: game),
+              'menu': (context, game) => TitleScreenOverlay(game: game),
+              'settings': (context, game) => SettingsOverlay(game: game),
+              'hud': (context, game) => HudOverlay(game: game),
+              'shop': (context, game) => ShopOverlay(game: game),
+              'stageClear': (context, game) => StageClearOverlay(game: game),
+              'gameOver': (context, game) => GameOverOverlay(game: game),
+              'leaderboard': (context, game) => LeaderboardOverlay(game: game),
+              'weaponSelection': (context, game) => WeaponSelectionOverlay(game: game),
+              'pause': (context, game) => PauseOverlay(game: game),
+              'levelUp': (context, game) => LevelUpOverlay(game: game),
+              'chest': (context, game) => ChestOverlay(game: game),
+              'tacticalMap': (context, game) => TacticalMapOverlay(game: game),
+              'starChart': (context, game) => StarChartOverlay(game: game),
+            },
+            initialActiveOverlays: const ['menu'],
+          ),
+        );
+      },
     );
   }
 }

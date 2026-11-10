@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
+import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/comet.dart';
@@ -145,15 +146,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     if (hpRatio <= 0.30 || isInvulnerable) {
       currentAvatarAsset = valkyrie.hudDamagedAsset;
       avatarGlowColor = Colors.redAccent;
-      statusExpression = 'CRITICAL ALERT';
+      statusExpression = I18n.t('hud.critical');
     } else if (game.specialAvailable) {
       currentAvatarAsset = valkyrie.hudUltimateAsset;
       avatarGlowColor = const Color(0xFFFFD700);
-      statusExpression = 'OVERDRIVE READY';
+      statusExpression = I18n.t('hud.overdrive_ready');
     } else {
       currentAvatarAsset = valkyrie.hudNeutralAsset;
       avatarGlowColor = valkyrie.primaryColor;
-      statusExpression = 'OPTIMAL';
+      statusExpression = I18n.t('hud.optimal');
     }
 
     return Container(
@@ -199,7 +200,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             child: IgnorePointer(
               child: Center(
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 360),
+                  constraints: const BoxConstraints(maxWidth: 420),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -213,29 +214,39 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                               Icon(Icons.bolt, color: valkyrie.accentColor, size: 14),
                               const SizedBox(width: 4),
                               Text(
-                            'LEVEL ${game.runLevel}',
-                            style: TextStyle(
-                              fontFamily: 'Orbitron',
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                              color: valkyrie.accentColor,
+                                I18n.t('hud.level', {'level': '${game.runLevel}'}),
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                  color: valkyrie.accentColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                I18n.t('hud.stardust', {
+                                  'cur': '${game.runXp}',
+                                  'max': '${game.runXpNextLevel}',
+                                }),
+                                style: TextStyle(
+                                  fontFamily: 'Rajdhani',
+                                  fontSize: 11.0,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.0,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      Text(
-                        '${game.runXp} / ${game.runXpNextLevel} STARDUST',
-                        style: TextStyle(
-                          fontFamily: 'Rajdhani',
-                          fontSize: 11.0,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 4),
                   Container(
                     height: 6,
@@ -316,7 +327,9 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '${((game.activeBoss!.hp / game.activeBoss!.maxHp) * 100).toInt()}% HULL',
+                          I18n.t('hud.boss_hull', {
+                            'percent': '${((game.activeBoss!.hp / game.activeBoss!.maxHp) * 100).toInt()}',
+                          }),
                           style: const TextStyle(
                             fontFamily: 'Rajdhani',
                             fontSize: 11.0,
@@ -509,7 +522,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  'SCORE',
+                                  I18n.t('hud.score'),
                                   style: TextStyle(
                                     fontFamily: 'Rajdhani',
                                     fontSize: 11.0,
@@ -710,14 +723,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white24, width: 1.2),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.pause, color: Colors.white70, size: 14),
-                            SizedBox(width: 4),
+                            const Icon(Icons.pause, color: Colors.white70, size: 14),
+                            const SizedBox(width: 4),
                             Text(
-                              'PAUSE',
-                              style: TextStyle(
+                              I18n.t('hud.pause'),
+                              style: const TextStyle(
                                 fontFamily: 'Rajdhani',
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -743,7 +756,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       border: Border.all(color: const Color(0xFFD500F9)),
                     ),
                     child: Text(
-                      '🌀 SURGE: ${player.vortexSurgeTimer.toStringAsFixed(1)}s',
+                      '🌀 ${I18n.t('hud.surge', {'time': player.vortexSurgeTimer.toStringAsFixed(1)})}',
                       style: const TextStyle(
                         fontFamily: 'Orbitron',
                         fontSize: 9.0,
@@ -765,7 +778,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       border: Border.all(color: const Color(0xFFFF1744)),
                     ),
                     child: Text(
-                      '🩸 SOBRECARGA: ${player.bloodOverdriveTimer.toStringAsFixed(1)}s',
+                      '🩸 ${I18n.t('hud.surge', {'time': player.bloodOverdriveTimer.toStringAsFixed(1)})}',
                       style: const TextStyle(
                         fontFamily: 'Orbitron',
                         fontSize: 9.0,
@@ -788,7 +801,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       _buildTacticalRadar(player, valkyrie),
                       const SizedBox(height: 3),
                       Text(
-                        '[M] MAPA TÁTICO',
+                        I18n.t('hud.tactical_map_btn'),
                         style: TextStyle(
                           fontFamily: 'Orbitron',
                           fontSize: 7.5,
@@ -825,14 +838,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
+                      const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
                       Text(
-                        'WARNING: SECTOR BOUNDARY // HAZARD PERIMETER',
-                        style: TextStyle(
+                        I18n.t('hud.hazard_warning'),
+                        style: const TextStyle(
                           fontFamily: 'Orbitron',
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -977,15 +990,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildKeyHintBadge('WASD', 'MOVER'),
+                          _buildKeyHintBadge('WASD', I18n.t('keyhint.move')),
                           const SizedBox(width: 8),
-                          _buildKeyHintBadge('ESPAÇO', 'DASH'),
+                          _buildKeyHintBadge(I18n.isPt ? 'ESPAÇO' : 'SPACE', I18n.t('keyhint.dash')),
                           const SizedBox(width: 8),
-                          _buildKeyHintBadge('Q', 'ESPECIAL'),
+                          _buildKeyHintBadge('Q', I18n.t('keyhint.special')),
                           const SizedBox(width: 8),
-                          _buildKeyHintBadge('BOTÃO ESQ', 'MIRA/TIRO'),
+                          _buildKeyHintBadge(I18n.isPt ? 'BOTÃO ESQ' : 'L-CLICK', I18n.t('keyhint.aim_fire')),
                           const SizedBox(width: 8),
-                          _buildKeyHintBadge('M', 'MAPA'),
+                          _buildKeyHintBadge('M', I18n.t('keyhint.map')),
                         ],
                       ),
                     ),
@@ -1021,7 +1034,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _showTouchControls ? 'KEYBOARD' : 'TOUCH',
+                      _showTouchControls ? I18n.t('hud.keyboard') : I18n.t('hud.touch'),
                       style: const TextStyle(
                         fontFamily: 'Rajdhani',
                         fontSize: 9.0,
@@ -1066,8 +1079,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                             ? 1.0
                             : (1.0 - (dashCooldown / (isVesper ? 1.8 : GameConstants.playerDashCooldownSeconds))).clamp(0.0, 1.0);
                         final dashLabel = isVesper
-                            ? (player.dashCharges > 0 ? '${player.dashCharges}x DASH' : '${dashCooldown.toStringAsFixed(1)}s')
-                            : (isReady ? 'DASH' : '${dashCooldown.toStringAsFixed(1)}s');
+                            ? (player.dashCharges > 0 ? '${player.dashCharges}x ${I18n.t('hud.dash')}' : '${dashCooldown.toStringAsFixed(1)}s')
+                            : (isReady ? I18n.t('hud.dash') : '${dashCooldown.toStringAsFixed(1)}s');
                         return Container(
                           width: 58,
                           height: 58,
@@ -1240,7 +1253,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                 size: 23,
                               ),
                               Text(
-                                isLocked ? 'LOCKED' : 'LOCK/FIRE',
+                                isLocked ? (I18n.isPt ? 'TRAVADO' : 'LOCKED') : I18n.t('hud.lock_fire'),
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 7.5,
@@ -1764,7 +1777,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   Icon(Icons.shield_outlined, size: 11, color: hpColor),
                   const SizedBox(width: 3),
                   Text(
-                    'HULL',
+                    I18n.t('hud.hull'),
                     style: TextStyle(
                       fontFamily: 'Rajdhani',
                       fontSize: 9.5,

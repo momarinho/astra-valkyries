@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class ShopOverlay extends StatelessWidget {
   final AsteroidsGame game;
@@ -44,13 +45,13 @@ class ShopOverlay extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.shopping_cart, color: Colors.amber, size: 28),
-                          SizedBox(width: 10),
+                          const Icon(Icons.shopping_cart, color: Colors.amber, size: 28),
+                          const SizedBox(width: 10),
                           Text(
-                            'UPGRADE SHOP',
-                            style: TextStyle(
+                            I18n.select(pt: 'OFICINA DE UPGRADES', en: 'UPGRADE SHOP'),
+                            style: const TextStyle(
                               fontFamily: 'Rajdhani',
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -397,7 +398,9 @@ class ShopOverlay extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
-            child: Text(isPurchased ? 'INSTALLED' : 'BUY ($costToBuy c)'),
+            child: Text(isPurchased
+                ? I18n.select(pt: 'INSTALADO', en: 'INSTALLED')
+                : I18n.select(pt: 'COMPRAR ($costToBuy c)', en: 'BUY ($costToBuy c)')),
           ),
         ],
       ),
@@ -478,7 +481,9 @@ class ShopOverlay extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
-            child: Text(isMax ? 'MAX LIVES' : 'BUY ($costToBuy c)'),
+            child: Text(isMax
+                ? I18n.select(pt: 'VIDAS NO MÁXIMO', en: 'MAX LIVES')
+                : I18n.select(pt: 'COMPRAR ($costToBuy c)', en: 'BUY ($costToBuy c)')),
           ),
         ],
       ),

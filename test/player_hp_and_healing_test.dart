@@ -8,6 +8,7 @@ import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/drop.dart';
 import 'package:asteroids/game/valkyrie.dart';
+import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/ui/hud_overlay.dart';
 
 void main() {
@@ -138,6 +139,14 @@ void main() {
   });
 
   group('HUD Hull Integrity Bar Widget Tests', () {
+    setUp(() {
+      I18n.setLocaleSync(AppLocale.enUs);
+    });
+
+    tearDown(() {
+      I18n.resetForTest(AppLocale.ptBr);
+    });
+
     testWidgets('HudOverlay displays Hull HP Bar with current and max values', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();

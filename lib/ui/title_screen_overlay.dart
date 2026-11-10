@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class TitleScreenOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -335,26 +336,26 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
 
     final menuItems = [
       (
-        title: 'INICIAR OPERAÇÃO // HANGAR',
-        subtitle: 'Selecionar Valquíria, Setor e Modo de Combate',
+        title: I18n.t('title.play'),
+        subtitle: I18n.t('title.play_sub'),
         icon: Icons.rocket_launch_rounded,
         color: const Color(0xFF00E5FF),
       ),
       (
-        title: 'LOJA & OFICINA // UPGRADES',
-        subtitle: 'Comprar melhorias permanentes de frota (${game.totalCredits}c disponíveis)',
+        title: I18n.t('title.workshop'),
+        subtitle: I18n.t('title.workshop_sub', {'credits': '${game.totalCredits}'}),
         icon: Icons.precision_manufacturing_rounded,
         color: const Color(0xFFFFB300),
       ),
       (
-        title: 'GALERIA & AFINIDADE // MEMÓRIAS',
-        subtitle: 'Arquivos de Elo, ilustrações e memórias desbloqueadas',
+        title: I18n.t('title.gallery'),
+        subtitle: I18n.t('title.gallery_sub'),
         icon: Icons.auto_awesome_motion_rounded,
         color: const Color(0xFFFF4081),
       ),
       (
-        title: 'CONTROLES & CONFIGURAÇÕES',
-        subtitle: 'Modo Direcional 360° vs Rotação Clássica e física de voo',
+        title: I18n.t('title.settings'),
+        subtitle: I18n.t('title.settings_sub'),
         icon: Icons.tune_rounded,
         color: const Color(0xFF00E676),
       ),
@@ -505,7 +506,8 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
   ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(items.length, (index) {
+      children: [
+        ...List.generate(items.length, (index) {
         final item = items[index];
         final isSelected = _selectedMenuIndex == index;
 
@@ -593,6 +595,43 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
           ),
         );
       }),
+      const SizedBox(height: 12),
+      // Language Quick Switcher
+      Center(
+        child: InkWell(
+          onTap: () async {
+            await I18n.toggleLocale();
+            setState(() {});
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.language_rounded, size: 16, color: Color(0xFF64FFDA)),
+                const SizedBox(width: 8),
+                Text(
+                  '${I18n.t('title.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
+                  style: const TextStyle(
+                    fontFamily: 'Rajdhani',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64FFDA),
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      ],
     );
   }
 
@@ -607,9 +646,12 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'ESQUADRÃO ASTRA VALKYRIES // UNIDADES ATIVAS',
-            style: TextStyle(
+          Text(
+            I18n.select(
+              pt: 'ESQUADRÃO ASTRA VALKYRIES // UNIDADES ATIVAS',
+              en: 'ASTRA VALKYRIE SQUADRON // ACTIVE UNITS',
+            ),
+            style: const TextStyle(
               fontFamily: 'Orbitron',
               fontSize: 10.5,
               fontWeight: FontWeight.bold,

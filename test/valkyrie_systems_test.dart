@@ -6,6 +6,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/components/player.dart';
+import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/ui/valkyrie_selection_overlay.dart';
 import 'package:asteroids/ui/hud_overlay.dart';
 import 'package:asteroids/ui/pause_overlay.dart';
@@ -100,6 +101,14 @@ void main() {
   });
 
   group('In-Run Reactive HUD and Pilot Integration Tests', () {
+    setUp(() {
+      I18n.setLocaleSync(AppLocale.enUs);
+    });
+
+    tearDown(() {
+      I18n.resetForTest(AppLocale.ptBr);
+    });
+
     testWidgets('HudOverlay displays Valkyrie pilot badge, callsign, and score', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();

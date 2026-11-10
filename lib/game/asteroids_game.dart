@@ -53,6 +53,7 @@ import 'sector.dart';
 import 'ending_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:asteroids/services/api_service.dart';
+import 'package:asteroids/services/localization_service.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -987,6 +988,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   Future<void> loadPersistentDataFromPrefs() async {
     try {
+      await I18n.init();
       final prefs = await SharedPreferences.getInstance();
       totalCredits = prefs.getInt('persistent_credits') ?? 0;
       hyperModeUnlocked = prefs.getBool('hyper_mode_unlocked') ?? true;
@@ -1524,7 +1526,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       if (!cometWarningTriggered && timeRemaining <= 105.0 && timeRemaining > 101.0) {
         cometWarningTriggered = true;
         cometAlertTimer = 4.0;
-        cometAlertMessage = '☄️ ALERTA CIENTÍFICO: Cometa Halley se aproximando!';
+        cometAlertMessage = I18n.select(
+          pt: '☄️ ALERTA CIENTÍFICO: Cometa Halley se aproximando!',
+          en: '☄️ SCIENTIFIC ALERT: Halley Comet approaching!',
+        );
         playSfx('low_health.wav');
       }
 

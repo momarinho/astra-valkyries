@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 class StageClearOverlay extends StatelessWidget {
   final AsteroidsGame game;
@@ -50,7 +51,7 @@ class StageClearOverlay extends StatelessWidget {
                 children: [
                   // Title
                   Text(
-                    'STAGE $level CLEAR!',
+                    I18n.select(pt: 'SETOR $level PACIFICADO!', en: 'STAGE $level CLEAR!'),
                     style: const TextStyle(
                       fontFamily: 'Rajdhani',
                       fontSize: 36,
@@ -68,15 +69,32 @@ class StageClearOverlay extends StatelessWidget {
                   const Divider(color: Colors.white24, height: 40),
 
                   // Bonus Table
-                  _buildStatRow('CURRENT SCORE', '$score'),
+                  _buildStatRow(I18n.t('hud.score'), '$score'),
                   const SizedBox(height: 12),
-                  _buildStatRow('STAGE CLEAR BONUS', '+$clearBonus credits', color: Colors.greenAccent),
+                  _buildStatRow(
+                    I18n.select(pt: 'BÔNUS DE CONCLUSÃO', en: 'STAGE CLEAR BONUS'),
+                    '+$clearBonus credits',
+                    color: Colors.greenAccent,
+                  ),
                   const SizedBox(height: 12),
-                  _buildStatRow('LIVES REMAINING BONUS', '+$livesBonus credits', color: Colors.greenAccent),
+                  _buildStatRow(
+                    I18n.select(pt: 'BÔNUS DE VIDAS RESTANTES', en: 'LIVES REMAINING BONUS'),
+                    '+$livesBonus credits',
+                    color: Colors.greenAccent,
+                  ),
                   const SizedBox(height: 12),
-                  _buildStatRow('CREDITS EARNED', '+$totalEarned credits', color: Colors.amberAccent),
+                  _buildStatRow(
+                    I18n.select(pt: 'CRÉDITOS OBTIDOS', en: 'CREDITS EARNED'),
+                    '+$totalEarned credits',
+                    color: Colors.amberAccent,
+                  ),
                   const SizedBox(height: 12),
-                  _buildStatRow('TOTAL CREDITS', '$totalCredits credits', color: Colors.amber, isBold: true),
+                  _buildStatRow(
+                    I18n.select(pt: 'TOTAL DE CRÉDITOS', en: 'TOTAL CREDITS'),
+                    '$totalCredits credits',
+                    color: Colors.amber,
+                    isBold: true,
+                  ),
 
                   const SizedBox(height: 40),
 
@@ -95,14 +113,14 @@ class StageClearOverlay extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.shopping_cart, size: 22),
-                        SizedBox(width: 8),
+                        const Icon(Icons.shopping_cart, size: 22),
+                        const SizedBox(width: 8),
                         Text(
-                          'ENTER UPGRADE SHOP',
-                          style: TextStyle(
+                          I18n.select(pt: 'ENTRAR NA OFICINA', en: 'ENTER UPGRADE SHOP'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.5,
@@ -127,9 +145,9 @@ class StageClearOverlay extends StatelessWidget {
                         side: const BorderSide(color: Colors.white24, width: 1),
                       ),
                     ),
-                    child: const Text(
-                      'BACK TO MENU',
-                      style: TextStyle(
+                    child: Text(
+                      I18n.t('game_over.menu'),
+                      style: const TextStyle(
                         fontSize: 14.5,
                         letterSpacing: 1.5,
                       ),

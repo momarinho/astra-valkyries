@@ -18,6 +18,7 @@ import 'package:asteroids/game/map/sector_map_generator.dart';
 import 'package:asteroids/ui/pause_overlay.dart';
 import 'package:asteroids/ui/game_over_overlay.dart';
 import 'package:asteroids/ui/title_screen_overlay.dart';
+import 'package:asteroids/services/localization_service.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();
@@ -216,7 +217,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.textContaining('VICTORY // VOID SINGULARITY CONQUERED!'), findsOneWidget);
+      expect(find.textContaining(I18n.select(pt: 'SINGULARIDADE DO VAZIO CONQUISTADA', en: 'VOID SINGULARITY CONQUERED')), findsOneWidget);
     });
 
     testWidgets('Sprint 12: TitleScreenOverlay runs Bootloader Loading Sequence and transitions to Main Menu', (tester) async {
