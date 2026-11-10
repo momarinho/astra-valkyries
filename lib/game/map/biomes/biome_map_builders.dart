@@ -483,7 +483,7 @@ class VestaBeltMapBuilder extends BiomeMapArchitect {
   }
 }
 
-/// 2. BIOMA 2A: Forja Solar de Hélio (Condutores de Plasma, Jatos Térmicos e Fornalhas Procedurais)
+/// 2. BIOMA 2A: Forja Solar de Hélio (Grande Corredor Horizontal Estilo Inlaid Library + Fornalhas)
 class HeliosForgeMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.orion;
@@ -495,7 +495,39 @@ class HeliosForgeMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // 1. Muralhas da Refinaria e Condutores de Plasma Procedurais
+    // 1. Piso Industrial Contínuo da Refinaria Solar (Corredor Horizontal estilo Inlaid Library)
+    game.world.add(
+      ModularFloorComponent(
+        position: Vector2(2400, 2400),
+        size: Vector2(3300, 1360),
+        floorAccent: const Color(0xFFFF9100),
+      ),
+    );
+
+    // 2. Muralhas de Contenção Superior (Teto a y=1720) e Inferior (Chão a y=3080)
+    final corridorWalls = [
+      // Paredes Superiores (Teto)
+      (Vector2(1450, 1720), Vector2(750, 34)),
+      (Vector2(2400, 1720), Vector2(650, 34)),
+      (Vector2(3350, 1720), Vector2(750, 34)),
+      // Paredes Inferiores (Chão)
+      (Vector2(1450, 3080), Vector2(750, 34)),
+      (Vector2(2400, 3080), Vector2(650, 34)),
+      (Vector2(3350, 3080), Vector2(750, 34)),
+    ];
+    for (final w in corridorWalls) {
+      if (isClearOfPois(w.$1, nodes, 280.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: w.$1,
+            wallSize: w.$2,
+            wallColor: const Color(0xFFFF9100),
+          ),
+        );
+      }
+    }
+
+    // 3. Muralhas da Refinaria e Condutores de Plasma Procedurais
     final conduitBases = [
       (Vector2(1550, 1380), Vector2(620, 34)),
       (Vector2(1550, 3420), Vector2(620, 34)),
@@ -503,8 +535,6 @@ class HeliosForgeMapBuilder extends BiomeMapArchitect {
       (Vector2(3250, 3420), Vector2(620, 34)),
       (Vector2(1180, 2000), Vector2(34, 420)),
       (Vector2(3620, 2800), Vector2(34, 420)),
-      (Vector2(2400, 1350), Vector2(360, 32)),
-      (Vector2(2400, 3450), Vector2(360, 32)),
     ];
 
     for (final c in conduitBases) {
@@ -571,7 +601,7 @@ class HeliosForgeMapBuilder extends BiomeMapArchitect {
   }
 }
 
-/// 3. BIOMA 2B: Abismo Criogênico de Caelum (Domo Térmico Central + Labirinto de Gelo Procedural)
+/// 3. BIOMA 2B: Abismo Criogênico de Caelum (Grande Abismo Vertical Estilo Gallo Tower + Domo Térmico)
 class CryoAbyssMapBuilder extends BiomeMapArchitect {
   @override
   SectorId get sectorId => SectorId.cryoAbyss;
@@ -586,7 +616,16 @@ class CryoAbyssMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
-    // 1. Domo Térmico Dourado no Centro Exato (2400, 2400) — refúgio seguro de calor
+    // 1. Piso Glacial do Grande Abismo Vertical (Corredor Vertical estilo Gallo Tower)
+    game.world.add(
+      ModularFloorComponent(
+        position: Vector2(2400, 2400),
+        size: Vector2(1740, 3300),
+        floorAccent: const Color(0xFF00E5FF),
+      ),
+    );
+
+    // 2. Domo Térmico Dourado no Centro Exato (2400, 2400) — refúgio seguro de calor
     game.world.add(
       ThermalDomeComponent(
         position: Vector2(2400, 2400),
@@ -594,14 +633,33 @@ class CryoAbyssMapBuilder extends BiomeMapArchitect {
       ),
     );
 
-    // 2. Paredes de Gelo Cristalino formando Labirinto Glacial Procedural por Seed
+    // 3. Paredes Glaciais Verticais Contínuas nas Bordas (Oeste a x=1530 e Leste a x=3270)
+    final chasmWalls = [
+      (Vector2(1530, 1450), Vector2(34, 750)),
+      (Vector2(1530, 2400), Vector2(34, 650)),
+      (Vector2(1530, 3350), Vector2(34, 750)),
+      (Vector2(3270, 1450), Vector2(34, 750)),
+      (Vector2(3270, 2400), Vector2(34, 650)),
+      (Vector2(3270, 3350), Vector2(34, 750)),
+    ];
+    for (final w in chasmWalls) {
+      if (isClearOfPois(w.$1, nodes, 280.0)) {
+        game.world.add(
+          MegastructureWallComponent(
+            position: w.$1,
+            wallSize: w.$2,
+            wallColor: const Color(0xFF80D8FF),
+          ),
+        );
+      }
+    }
+
+    // 4. Paredes de Gelo Cristalino formando Labirinto Glacial Procedural por Seed
     final iceWallBases = [
       (Vector2(1720, 1950), Vector2(340, 30)),
       (Vector2(3080, 1950), Vector2(340, 30)),
       (Vector2(1720, 2850), Vector2(340, 30)),
       (Vector2(3080, 2850), Vector2(340, 30)),
-      (Vector2(1420, 2400), Vector2(30, 480)),
-      (Vector2(3380, 2400), Vector2(30, 480)),
       (Vector2(2400, 1650), Vector2(400, 30)),
       (Vector2(2400, 3150), Vector2(400, 30)),
     ];
@@ -660,6 +718,22 @@ class AegisGraveyardMapBuilder extends BiomeMapArchitect {
     math.Random random,
     List<MapNode> nodes,
   ) {
+    // Pisos Industriais Internos dos Encouraçados (Interior Indoor)
+    game.world.add(
+      ModularFloorComponent(
+        position: Vector2(1380, 2400),
+        size: Vector2(580, 1150),
+        floorAccent: const Color(0xFF00E676),
+      ),
+    );
+    game.world.add(
+      ModularFloorComponent(
+        position: Vector2(3420, 2400),
+        size: Vector2(580, 1150),
+        floorAccent: const Color(0xFF00E676),
+      ),
+    );
+
     // Cascos Rasgados de Encouraçados Gerados Proceduralmente por Seed
     final hullWalls = [
       (Vector2(1450, 1550), Vector2(560, 32)),
