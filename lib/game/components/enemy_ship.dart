@@ -30,6 +30,8 @@ enum EliteAuraType {
   cryoFrost,   // Aura Criogênica: desacelera alvos próximos
   aegisShield, // Aura de Escudo: reduz dano recebido em 25%
   ionShock,    // Aura de Choque: sobrecarrega velocidade e cadência
+  vortex,      // Campo Gravitacional (Sprint 45): atrai nave da jogadora para a zona de perigo
+  volatile,    // Detonação Estilhaçadora (Sprint 45): detona em estilhaços em 360° no abate
 }
 
 enum RaiderState {
@@ -92,6 +94,8 @@ class EnemyShipComponent extends PositionComponent
       EliteAuraType.cryoFrost,
       EliteAuraType.aegisShield,
       EliteAuraType.ionShock,
+      EliteAuraType.vortex,
+      EliteAuraType.volatile,
     ];
     eliteAura = aura ?? availableAuras[position.x.toInt().abs() % availableAuras.length];
     maxHp *= 1.65;
@@ -369,6 +373,12 @@ class EnemyShipComponent extends PositionComponent
     // Sprint 20: Aura Criogênica de Elite desacelera a nave da jogadora se muito próxima
     if (isPromotedElite && eliteAura == EliteAuraType.cryoFrost && distToPlayer <= 145.0) {
       player.velocity.scale(math.pow(0.82, dt).toDouble());
+    }
+
+    // Sprint 45: Aura Vortex de Elite atrai a nave da jogadora para a zona perigosa
+    if (isPromotedElite && eliteAura == EliteAuraType.vortex && distToPlayer <= 220.0 && distToPlayer > 10.0) {
+      final pullDir = (position - player.position).normalized();
+      player.position += pullDir * (42.0 * dt);
     }
   }
 
@@ -691,7 +701,6 @@ class EnemyShipComponent extends PositionComponent
   }
 
   void die() {
-    removeFromParent();
     try {
       game.notifyEnemyKilledForUnlocks(type);
     } catch (_) {}
@@ -742,6 +751,26 @@ class EnemyShipComponent extends PositionComponent
         if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 105.0) {
           other.takeDamage(35.0, other.position);
         }
+      }
+    }
+
+    // Sprint 45: Elite Volatile Affix death detonation (fragmentation burst)
+    if (isPromotedElite && eliteAura == EliteAuraType.volatile) {
+      game.triggerScreenShake(duration: 0.35, intensity: 12.0);
+      game.playSfx('bomb_explode.wav');
+      const numBullets = 6;
+      for (int i = 0; i < numBullets; i++) {
+        final bulletAngle = (2 * math.pi / numBullets) * i;
+        final dir = Vector2(math.cos(bulletAngle), math.sin(bulletAngle));
+        game.world.add(
+          EnemyBulletComponent(
+            position: position.clone(),
+            radius: 4.5,
+            velocity: dir * 140.0,
+            damage: 10.0,
+            bulletColor: const Color(0xFFFF5252),
+          ),
+        );
       }
     }
 
@@ -828,6 +857,7 @@ class EnemyShipComponent extends PositionComponent
         ),
       );
     }
+    removeFromParent();
   }
 
   @override
@@ -889,6 +919,14 @@ class EnemyShipComponent extends PositionComponent
           auraColor = const Color(0xFF00E676);
           break;
         case EliteAuraType.ionShock:
+          auraColor = const Color(0xFFFFD700);
+          break;
+        case EliteAuraType.vortex:
+          auraColor = const Color(0xFFE040FB);
+          break;
+        case EliteAuraType.volatile:
+          auraColor = const Color(0xFFFF5252);
+          break;
         case EliteAuraType.none:
           auraColor = const Color(0xFFFFD700);
           break;

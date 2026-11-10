@@ -388,9 +388,23 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     } catch (_) {}
   }
 
+  void _triggerRelicDashSynergy() {
+    try {
+      if (game.unlockedRelics.contains('chrono_crystal')) {
+        final enemyBullets = game.world.children.whereType<EnemyBulletComponent>().toList();
+        for (final eb in enemyBullets) {
+          if (eb.position.distanceTo(position) <= 220.0) {
+            eb.velocity.scale(0.5);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   void dash() {
     final vId = valkyrie?.id ?? 'lyra';
     _triggerMirrorDashDeflection();
+    _triggerRelicDashSynergy();
     try {
       game.notifyDashExecutedForUnlocks();
     } catch (_) {}

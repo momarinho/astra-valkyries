@@ -27,7 +27,9 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   bool cryoPodSpawned = false;
   bool goldenAsteroidSpawned = false;
   bool swarm20Spawned = false;
+  bool magmaSurgeSpawned = false;
   bool swarm60Spawned = false;
+  bool smugglerSpawned = false;
   bool sectorClimaxSpawned = false;
 
   AsteroidField({this.mode = 'classic'});
@@ -50,6 +52,11 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       swarm20Spawned = true;
       _spawnSwarmRush(count: 4, label: '⚠️ PATRULHA DE RECONHECIMENTO DETECTADA! ⚠️');
     }
+    // Sprint 46: Crise de Setor 1 - Tempestade de Meteoritos Magmáticos
+    if (difficultyTimer >= 35.0 && !magmaSurgeSpawned) {
+      magmaSurgeSpawned = true;
+      _spawnMagmaMeteoriteSurge();
+    }
     if (difficultyTimer >= 45.0 && !subBoss45Spawned) {
       subBoss45Spawned = true;
       _spawnEliteCommander(1, label: '⚠️ SUB-CHEFE [0:45]: VANGUARDA DO VÁCUO!');
@@ -65,6 +72,11 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     if (difficultyTimer >= 90.0 && !elite1Spawned) {
       elite1Spawned = true;
       _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [1:30]: EXECUTORES GÊMEOS!');
+    }
+    // Sprint 46: Crise de Setor 2 - Cargueiro Contrabandista de Alta Prioridade
+    if (difficultyTimer >= 110.0 && !smugglerSpawned) {
+      smugglerSpawned = true;
+      _spawnSmugglerConvoy();
     }
     if (difficultyTimer >= 135.0 && !elite2Spawned) {
       elite2Spawned = true;
@@ -284,6 +296,78 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
         ),
       );
     }
+  }
+
+  void _spawnMagmaMeteoriteSurge() {
+    Vector2 playerPos;
+    try {
+      playerPos = game.player.position;
+    } catch (_) {
+      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    }
+
+    try {
+      game.playSfx('low_health.wav');
+      game.triggerScreenShake(duration: 0.8, intensity: 16.0);
+      game.spawnFloatingText(
+        playerPos + Vector2(0, -65),
+        I18n.select(
+          pt: '🌋 ALERTA DE CATACLISMO: TEMPESTADE DE MAGMA! 🌋',
+          en: '🌋 CATACLYSM WARNING: MAGMA METEORITE SURGE! 🌋',
+        ),
+        color: const Color(0xFFFF5722),
+        fontSize: 17.0,
+      );
+    } catch (_) {}
+
+    final random = math.Random();
+    const count = 4;
+    for (int i = 0; i < count; i++) {
+      final angle = (math.pi / 4) + (random.nextDouble() - 0.5) * 0.4;
+      final speed = 190.0 + random.nextDouble() * 50.0;
+      final velocity = Vector2(math.cos(angle), math.sin(angle)) * speed;
+      final offset = Vector2(-400.0 - (i * 90.0), -300.0 + (i * 120.0));
+      final spawnPos = playerPos + offset;
+
+      game.world.add(
+        AsteroidComponent(
+          radius: 35.0,
+          position: spawnPos,
+          velocity: velocity,
+          variant: AsteroidVariant.magma,
+        ),
+      );
+    }
+  }
+
+  void _spawnSmugglerConvoy() {
+    Vector2 playerPos;
+    try {
+      playerPos = game.player.position;
+    } catch (_) {
+      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    }
+
+    try {
+      game.playSfx('powerup.wav');
+      game.triggerScreenShake(duration: 0.6, intensity: 14.0);
+      game.spawnFloatingText(
+        playerPos + Vector2(0, -65),
+        I18n.select(
+          pt: '🛸 CARGUEIRO CLASSIFICADO DETECTADO // INTERCEPTE A CARGA! 🛸',
+          en: '🛸 CLASSIFIED SMUGGLER DETECTED // INTERCEPT CARGO! 🛸',
+        ),
+        color: const Color(0xFFFFD700),
+        fontSize: 17.0,
+      );
+    } catch (_) {}
+
+    final smuggler = EnemyShipComponent(
+      position: playerPos + Vector2(450, -350),
+      type: EnemyType.eliteCommander,
+    )..promoteToEliteWithAura(EliteAuraType.volatile);
+
+    game.world.add(smuggler);
   }
 
   void _spawnEnemyWave() {

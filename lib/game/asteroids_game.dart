@@ -963,6 +963,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   double shakeTimer = 0.0;
   double shakeDuration = 0.0;
   double shakeIntensity = 0.0;
+  double hitStopTimer = 0.0;
   
   double lowHealthWarnTimer = 0.0;
 
@@ -1556,6 +1557,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   @override
   void update(double dt) {
     super.update(dt);
+    // Sprint 48: Arcade Hit-Stop visceral impact freeze
+    if (hitStopTimer > 0) {
+      hitStopTimer = math.max(0.0, hitStopTimer - dt);
+      return;
+    }
     if (dt > 0) {
       final instantFps = (1.0 / dt).clamp(1.0, 240.0);
       currentFps = currentFps * 0.92 + instantFps * 0.08;
@@ -2078,6 +2084,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     shakeTimer = math.max(shakeTimer, duration);
   }
 
+  void triggerHitStop(double durationSeconds) {
+    hitStopTimer = math.max(hitStopTimer, durationSeconds.clamp(0.02, 0.25));
+  }
+
   void spawnExplosionParticles({
     required Vector2 position,
     required List<Color> colorChoices,
@@ -2185,6 +2195,19 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     );
   }
 
+  void _triggerRelicCritSynergy(Vector2 pos) {
+    if (!unlockedRelics.contains('void_lens')) return;
+    try {
+      final orbs = world.children.whereType<XpOrbComponent>().toList();
+      for (final orb in orbs) {
+        if (orb.position.distanceTo(pos) <= 240.0) {
+          final toPlayer = (player.position - orb.position).normalized();
+          orb.position += toPlayer * 160.0;
+        }
+      }
+    } catch (_) {}
+  }
+
   /// Sprint 38: Floating Combat Text com codificação elemental (Diablo / Borderlands)
   void spawnCombatDamageText({
     required Vector2 position,
@@ -2193,6 +2216,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     ElementalStatus? element,
   }) {
     if (state != GameState.playing) return;
+    if (isCritical) {
+      _triggerRelicCritSynergy(position);
+    }
     final Color textColor;
     if (isCritical) {
       textColor = const Color(0xFFFFD700); // Gold

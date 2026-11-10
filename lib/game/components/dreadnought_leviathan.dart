@@ -296,11 +296,37 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   void _defeat() {
     isDefeated = true;
     hp = 0;
+    // Sprint 48: Hit-stop arcade e explosão colossal multi-estágio
+    game.triggerHitStop(0.08);
     game.onBossDefeatedSpeechCheck();
     game.addScore(5000);
     game.addRunCredits(500);
-    game.playSfx('powerup.wav');
-    game.triggerScreenShake(duration: 1.5, intensity: 25.0);
+    game.playSfx('bomb_explode.wav');
+    game.triggerScreenShake(duration: 1.8, intensity: 28.0);
+
+    // Multi-estágio de detonações secundárias ao redor da carcaça do chefe
+    final random = math.Random();
+    for (int i = 0; i < 6; i++) {
+      final delayMs = i * 75;
+      final offset = Vector2(
+        (random.nextDouble() - 0.5) * 110.0,
+        (random.nextDouble() - 0.5) * 110.0,
+      );
+      Future.delayed(Duration(milliseconds: delayMs), () {
+        try {
+          game.playSfx('bomb_explode.wav');
+          game.spawnExplosionParticles(
+            position: position + offset,
+            colorChoices: const [Color(0xFFFF1744), Color(0xFFFFD700), Colors.white, Colors.orangeAccent],
+            count: 22,
+            minSize: 3.0,
+            maxSize: 7.0,
+            minSpeed: 40.0,
+            maxSpeed: 280.0,
+          );
+        } catch (_) {}
+      });
+    }
 
     // Guaranteed Legendary Cosmic Chest Drop!
     game.world.add(

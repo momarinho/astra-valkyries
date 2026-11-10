@@ -242,10 +242,12 @@ class IgnisWyrmComponent extends PositionComponent
   void _defeat() {
     isDefeated = true;
     hp = 0;
+    // Sprint 48: Hit-stop arcade e finalização colossal
+    game.triggerHitStop(0.08);
     game.onBossDefeatedSpeechCheck();
     game.addScore(8000);
     game.addRunCredits(800);
-    game.playSfx('powerup.wav');
+    game.playSfx('bomb_explode.wav');
     game.triggerScreenShake(duration: 2.0, intensity: 28.0);
 
     // Explosão em cascata pelos segmentos
