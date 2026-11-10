@@ -109,5 +109,37 @@ void main() {
       await tester.tap(find.textContaining('CLAIM & RESUME SORTIE'));
       await tester.pump();
     });
+
+    testWidgets('ChestOverlay renders Super-Evolution spotlight card and badge', (tester) async {
+      I18n.setLocaleSync(AppLocale.enUs);
+      await tester.binding.setSurfaceSize(const Size(1280, 720));
+      final game = AsteroidsGame();
+      game.selectedValkyrie = Valkyrie.findById('kaede');
+      game.player = PlayerComponent(position: Vector2(100, 100));
+      game.player.valkyrie = game.selectedValkyrie;
+
+      game.currentChestRewards = [
+        ChestReward(
+          title: '★ SUPER-EVOLUTION: TACHYON MURAMASA ★',
+          subtitle: 'Dimensional cleave piercing all targets',
+          icon: Icons.flash_on,
+          color: const Color(0xFFFFD700),
+          apply: () {},
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChestOverlay(game: game),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('★ SUPER-EVOLUTION: TACHYON MURAMASA ★'), findsOneWidget);
+      expect(find.textContaining('★ SUPER-EVO ★'), findsOneWidget);
+      expect(find.textContaining('CLAIM & RESUME SORTIE'), findsOneWidget);
+    });
   });
 }

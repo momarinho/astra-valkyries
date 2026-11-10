@@ -415,16 +415,14 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       variant = AsteroidVariant.golden;
     } else if (game.currentSector.id == SectorId.orion && random.nextDouble() < 0.40) {
       variant = AsteroidVariant.magma;
-    } else if (difficultyTimer >= 60.0) {
+    } else if (difficultyTimer >= 30.0) {
       final roll = random.nextDouble();
-      if (difficultyTimer < 120.0) {
-        if (roll < 0.30) variant = AsteroidVariant.crystalline;
-      } else {
-        if (roll < 0.25) {
-          variant = AsteroidVariant.crystalline;
-        } else if (roll < 0.50) {
-          variant = AsteroidVariant.magma;
-        }
+      if (roll < 0.14) {
+        variant = AsteroidVariant.titanium;
+      } else if (roll < 0.35) {
+        variant = AsteroidVariant.crystalline;
+      } else if (roll < 0.50 && (game.currentSector.id == SectorId.orion || difficultyTimer >= 120.0)) {
+        variant = AsteroidVariant.magma;
       }
     }
 

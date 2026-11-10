@@ -8,12 +8,15 @@ import 'package:asteroids/game/glow.dart';
 import 'drop.dart';
 import 'xp_orb.dart';
 import 'magma_hazard.dart';
+import 'enemy_ship.dart';
+import 'advanced_weapons.dart';
 
 enum AsteroidVariant {
   standard,    // Rocha cinza-azulada que divide em menores
   crystalline, // Prisma de cristal que explode em chuva torrencial de XP
   magma,       // Rocha incandescente que cria poça de plasma térmico ao morrer
   golden,      // Asteroide dourado lendário (Easter Egg) com stardust e sucata
+  titanium,    // Veio de titânio (DRG Survivor) com sucata e retardamento tático
 }
 
 class AsteroidComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
@@ -39,6 +42,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     if (variant == AsteroidVariant.crystalline) return (base * 1.5).toInt();
     if (variant == AsteroidVariant.magma) return (base * 1.3).toInt();
     if (variant == AsteroidVariant.golden) return base * 5;
+    if (variant == AsteroidVariant.titanium) return (base * 2.0).toInt();
     return base;
   }
 
@@ -65,6 +69,8 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       maxHp *= 1.35; // Magma asteroids are more durable
     } else if (variant == AsteroidVariant.crystalline) {
       maxHp *= 0.85; // Crystalline asteroids are more brittle
+    } else if (variant == AsteroidVariant.titanium) {
+      maxHp *= 1.60; // Veio de titânio reforçado
     }
 
     hp = maxHp;
@@ -266,6 +272,30 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.5,
         intensity: 2.0,
       );
+    } else if (variant == AsteroidVariant.titanium) {
+      // Titanium Ore Asteroid: Slate-metallic hull with bright cyan-titanium mineral seams
+      final fillPaint = Paint()
+        ..color = isFlashing ? Colors.white : const Color(0xFF101B2B).withValues(alpha: 0.94)
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+
+      final veinPaint = Paint()
+        ..color = isFlashing ? Colors.white : const Color(0xFF80D8FF).withValues(alpha: 0.85)
+        ..strokeWidth = 1.8
+        ..style = PaintingStyle.stroke;
+      for (var i = 0; i < numPoints; i += 2) {
+        final pointAngle = (2 * math.pi * i) / numPoints;
+        final r = radius * pointsOffsets[i] * 0.75;
+        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), veinPaint);
+      }
+
+      Glow.strokePath(
+        canvas,
+        path,
+        isFlashing ? Colors.white : const Color(0xFF00E5FF),
+        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.5,
+        intensity: 1.8,
+      );
     } else {
       // Standard rock: preenchimento opaco escuro para ocluir estrelas/bioma + borda luminosa nítida
       final rockFill = Paint()
@@ -384,6 +414,39 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         color: const Color(0xFFFF5722),
         fontSize: 12.5,
       );
+    } else if (variant == AsteroidVariant.titanium) {
+      game.playSfx('asteroid_split.wav');
+      game.triggerScreenShake(duration: 0.35, intensity: radius * 0.28);
+      game.spawnExplosionParticles(
+        position: position,
+        colorChoices: [const Color(0xFF80D8FF), Colors.white, const Color(0xFF00E5FF), const Color(0xFF90CAF9)],
+        count: 28,
+        minSize: 2.2,
+        maxSize: 5.0,
+        minSpeed: 70.0,
+        maxSpeed: 240.0,
+      );
+      game.addRunCredits(35);
+      game.spawnFloatingText(
+        position + Vector2(0, -25),
+        '⛏️ VEIO DE TITÂNIO EXTRAÍDO! (+35 SUCATA)',
+        color: const Color(0xFF80D8FF),
+        fontSize: 14.5,
+      );
+
+      for (var i = 0; i < 2; i++) {
+        final a = (i * math.pi);
+        final offset = Vector2(math.cos(a), math.sin(a)) * (radius * 0.4);
+        game.world.add(XpOrbComponent(position: position + offset, type: XpOrbType.medium));
+      }
+
+      // Tactical Corridor Carving Shockwave: slows nearby enemies by 30% for 3.0s
+      for (final enemy in game.world.children.whereType<EnemyShipComponent>()) {
+        if (enemy.position.distanceToSquared(position) <= 140.0 * 140.0) {
+          enemy.applyElementalStatus(ElementalStatus.cryoFreeze, duration: 3.0);
+        }
+      }
+      return;
     } else {
       // Standard explosion particles & screen shake
       final numParticles = math.max(8, (radius * 0.8).toInt());

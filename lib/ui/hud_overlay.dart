@@ -584,25 +584,32 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
                       final progress = (1.0 - (w.currentCooldown / maxCd)).clamp(0.0, 1.0);
                       final isMax = w.level >= w.maxLevel;
+                      final isCanEvolve = w.canEvolve;
 
                       return Container(
                         margin: const EdgeInsets.only(right: 5),
-                        width: 36,
-                        height: 36,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(7),
                           border: Border.all(
                             color: w.isEvolved
                                 ? const Color(0xFFFFD700)
-                                : (isMax ? const Color(0xFFFFB300) : (isReady ? valkyrie.accentColor.withOpacity(0.65) : Colors.white24)),
-                            width: (w.isEvolved || isMax) ? 1.4 : 1.0,
+                                : (isCanEvolve
+                                    ? const Color(0xFFFFD700)
+                                    : (isMax ? const Color(0xFFFFB300) : (isReady ? valkyrie.accentColor.withOpacity(0.65) : Colors.white24))),
+                            width: (w.isEvolved || isCanEvolve) ? 2.0 : (isMax ? 1.4 : 1.0),
                           ),
-                          boxShadow: (w.isEvolved || isMax)
+                          boxShadow: (w.isEvolved || isCanEvolve || isMax)
                               ? [
                                   BoxShadow(
-                                    color: (w.isEvolved ? const Color(0xFFFFD700) : const Color(0xFFFFB300)).withOpacity(0.35),
-                                    blurRadius: 6,
+                                    color: (w.isEvolved || isCanEvolve
+                                            ? const Color(0xFFFFD700)
+                                            : const Color(0xFFFFB300))
+                                        .withOpacity(isCanEvolve ? 0.60 : 0.35),
+                                    blurRadius: isCanEvolve ? 10 : 6,
+                                    spreadRadius: isCanEvolve ? 1.2 : 0.0,
                                   ),
                                 ]
                               : null,
@@ -613,7 +620,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                             Icon(
                               _getWeaponIcon(w),
                               size: 16,
-                              color: w.isEvolved
+                              color: (w.isEvolved || isCanEvolve)
                                   ? const Color(0xFFFFD700)
                                   : (isMax ? const Color(0xFFFFB300) : valkyrie.accentColor),
                             ),
@@ -621,12 +628,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                               top: 1,
                               right: 2,
                               child: Text(
-                                w.isEvolved ? 'EVO' : (isMax ? 'MAX' : '${w.level}'),
+                                w.isEvolved
+                                    ? 'EVO'
+                                    : (isCanEvolve ? '★EVO' : (isMax ? 'MAX' : '${w.level}')),
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 6.5,
                                   fontWeight: FontWeight.bold,
-                                  color: w.isEvolved
+                                  color: (w.isEvolved || isCanEvolve)
                                       ? const Color(0xFFFFD700)
                                       : (isMax ? const Color(0xFFFFB300) : Colors.white70),
                                 ),

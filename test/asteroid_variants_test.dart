@@ -5,11 +5,12 @@ import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/xp_orb.dart';
 import 'package:asteroids/game/components/magma_hazard.dart';
+import 'package:asteroids/game/components/enemy_ship.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Asteroid Variants (Crystalline & Magma) Tests', () {
+  group('Asteroid Variants (Crystalline, Magma & Titanium) Tests', () {
     test('Crystalline variant does NOT divide into sub-asteroids and bursts into Stardust XP rain', () {
       final game = AsteroidsGame();
       game.player = PlayerComponent(position: Vector2(500, 500));
@@ -53,6 +54,43 @@ void main() {
       expect(hazards.isNotEmpty, isTrue);
       expect(hazards.first.position, Vector2(400, 400));
       expect(hazards.first.duration, 3.5);
+    });
+
+    test('Titanium vein variant has 1.6x HP, grants +35 scrap, drops 2 medium XP orbs and slows nearby enemies', () {
+      final game = AsteroidsGame();
+      game.player = PlayerComponent(position: Vector2(500, 500));
+      game.state = GameState.playing;
+      final initialScrap = game.runCredits;
+
+      final titanium = AsteroidComponent(
+        radius: 40.0,
+        position: Vector2(400, 400),
+        velocity: Vector2(2, 2),
+        variant: AsteroidVariant.titanium,
+      );
+      game.world.add(titanium);
+
+      // Verify 1.6x HP scaling (medium asteroid base 50.0 * 1.6 = 80.0)
+      expect(titanium.maxHp, closeTo(50.0 * 1.6, 0.1));
+
+      // Spawn an enemy within shockwave radius (140px)
+      final enemy = EnemyShipComponent(
+        position: Vector2(450, 400),
+        type: EnemyType.scout,
+      );
+      game.world.add(enemy);
+
+      titanium.takeDamage(100.0, titanium.position);
+
+      // Verify scrap credits increased by +35
+      expect(game.runCredits, initialScrap + 35);
+
+      // Verify medium XP orbs spawned
+      final mediumOrbs = game.world.children.whereType<XpOrbComponent>().where((o) => o.type == XpOrbType.medium);
+      expect(mediumOrbs.length, 2);
+
+      // Verify enemy received cryo freeze slow shockwave
+      expect(enemy.cryoFreezeTimer, closeTo(3.0, 0.1));
     });
   });
 }
