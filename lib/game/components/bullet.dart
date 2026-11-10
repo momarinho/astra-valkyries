@@ -11,6 +11,7 @@ import 'breakable_prop.dart';
 import 'enemy_ship.dart';
 import 'sector_boss.dart';
 import 'advanced_weapons.dart';
+import 'package:asteroids/game/weapons.dart';
 
 class BulletComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius;
@@ -20,6 +21,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
   final Color? color;
   int piercesLeft;
   final ElementalStatus elementalStatus;
+  final Weapon? weaponSource;
 
   BulletComponent({
     required Vector2 position,
@@ -30,6 +32,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
     this.color,
     this.piercesLeft = 0,
     this.elementalStatus = ElementalStatus.none,
+    this.weaponSource,
   }) {
     this.position = position;
     anchor = Anchor.center;
@@ -78,6 +81,10 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
       } catch (_) {}
 
       final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) {
+        weaponSource?.totalKills++;
+      }
       if (isCrit) {
         game.spawnFloatingText(
           position + Vector2(0, -18),
@@ -117,7 +124,11 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         }
       } catch (_) {}
 
-      other.takeDamage(dealtDamage, position);
+      final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) {
+        weaponSource?.totalKills++;
+      }
       if (piercesLeft > 0) {
         piercesLeft--;
       } else {
@@ -132,7 +143,11 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         }
       } catch (_) {}
 
-      other.takeDamage(dealtDamage, position);
+      final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) {
+        weaponSource?.totalKills++;
+      }
       if (piercesLeft > 0) {
         piercesLeft--;
       } else {
@@ -152,7 +167,11 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
       if (elementalStatus != ElementalStatus.none) {
         other.applyElementalStatus(elementalStatus, duration: 4.0);
       }
-      other.takeDamage(dealtDamage, position);
+      final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) {
+        weaponSource?.totalKills++;
+      }
       if (isCrit) {
         game.spawnFloatingText(
           position + Vector2(0, -18),
@@ -190,7 +209,11 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
       if (elementalStatus != ElementalStatus.none) {
         other.applyElementalStatus(elementalStatus, duration: 4.0);
       }
-      other.takeDamage(dealtDamage, position);
+      final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) {
+        weaponSource?.totalKills++;
+      }
       if (isCrit) {
         game.spawnFloatingText(
           position + Vector2(0, -18),

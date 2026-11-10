@@ -24,6 +24,7 @@ class FloatingTextComponent extends PositionComponent {
   void update(double dt) {
     super.update(dt);
     position += velocity * dt;
+    velocity.y += 35.0 * dt; // Gentle gravity arc for combat feel
     timer += dt;
     if (timer >= duration) {
       removeFromParent();
@@ -35,6 +36,16 @@ class FloatingTextComponent extends PositionComponent {
     final progress = timer / duration;
     final alpha = (255 * (1.0 - progress)).clamp(0, 255).toInt();
     if (alpha <= 0) return;
+
+    // Juice scale pop on appearance (Nova Drift / Diablo style)
+    final scale = (timer < 0.12)
+        ? 1.0 + 0.32 * (1.0 - (timer / 0.12))
+        : 1.0;
+
+    canvas.save();
+    if (scale != 1.0) {
+      canvas.scale(scale);
+    }
 
     final textSpan = TextSpan(
       text: text,
@@ -50,7 +61,7 @@ class FloatingTextComponent extends PositionComponent {
             offset: const Offset(1, 1),
           ),
           Shadow(
-            color: color.withAlpha((alpha * 0.5).toInt()),
+            color: color.withAlpha((alpha * 0.6).toInt()),
             blurRadius: 8,
           ),
         ],
@@ -63,5 +74,6 @@ class FloatingTextComponent extends PositionComponent {
     );
     textPainter.layout();
     textPainter.paint(canvas, Offset(-textPainter.width / 2, -textPainter.height / 2));
+    canvas.restore();
   }
 }

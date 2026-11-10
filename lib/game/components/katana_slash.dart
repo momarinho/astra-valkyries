@@ -11,6 +11,7 @@ import 'enemy_ship.dart';
 import 'enemy_bullet.dart';
 import 'sector_boss.dart';
 import 'advanced_weapons.dart';
+import 'package:asteroids/game/weapons.dart';
 
 /// ⚔️ KatanaSlashComponent: Lâmina taquiônica em formato de crescente energético.
 /// Corta obstáculos em linha reta, desfere dano crítico em asteroides/naves inimigas
@@ -26,6 +27,7 @@ class KatanaSlashComponent extends PositionComponent
   final Color coreColor;
   int piercesLeft;
   final bool isVoidMuramasa;
+  final Weapon? weaponSource;
   final Set<PositionComponent> _damagedTargets = {};
 
   KatanaSlashComponent({
@@ -40,6 +42,7 @@ class KatanaSlashComponent extends PositionComponent
     this.coreColor = Colors.white,
     this.piercesLeft = 4,
     this.isVoidMuramasa = false,
+    this.weaponSource,
   }) {
     this.position = position;
     this.angle = angle;
@@ -125,6 +128,8 @@ class KatanaSlashComponent extends PositionComponent
 
     if (other is AsteroidComponent) {
       final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) weaponSource?.totalKills++;
       if (isCrit) {
         game.spawnFloatingText(
           position + Vector2(0, -18),
@@ -143,7 +148,9 @@ class KatanaSlashComponent extends PositionComponent
       if (isVoidMuramasa) {
         other.applyElementalStatus(ElementalStatus.voidRupture, duration: 4.0);
       }
-      other.takeDamage(dealtDamage, position);
+      final destroyed = other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
+      if (destroyed) weaponSource?.totalKills++;
       if (isCrit) {
         game.spawnFloatingText(
           position + Vector2(0, -18),
@@ -154,10 +161,13 @@ class KatanaSlashComponent extends PositionComponent
       }
     } else if (other is CargoWreckComponent) {
       other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
     } else if (other is BreakablePropComponent) {
       other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
     } else if (other is SectorBoss) {
       other.takeDamage(dealtDamage, position);
+      weaponSource?.totalDamageDealt += dealtDamage;
     }
 
     // Faíscas cortantes de impacto

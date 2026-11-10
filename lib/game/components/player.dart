@@ -94,6 +94,13 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   final List<Weapon> activeWeapons = [];
   final Map<String, Weapon> unlockedWeapons = {};
 
+  double get totalDamageDealt => activeWeapons.fold(0.0, (sum, w) => sum + w.totalDamageDealt);
+
+  Weapon? get mvpWeapon {
+    if (activeWeapons.isEmpty) return null;
+    return activeWeapons.reduce((a, b) => a.totalDamageDealt >= b.totalDamageDealt ? a : b);
+  }
+
   Weapon get weapon => activeWeapons.isNotEmpty ? activeWeapons.first : Blaster();
   set weapon(Weapon w) {
     setWeapon(w);

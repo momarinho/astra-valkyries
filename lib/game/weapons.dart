@@ -24,6 +24,8 @@ abstract class Weapon {
 
   bool isEvolved = false;
   String? evolvedName;
+  double totalDamageDealt = 0.0;
+  int totalKills = 0;
 
   bool get canEvolve => level >= maxLevel && !isEvolved;
 
@@ -188,6 +190,7 @@ class Blaster extends Weapon {
           damage: effectiveDamage,
           color: const Color(0xFFFFD700), // Imperial Gold
           piercesLeft: 99,
+          weaponSource: this,
         );
         player.game.world.add(bullet);
       }
@@ -206,6 +209,7 @@ class Blaster extends Weapon {
           lifeTimer: GameConstants.shotLifetimeSeconds,
           damage: effectiveDamage * 0.60,
           piercesLeft: player.pierceCount,
+          weaponSource: this,
         );
         player.game.world.add(bullet);
       }
@@ -220,6 +224,7 @@ class Blaster extends Weapon {
       lifeTimer: GameConstants.shotLifetimeSeconds,
       damage: effectiveDamage,
       piercesLeft: player.pierceCount,
+      weaponSource: this,
     );
     player.game.world.add(bullet);
     return true;
@@ -283,6 +288,7 @@ class SpreadShot extends Weapon {
           damage: effectiveDamage * 0.55,
           color: const Color(0xFFFF5252), // Flak Red
           piercesLeft: 2,
+          weaponSource: this,
         );
         player.game.world.add(bullet);
       }
@@ -315,6 +321,7 @@ class SpreadShot extends Weapon {
         lifeTimer: lifeTime,
         damage: pelletDamage,
         piercesLeft: player.pierceCount,
+        weaponSource: this,
       );
       player.game.world.add(bullet);
     }
@@ -373,6 +380,7 @@ class RapidFire extends Weapon {
         damage: effectiveDamage,
         color: const Color(0xFF80D8FF), // Glacial Neon Ice Blue
         piercesLeft: 99,
+        weaponSource: this,
       );
       player.game.world.add(bullet);
       return true;
@@ -386,6 +394,7 @@ class RapidFire extends Weapon {
       lifeTimer: 0.88,
       damage: effectiveDamage,
       piercesLeft: player.pierceCount,
+      weaponSource: this,
     );
     player.game.world.add(bullet);
     return true;
@@ -1030,6 +1039,7 @@ class TachyonKatana extends Weapon {
 
   @override
   bool fire(PlayerComponent player) {
+    player.customGame?.playSfx('katana_slash.wav');
     final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
 
@@ -1052,6 +1062,7 @@ class TachyonKatana extends Weapon {
           coreColor: const Color(0xFF00E5FF),  // Tachyon Core Cyan
           piercesLeft: 6,
           isVoidMuramasa: true,
+          weaponSource: this,
         );
         player.game.world.add(slash);
       }
@@ -1075,6 +1086,7 @@ class TachyonKatana extends Weapon {
           slashHeight: 14.0,
           slashColor: const Color(0xFF00E5FF),
           piercesLeft: 3,
+          weaponSource: this,
         );
         player.game.world.add(slash);
       }
@@ -1100,6 +1112,7 @@ class TachyonKatana extends Weapon {
           slashHeight: 12.0,
           slashColor: const Color(0xFF00E5FF),
           piercesLeft: 2,
+          weaponSource: this,
         );
         player.game.world.add(slash);
       }
@@ -1117,6 +1130,7 @@ class TachyonKatana extends Weapon {
       slashHeight: 10.0,
       slashColor: const Color(0xFF00E5FF),
       piercesLeft: 1, // Consumido na primeira apara ou impacto
+      weaponSource: this,
     );
     player.game.world.add(slash);
     return true;

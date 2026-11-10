@@ -38,6 +38,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   double deathTimer = 0.0;
 
   bool isDefeated = false;
+  bool isEnraged = false;
   double spiralAngle = 0.0;
   Vector2 velocity = Vector2.zero();
 
@@ -119,8 +120,19 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     position += velocity * dt;
     _enforceSectorBounds();
 
+    final effectiveDt = isEnraged ? dt * 1.30 : dt;
+
+    if (isEnraged && math.Random().nextDouble() < 0.25) {
+      game.spawnSparks(
+        position: position,
+        color: const Color(0xFFFF1744),
+        count: 2,
+        speed: 80.0,
+      );
+    }
+
     // 1. Alternating Twin Turret Volleys
-    shootTimer += dt;
+    shootTimer += effectiveDt;
     final turretCadence = hpFraction > 0.30 ? 1.8 : 1.2;
     if (shootTimer >= turretCadence && distToPlayer <= 900.0) {
       shootTimer = 0.0;
@@ -129,7 +141,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
 
     // 2. Danmaku Spiral Rings (Phase 2 & 3)
     if (hpFraction <= 0.66) {
-      spiralTimer += dt;
+      spiralTimer += effectiveDt;
       final spiralCadence = hpFraction <= 0.30 ? 1.6 : 2.5;
       if (spiralTimer >= spiralCadence) {
         spiralTimer = 0.0;
@@ -138,7 +150,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     }
 
     // 3. Scout Drone Escort Summons
-    summonTimer += dt;
+    summonTimer += effectiveDt;
     if (summonTimer >= 8.0 && hpFraction > 0.15) {
       summonTimer = 0.0;
       _summonScoutEscorts();
@@ -146,14 +158,14 @@ class DreadnoughtLeviathanComponent extends PositionComponent
 
     // 4. Telegraphed Railgun Beam (Phase 2 & 3)
     if (hpFraction <= 0.66) {
-      beamTimer += dt;
+      beamTimer += effectiveDt;
       if (!isTelegraphingBeam && beamTimer >= 6.5) {
         isTelegraphingBeam = true;
         beamTelegraphDuration = 1.0;
         lockedBeamDir = targetDir;
         game.playSfx('dash.wav');
       } else if (isTelegraphingBeam) {
-        beamTelegraphDuration -= dt;
+        beamTelegraphDuration -= effectiveDt;
         if (beamTelegraphDuration <= 0) {
           isTelegraphingBeam = false;
           beamTimer = 0.0;
@@ -251,16 +263,29 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       maxSpeed: 100.0,
     );
 
+    game.spawnCombatDamageText(
+      position: hitPos,
+      damage: damage,
+      isCritical: damage >= 70.0,
+    );
+
+    // Sprint 39: Modo Enfurecido (Enraged State) abaixo de 35% HP
+    if (!isEnraged && hp <= maxHp * 0.35 && hp > 0) {
+      isEnraged = true;
+      game.playSfx('boss_spawn.wav');
+      game.triggerScreenShake(duration: 0.70, intensity: 20.0);
+      game.spawnFloatingText(
+        position + Vector2(0, -radius - 25),
+        '⚠️ PROTOCOLO DE FÚRIA ATIVADO! (ENRAGED)',
+        color: const Color(0xFFFF1744),
+        fontSize: 16.0,
+      );
+    }
+
     if (hp <= 0) {
       _defeat();
       return true;
     } else {
-      game.spawnFloatingText(
-        hitPos,
-        '-${damage.toInt()}',
-        color: const Color(0xFFFF8A80),
-        fontSize: 12.5,
-      );
       return false;
     }
   }

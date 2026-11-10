@@ -415,7 +415,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         fontSize: 12.5,
       );
     } else if (variant == AsteroidVariant.titanium) {
-      game.playSfx('asteroid_split.wav');
+      game.playSfx('titanium_mine.wav');
       game.triggerScreenShake(duration: 0.35, intensity: radius * 0.28);
       game.spawnExplosionParticles(
         position: position,

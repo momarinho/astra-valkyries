@@ -641,7 +641,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     ultimateCharge = (ultimateCharge + amount).clamp(0.0, 1.0);
     if (ultimateCharge >= 1.0) {
       specialAvailable = true;
-      playSfx('powerup.wav');
+      playSfx('ultimate_ready.wav');
       try {
         spawnFloatingText(
           player.position + Vector2(0, -42),
@@ -1237,6 +1237,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         try {
           FlameAudio.bgm.stop();
         } catch (_) {}
+        playSfx('game_over.wav');
         _removeAllAsteroidsAndProjectiles();
         break;
       case GameState.leaderboard:
@@ -2149,6 +2150,43 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     );
   }
 
+  /// Sprint 38: Floating Combat Text com codificação elemental (Diablo / Borderlands)
+  void spawnCombatDamageText({
+    required Vector2 position,
+    required double damage,
+    bool isCritical = false,
+    ElementalStatus? element,
+  }) {
+    if (state != GameState.playing) return;
+    final Color textColor;
+    if (isCritical) {
+      textColor = const Color(0xFFFFD700); // Gold
+    } else if (element == ElementalStatus.cryoFreeze) {
+      textColor = const Color(0xFF00E5FF); // Cyber Cyan
+    } else if (element == ElementalStatus.solarBurn) {
+      textColor = const Color(0xFFFF6D00); // Solar Orange
+    } else if (element == ElementalStatus.voidRupture) {
+      textColor = const Color(0xFFE040FB); // Void Purple
+    } else if (element == ElementalStatus.ionShock) {
+      textColor = const Color(0xFF76FF03); // Neon Lime
+    } else {
+      textColor = const Color(0xFFFF8A80); // Soft Coral
+    }
+
+    final rng = math.Random();
+    final text = isCritical ? '★ ${damage.toInt()}!' : '${damage.toInt()}';
+    final fontSize = isCritical ? 14.5 : 11.5;
+    final vel = Vector2((rng.nextDouble() - 0.5) * 44.0, -60.0 - rng.nextDouble() * 25.0);
+
+    spawnFloatingText(
+      position + Vector2((rng.nextDouble() - 0.5) * 16.0, (rng.nextDouble() - 0.5) * 12.0),
+      text,
+      color: textColor,
+      fontSize: fontSize,
+      velocity: vel,
+    );
+  }
+
   void addScore(int points) {
     if (state != GameState.playing) return;
     score += points;
@@ -2234,7 +2272,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (!specialAvailable || state != GameState.playing) return;
     specialAvailable = false;
     ultimateCharge = 0.0;
-    playSfx('powerup.wav');
+    playSfx('special.wav');
     triggerScreenShake(duration: 0.8, intensity: 20.0);
 
     final primaryColor = selectedValkyrie.primaryColor;

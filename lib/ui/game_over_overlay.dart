@@ -5,6 +5,7 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/ending_manager.dart';
 import 'package:asteroids/services/api_service.dart';
 import 'package:asteroids/services/localization_service.dart';
+import 'package:asteroids/game/weapons.dart';
 
 class GameOverOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -490,6 +491,160 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                             ),
                           ],
                         ),
+                      ),
+
+                      // Sprint 40: Tactical Weapon Performance Arsenal Breakdown (Vampire Survivors Style)
+                      Builder(
+                        builder: (context) {
+                          final weapons = <Weapon>[];
+                          try {
+                            weapons.addAll(game.player.activeWeapons);
+                          } catch (_) {}
+                          if (weapons.isEmpty) return const SizedBox.shrink();
+
+                          final totalDealt = weapons.fold(0.0, (sum, w) => sum + w.totalDamageDealt);
+                          final mvpWeapon = weapons.reduce((a, b) => a.totalDamageDealt >= b.totalDamageDealt ? a : b);
+
+                          return Container(
+                            margin: const EdgeInsets.only(top: 14),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0C101B).withOpacity(0.92),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white12, width: 1.2),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.query_stats, color: Color(0xFFFFD700), size: 16),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        I18n.select(
+                                          pt: 'DESEMPENHO DO ARSENAL BÉLICO',
+                                          en: 'TACTICAL ARSENAL REPORT',
+                                        ),
+                                        style: const TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 11.0,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFFFD700),
+                                          letterSpacing: 1.1,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (mvpWeapon.totalDamageDealt > 0)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFD700).withOpacity(0.18),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFFFFD700), width: 1.0),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.star, color: Color(0xFFFFD700), size: 11),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'MVP: ${mvpWeapon.name.toUpperCase()}',
+                                              style: const TextStyle(
+                                                fontFamily: 'Orbitron',
+                                                fontSize: 8.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFFFFD700),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                ...weapons.map((w) {
+                                  final totalRef = totalDealt > 0 ? totalDealt : 1.0;
+                                  final pct = (w.totalDamageDealt / totalRef).clamp(0.0, 1.0);
+                                  final isMvp = w == mvpWeapon && w.totalDamageDealt > 0;
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      w.isEvolved ? (w.evolvedName ?? w.name) : w.name,
+                                                      style: TextStyle(
+                                                        fontFamily: 'Rajdhani',
+                                                        fontSize: 13.0,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: isMvp ? const Color(0xFFFFD700) : Colors.white,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (w.isEvolved) ...[
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFFFD700).withOpacity(0.25),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                        border: Border.all(color: const Color(0xFFFFD700), width: 0.8),
+                                                      ),
+                                                      child: const Text(
+                                                        '★EVO',
+                                                        style: TextStyle(
+                                                          fontFamily: 'Orbitron',
+                                                          fontSize: 7.5,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Color(0xFFFFD700),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '${w.totalDamageDealt.toInt()} dmg (${(pct * 100).toStringAsFixed(1)}%)',
+                                              style: TextStyle(
+                                                fontFamily: 'Orbitron',
+                                                fontSize: 10.0,
+                                                color: isMvp ? const Color(0xFFFFD700) : Colors.white70,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 3),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: LinearProgressIndicator(
+                                            value: pct,
+                                            backgroundColor: Colors.white10,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              isMvp ? const Color(0xFFFFD700) : valkyrie.primaryColor,
+                                            ),
+                                            minHeight: 5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 20),

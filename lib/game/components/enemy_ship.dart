@@ -661,18 +661,31 @@ class EnemyShipComponent extends PositionComponent
       );
     } catch (_) {}
 
+    ElementalStatus? currentElement;
+    if (hasStatus(ElementalStatus.voidRupture)) {
+      currentElement = ElementalStatus.voidRupture;
+    } else if (hasStatus(ElementalStatus.cryoFreeze)) {
+      currentElement = ElementalStatus.cryoFreeze;
+    } else if (hasStatus(ElementalStatus.solarBurn)) {
+      currentElement = ElementalStatus.solarBurn;
+    } else if (hasStatus(ElementalStatus.ionShock)) {
+      currentElement = ElementalStatus.ionShock;
+    }
+
+    final isCrit = effectiveDamage >= 50.0 || hasStatus(ElementalStatus.voidRupture);
+    try {
+      game.spawnCombatDamageText(
+        position: hitPos,
+        damage: effectiveDamage,
+        isCritical: isCrit,
+        element: currentElement,
+      );
+    } catch (_) {}
+
     if (hp <= 0) {
       die();
       return true;
     } else {
-      try {
-        game.spawnFloatingText(
-          hitPos,
-          '-${damage.toInt()}',
-          color: const Color(0xFFFF8A80),
-          fontSize: 11.5,
-        );
-      } catch (_) {}
       return false;
     }
   }
@@ -1075,6 +1088,28 @@ class EnemyShipComponent extends PositionComponent
       ..color = isFlashing ? flashColor : const Color(0xFFFF5252)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(0, -radius * 0.2), 3.2, corePaint);
+
+    // Sprint 39: Telegraphed Dash Trajectory Corridor (Nova Drift / Hades)
+    if (raiderState == RaiderState.telegraphing) {
+      final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
+      final dashTelegraphPaint = Paint()
+        ..color = const Color(0xFFFF1744).withValues(alpha: 0.35 + pulse * 0.45)
+        ..strokeWidth = 2.2 + pulse * 1.5
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawLine(
+        Offset(0, -radius * 1.2),
+        const Offset(0, -260.0),
+        dashTelegraphPaint,
+      );
+
+      final conePaint = Paint()
+        ..color = const Color(0xFFFF1744).withValues(alpha: 0.15 + pulse * 0.20)
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(-12, -radius * 1.2), const Offset(-22, -260.0), conePaint);
+      canvas.drawLine(Offset(12, -radius * 1.2), const Offset(22, -260.0), conePaint);
+    }
   }
 
   void _renderSniper(Canvas canvas, bool isFlashing, Color flashColor) {
@@ -1118,6 +1153,32 @@ class EnemyShipComponent extends PositionComponent
       ..color = isFlashing ? flashColor : const Color(0xFF80D8FF)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset.zero, 3.0, corePaint);
+
+    // Sprint 39: Telegraphed Laser Aiming Line (Hades / Nova Drift)
+    if (shootCooldown <= 0.70 && shootCooldown > 0) {
+      final telegraphProgress = (1.0 - (shootCooldown / 0.70)).clamp(0.0, 1.0);
+      final alpha = (0.25 + 0.65 * telegraphProgress).clamp(0.0, 1.0);
+      final laserPaint = Paint()
+        ..color = Color.lerp(const Color(0xFFE040FB), const Color(0xFFFF1744), telegraphProgress)!.withValues(alpha: alpha)
+        ..strokeWidth = 1.0 + telegraphProgress * 1.8
+        ..style = PaintingStyle.stroke;
+
+      canvas.drawLine(
+        Offset(0, -radius * 1.3),
+        const Offset(0, -380.0),
+        laserPaint,
+      );
+
+      // Warning target reticle at tip
+      canvas.drawCircle(
+        const Offset(0, -380.0),
+        3.0 + telegraphProgress * 2.5,
+        Paint()
+          ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
   }
 
   void _renderElite(Canvas canvas, bool isFlashing, Color flashColor) {
