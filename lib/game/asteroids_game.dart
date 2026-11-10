@@ -49,6 +49,7 @@ import 'valkyrie.dart';
 import 'rogue_perks.dart';
 import 'roguelite_systems.dart';
 import '../services/achievement_service.dart';
+import '../services/sound_engine.dart';
 import 'meta_progression.dart';
 import 'affinity_system.dart';
 import 'sector.dart';
@@ -2082,56 +2083,27 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     );
   }
 
-  final Map<String, int> _lastPlayedSfxTime = {};
-  final List<AudioPlayer> _sfxPlayers = [];
-  List<AudioPlayer> get sfxPlayers => _sfxPlayers;
-  int _currentSfxIndex = 0;
+  final SoundEngine soundEngine = SoundEngine();
+  List<AudioPlayer> get sfxPlayers => soundEngine.allPlayers;
 
   void initSfxPlayers() {
-    for (int i = 0; i < 3; i++) {
-      final p = AudioPlayer();
-      p.audioCache.prefix = 'assets/sounds/';
-      _sfxPlayers.add(p);
-    }
+    soundEngine.initialize();
   }
 
-  void playSfx(String name) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final minInterval = (name == 'shoot.wav') ? 85 : 65;
-    final lastTime = _lastPlayedSfxTime[name] ?? 0;
-    if (now - lastTime < minInterval) {
-      return;
-    }
-    _lastPlayedSfxTime[name] = now;
-
-    if (_sfxPlayers.isEmpty) return;
-
-    _currentSfxIndex = (_currentSfxIndex + 1) % _sfxPlayers.length;
-    final player = _sfxPlayers[_currentSfxIndex];
-
-    try {
-      // Dynamic volume & micro-pitch jitter to eliminate audio fatigue on automatic fire
-      final double baseVol = (name == 'shoot.wav') ? 0.32 : 1.0;
-      final double effectiveVolume = (baseVol * sfxVolume * masterVolume).clamp(0.0, 1.0);
-      if (name == 'shoot.wav') {
-        final pitch = 0.93 + math.Random().nextDouble() * 0.14; // Subtle pitch jitter
-        player.setPlaybackRate(pitch);
-      } else {
-        player.setPlaybackRate(1.0);
-      }
-      await player.play(AssetSource(name), volume: effectiveVolume);
-    } catch (_) {}
+  void playSfx(String name, {double? volumeMultiplier, double? pitch}) {
+    soundEngine.playSfx(
+      name: name,
+      masterVolume: masterVolume,
+      sfxVolume: sfxVolume,
+      volumeMultiplier: volumeMultiplier,
+      overridePitch: pitch,
+    );
   }
 
   @override
   void onRemove() {
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
-    for (final p in _sfxPlayers) {
-      try {
-        p.dispose();
-      } catch (_) {}
-    }
-    _sfxPlayers.clear();
+    soundEngine.dispose();
     try {
       FlameAudio.bgm.dispose();
     } catch (_) {}
