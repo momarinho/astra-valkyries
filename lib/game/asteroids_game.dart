@@ -43,6 +43,10 @@ import 'components/katana_slash.dart';
 import 'components/space_station.dart';
 import 'components/cargo_wreck.dart';
 import 'components/cosmic_nebula.dart';
+import 'components/kinetic_space_dust.dart';
+import 'components/distant_megastructure.dart';
+import 'components/procedural_cosmic_nebula.dart';
+import 'components/space_time_warp_grid.dart';
 import 'map/sector_map_data.dart';
 import 'map/sector_map_generator.dart';
 import 'weapons.dart';
@@ -107,7 +111,8 @@ class ChestReward {
   });
 }
 
-class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents, TapCallbacks {
+class AsteroidsGame extends FlameGame
+    with HasCollisionDetection, KeyboardEvents, TapCallbacks {
   late final PlayerComponent player;
   AsteroidField? asteroidField;
   LevelManager? levelManager;
@@ -146,8 +151,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   bool mobileShootPressed = false;
   bool mobileDashPressed = false;
   bool showTouchControls = false;
-  bool isAimLocked = false; // Trava de Mira (Strafe Lock) no Mobile/Joystick para recuar atirando
-  bool useDirectionalControls = false; // False = Propulsão Vetorial + Ré Tática (Padrão PC), True = Direcional 360°
+  bool isAimLocked =
+      false; // Trava de Mira (Strafe Lock) no Mobile/Joystick para recuar atirando
+  bool useDirectionalControls =
+      false; // False = Propulsão Vetorial + Ré Tática (Padrão PC), True = Direcional 360°
   int initialHangarTab = 0; // 0 = Hangar/Sortie, 1 = Loja/Oficina, 2 = Galeria
   GameState previousMenuState = GameState.menu;
 
@@ -161,8 +168,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   // Sprint 13, 16, 17, 18: Void Cells, Blueprints, Mutations & Milestones
   int voidCellsLevel = 0; // 0 a 5 (Dead Cells Boss Cells style)
   int maxUnlockedVoidCells = 1;
-  final Set<String> foundBlueprints = {'aegis_sawblades', 'tesla_arc', 'inferno_cone'};
-  final Set<String> forgedBlueprints = {'aegis_sawblades', 'tesla_arc', 'inferno_cone'};
+  final Set<String> foundBlueprints = {
+    'aegis_sawblades',
+    'tesla_arc',
+    'inferno_cone',
+  };
+  final Set<String> forgedBlueprints = {
+    'aegis_sawblades',
+    'tesla_arc',
+    'inferno_cone',
+  };
   final List<String> activeMutations = [];
   final Set<String> unlockedMilestones = {};
   bool flawlessBossKill = true;
@@ -213,8 +228,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         .toList();
     final chosen = unfound.isNotEmpty
         ? unfound.first
-        : FlightRecorderLog.allFlightRecorders[
-            pos.x.toInt().abs() % FlightRecorderLog.allFlightRecorders.length];
+        : FlightRecorderLog.allFlightRecorders[pos.x.toInt().abs() %
+              FlightRecorderLog.allFlightRecorders.length];
     unlockedFlightRecorders.add(chosen.id);
     if (unlockedFlightRecorders.length >= 4) {
       astraeaMatrixDecoded = true;
@@ -239,7 +254,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (activeSpeechBubble != null && activeSpeechBubble!.isMounted) {
       activeSpeechBubble!.removeFromParent();
     }
-    final text = customText ??
+    final text =
+        customText ??
         SpeechBubbleComponent.getContextualLine(selectedValkyrie.id, trigger);
     final bubble = SpeechBubbleComponent(
       valkyrieId: selectedValkyrie.id,
@@ -293,7 +309,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         unlockSector(SectorId.eventHorizon);
         break;
       case SectorId.eventHorizon:
-        if (voidCellsLevel >= 3 || unlockedRelics.contains('yellow_sign') || astraeaMatrixDecoded) {
+        if (voidCellsLevel >= 3 ||
+            unlockedRelics.contains('yellow_sign') ||
+            astraeaMatrixDecoded) {
           unlockSector(SectorId.voidThrone);
         }
         break;
@@ -303,7 +321,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   bool isWeaponUnlockedInPool(String weaponId) {
-    return unlockedWeaponPool.contains(weaponId) || forgedBlueprints.contains(weaponId);
+    return unlockedWeaponPool.contains(weaponId) ||
+        forgedBlueprints.contains(weaponId);
   }
 
   void unlockWeaponWithToast(String weaponId) {
@@ -451,7 +470,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     if (runEnemiesKilled >= 30) {
       unlockWeaponWithToast('resonance_shield');
     }
-    if (runEnemiesKilled >= 80 && player.unlockedWeapons.containsKey('rapid_fire')) {
+    if (runEnemiesKilled >= 80 &&
+        player.unlockedWeapons.containsKey('rapid_fire')) {
       final rf = player.unlockedWeapons['rapid_fire'];
       if (rf != null && rf.level >= 3) {
         unlockWeaponWithToast('tesla_arc');
@@ -504,7 +524,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     activeBoss = null;
     beaconsCharged = 0;
     if (asteroidField != null) {
-      asteroidField!.difficultyTimer += 360.0; // Inimigos e hordas escalonadas para o loop!
+      asteroidField!.difficultyTimer +=
+          360.0; // Inimigos e hordas escalonadas para o loop!
     }
     _removeAllAsteroidsAndProjectiles();
     _initSectorPois();
@@ -520,7 +541,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void tryDropBlueprint(Vector2 pos, {bool guaranteed = false}) {
-    final unfound = BlueprintDef.allBlueprints.where((bp) => !foundBlueprints.contains(bp.weaponId)).toList();
+    final unfound = BlueprintDef.allBlueprints
+        .where((bp) => !foundBlueprints.contains(bp.weaponId))
+        .toList();
     if (unfound.isEmpty) return;
     if (!guaranteed && math.Random().nextDouble() > 0.35) return;
 
@@ -539,7 +562,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   bool forgeBlueprint(String weaponId) {
     final bp = BlueprintDef.findByWeaponId(weaponId);
     if (bp == null) return false;
-    if (!foundBlueprints.contains(weaponId) || forgedBlueprints.contains(weaponId)) return false;
+    if (!foundBlueprints.contains(weaponId) ||
+        forgedBlueprints.contains(weaponId)) {
+      return false;
+    }
     if (totalCredits < bp.forgeCost) return false;
 
     totalCredits -= bp.forgeCost;
@@ -571,7 +597,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void applyPilotMutation(String mutationId) {
-    if (activeMutations.contains(mutationId) || activeMutations.length >= 3) return;
+    if (activeMutations.contains(mutationId) || activeMutations.length >= 3) {
+      return;
+    }
     activeMutations.add(mutationId);
     switch (mutationId) {
       case 'mut_lone_wolf':
@@ -600,7 +628,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         lifeTimer: 0.75,
         damage: damage * rogueDamageMultiplier,
         color: isEvolved ? const Color(0xFFFFD700) : const Color(0xFF00E5FF),
-        elementalStatus: isEvolved ? ElementalStatus.ionShock : ElementalStatus.none,
+        elementalStatus: isEvolved
+            ? ElementalStatus.ionShock
+            : ElementalStatus.none,
       ),
     );
   }
@@ -635,7 +665,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   GameState state = GameState.scienceIntro;
   String activeMode = 'arcade'; // 'arcade', 'classic' or 'campaign'
-  
+
   // Astra Valkyrie Pilot
   Valkyrie selectedValkyrie = Valkyrie.defaultValkyrie;
   Sector currentSector = Sector.defaultSector;
@@ -648,7 +678,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void addStardust(int amount) => addXp(amount);
   void addScrap(int amount) {
     final voidCellMult = 1.0 + (voidCellsLevel * 0.25);
-    final effective = ((isHyperMode ? amount * 1.5 : amount) * voidCellMult).round();
+    final effective = ((isHyperMode ? amount * 1.5 : amount) * voidCellMult)
+        .round();
     runCredits += effective;
     totalCredits += effective;
     if (activeMutations.contains('mut_scrap_alchemist')) {
@@ -673,7 +704,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   double ultimateChargeRate = 1.0 / 40.0; // 40s recarga passiva
 
   // Sprint 42: Apresentação Cinematográfica de Chefes
-  final ValueNotifier<BossCinematicData?> bossCinematicNotifier = ValueNotifier(null);
+  final ValueNotifier<BossCinematicData?> bossCinematicNotifier = ValueNotifier(
+    null,
+  );
 
   void triggerBossCinematicIntro({
     required String title,
@@ -683,7 +716,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     playSfx('boss_spawn.wav');
     triggerScreenShake(duration: 0.85, intensity: 20.0);
     setCameraZoom(1.12);
-    bossCinematicNotifier.value = BossCinematicData(title: title, subtitle: subtitle, color: color);
+    bossCinematicNotifier.value = BossCinematicData(
+      title: title,
+      subtitle: subtitle,
+      color: color,
+    );
     Future.delayed(const Duration(milliseconds: 2800), () {
       if (bossCinematicNotifier.value?.title == title) {
         bossCinematicNotifier.value = null;
@@ -759,18 +796,25 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           furthest = o;
         }
       }
-      final incomingValue = customValue ?? (type == XpOrbType.large ? 14 : (type == XpOrbType.medium ? 6 : 2));
+      final incomingValue =
+          customValue ??
+          (type == XpOrbType.large ? 14 : (type == XpOrbType.medium ? 6 : 2));
       furthest.absorbXp(incomingValue);
       return;
     }
 
-    world.add(XpOrbComponent(position: position, type: type, customValue: customValue));
+    world.add(
+      XpOrbComponent(position: position, type: type, customValue: customValue),
+    );
   }
 
   void triggerLevelUp() {
     // Sprint 26: Tomo de Fusão Térmica concede permanentemente +1 escolha no Level-Up (4 em vez de 3)
     final choiceCount = unlockedRelics.contains('thermal_tome') ? 4 : 3;
-    currentLevelUpChoices = RoguePerkGenerator.generateChoices(this, count: choiceCount);
+    currentLevelUpChoices = RoguePerkGenerator.generateChoices(
+      this,
+      count: choiceCount,
+    );
 
     // Sprint 25 & 27: Condições de nível estilo Vampire Survivors
     if (runLevel >= 8 && currentSector.id == SectorId.vesta) {
@@ -858,7 +902,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         itemCount = 5;
         break;
       case ChestTier.gold:
-        final luckBonus = (rogueCritChance * 0.5) + metaProgression.jackpotChanceBonus;
+        final luckBonus =
+            (rogueCritChance * 0.5) + metaProgression.jackpotChanceBonus;
         final roll = math.Random().nextDouble();
         if (roll < 0.12 + luckBonus) {
           itemCount = 5;
@@ -900,7 +945,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         }
       }
     }
-    final evolvableWeapons = player.activeWeapons.where((w) => w.canEvolve).toList();
+    final evolvableWeapons = player.activeWeapons
+        .where((w) => w.canEvolve)
+        .toList();
     for (final w in evolvableWeapons) {
       if (list.length >= count) break;
       final targetW = w;
@@ -921,14 +968,17 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     // 2. Regular Weapon Upgrades (MK 1 -> MK 2 -> MK 3)
-    final upgradableWeapons = player.activeWeapons.where((w) => w.level < w.maxLevel).toList();
+    final upgradableWeapons = player.activeWeapons
+        .where((w) => w.level < w.maxLevel)
+        .toList();
     for (final w in upgradableWeapons) {
       if (list.length >= count) break;
       final targetW = w;
       list.add(
         ChestReward(
           title: '${targetW.name} MK ${targetW.level + 1}',
-          subtitle: 'Arsenal Upgrade: Weapon enhanced to MK ${targetW.level + 1}',
+          subtitle:
+              'Arsenal Upgrade: Weapon enhanced to MK ${targetW.level + 1}',
           icon: Icons.military_tech,
           color: const Color(0xFFFFB300),
           apply: () {
@@ -1012,20 +1062,25 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   int get lives {
     try {
       if (player.hp <= 0) return 0;
-      final maxLives = GameConstants.playerLives + metaProgression.hullBonusLives;
-      return (player.hp / math.max(1.0, player.maxHp) * maxLives).ceil().clamp(1, maxLives);
+      final maxLives =
+          GameConstants.playerLives + metaProgression.hullBonusLives;
+      return (player.hp / math.max(1.0, player.maxHp) * maxLives).ceil().clamp(
+        1,
+        maxLives,
+      );
     } catch (_) {
       return _lives;
     }
   }
+
   set lives(int val) => _lives = val;
   int currentLevel = 1;
-  
+
   // Roguelite Meta-Progression & Scrap Economy
   final MetaProgression metaProgression = MetaProgression();
   final AffinityManager affinityManager = AffinityManager();
   int totalCredits = 0; // Bank balance across runs
-  int runCredits = 0;   // Scrap collected during current sortie
+  int runCredits = 0; // Scrap collected during current sortie
 
   int get credits => totalCredits;
   set credits(int val) => totalCredits = val;
@@ -1056,7 +1111,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     try {
       if (FlameAudio.bgm.isPlaying) {
-        FlameAudio.bgm.audioPlayer.setVolume(effectiveBgmVolume).catchError((_) {});
+        FlameAudio.bgm.audioPlayer
+            .setVolume(effectiveBgmVolume)
+            .catchError((_) {});
       }
     } catch (_) {}
     saveAudioSettings();
@@ -1079,7 +1136,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       bgmVolume = prefs.getDouble('audio_bgm_volume') ?? 0.8;
     } catch (_) {}
   }
-  
+
   double lowHealthWarnTimer = 0.0;
 
   String? playerId;
@@ -1108,7 +1165,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Lock camera resolution to 1280x720 (matching Pygame coordinates)
     camera.viewport = FixedResolutionViewport(resolution: Vector2(1280, 720));
-    camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    camera.viewfinder.position = Vector2(
+      GameConstants.sectorWidth / 2,
+      GameConstants.sectorHeight / 2,
+    );
     camera.viewfinder.anchor = Anchor.center;
 
     // Setup FlameAudio asset folder configuration and silence native warning spam on Linux
@@ -1125,13 +1185,20 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Add StarfieldComponent, SectorBoundaryComponent, and Sector POIs first
     world.add(StarfieldComponent());
+    world.add(DistantMegastructureBackdropComponent());
+    world.add(ProceduralCosmicNebulaComponent());
+    world.add(KineticSpaceDustComponent());
+    world.add(SpaceTimeWarpGridComponent());
     world.add(SectorBoundaryComponent());
     world.add(particlePool);
     _initSectorPois();
 
     // Add PlayerComponent (starts in center of the large sector)
     player = PlayerComponent(
-      position: Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2),
+      position: Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      ),
     )..customGame = this;
     world.add(player);
 
@@ -1172,7 +1239,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       voidCellsLevel = prefs.getInt('void_cells_level') ?? 0;
       maxUnlockedVoidCells = prefs.getInt('max_unlocked_void_cells') ?? 1;
       selectedMovementPresetIndex = prefs.getInt('movement_preset_index') ?? 1;
-      useDirectionalControls = prefs.getBool('use_directional_controls') ?? false;
+      useDirectionalControls =
+          prefs.getBool('use_directional_controls') ?? false;
       showFpsOverlay = prefs.getBool('show_fps_overlay') ?? false;
       final savedFoundBp = prefs.getStringList('found_blueprints');
       if (savedFoundBp != null) foundBlueprints.addAll(savedFoundBp);
@@ -1230,7 +1298,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void addRunCredits(int amount) {
     if (state != GameState.playing) return;
     final voidCellMult = 1.0 + (voidCellsLevel * 0.25);
-    final effective = ((isHyperMode ? amount * 1.5 : amount) * voidCellMult).round();
+    final effective = ((isHyperMode ? amount * 1.5 : amount) * voidCellMult)
+        .round();
     runCredits += effective;
     if (activeMutations.contains('mut_scrap_alchemist')) {
       try {
@@ -1268,7 +1337,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       await prefs.setBool('use_directional_controls', useDirectionalControls);
       await prefs.setStringList('found_blueprints', foundBlueprints.toList());
       await prefs.setStringList('forged_blueprints', forgedBlueprints.toList());
-      await prefs.setStringList('unlocked_milestones', unlockedMilestones.toList());
+      await prefs.setStringList(
+        'unlocked_milestones',
+        unlockedMilestones.toList(),
+      );
 
       // Fase 4: Persistência de Setores, Relíquias, Segredos e Armas Desbloqueadas
       await prefs.setStringList(
@@ -1280,9 +1352,15 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         'rescued_sector_secrets',
         rescuedSectorSecrets.map((s) => s.name).toList(),
       );
-      await prefs.setStringList('unlocked_weapon_pool', unlockedWeaponPool.toList());
+      await prefs.setStringList(
+        'unlocked_weapon_pool',
+        unlockedWeaponPool.toList(),
+      );
       for (final entry in completedSectorsPerValkyrie.entries) {
-        await prefs.setStringList('completed_sector_${entry.key}', entry.value.toList());
+        await prefs.setStringList(
+          'completed_sector_${entry.key}',
+          entry.value.toList(),
+        );
       }
     } catch (_) {}
   }
@@ -1297,7 +1375,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     final key = event.logicalKey;
-    final isPauseKey = key == LogicalKeyboardKey.escape ||
+    final isPauseKey =
+        key == LogicalKeyboardKey.escape ||
         key == LogicalKeyboardKey.keyP ||
         key == LogicalKeyboardKey.gameButtonStart;
 
@@ -1305,7 +1384,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       togglePause();
       return true;
     }
-    if (state == GameState.playing && key == LogicalKeyboardKey.gameButtonSelect) {
+    if (state == GameState.playing &&
+        key == LogicalKeyboardKey.gameButtonSelect) {
       toggleTacticalMap();
       return true;
     }
@@ -1335,7 +1415,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('valkyrieSelection');
         try {
           camera.stop();
-          camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+          camera.viewfinder.position = Vector2(
+            GameConstants.sectorWidth / 2,
+            GameConstants.sectorHeight / 2,
+          );
         } catch (_) {}
         try {
           if (!FlameAudio.bgm.isPlaying) {
@@ -1366,7 +1449,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         _safeAddOverlay('menu');
         try {
           camera.stop();
-          camera.viewfinder.position = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+          camera.viewfinder.position = Vector2(
+            GameConstants.sectorWidth / 2,
+            GameConstants.sectorHeight / 2,
+          );
         } catch (_) {}
         try {
           if (!FlameAudio.bgm.isPlaying) {
@@ -1431,7 +1517,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void togglePause() {
     if (state != GameState.playing) return;
     final now = DateTime.now();
-    if (_lastPauseToggleTime != null && now.difference(_lastPauseToggleTime!).inMilliseconds < 300) {
+    if (_lastPauseToggleTime != null &&
+        now.difference(_lastPauseToggleTime!).inMilliseconds < 300) {
       return;
     }
     _lastPauseToggleTime = now;
@@ -1463,7 +1550,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   @override
-  KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+  KeyEventResult onKeyEvent(
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
     if (state != GameState.playing) {
       this.keysPressed.clear();
       return KeyEventResult.ignored;
@@ -1539,14 +1629,21 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     runSolarBurnTicks = 0;
 
     // Sprint 26: Relíquia Matriz de Mutação Inicial concede 1 Mutação gratuita na decolagem!
-    if (unlockedRelics.contains('mutation_matrix') && PilotMutation.allMutations.isNotEmpty) {
+    if (unlockedRelics.contains('mutation_matrix') &&
+        PilotMutation.allMutations.isNotEmpty) {
       final muts = PilotMutation.allMutations.toList()..shuffle();
       applyPilotMutation(muts.first.id);
     }
-    rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus).clamp(0.0, 1.0);
+    rogueCritChance =
+        (selectedValkyrie.critChance + metaProgression.critChanceBonus).clamp(
+          0.0,
+          1.0,
+        );
     rogueDamageMultiplier = 1.0 + metaProgression.damageBonusMultiplier;
     rogueFireRateMultiplier = 1.0;
-    rogueMagnetRadius = (150.0 * selectedValkyrie.magnetRadiusMultiplier) * metaProgression.magnetMultiplier;
+    rogueMagnetRadius =
+        (150.0 * selectedValkyrie.magnetRadiusMultiplier) *
+        metaProgression.magnetMultiplier;
 
     // Remove any running level manager or asteroid field
     if (levelManager != null) {
@@ -1561,13 +1658,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     // Reset player states, stats, and initialize chosen Valkyrie's starting weapon at Sector Center
     player.customGame ??= this;
     player.valkyrie = selectedValkyrie;
-    player.respawn(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+    player.respawn(
+      GameConstants.sectorWidth / 2,
+      GameConstants.sectorHeight / 2,
+    );
     player.initHp();
     try {
       camera.viewfinder.position = player.position;
       camera.follow(player);
     } catch (_) {}
-    
+
     // Set starting weapon based on chosen Valkyrie
     final startingWeapon = selectedValkyrie.createStartingWeapon();
     player.setWeapon(startingWeapon);
@@ -1576,11 +1676,25 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final preset = movementPresets[selectedMovementPresetIndex];
     final affinity = affinityManager.getAffinity(selectedValkyrie.id);
     final hyperSpeedMult = isHyperMode ? 1.25 : 1.0;
-    player.movementAcceleration = preset.acceleration * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus) * hyperSpeedMult;
-    player.movementMaxSpeed = preset.maxSpeed * selectedValkyrie.speedMultiplier * metaProgression.speedMultiplier * (1.0 + affinity.bondSpeedBonus) * hyperSpeedMult;
+    player.movementAcceleration =
+        preset.acceleration *
+        selectedValkyrie.speedMultiplier *
+        metaProgression.speedMultiplier *
+        (1.0 + affinity.bondSpeedBonus) *
+        hyperSpeedMult;
+    player.movementMaxSpeed =
+        preset.maxSpeed *
+        selectedValkyrie.speedMultiplier *
+        metaProgression.speedMultiplier *
+        (1.0 + affinity.bondSpeedBonus) *
+        hyperSpeedMult;
     player.movementFriction = preset.friction;
     player.magnetRadius = rogueMagnetRadius;
-    rogueCritChance = (selectedValkyrie.critChance + metaProgression.critChanceBonus + affinity.bondCritBonus).clamp(0.0, 1.0);
+    rogueCritChance =
+        (selectedValkyrie.critChance +
+                metaProgression.critChanceBonus +
+                affinity.bondCritBonus)
+            .clamp(0.0, 1.0);
 
     // Setup Spawning Mode (Continuous void field for roguelike protocol)
     asteroidField = AsteroidField();
@@ -1611,43 +1725,45 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     // 2. Remove todas as entidades dinâmicas de jogo
-    final childrenToRemove = world.children.where((child) =>
-        child is AsteroidComponent ||
-        child is BulletComponent ||
-        child is BombComponent ||
-        child is BombExplosionComponent ||
-        child is ParticleComponent ||
-        child is FloatingTextComponent ||
-        child is DropComponent ||
-        child is XpOrbComponent ||
-        child is EnemyShipComponent ||
-        child is EnemyBulletComponent ||
-        child is ChestComponent ||
-        child is MagmaHazardComponent ||
-        child is SingularityRiftComponent ||
-        child is ProximityMineComponent ||
-        child is DerelictTurretComponent ||
-        child is OrbitalSawbladeComponent ||
-        child is TeslaLightningComponent ||
-        child is ChakramProjectileComponent ||
-        child is GravityAuraPulseComponent ||
-        child is ThermalLanceBeamComponent ||
-        child is WingmanDroneComponent ||
-        child is PlayerClusterMineComponent ||
-        child is MegastructureWallComponent ||
-        child is LaserContainmentGateComponent ||
-        child is TimedVaultComponent ||
-        child is FlawlessVaultComponent ||
-        child is VoidMerchantComponent ||
-        child is CursedShrineComponent ||
-        child is CryoMistZoneComponent ||
-        child is CryoMineComponent ||
-        child is OrganicBiomassWallComponent ||
-        child is XenoCocoonComponent ||
-        child is SpeechBubbleComponent ||
-        child is SectorBoss ||
-        child is HyperspaceGateComponent ||
-        child is VoidReaperComponent);
+    final childrenToRemove = world.children.where(
+      (child) =>
+          child is AsteroidComponent ||
+          child is BulletComponent ||
+          child is BombComponent ||
+          child is BombExplosionComponent ||
+          child is ParticleComponent ||
+          child is FloatingTextComponent ||
+          child is DropComponent ||
+          child is XpOrbComponent ||
+          child is EnemyShipComponent ||
+          child is EnemyBulletComponent ||
+          child is ChestComponent ||
+          child is MagmaHazardComponent ||
+          child is SingularityRiftComponent ||
+          child is ProximityMineComponent ||
+          child is DerelictTurretComponent ||
+          child is OrbitalSawbladeComponent ||
+          child is TeslaLightningComponent ||
+          child is ChakramProjectileComponent ||
+          child is GravityAuraPulseComponent ||
+          child is ThermalLanceBeamComponent ||
+          child is WingmanDroneComponent ||
+          child is PlayerClusterMineComponent ||
+          child is MegastructureWallComponent ||
+          child is LaserContainmentGateComponent ||
+          child is TimedVaultComponent ||
+          child is FlawlessVaultComponent ||
+          child is VoidMerchantComponent ||
+          child is CursedShrineComponent ||
+          child is CryoMistZoneComponent ||
+          child is CryoMineComponent ||
+          child is OrganicBiomassWallComponent ||
+          child is XenoCocoonComponent ||
+          child is SpeechBubbleComponent ||
+          child is SectorBoss ||
+          child is HyperspaceGateComponent ||
+          child is VoidReaperComponent,
+    );
     for (final child in List.from(childrenToRemove)) {
       child.removeFromParent();
     }
@@ -1715,13 +1831,18 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     // Sprint 52: Interpolação suave do Zoom Dinâmico de Câmera
     if ((camera.viewfinder.zoom - targetCameraZoom).abs() > 0.001) {
-      camera.viewfinder.zoom += (targetCameraZoom - camera.viewfinder.zoom) * (dt * 3.5).clamp(0.0, 1.0);
+      camera.viewfinder.zoom +=
+          (targetCameraZoom - camera.viewfinder.zoom) *
+          (dt * 3.5).clamp(0.0, 1.0);
     }
 
     // Science Fair 180-second (3-minute) countdown timer & Celestial Events
     if (state == GameState.playing) {
       if (!specialAvailable && ultimateCharge < 1.0) {
-        ultimateCharge = (ultimateCharge + dt * ultimateChargeRate).clamp(0.0, 1.0);
+        ultimateCharge = (ultimateCharge + dt * ultimateChargeRate).clamp(
+          0.0,
+          1.0,
+        );
         if (ultimateCharge >= 1.0) {
           specialAvailable = true;
           playSfx('powerup.wav');
@@ -1747,7 +1868,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       }
 
       // Mid-game surprise event: Comet Halley warning at 105s remaining (75s played)
-      if (!cometWarningTriggered && timeRemaining <= 105.0 && timeRemaining > 101.0) {
+      if (!cometWarningTriggered &&
+          timeRemaining <= 105.0 &&
+          timeRemaining > 101.0) {
         cometWarningTriggered = true;
         cometAlertTimer = 4.0;
         cometAlertMessage = I18n.select(
@@ -1767,7 +1890,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         final hasActiveBoss = activeBoss != null && !activeBoss!.isDefeated;
         final hasGate = world.children.any((c) => c is HyperspaceGateComponent);
         if (hasActiveBoss || hasGate) {
-          timeRemaining = 0; // Overtime durante o Clímax do Chefe ou preparação do Hipersalto
+          timeRemaining =
+              0; // Overtime durante o Clímax do Chefe ou preparação do Hipersalto
         } else {
           timeRemaining = 0;
           if (!voidReaperSpawned) {
@@ -1779,7 +1903,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     // If campaign is active, run the level manager update
-    if (state == GameState.playing && activeMode == 'campaign' && levelManager != null) {
+    if (state == GameState.playing &&
+        activeMode == 'campaign' &&
+        levelManager != null) {
       levelManager!.update(dt);
     }
 
@@ -1797,12 +1923,18 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   void render(Canvas canvas) {
     if (shakeTimer > 0) {
       final random = math.Random();
-      final progress = (shakeTimer / math.max(0.001, shakeDuration)).clamp(0.0, 1.0);
-      final decay = progress * progress; // Decaimento quadrático de trauma (Nova Drift benchmark)
+      final progress = (shakeTimer / math.max(0.001, shakeDuration)).clamp(
+        0.0,
+        1.0,
+      );
+      final decay =
+          progress *
+          progress; // Decaimento quadrático de trauma (Nova Drift benchmark)
       final currentIntensity = shakeIntensity * decay;
       final dx = (-1.0 + random.nextDouble() * 2.0) * currentIntensity;
       final dy = (-1.0 + random.nextDouble() * 2.0) * currentIntensity;
-      final angle = (-1.0 + random.nextDouble() * 2.0) * (currentIntensity * 0.0012);
+      final angle =
+          (-1.0 + random.nextDouble() * 2.0) * (currentIntensity * 0.0012);
 
       canvas.save();
       final cx = size.x * 0.5;
@@ -1832,7 +1964,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final random = math.Random();
     final angle = random.nextDouble() * 2 * math.pi;
     const spawnDist = 650.0;
-    final spawnPos = player.position + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
+    final spawnPos =
+        player.position + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
     spawnPos.x = spawnPos.x.clamp(120.0, GameConstants.sectorWidth - 120.0);
     spawnPos.y = spawnPos.y.clamp(120.0, GameConstants.sectorHeight - 120.0);
 
@@ -1997,7 +2130,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final random = math.Random();
     final angle = random.nextDouble() * 2 * math.pi;
     final spawnDist = 650.0;
-    final spawnPos = player.position + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
+    final spawnPos =
+        player.position + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
 
     spawnPos.x = spawnPos.x.clamp(100.0, GameConstants.sectorWidth - 100.0);
     spawnPos.y = spawnPos.y.clamp(100.0, GameConstants.sectorHeight - 100.0);
@@ -2076,7 +2210,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
           nextId = SectorId.eventHorizon;
           break;
         case SectorId.eventHorizon:
-          nextId = canAccessSecretSector5 ? SectorId.voidThrone : SectorId.vesta;
+          nextId = canAccessSecretSector5
+              ? SectorId.voidThrone
+              : SectorId.vesta;
           break;
         case SectorId.voidThrone:
           nextId = SectorId.vesta;
@@ -2096,32 +2232,34 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     }
 
     // Remove entidades antigas de combate do setor anterior
-    final toRemove = world.children.where((child) =>
-        child is AsteroidComponent ||
-        child is EnemyShipComponent ||
-        child is EnemyBulletComponent ||
-        child is BulletComponent ||
-        child is ProximityMineComponent ||
-        child is DerelictTurretComponent ||
-        child is TeslaLightningComponent ||
-        child is ChakramProjectileComponent ||
-        child is GravityAuraPulseComponent ||
-        child is ThermalLanceBeamComponent ||
-        child is PlayerClusterMineComponent ||
-        child is MegastructureWallComponent ||
-        child is LaserContainmentGateComponent ||
-        child is TimedVaultComponent ||
-        child is FlawlessVaultComponent ||
-        child is VoidMerchantComponent ||
-        child is CursedShrineComponent ||
-        child is CryoMistZoneComponent ||
-        child is CryoMineComponent ||
-        child is OrganicBiomassWallComponent ||
-        child is XenoCocoonComponent ||
-        child is SpeechBubbleComponent ||
-        child is SectorBoss ||
-        child is HyperspaceGateComponent ||
-        child is VoidReaperComponent);
+    final toRemove = world.children.where(
+      (child) =>
+          child is AsteroidComponent ||
+          child is EnemyShipComponent ||
+          child is EnemyBulletComponent ||
+          child is BulletComponent ||
+          child is ProximityMineComponent ||
+          child is DerelictTurretComponent ||
+          child is TeslaLightningComponent ||
+          child is ChakramProjectileComponent ||
+          child is GravityAuraPulseComponent ||
+          child is ThermalLanceBeamComponent ||
+          child is PlayerClusterMineComponent ||
+          child is MegastructureWallComponent ||
+          child is LaserContainmentGateComponent ||
+          child is TimedVaultComponent ||
+          child is FlawlessVaultComponent ||
+          child is VoidMerchantComponent ||
+          child is CursedShrineComponent ||
+          child is CryoMistZoneComponent ||
+          child is CryoMineComponent ||
+          child is OrganicBiomassWallComponent ||
+          child is XenoCocoonComponent ||
+          child is SpeechBubbleComponent ||
+          child is SectorBoss ||
+          child is HyperspaceGateComponent ||
+          child is VoidReaperComponent,
+    );
     for (final child in List.from(toRemove)) {
       child.removeFromParent();
     }
@@ -2191,7 +2329,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     super.onRemove();
   }
 
-  void triggerScreenShake({required double duration, required double intensity}) {
+  void triggerScreenShake({
+    required double duration,
+    required double intensity,
+  }) {
     shakeIntensity = math.max(shakeIntensity, intensity).clamp(1.0, 36.0);
     shakeDuration = math.max(shakeDuration, duration).clamp(0.05, 3.0);
     shakeTimer = math.max(shakeTimer, duration);
@@ -2236,7 +2377,12 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   }
 
   void buyItem(String itemId) {
-    final isWeapon = const ['blaster', 'spread_shot', 'rapid_fire', 'bomb_launcher'].contains(itemId);
+    final isWeapon = const [
+      'blaster',
+      'spread_shot',
+      'rapid_fire',
+      'bomb_launcher',
+    ].contains(itemId);
 
     if (isWeapon) {
       if (player.unlockedWeapons.containsKey(itemId)) {
@@ -2292,8 +2438,16 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
   static const int maxActiveFloatingTexts = 26;
 
-  void spawnFloatingText(Vector2 position, String text, {Color color = Colors.white, double fontSize = 14.0, Vector2? velocity}) {
-    final existingTexts = world.children.whereType<FloatingTextComponent>().toList();
+  void spawnFloatingText(
+    Vector2 position,
+    String text, {
+    Color color = Colors.white,
+    double fontSize = 14.0,
+    Vector2? velocity,
+  }) {
+    final existingTexts = world.children
+        .whereType<FloatingTextComponent>()
+        .toList();
     if (existingTexts.length >= maxActiveFloatingTexts) {
       existingTexts.first.removeFromParent();
     }
@@ -2350,10 +2504,17 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     final rng = math.Random();
     final text = isCritical ? '★ ${damage.toInt()}!' : '${damage.toInt()}';
     final fontSize = isCritical ? 14.5 : 11.5;
-    final vel = Vector2((rng.nextDouble() - 0.5) * 44.0, -60.0 - rng.nextDouble() * 25.0);
+    final vel = Vector2(
+      (rng.nextDouble() - 0.5) * 44.0,
+      -60.0 - rng.nextDouble() * 25.0,
+    );
 
     spawnFloatingText(
-      position + Vector2((rng.nextDouble() - 0.5) * 16.0, (rng.nextDouble() - 0.5) * 12.0),
+      position +
+          Vector2(
+            (rng.nextDouble() - 0.5) * 16.0,
+            (rng.nextDouble() - 0.5) * 12.0,
+          ),
       text,
       color: textColor,
       fontSize: fontSize,
@@ -2397,31 +2558,43 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     Vector2 spawnPos;
     switch (edge) {
       case 0: // Left
-        spawnPos = Vector2(-35.0, 100.0 + random.nextDouble() * (GameConstants.screenHeight - 200.0));
+        spawnPos = Vector2(
+          -35.0,
+          100.0 + random.nextDouble() * (GameConstants.screenHeight - 200.0),
+        );
         break;
       case 1: // Right
-        spawnPos = Vector2(GameConstants.screenWidth + 35.0, 100.0 + random.nextDouble() * (GameConstants.screenHeight - 200.0));
+        spawnPos = Vector2(
+          GameConstants.screenWidth + 35.0,
+          100.0 + random.nextDouble() * (GameConstants.screenHeight - 200.0),
+        );
         break;
       case 2: // Top
-        spawnPos = Vector2(100.0 + random.nextDouble() * (GameConstants.screenWidth - 200.0), -35.0);
+        spawnPos = Vector2(
+          100.0 + random.nextDouble() * (GameConstants.screenWidth - 200.0),
+          -35.0,
+        );
         break;
       default: // Bottom
-        spawnPos = Vector2(100.0 + random.nextDouble() * (GameConstants.screenWidth - 200.0), GameConstants.screenHeight + 35.0);
+        spawnPos = Vector2(
+          100.0 + random.nextDouble() * (GameConstants.screenWidth - 200.0),
+          GameConstants.screenHeight + 35.0,
+        );
         break;
     }
 
     // Direct trajectory across the central play area (near player zone)
-    final targetX = (GameConstants.screenWidth / 2) + (random.nextDouble() - 0.5) * 400.0;
-    final targetY = (GameConstants.screenHeight / 2) + (random.nextDouble() - 0.5) * 260.0;
+    final targetX =
+        (GameConstants.screenWidth / 2) + (random.nextDouble() - 0.5) * 400.0;
+    final targetY =
+        (GameConstants.screenHeight / 2) + (random.nextDouble() - 0.5) * 260.0;
     final targetPoint = Vector2(targetX, targetY);
 
     final dir = (targetPoint - spawnPos).normalized();
-    final velocity = dir * 105.0; // Calibrated speed (105 px/s): approachable and pursuable
+    final velocity =
+        dir * 105.0; // Calibrated speed (105 px/s): approachable and pursuable
 
-    final comet = CometComponent(
-      position: spawnPos,
-      velocity: velocity,
-    );
+    final comet = CometComponent(position: spawnPos, velocity: velocity);
 
     world.add(comet);
     playSfx('powerup.wav');
@@ -2524,17 +2697,31 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         player.invulnerableTimer = 3.5;
         player.velocity += player.forward * 450.0;
         triggerScreenShake(duration: 0.85, intensity: 20.0);
-        final enemyBullets = world.children.whereType<EnemyBulletComponent>().toList();
+        final enemyBullets = world.children
+            .whereType<EnemyBulletComponent>()
+            .toList();
         for (final b in enemyBullets) {
           if (b.position.distanceToSquared(player.position) <= 500.0 * 500.0) {
             b.removeFromParent();
-            spawnSparks(position: b.position, color: const Color(0xFFFF9800), count: 5);
+            spawnSparks(
+              position: b.position,
+              color: const Color(0xFFFF9800),
+              count: 5,
+            );
           }
         }
         final waves = [
           (speed: 640.0, angleOffset: 0.0, color: const Color(0xFFFF5722)),
-          (speed: 540.0, angleOffset: math.pi / 12, color: const Color(0xFFFF9800)),
-          (speed: 460.0, angleOffset: -math.pi / 12, color: const Color(0xFFFFEB3B)),
+          (
+            speed: 540.0,
+            angleOffset: math.pi / 12,
+            color: const Color(0xFFFF9800),
+          ),
+          (
+            speed: 460.0,
+            angleOffset: -math.pi / 12,
+            color: const Color(0xFFFFEB3B),
+          ),
         ];
         const bulletsPerWave = 12;
         const step = (2 * math.pi) / bulletsPerWave;
@@ -2562,7 +2749,11 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         triggerScreenShake(duration: 0.65, intensity: 16.0);
         for (final e in world.children.whereType<EnemyShipComponent>()) {
           e.cryoFreezeTimer = 4.5;
-          spawnSparks(position: e.position, color: const Color(0xFF80D8FF), count: 6);
+          spawnSparks(
+            position: e.position,
+            color: const Color(0xFF80D8FF),
+            count: 6,
+          );
         }
         const beamCount = 28;
         final stepSelene = (2 * math.pi) / beamCount;
@@ -2604,11 +2795,17 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
         // 5.0s invulnerabilidade, anula projéteis em 600px + 36 lasers estelares imperiais
         player.invulnerableTimer = 5.0;
         triggerScreenShake(duration: 1.2, intensity: 28.0);
-        final enemyBulletsAstraea = world.children.whereType<EnemyBulletComponent>().toList();
+        final enemyBulletsAstraea = world.children
+            .whereType<EnemyBulletComponent>()
+            .toList();
         for (final b in enemyBulletsAstraea) {
           if (b.position.distanceToSquared(player.position) <= 600.0 * 600.0) {
             b.removeFromParent();
-            spawnSparks(position: b.position, color: const Color(0xFFFFD700), count: 6);
+            spawnSparks(
+              position: b.position,
+              color: const Color(0xFFFFD700),
+              count: 6,
+            );
           }
         }
         const astraeaLaserCount = 36;
@@ -2666,7 +2863,10 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     _removeAllAsteroidsAndProjectiles();
 
     player.customGame ??= this;
-    player.respawn(GameConstants.screenWidth / 2, GameConstants.screenHeight / 2);
+    player.respawn(
+      GameConstants.screenWidth / 2,
+      GameConstants.screenHeight / 2,
+    );
     player.configureScientist(scientist);
 
     final preset = movementPresets[selectedMovementPresetIndex];
@@ -2689,7 +2889,9 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
 
     missionSurvived = survived;
     lastRunWasVictory = survived;
-    final bondLevel = affinityManager.getAffinity(selectedValkyrie.id).bondLevel;
+    final bondLevel = affinityManager
+        .getAffinity(selectedValkyrie.id)
+        .bondLevel;
     lastTriggeredEnding = EndingManager.evaluateEnding(
       survived: survived,
       sectorId: currentSector.id,
@@ -2721,7 +2923,8 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     savePersistentCredits();
 
     // Bank bond affinity XP for active pilot
-    final timeSurvivedMinutes = ((fairRoundDuration - timeRemaining) / 60.0).clamp(0.0, 5.0);
+    final timeSurvivedMinutes = ((fairRoundDuration - timeRemaining) / 60.0)
+        .clamp(0.0, 5.0);
     final bondXp = (survived ? 80 : 25) + (timeSurvivedMinutes * 15).toInt();
     affinityManager.getAffinity(selectedValkyrie.id).addXp(bondXp);
     affinityManager.saveToPrefs();

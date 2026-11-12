@@ -13,23 +13,26 @@ import 'advanced_weapons.dart';
 import '../../services/achievement_service.dart';
 
 enum AsteroidVariant {
-  standard,    // Rocha cinza-azulada que divide em menores
+  standard, // Rocha cinza-azulada que divide em menores
   crystalline, // Prisma de cristal que explode em chuva torrencial de XP
-  magma,       // Rocha incandescente que cria poça de plasma térmico ao morrer
-  golden,      // Asteroide dourado lendário (Easter Egg) com stardust e sucata
-  titanium,    // Veio de titânio (DRG Survivor) com sucata e retardamento tático
+  magma, // Rocha incandescente que cria poça de plasma térmico ao morrer
+  golden, // Asteroide dourado lendário (Easter Egg) com stardust e sucata
+  titanium, // Veio de titânio (DRG Survivor) com sucata e retardamento tático
 }
 
-class AsteroidComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+class AsteroidComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? testGame;
   final double radius;
   final Vector2 velocity;
   final AsteroidVariant variant;
-  
+
   late final int numPoints;
   late final List<double> pointsOffsets;
   late final double rotationSpeed;
   late final Path cachedPath;
+  late final List<Offset> cachedVertices;
+  late final List<Offset> cachedNormals;
 
   late double maxHp;
   late double hp;
@@ -38,6 +41,18 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   // Zero-GC Cached Paint instances for high-performance asteroid rendering (60-120 FPS)
   static final Paint _sharedFillPaint = Paint()..style = PaintingStyle.fill;
   static final Paint _sharedStrokePaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _sunRimPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+  static final Paint _specularPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+  static final Paint _shadowRimPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+  static final Paint _facetShadePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
 
   int get scoreValue {
     final base = (radius <= GameConstants.asteroidMinRadius * 1.25)
@@ -60,7 +75,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     this.position = position;
     anchor = Anchor.center;
     size = Vector2.all(radius * 2);
-    
+
     // Scale HP with asteroid size
     if (radius > GameConstants.asteroidMinRadius * 2.2) {
       maxHp = 90.0;
@@ -88,17 +103,19 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       numPoints,
       (_) => 0.75 + random.nextDouble() * 0.5,
     );
-    
+
     rotationSpeed = (-40.0 + random.nextDouble() * 80.0) * math.pi / 180.0;
     angle = random.nextDouble() * 2 * math.pi;
 
-    // Pre-bake the asteroid's outer perimeter path to avoid reallocations on every frame
+    // Pre-bake the asteroid's outer perimeter path, vertices and edge outward normals
     final p = Path();
+    final vertices = <Offset>[];
     for (var i = 0; i < numPoints; i++) {
       final pointAngle = (2 * math.pi * i) / numPoints;
       final r = radius * pointsOffsets[i];
       final x = r * math.cos(pointAngle);
       final y = r * math.sin(pointAngle);
+      vertices.add(Offset(x, y));
       if (i == 0) {
         p.moveTo(x, y);
       } else {
@@ -107,6 +124,25 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     }
     p.close();
     cachedPath = p;
+    cachedVertices = vertices;
+
+    // Outward edge normals oriented for clockwise vertices in screen coordinates (Y down)
+    final normals = <Offset>[];
+    for (var i = 0; i < numPoints; i++) {
+      final v1 = vertices[i];
+      final v2 = vertices[(i + 1) % numPoints];
+      final dx = v2.dx - v1.dx;
+      final dy = v2.dy - v1.dy;
+      final nx = dy;
+      final ny = -dx;
+      final len = math.sqrt(nx * nx + ny * ny);
+      if (len > 0.0001) {
+        normals.add(Offset(nx / len, ny / len));
+      } else {
+        normals.add(const Offset(0.0, -1.0));
+      }
+    }
+    cachedNormals = normals;
   }
 
   @override
@@ -128,7 +164,8 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   }
 
   bool shouldPrune(Vector2 playerPosition) {
-    return position.distanceTo(playerPosition) > GameConstants.proximityDespawnRadius;
+    return position.distanceTo(playerPosition) >
+        GameConstants.proximityDespawnRadius;
   }
 
   @override
@@ -141,7 +178,10 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     angle += rotationSpeed * dt;
 
     try {
-      final g = testGame ?? (findGame() as AsteroidsGame?) ?? (isMounted ? game : null);
+      final g =
+          testGame ??
+          (findGame() as AsteroidsGame?) ??
+          (isMounted ? game : null);
       if (g != null && g.state == GameState.playing) {
         if (shouldPrune(g.player.position)) {
           removeFromParent();
@@ -160,8 +200,8 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     final List<Color> sparkColors = variant == AsteroidVariant.crystalline
         ? [Colors.cyanAccent, const Color(0xFFE040FB), Colors.white]
         : (variant == AsteroidVariant.magma
-            ? [Colors.deepOrangeAccent, Colors.amberAccent, Colors.yellow]
-            : [Colors.orangeAccent, Colors.white, Colors.grey]);
+              ? [Colors.deepOrangeAccent, Colors.amberAccent, Colors.yellow]
+              : [Colors.orangeAccent, Colors.white, Colors.grey]);
 
     game.spawnExplosionParticles(
       position: hitPos,
@@ -180,7 +220,9 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       game.spawnFloatingText(
         hitPos,
         '-${damage.toInt()}',
-        color: variant == AsteroidVariant.magma ? Colors.deepOrangeAccent : Colors.orangeAccent,
+        color: variant == AsteroidVariant.magma
+            ? Colors.deepOrangeAccent
+            : Colors.orangeAccent,
         fontSize: 11.5,
       );
       return false; // Still alive
@@ -227,23 +269,33 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
     // Interior shading based on variant (Zero-GC Reusable Paints)
     if (variant == AsteroidVariant.crystalline) {
-      _sharedFillPaint.color = const Color(0xFF00E5FF).withValues(alpha: isFlashing ? 0.45 : 0.15);
+      _sharedFillPaint.color = const Color(
+        0xFF00E5FF,
+      ).withValues(alpha: isFlashing ? 0.45 : 0.15);
       canvas.drawPath(path, _sharedFillPaint);
 
       // Facet interior crystal lines
-      _sharedStrokePaint.color = const Color(0xFFE040FB).withValues(alpha: isFlashing ? 0.8 : 0.4);
+      _sharedStrokePaint.color = const Color(
+        0xFFE040FB,
+      ).withValues(alpha: isFlashing ? 0.8 : 0.4);
       _sharedStrokePaint.strokeWidth = 1.0;
       for (var i = 0; i < numPoints; i += 2) {
         final pointAngle = (2 * math.pi * i) / numPoints;
         final r = radius * pointsOffsets[i];
-        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), _sharedStrokePaint);
+        canvas.drawLine(
+          Offset.zero,
+          Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)),
+          _sharedStrokePaint,
+        );
       }
 
       Glow.strokePath(
         canvas,
         path,
         isFlashing ? Colors.white : const Color(0xFF00E5FF),
-        width: isFlashing ? GameConstants.lineWidth * 2.0 : GameConstants.lineWidth * 1.3,
+        width: isFlashing
+            ? GameConstants.lineWidth * 2.0
+            : GameConstants.lineWidth * 1.3,
         intensity: isFlashing ? 1.8 : 1.2,
       );
     } else if (variant == AsteroidVariant.magma) {
@@ -251,24 +303,34 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       canvas.drawPath(path, _sharedFillPaint);
 
       // Molten veins
-      _sharedStrokePaint.color = isFlashing ? Colors.white : const Color(0xFFFF5722);
+      _sharedStrokePaint.color = isFlashing
+          ? Colors.white
+          : const Color(0xFFFF5722);
       _sharedStrokePaint.strokeWidth = 1.5;
       for (var i = 0; i < numPoints; i += 3) {
         final pointAngle = (2 * math.pi * i) / numPoints;
         final r = radius * pointsOffsets[i] * 0.7;
-        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), _sharedStrokePaint);
+        canvas.drawLine(
+          Offset.zero,
+          Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)),
+          _sharedStrokePaint,
+        );
       }
 
       Glow.strokePath(
         canvas,
         path,
         isFlashing ? Colors.white : const Color(0xFFFF3D00),
-        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.4,
+        width: isFlashing
+            ? GameConstants.lineWidth * 2.2
+            : GameConstants.lineWidth * 1.4,
         intensity: isFlashing ? 1.9 : 1.3,
       );
     } else if (variant == AsteroidVariant.golden) {
       // Golden Asteroid: Radiant metallic gold hull with bright solar glow
-      _sharedFillPaint.color = const Color(0xFFFFD700).withValues(alpha: isFlashing ? 0.6 : 0.25);
+      _sharedFillPaint.color = const Color(
+        0xFFFFD700,
+      ).withValues(alpha: isFlashing ? 0.6 : 0.25);
       canvas.drawPath(path, _sharedFillPaint);
 
       final strokeColor = isFlashing ? Colors.white : const Color(0xFFFFD700);
@@ -276,27 +338,39 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         canvas,
         path,
         strokeColor,
-        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.5,
+        width: isFlashing
+            ? GameConstants.lineWidth * 2.2
+            : GameConstants.lineWidth * 1.5,
         intensity: 2.0,
       );
     } else if (variant == AsteroidVariant.titanium) {
       // Titanium Ore Asteroid: Slate-metallic hull with bright cyan-titanium mineral seams
-      _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF101B2B).withValues(alpha: 0.94);
+      _sharedFillPaint.color = isFlashing
+          ? Colors.white
+          : const Color(0xFF101B2B).withValues(alpha: 0.94);
       canvas.drawPath(path, _sharedFillPaint);
 
-      _sharedStrokePaint.color = isFlashing ? Colors.white : const Color(0xFF80D8FF).withValues(alpha: 0.85);
+      _sharedStrokePaint.color = isFlashing
+          ? Colors.white
+          : const Color(0xFF80D8FF).withValues(alpha: 0.85);
       _sharedStrokePaint.strokeWidth = 1.8;
       for (var i = 0; i < numPoints; i += 2) {
         final pointAngle = (2 * math.pi * i) / numPoints;
         final r = radius * pointsOffsets[i] * 0.75;
-        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), _sharedStrokePaint);
+        canvas.drawLine(
+          Offset.zero,
+          Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)),
+          _sharedStrokePaint,
+        );
       }
 
       Glow.strokePath(
         canvas,
         path,
         isFlashing ? Colors.white : const Color(0xFF00E5FF),
-        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.5,
+        width: isFlashing
+            ? GameConstants.lineWidth * 2.2
+            : GameConstants.lineWidth * 1.5,
         intensity: 1.8,
       );
     } else {
@@ -306,13 +380,154 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
           : const Color(0xFF0C101A).withValues(alpha: 0.88);
       canvas.drawPath(path, _sharedFillPaint);
 
+      // Chiseled internal facet lines reacting to star light
+      _renderStandardFacets(canvas, isFlashing);
+
       Glow.strokePath(
         canvas,
         path,
         isFlashing ? Colors.white : const Color(0xFFDDEBFF),
-        width: isFlashing ? GameConstants.lineWidth * 2.2 : GameConstants.lineWidth * 1.4,
+        width: isFlashing
+            ? GameConstants.lineWidth * 2.2
+            : GameConstants.lineWidth * 1.4,
         intensity: isFlashing ? 1.7 : 1.1,
       );
+    }
+
+    // SPRINT 56: Iluminação Estelar Direcional nos Asteroides (Sunlight Normal Shading)
+    _renderSunlightShading(canvas, isFlashing);
+  }
+
+  void _renderStandardFacets(Canvas canvas, bool isFlashing) {
+    Vector2 starLightDir;
+    Color starColor;
+    try {
+      final g =
+          testGame ??
+          (findGame() as AsteroidsGame?) ??
+          (isMounted ? game : null);
+      if (g != null) {
+        starLightDir = g.currentSector.starLightDirection;
+        starColor = g.currentSector.starColor;
+      } else {
+        starLightDir = Vector2(-0.7071, -0.7071);
+        starColor = const Color(0xFFE3F2FD);
+      }
+    } catch (_) {
+      starLightDir = Vector2(-0.7071, -0.7071);
+      starColor = const Color(0xFFE3F2FD);
+    }
+
+    final cosA = math.cos(angle);
+    final sinA = math.sin(angle);
+    final localSunX = starLightDir.x * cosA + starLightDir.y * sinA;
+    final localSunY = -starLightDir.x * sinA + starLightDir.y * cosA;
+
+    _facetShadePaint.strokeWidth = 1.0;
+    for (var i = 0; i < numPoints; i += 2) {
+      final v = cachedVertices[i];
+      final norm = cachedNormals[i];
+      final dot = norm.dx * localSunX + norm.dy * localSunY;
+
+      if (dot > 0.1) {
+        _facetShadePaint.color = starColor.withValues(
+          alpha: isFlashing ? 0.6 : 0.20 * dot,
+        );
+      } else {
+        _facetShadePaint.color = const Color(
+          0xFF04070F,
+        ).withValues(alpha: isFlashing ? 0.3 : 0.45);
+      }
+      canvas.drawLine(
+        Offset.zero,
+        Offset(v.dx * 0.70, v.dy * 0.70),
+        _facetShadePaint,
+      );
+    }
+  }
+
+  void _renderSunlightShading(Canvas canvas, bool isFlashing) {
+    Vector2 starLightDir;
+    Color starColor;
+    try {
+      final g =
+          testGame ??
+          (findGame() as AsteroidsGame?) ??
+          (isMounted ? game : null);
+      if (g != null) {
+        starLightDir = g.currentSector.starLightDirection;
+        starColor = g.currentSector.starColor;
+      } else {
+        starLightDir = Vector2(-0.7071, -0.7071);
+        starColor = const Color(0xFFE3F2FD);
+      }
+    } catch (_) {
+      starLightDir = Vector2(-0.7071, -0.7071);
+      starColor = const Color(0xFFE3F2FD);
+    }
+
+    final cosA = math.cos(angle);
+    final sinA = math.sin(angle);
+    final localSunX = starLightDir.x * cosA + starLightDir.y * sinA;
+    final localSunY = -starLightDir.x * sinA + starLightDir.y * cosA;
+
+    for (var i = 0; i < numPoints; i++) {
+      final v1 = cachedVertices[i];
+      final v2 = cachedVertices[(i + 1) % numPoints];
+      final norm = cachedNormals[i];
+      final dot = norm.dx * localSunX + norm.dy * localSunY;
+
+      if (dot > 0.05) {
+        // Face voltada para a estrela celestial do setor (Sunlit Rim Highlight)
+        final k = dot.clamp(0.0, 1.0);
+        final rimAlpha = isFlashing ? 0.95 : (0.45 + 0.50 * k);
+
+        Color baseRim;
+        switch (variant) {
+          case AsteroidVariant.crystalline:
+            baseRim = const Color(0xFF00E5FF);
+            break;
+          case AsteroidVariant.magma:
+            baseRim = const Color(0xFFFF9100);
+            break;
+          case AsteroidVariant.golden:
+            baseRim = const Color(0xFFFFD700);
+            break;
+          case AsteroidVariant.titanium:
+            baseRim = const Color(0xFF80D8FF);
+            break;
+          case AsteroidVariant.standard:
+            baseRim = const Color(0xFFDDEBFF);
+            break;
+        }
+
+        final rimColor = isFlashing
+            ? Colors.white
+            : Color.lerp(baseRim, starColor, 0.45)!;
+
+        _sunRimPaint.color = rimColor.withValues(
+          alpha: rimAlpha.clamp(0.0, 1.0),
+        );
+        _sunRimPaint.strokeWidth = GameConstants.lineWidth * (1.2 + 1.3 * k);
+        canvas.drawLine(v1, v2, _sunRimPaint);
+
+        // Realce especular puro no ápice das arestas frontais
+        if (k > 0.35 && Glow.enabled) {
+          _specularPaint.color = Colors.white.withValues(
+            alpha: isFlashing ? 0.95 : (0.75 * k),
+          );
+          _specularPaint.strokeWidth = 1.0;
+          canvas.drawLine(v1, v2, _specularPaint);
+        }
+      } else {
+        // Face na sombra cósmica (Deep Cosmic Shadow)
+        final shadowAlpha = isFlashing ? 0.30 : 0.60;
+        _shadowRimPaint.color = const Color(
+          0xFF03050A,
+        ).withValues(alpha: shadowAlpha);
+        _shadowRimPaint.strokeWidth = GameConstants.lineWidth * 0.9;
+        canvas.drawLine(v1, v2, _shadowRimPaint);
+      }
     }
   }
 
@@ -325,7 +540,11 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       game.triggerScreenShake(duration: 0.35, intensity: radius * 0.25);
       game.spawnExplosionParticles(
         position: position,
-        colorChoices: [const Color(0xFFFFD700), Colors.white, const Color(0xFFFFF176)],
+        colorChoices: [
+          const Color(0xFFFFD700),
+          Colors.white,
+          const Color(0xFFFFF176),
+        ],
         count: 36,
         minSize: 3.0,
         maxSize: 6.0,
@@ -343,7 +562,9 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       for (var i = 0; i < 5; i++) {
         final a = (i * 2 * math.pi / 5);
         final offset = Vector2(math.cos(a), math.sin(a)) * (radius * 0.5);
-        game.world.add(XpOrbComponent(position: position + offset, type: XpOrbType.large));
+        game.world.add(
+          XpOrbComponent(position: position + offset, type: XpOrbType.large),
+        );
       }
       return;
     }
@@ -355,7 +576,12 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
       game.spawnExplosionParticles(
         position: position,
-        colorChoices: [const Color(0xFF00E5FF), const Color(0xFFE040FB), Colors.white, Colors.cyanAccent],
+        colorChoices: [
+          const Color(0xFF00E5FF),
+          const Color(0xFFE040FB),
+          Colors.white,
+          Colors.cyanAccent,
+        ],
         count: 24,
         minSize: 2.0,
         maxSize: 4.5,
@@ -367,7 +593,9 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       const int xpCount = 8;
       for (var i = 0; i < xpCount; i++) {
         final angle = (2 * math.pi * i) / xpCount;
-        final offset = Vector2(math.cos(angle), math.sin(angle)) * (12.0 + math.Random().nextDouble() * 15.0);
+        final offset =
+            Vector2(math.cos(angle), math.sin(angle)) *
+            (12.0 + math.Random().nextDouble() * 15.0);
         game.world.add(
           XpOrbComponent(
             position: position + offset,
@@ -392,7 +620,12 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
 
       game.spawnExplosionParticles(
         position: position,
-        colorChoices: [Colors.deepOrangeAccent, Colors.orange, Colors.amberAccent, Colors.yellow],
+        colorChoices: [
+          Colors.deepOrangeAccent,
+          Colors.orange,
+          Colors.amberAccent,
+          Colors.yellow,
+        ],
         count: 28,
         minSize: 2.5,
         maxSize: 5.0,
@@ -420,7 +653,12 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       game.triggerScreenShake(duration: 0.35, intensity: radius * 0.28);
       game.spawnExplosionParticles(
         position: position,
-        colorChoices: [const Color(0xFF80D8FF), Colors.white, const Color(0xFF00E5FF), const Color(0xFF90CAF9)],
+        colorChoices: [
+          const Color(0xFF80D8FF),
+          Colors.white,
+          const Color(0xFF00E5FF),
+          const Color(0xFF90CAF9),
+        ],
         count: 28,
         minSize: 2.2,
         maxSize: 5.0,
@@ -439,7 +677,9 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       for (var i = 0; i < 2; i++) {
         final a = (i * math.pi);
         final offset = Vector2(math.cos(a), math.sin(a)) * (radius * 0.4);
-        game.world.add(XpOrbComponent(position: position + offset, type: XpOrbType.medium));
+        game.world.add(
+          XpOrbComponent(position: position + offset, type: XpOrbType.medium),
+        );
       }
 
       // Tactical Corridor Carving Shockwave: slows nearby enemies by 30% for 3.0s (O(1) Entity Registry)
@@ -507,11 +747,13 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       } else if (roll < 0.98) {
         dropType = DropType.darkMatter;
       } else {
-        dropType = DropType.vortexSurge; // Raro Drop Especial estilo Vampire Survivors (2% de chance)
+        dropType = DropType
+            .vortexSurge; // Raro Drop Especial estilo Vampire Survivors (2% de chance)
       }
 
       final driftAngle = random.nextDouble() * 2 * math.pi;
-      final dropVel = Vector2(math.cos(driftAngle), math.sin(driftAngle)) * 25.0;
+      final dropVel =
+          Vector2(math.cos(driftAngle), math.sin(driftAngle)) * 25.0;
 
       game.world.add(
         DropComponent(
@@ -540,7 +782,7 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       velocity: velocityA * 1.2,
       variant: variant,
     );
-    
+
     final asteroidB = AsteroidComponent(
       radius: newRadius,
       position: position.clone(),

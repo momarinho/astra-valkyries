@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flame/components.dart';
 
 enum SectorId {
   vesta,
@@ -44,7 +45,8 @@ class Sector {
       id: SectorId.vesta,
       name: 'Cinturão de Vesta',
       subtitle: 'Setor 1 // Campo de Detritos Primário',
-      description: 'Denso cinturão de asteroides ricos em ferro e silicato. Ideal para reconhecimento e testes balísticos.',
+      description:
+          'Denso cinturão de asteroides ricos em ferro e silicato. Ideal para reconhecimento e testes balísticos.',
       difficultyLabel: 'NORMAL',
       primaryColor: Color(0xFF00E5FF),
       secondaryColor: Color(0xFF1E3C9E),
@@ -64,13 +66,15 @@ class Sector {
       id: SectorId.orion,
       name: 'Forja Solar de Órion',
       subtitle: 'Setor 2 // Nebulosa de Plasma Quente',
-      description: 'Região vulcânica estelar sob radiação solar extrema. Asteroides fundidos deixam rastros de magma ionizado.',
+      description:
+          'Região vulcânica estelar sob radiação solar extrema. Asteroides fundidos deixam rastros de magma ionizado.',
       difficultyLabel: 'DIFÍCIL',
       primaryColor: Color(0xFFFF5722),
       secondaryColor: Color(0xFFFF9100),
       speedMultiplier: 1.15,
       asteroidDensity: 1.15,
-      hazardWarning: 'Radiação Térmica: Erupções solares e poças de magma estelar.',
+      hazardWarning:
+          'Radiação Térmica: Erupções solares e poças de magma estelar.',
       icon: Icons.whatshot,
       paletteStops: [
         (t: 0.0, a: Color(0xFFD84315), b: Color(0xFFFF8F00)),
@@ -84,13 +88,15 @@ class Sector {
       id: SectorId.graveyard,
       name: 'Cemitério de Dreadnoughts',
       subtitle: 'Setor 3 // Necrópole de Carcaças Militares',
-      description: 'Carcaças de antigas naves de guerra e contêineres abandonados. Tempestades eletromagnéticas desestabilizam escudos.',
+      description:
+          'Carcaças de antigas naves de guerra e contêineres abandonados. Tempestades eletromagnéticas desestabilizam escudos.',
       difficultyLabel: 'EXPERT',
       primaryColor: Color(0xFF00E676),
       secondaryColor: Color(0xFF004D40),
       speedMultiplier: 1.25,
       asteroidDensity: 1.25,
-      hazardWarning: 'Tempestade EMP: Interferências eletromagnéticas e piratas espaciais.',
+      hazardWarning:
+          'Tempestade EMP: Interferências eletromagnéticas e piratas espaciais.',
       icon: Icons.token,
       paletteStops: [
         (t: 0.0, a: Color(0xFF004D40), b: Color(0xFF00BFA5)),
@@ -104,13 +110,15 @@ class Sector {
       id: SectorId.eventHorizon,
       name: 'Abismo Event Horizon',
       subtitle: 'Setor 4 // Limiar do Buraco Negro',
-      description: 'O tecido do hiperespaço dobra-se diante de uma singularidade cósmica. Forças gravitacionais arrastam tudo ao vórtice.',
+      description:
+          'O tecido do hiperespaço dobra-se diante de uma singularidade cósmica. Forças gravitacionais arrastam tudo ao vórtice.',
       difficultyLabel: 'PESADELO',
       primaryColor: Color(0xFFE040FB),
       secondaryColor: Color(0xFF7C4DFF),
       speedMultiplier: 1.4,
       asteroidDensity: 1.35,
-      hazardWarning: 'Gravidade Singular: Buracos negros ativos sugam matéria próxima.',
+      hazardWarning:
+          'Gravidade Singular: Buracos negros ativos sugam matéria próxima.',
       icon: Icons.cyclone,
       paletteStops: [
         (t: 0.0, a: Color(0xFF311B92), b: Color(0xFF880E4F)),
@@ -126,13 +134,15 @@ class Sector {
     id: SectorId.cryoAbyss,
     name: 'Abismo Criogênico',
     subtitle: 'Setor 2B // Glaciares de Hidrogênio Sólido',
-    description: 'Rota alternativa congelada. Bombardeiros criogênicos e tempestades de gelo reduzem a velocidade térmica.',
+    description:
+        'Rota alternativa congelada. Bombardeiros criogênicos e tempestades de gelo reduzem a velocidade térmica.',
     difficultyLabel: 'DIFÍCIL // ROTA B',
     primaryColor: Color(0xFF80D8FF),
     secondaryColor: Color(0xFF006064),
     speedMultiplier: 1.15,
     asteroidDensity: 1.15,
-    hazardWarning: 'Zero Absoluto: Bombardeiros Criogênicos e cristais de alta densidade.',
+    hazardWarning:
+        'Zero Absoluto: Bombardeiros Criogênicos e cristais de alta densidade.',
     icon: Icons.ac_unit,
     paletteStops: [
       (t: 0.0, a: Color(0xFF004D40), b: Color(0xFF0097A7)),
@@ -147,7 +157,8 @@ class Sector {
     id: SectorId.xenoHive,
     name: 'Colmeia Xeno de Leviatãs',
     subtitle: 'Setor 3B // Ninho Biológico do Vazio',
-    description: 'Rota alternativa infestada por Carrier Hives e enxames massivos de Void Swarmers.',
+    description:
+        'Rota alternativa infestada por Carrier Hives e enxames massivos de Void Swarmers.',
     difficultyLabel: 'EXPERT // ROTA B',
     primaryColor: Color(0xFFFF4081),
     secondaryColor: Color(0xFF4A148C),
@@ -168,13 +179,15 @@ class Sector {
     id: SectorId.voidThrone,
     name: 'O Trono do Vazio',
     subtitle: 'Setor 5 Secreto // Berço do Soberano Primordial',
-    description: 'Santuário proibido além do Horizonte de Eventos. Acessível apenas com 3+ Void Cells ou Matriz da Astraea decodificada.',
+    description:
+        'Santuário proibido além do Horizonte de Eventos. Acessível apenas com 3+ Void Cells ou Matriz da Astraea decodificada.',
     difficultyLabel: 'DIVINO // SECRETO',
     primaryColor: Color(0xFFFFD700),
     secondaryColor: Color(0xFFE040FB),
     speedMultiplier: 1.48,
     asteroidDensity: 1.40,
-    hazardWarning: 'Singularidade Soberana: O Arquiteto do Protocolo rege o tecido do tempo.',
+    hazardWarning:
+        'Singularidade Soberana: O Arquiteto do Protocolo rege o tecido do tempo.',
     icon: Icons.auto_awesome_rounded,
     paletteStops: [
       (t: 0.0, a: Color(0xFF140024), b: Color(0xFF4A148C)),
@@ -186,14 +199,17 @@ class Sector {
   );
 
   static List<Sector> get allSectorsWithBranches => [
-        ...allSectors,
-        cryoAbyss,
-        xenoHive,
-        voidThrone,
-      ];
+    ...allSectors,
+    cryoAbyss,
+    xenoHive,
+    voidThrone,
+  ];
 
   /// Retorna as opções de rota ramificada no Mapa Estelar (Branching Star Chart) ao concluir um setor
-  static List<Sector> getNextBranchChoices(Sector current, {bool canUnlockSecret = false}) {
+  static List<Sector> getNextBranchChoices(
+    Sector current, {
+    bool canUnlockSecret = false,
+  }) {
     switch (current.id) {
       case SectorId.vesta:
         // Do Setor 1 (Vesta) bifurca para Setor 2A (Forja de Órion) ou Setor 2B (Abismo Criogênico)
@@ -219,7 +235,57 @@ class Sector {
   static Sector get defaultSector => allSectors.first;
 
   static Sector findById(SectorId id) {
-    return allSectorsWithBranches.firstWhere((s) => s.id == id, orElse: () => defaultSector);
+    return allSectorsWithBranches.firstWhere(
+      (s) => s.id == id,
+      orElse: () => defaultSector,
+    );
+  }
+
+  /// Vetor normalizado apontando para a estrela celestial do setor (Sprint 56: Sunlight Shading)
+  Vector2 get starLightDirection {
+    switch (id) {
+      case SectorId.vesta:
+        // Sol branco-azulado primário no quadrante Noroeste
+        return Vector2(-0.7071, -0.7071);
+      case SectorId.orion:
+        // Supergigante de plasma solar ardente no zênite
+        return Vector2(0.2588, -0.9659);
+      case SectorId.cryoAbyss:
+        // Anã branca hiperdensa e gélida no quadrante Oeste
+        return Vector2(-0.8660, -0.5000);
+      case SectorId.graveyard:
+        // Estrela de nêutrons espectral verde no quadrante Sudeste
+        return Vector2(0.6000, 0.8000);
+      case SectorId.xenoHive:
+        // Pulsação bioluminescente fúcsia/magenta no quadrante Nordeste
+        return Vector2(0.7071, -0.7071);
+      case SectorId.eventHorizon:
+        // Radiação síncrotron do disco de acreção do buraco negro
+        return Vector2(-0.8000, 0.6000);
+      case SectorId.voidThrone:
+        // Luz divina primordial do Trono Soberano
+        return Vector2(0.0000, -1.0000);
+    }
+  }
+
+  /// Cor estelar principal para cálculos de luz especular e rim highlights
+  Color get starColor {
+    switch (id) {
+      case SectorId.vesta:
+        return const Color(0xFFE3F2FD); // Branco estelar azulado
+      case SectorId.orion:
+        return const Color(0xFFFFAB40); // Âmbar solar incandescente
+      case SectorId.cryoAbyss:
+        return const Color(0xFF80D8FF); // Ciano criogênico puro
+      case SectorId.graveyard:
+        return const Color(0xFF69F0AE); // Esmeralda radioativo
+      case SectorId.xenoHive:
+        return const Color(0xFFFF4081); // Magenta bio-abissal
+      case SectorId.eventHorizon:
+        return const Color(0xFFEA80FC); // Violeta de horizonte quântico
+      case SectorId.voidThrone:
+        return const Color(0xFFFFD700); // Dourado celestial supremo
+    }
   }
 
   /// Caminho da arte modelo top-down oficial do bioma (Sprint 25)

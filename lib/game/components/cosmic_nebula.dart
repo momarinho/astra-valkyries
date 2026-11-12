@@ -5,14 +5,15 @@ import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 
 enum NebulaType {
-  ionCloud,    // Rapid weapon recharge (+30% fire rate), but shields suppressed
-  darkMatter,  // High critical chance (+50% crit rate), but movement damped (-30% max speed)
+  ionCloud, // Rapid weapon recharge (+30% fire rate), but shields suppressed
+  darkMatter, // High critical chance (+50% crit rate), but movement damped (-30% max speed)
 }
 
 /// Large interactive cosmic nebula region (Rebalanceada na Sprint 20).
 /// Possui deriva espacial contínua, duração finita (25 a 35s) e Sobrecarga Térmica/Radiação:
 /// permanecer mais de 6s contínuos drena 5% de HP/segundo até a nave sair da área.
-class CosmicNebulaComponent extends PositionComponent with HasGameReference<AsteroidsGame> {
+class CosmicNebulaComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame> {
   final NebulaType type;
   final double radius;
   final Vector2 driftVelocity;
@@ -24,17 +25,30 @@ class CosmicNebulaComponent extends PositionComponent with HasGameReference<Aste
   double _overloadWarningTimer = 0.0;
   double _pulseTimer = 0.0;
 
+  // Zero-GC Cached Paints
+  static final Paint _gasPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _boundaryPaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _motePaint = Paint()..style = PaintingStyle.fill;
+
   CosmicNebulaComponent({
     required Vector2 position,
     required this.type,
     this.radius = 420.0,
     Vector2? driftVelocity,
     this.maxDuration = 30.0,
-  })  : driftVelocity = driftVelocity ??
-            (type == NebulaType.ionCloud ? Vector2(22.0, -14.0) : Vector2(-18.0, 16.0)),
-        super(position: position, size: Vector2.all(radius * 2), anchor: Anchor.center);
+  }) : driftVelocity =
+           driftVelocity ??
+           (type == NebulaType.ionCloud
+               ? Vector2(22.0, -14.0)
+               : Vector2(-18.0, 16.0)),
+       super(
+         position: position,
+         size: Vector2.all(radius * 2),
+         anchor: Anchor.center,
+       );
 
-  String get name => type == NebulaType.ionCloud ? 'ION NEBULA' : 'DARK MATTER POCKET';
+  String get name =>
+      type == NebulaType.ionCloud ? 'ION NEBULA' : 'DARK MATTER POCKET';
 
   String get modifierText {
     final baseText = type == NebulaType.ionCloud
@@ -149,40 +163,37 @@ class CosmicNebulaComponent extends PositionComponent with HasGameReference<Aste
     final pulse = 1.0 + 0.05 * math.sin(_pulseTimer);
     final currentRadius = radius * pulse;
 
-    // Multi-stop volumetric radial gradient for deep space gas cloud
-    final gradient = RadialGradient(
+    _gasPaint.shader = RadialGradient(
       colors: [
-        primaryColor.withOpacity(0.18),
-        secondaryColor.withOpacity(0.12),
-        secondaryColor.withOpacity(0.05),
+        primaryColor.withValues(alpha: 0.18),
+        secondaryColor.withValues(alpha: 0.12),
+        secondaryColor.withValues(alpha: 0.05),
         Colors.transparent,
       ],
       stops: const [0.0, 0.45, 0.75, 1.0],
-    );
+    ).createShader(Rect.fromCircle(center: Offset.zero, radius: currentRadius));
 
-    final paint = Paint()
-      ..shader = gradient.createShader(Rect.fromCircle(center: Offset.zero, radius: currentRadius))
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(Offset.zero, currentRadius, paint);
+    canvas.drawCircle(Offset.zero, currentRadius, _gasPaint);
 
     // Subtle gas perimeter boundary line
-    final boundaryPaint = Paint()
-      ..color = primaryColor.withOpacity(0.14 + 0.06 * math.sin(_pulseTimer * 1.5))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    canvas.drawCircle(Offset.zero, currentRadius * 0.95, boundaryPaint);
+    _boundaryPaint.color = primaryColor.withValues(
+      alpha: 0.14 + 0.06 * math.sin(_pulseTimer * 1.5),
+    );
+    _boundaryPaint.strokeWidth = 1.2;
+    canvas.drawCircle(Offset.zero, currentRadius * 0.95, _boundaryPaint);
 
     // Ambient floating dust motes inside nebula
-    final motePaint = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < 18; i++) {
       final a = (i * (2 * math.pi / 18)) + 0.1 * math.sin(_pulseTimer + i);
       final r = (0.2 + (i % 6) * 0.12) * radius;
       final x = r * math.cos(a);
       final y = r * math.sin(a);
-      final alpha = (0.35 + 0.35 * math.sin(_pulseTimer * 2.0 + i)).clamp(0.0, 1.0);
-      motePaint.color = primaryColor.withOpacity(alpha);
-      canvas.drawCircle(Offset(x, y), 2.0 + (i % 3) * 0.8, motePaint);
+      final alpha = (0.35 + 0.35 * math.sin(_pulseTimer * 2.0 + i)).clamp(
+        0.0,
+        1.0,
+      );
+      _motePaint.color = primaryColor.withValues(alpha: alpha);
+      canvas.drawCircle(Offset(x, y), 2.0 + (i % 3) * 0.8, _motePaint);
     }
   }
 }
