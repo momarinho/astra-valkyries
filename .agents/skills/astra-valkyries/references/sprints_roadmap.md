@@ -49,12 +49,14 @@ This document tracks the execution of Sprints 55 to 60, as officially documented
 
 ---
 
-## Sprint 58: Tactical Squadron AI & High-Caliber Telegraphs
+## Sprint 58: Tactical Squadron AI & High-Caliber Telegraphs (DONE ✅)
 * **Goal**: Choreographed enemy formations and reflex-based counter-play.
 * **Deliverables**:
-  - Tactical squad spawn patterns (Wedge, Pincer, Freight Escort).
-  - Telegraph laser lines for Snipers and Elites with countdown color transition.
-  - Algorithmic swarm separation (Boids Repulsion) preventing sprite overlap.
+  - Tactical squad spawn patterns (Wedge, Pincer, Freight Escort) in `AsteroidField`.
+  - Universal 700ms laser telegraphs (500ms amber tracking -> 200ms crimson aim-lock) on Snipers, CryoBombers, Raiders, and Dreadnought Leviathan (Zero-GC).
+  - Algorithmic swarm separation (Boids Repulsion via `game.activeEnemies`) preventing sprite overlap.
+  - Bi-directional environmental hazards: enemy-triggered `ProximityMineComponent` & Dash-rammed kinetic asteroids crushing enemy ships.
+  - 8 automated tests in `test/sprint58_tactical_ai_test.dart` (302 total tests passing).
 
 ---
 

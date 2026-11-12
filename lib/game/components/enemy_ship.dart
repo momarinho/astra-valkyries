@@ -138,6 +138,35 @@ class EnemyShipComponent extends PositionComponent
   double raiderTimer = 0.0;
   Vector2 lockedChargeDirection = Vector2.zero();
 
+  // Sprint 58: Universal 700ms Laser Telegraph with final 200ms aim-lock
+  static const double universalTelegraphDuration = 0.70;
+  static const double universalTelegraphLockWindow = 0.20;
+  bool isTelegraphingShot = false;
+  double shotTelegraphTimer = 0.0;
+  Vector2 lockedShotDir = Vector2(0, -1);
+
+  // Sprint 58: Boids repulsion & Kinetic Asteroid Impact cooldown (Zero-GC)
+  double kineticHitCooldown = 0.0;
+  final Vector2 _boidsScratch = Vector2.zero();
+
+  bool get isLaserTelegraphActive =>
+      (type == EnemyType.raider && raiderState == RaiderState.telegraphing) ||
+      isTelegraphingShot;
+
+  bool get isTelegraphAimLocked {
+    if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {
+      return raiderTimer <= universalTelegraphLockWindow;
+    }
+    if (isTelegraphingShot) {
+      return shotTelegraphTimer <= universalTelegraphLockWindow;
+    }
+    return false;
+  }
+
+  /// Âmbar (#FFB300) enquanto rastreia, carmesim neon (#FF1744) nos últimos 200ms travados.
+  Color get currentTelegraphColor =>
+      isTelegraphAimLocked ? const Color(0xFFFF1744) : const Color(0xFFFFB300);
+
   // Sprint 14: 4 Elemental Status Effects & Cross-Elemental Synergy
   final Map<ElementalStatus, double> activeStatuses = {};
   double _burnTickTimer = 0.0;
@@ -311,14 +340,93 @@ class EnemyShipComponent extends PositionComponent
       final pushDir = dist > 0.1
           ? (position - asteroid.position).normalized()
           : Vector2(0, -1);
-      position = asteroid.position + pushDir * (radius + asteroid.radius + 1.0);
+      position = asteroid.position + pushDir * (radius + asteroid.radius + 2.0);
       velocity = pushDir * (baseSpeed * 1.15);
+
+      // Sprint 58: Asteroides arremessados via Dash ou em alta velocidade esmagam qualquer inimigo
+      if (asteroid.isKineticHazard && kineticHitCooldown <= 0) {
+        kineticHitCooldown = 0.25;
+        final kineticDmg =
+            (asteroid.radius * 2.8) + (asteroid.velocity.length * 0.14);
+        velocity =
+            pushDir *
+            math.max(baseSpeed * 1.4, asteroid.velocity.length * 0.65);
+        asteroid.velocity.scale(0.75);
+        asteroid.launchedByDashTimer = math.max(
+          0.0,
+          asteroid.launchedByDashTimer - 0.35,
+        );
+
+        try {
+          game.spawnFloatingText(
+            position + Vector2(0, -radius - 8),
+            'CRUSH! -${kineticDmg.toInt()}',
+            color: const Color(0xFF00E5FF),
+            fontSize: 12.5,
+          );
+          game.triggerScaledHitStop(
+            damage: kineticDmg,
+            isCrit: true,
+            isEliteKill: false,
+            impactDir: pushDir,
+          );
+        } catch (_) {}
+
+        takeDamage(kineticDmg, position);
+        return;
+      }
 
       // Naves leves (Void Swarmers & Scouts) sofrem dano de impacto ao colidirem contra asteroides massivos
       if ((type == EnemyType.voidSwarmer || type == EnemyType.scout) &&
           asteroid.radius >= 24.0) {
         takeDamage(asteroid.radius * 0.90, position);
       }
+    }
+  }
+
+  /// Sprint 58: Separação suave de enxame (Boids Repulsion) usando apenas iteráveis pré-existentes (Zero-GC).
+  void applyBoidsSeparation(
+    Iterable<EnemyShipComponent> neighbors, {
+    double separationRadius = 38.0,
+    double repulsionStrength = 195.0,
+  }) {
+    final radiusSq = separationRadius * separationRadius;
+    double forceX = 0.0;
+    double forceY = 0.0;
+
+    for (final other in neighbors) {
+      if (identical(other, this) || other.hp <= 0) continue;
+      final dx = position.x - other.position.x;
+      final dy = position.y - other.position.y;
+      final distSq = dx * dx + dy * dy;
+      if (distSq >= radiusSq) continue;
+
+      if (distSq < 0.0001) {
+        // Desempate determinístico em direções opostas quando dois drones sobrepõem exatamente
+        final pairSign = identityHashCode(this) <= identityHashCode(other)
+            ? 1.0
+            : -1.0;
+        final tieAngle =
+            ((identityHashCode(this) ^ identityHashCode(other)).abs() % 628) *
+            0.01;
+        forceX += math.cos(tieAngle) * pairSign;
+        forceY += math.sin(tieAngle) * pairSign;
+      } else {
+        final dist = math.sqrt(distSq);
+        final weight = (separationRadius - dist) / separationRadius;
+        forceX += (dx / dist) * weight;
+        forceY += (dy / dist) * weight;
+      }
+    }
+
+    final magSq = forceX * forceX + forceY * forceY;
+    if (magSq > 0.0001) {
+      final mag = math.sqrt(magSq);
+      _boidsScratch.setValues(
+        (forceX / mag) * repulsionStrength,
+        (forceY / mag) * repulsionStrength,
+      );
+      velocity.add(_boidsScratch);
     }
   }
 
@@ -338,6 +446,9 @@ class EnemyShipComponent extends PositionComponent
 
     if (hitFlashTimer > 0) {
       hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
+    }
+    if (kineticHitCooldown > 0) {
+      kineticHitCooldown = math.max(0.0, kineticHitCooldown - dt);
     }
 
     // Tick Elemental Statuses (Solar Burn DoT & Cryo Freeze Slow)
@@ -408,6 +519,11 @@ class EnemyShipComponent extends PositionComponent
       case EnemyType.cryoBomber:
         _updateCryoBomber(effectiveDt, toPlayer, distToPlayer);
         break;
+    }
+
+    // Sprint 58: Boids Repulsion em enxames/batedores via activeEnemies (Zero-GC)
+    if (type == EnemyType.voidSwarmer || type == EnemyType.scout) {
+      applyBoidsSeparation(game.activeEnemies);
     }
 
     position += velocity * cryoSlowFactor * dt;
@@ -516,23 +632,57 @@ class EnemyShipComponent extends PositionComponent
     }
   }
 
+  /// Avança a janela de telegraph de 700ms (0.70s), permitindo rastrear nos primeiros
+  /// 500ms e travando o ângulo nos últimos 200ms antes do disparo.
+  /// Retorna true no exato quadro em que a janela termina e o projétil deve disparar.
+  bool advanceShotTelegraph(double dt, Vector2 liveAimDir) {
+    if (!isTelegraphingShot) return false;
+    shotTelegraphTimer -= dt;
+    if (shotTelegraphTimer > universalTelegraphLockWindow &&
+        liveAimDir.length2 > 0.0001) {
+      lockedShotDir.setFrom(liveAimDir);
+      angle = math.atan2(lockedShotDir.y, lockedShotDir.x) + math.pi / 2;
+    }
+    if (shotTelegraphTimer <= 0.0) {
+      isTelegraphingShot = false;
+      shotTelegraphTimer = 0.0;
+      return true;
+    }
+    return false;
+  }
+
   void _updateCryoBomber(double dt, Vector2 toPlayer, double dist) {
     final targetDir = dist > 1.0 ? toPlayer.normalized() : Vector2(0, -1);
+
+    if (isTelegraphingShot) {
+      velocity.scale(math.exp(-4.0 * dt));
+      if (advanceShotTelegraph(dt, targetDir)) {
+        shootCooldown = 2.4;
+        final fireDir = lockedShotDir.length2 > 0.0001
+            ? lockedShotDir.normalized()
+            : targetDir;
+        game.world.add(
+          EnemyBulletComponent(
+            position: position + fireDir * (radius + 5.0),
+            radius: 6.0,
+            velocity: fireDir * 195.0,
+            damage: 1.0,
+            bulletColor: const Color(0xFF80D8FF),
+          ),
+        );
+        game.playSfx('shoot.wav');
+      }
+      return;
+    }
+
     angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
     velocity = targetDir * baseSpeed;
 
     shootCooldown -= dt;
     if (shootCooldown <= 0 && dist <= 520) {
-      shootCooldown = 2.4;
-      game.world.add(
-        EnemyBulletComponent(
-          position: position + targetDir * (radius + 5.0),
-          radius: 6.0,
-          velocity: targetDir * 195.0,
-          damage: 1.0,
-          bulletColor: const Color(0xFF80D8FF),
-        ),
-      );
+      isTelegraphingShot = true;
+      shotTelegraphTimer = universalTelegraphDuration;
+      lockedShotDir.setFrom(targetDir);
     }
   }
 
@@ -574,15 +724,18 @@ class EnemyShipComponent extends PositionComponent
 
         if (raiderTimer <= 0) {
           raiderState = RaiderState.telegraphing;
-          raiderTimer = 0.8; // 0.8s telegraphed laser warning
-          lockedChargeDirection = targetDir;
+          raiderTimer = universalTelegraphDuration; // 700ms telegraphed warning
+          lockedChargeDirection.setFrom(targetDir);
           angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
           velocity = Vector2.zero();
         }
         break;
 
       case RaiderState.telegraphing:
-        // Keep aim locked on target vector
+        // Rastreia suavemente nos primeiros 500ms; trava ângulo nos últimos 200ms
+        if (raiderTimer > universalTelegraphLockWindow && dist > 1.0) {
+          lockedChargeDirection.setFrom(toPlayer.normalized());
+        }
         angle =
             math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) +
             math.pi / 2;
@@ -635,7 +788,30 @@ class EnemyShipComponent extends PositionComponent
   }
 
   void _updateSniper(double dt, Vector2 toPlayer, double dist) {
-    final targetDir = toPlayer.normalized();
+    final targetDir = dist > 1.0 ? toPlayer.normalized() : Vector2(0, -1);
+
+    if (isTelegraphingShot) {
+      // Sniper freia suavemente para focar a mira do feixe laser de aviso
+      velocity.scale(math.exp(-5.0 * dt));
+      if (advanceShotTelegraph(dt, targetDir)) {
+        shootCooldown = 2.5;
+        final fireDir = lockedShotDir.length2 > 0.0001
+            ? lockedShotDir.normalized()
+            : targetDir;
+        game.world.add(
+          EnemyBulletComponent(
+            position: position + fireDir * (radius + 4.0),
+            radius: 4.5,
+            velocity: fireDir * 230.0,
+            damage: 1.0,
+            bulletColor: const Color(0xFFE040FB), // Magenta
+          ),
+        );
+        game.playSfx('shoot.wav');
+      }
+      return;
+    }
+
     angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
 
     // Maintain artillery distance between 320px and 450px
@@ -650,18 +826,9 @@ class EnemyShipComponent extends PositionComponent
 
     shootCooldown -= dt;
     if (shootCooldown <= 0 && dist <= 550) {
-      shootCooldown = 2.5;
-      final bulletVel = targetDir * 230.0;
-      game.world.add(
-        EnemyBulletComponent(
-          position: position + targetDir * (radius + 4.0),
-          radius: 4.5,
-          velocity: bulletVel,
-          damage: 1.0,
-          bulletColor: const Color(0xFFE040FB), // Magenta
-        ),
-      );
-      game.playSfx('shoot.wav');
+      isTelegraphingShot = true;
+      shotTelegraphTimer = universalTelegraphDuration;
+      lockedShotDir.setFrom(targetDir);
     }
   }
 
@@ -1076,21 +1243,37 @@ class EnemyShipComponent extends PositionComponent
       canvas.drawCircle(Offset.zero, radius * 1.45, _sharedStrokePaint);
     }
 
-    // 1. Draw Telegraphed Red Aiming Laser for Raider (straight out of ship's nose)
-    if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {
-      final pulse =
-          (math.sin(DateTime.now().millisecondsSinceEpoch / 50.0) + 1) / 2;
-      _laserTelegraphPaint.color = const Color(
-        0xFFFF1744,
-      ).withValues(alpha: 0.45 + pulse * 0.45);
-      _laserTelegraphPaint.strokeWidth = 1.8 + pulse * 1.2;
+    // 1. Universal 700ms Telegraphed Aiming Laser (Raider, Sniper & CryoBomber)
+    if (isLaserTelegraphActive) {
+      final locked = isTelegraphAimLocked;
+      final remaining = type == EnemyType.raider
+          ? raiderTimer
+          : shotTelegraphTimer;
+      final progress = (1.0 - (remaining / universalTelegraphDuration)).clamp(
+        0.0,
+        1.0,
+      );
+      final pulse = locked
+          ? 1.0
+          : (0.45 + 0.55 * ((math.sin(progress * 26.0) + 1.0) * 0.5));
+      _laserTelegraphPaint.color = currentTelegraphColor.withValues(
+        alpha: locked ? 0.92 : (0.40 + pulse * 0.35),
+      );
+      _laserTelegraphPaint.strokeWidth = locked ? 3.2 : (1.2 + progress * 1.4);
 
       // In local coordinates, ship's nose is (0, -radius), facing forward (0, -1)
       canvas.drawLine(
         Offset(0, -radius),
-        const Offset(0, -650.0),
+        const Offset(0, -680.0),
         _laserTelegraphPaint,
       );
+
+      if (locked) {
+        _laserReticlePaint.color = const Color(
+          0xFFFF1744,
+        ).withValues(alpha: 0.78);
+        canvas.drawCircle(Offset(0, -radius - 6.0), 6.0, _laserReticlePaint);
+      }
     }
 
     final isFlashing = hitFlashTimer > 0;

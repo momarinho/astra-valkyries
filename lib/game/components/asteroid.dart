@@ -38,6 +38,12 @@ class AsteroidComponent extends PositionComponent
   late double hp;
   double hitFlashTimer = 0.0;
   double localFreezeTimer = 0.0;
+  // Sprint 58: Asteroide arremessado por Dash ou projétil cinético de alta velocidade
+  double launchedByDashTimer = 0.0;
+  static final List<EnemyShipComponent> _enemyImpactScratch = [];
+
+  bool get isKineticHazard =>
+      launchedByDashTimer > 0.0 || velocity.length2 >= 220.0 * 220.0;
 
   // Zero-GC Cached Paint instances for high-performance asteroid rendering (60-120 FPS)
   static final Paint _sharedFillPaint = Paint()..style = PaintingStyle.fill;
@@ -180,6 +186,9 @@ class AsteroidComponent extends PositionComponent
     if (hitFlashTimer > 0) {
       hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
     }
+    if (launchedByDashTimer > 0) {
+      launchedByDashTimer = math.max(0.0, launchedByDashTimer - dt);
+    }
     position += velocity * dt;
     angle += rotationSpeed * dt;
 
@@ -189,6 +198,19 @@ class AsteroidComponent extends PositionComponent
           (findGame() as AsteroidsGame?) ??
           (isMounted ? game : null);
       if (g != null && g.state == GameState.playing) {
+        // Sprint 58: Asteroides arremessados pelo Dash esmagam qualquer inimigo no trajeto (Zero-GC)
+        if (isKineticHazard && g.activeEnemies.isNotEmpty) {
+          _enemyImpactScratch
+            ..clear()
+            ..addAll(g.activeEnemies);
+          for (var i = 0; i < _enemyImpactScratch.length; i++) {
+            final enemy = _enemyImpactScratch[i];
+            if (enemy.hp > 0 && !enemy.isRemoving) {
+              enemy.resolveAsteroidImpact(this);
+            }
+          }
+          _enemyImpactScratch.clear();
+        }
         if (shouldPrune(g.player.position)) {
           removeFromParent();
           return;

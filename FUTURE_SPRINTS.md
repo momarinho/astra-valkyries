@@ -35,16 +35,15 @@ This document outlines the current active engineering milestones for **Astra Val
 - Zero-GC hardening across hot path renderers (`PlayerComponent`, `DashGhost`).
 - 294 automated tests passing with 100% green status and 0 linter issues.
 
+### 👾 Sprint 58: Coreografia Tática de Esquadrões & Telegraphs Universais (*Nova Drift & Galaga*) ✅ (CONCLUÍDA)
+- Choreographed squadrons (`buildWedgeFormation`, `buildPincerManeuver`, `buildFreightEscort`) in `AsteroidField`.
+- Universal 700ms laser telegraphs with 200ms aim-lock & amber-to-crimson shift on `EnemyShipComponent` and `DreadnoughtLeviathanComponent` (Zero-GC).
+- Zero-GC Boids Repulsion (`applyBoidsSeparation`) over `game.activeEnemies` + bi-directional `ProximityMineComponent` & Dash-rammed kinetic asteroid crushing.
+- 302 automated tests passing (`test/sprint58_tactical_ai_test.dart`) with 0 linter issues.
+
 ---
 
 ## 🎯 Active & Upcoming Sprints
-
-### 👾 Sprint 58: Coreografia Tática de Esquadrões & Telegraphs Universais (*Nova Drift & Galaga*)
-- **Target:** Intelligent enemy flight choreography and clear telegraphing.
-- **Deliverables:**
-  - Tactical squad spawn formations (Wedge Formation, Pincer Maneuver, Heavy Convoy Escort).
-  - 700ms universal sniper and boss laser telegraphs with locking color transitions.
-  - Boids Repulsion algorithm to prevent swarm enemy sprite overlap.
 
 ### ⚖️ Sprint 59: Expansão Roguelite, Trade-offs Radicais & Estatísticas (*Brotato Model*)
 - **Target:** High-risk/high-reward build variety and transparent combat statistics.

@@ -502,19 +502,21 @@ flowchart TD
 ---
 
 ## 👾 SPRINT 58: Coreografia Tática de Esquadrões & Telegraphs Universais (*Nova Drift & Galaga*)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA (Sprint 58)**
 - **Objetivo:** Substituir a geração radial aleatória de inimigos por formações táticas coordenadas e avisos telegrafados de disparos pesados.
-- **Entregáveis Planejados:**
-  - [ ] **Formações Coreografadas de Esquadrilhas:**
-    - *Cunha Tática (Wedge Formation):* 1 Líder Raider e 4 Scouts em formação V mantendo vetor de aproximação unificado.
-    - *Pinça Dupla Flanqueadora (Pincer Maneuver):* Dois esquadrões partindo de quadrantes opostos para interceptar o vetor de fuga do jogador.
-    - *Comboio de Suprimentos:* 1 Cargueiro de Elite escoltado por 2 cruisers com escudos frontais (*Aegis Bulwarks*).
-  - [ ] **Telegraphs Universais de Laser (700ms):**
-    - Snipers, CryoBombers e ataques colossais de chefes projetam feixe fino de aviso com trava de mira nos últimos 200ms, permitindo esquiva por reflexo.
-  - [ ] **Algoritmo de Separação de Enxames (*Boids Repulsion*):**
-    - Força suave de repulsão entre Scouts e Void Swarmers para erradicar o bug de sobreposição de sprites em hordas densas.
-  - [ ] **Perigos Ambientais Bi-Direcionais:**
-    - Minas de proximidade agora se armam e detonam se inimigos cruzarem seu perímetro; empurrar asteroides com Dash contra naves causa dano de impacto esmagador.
+- **Entregáveis Implementados:**
+  - [x] **Formações Coreografadas de Esquadrilhas (`AsteroidField`):**
+    - *Cunha Tática (Wedge Formation):* 1 Líder Raider e 4 Scouts simétricos em formação V mantendo vetor de aproximação unificado (`buildWedgeFormation`).
+    - *Pinça Dupla Flanqueadora (Pincer Maneuver):* Dois esquadrões partindo de quadrantes opostos para interceptar o vetor de fuga da jogadora (`buildPincerManeuver`).
+    - *Comboio de Suprimentos (`buildFreightEscort`):* 1 Cargueiro/Flagship escoltado na vanguarda por 2 cruzadores com escudos frontais (*Aegis Bulwarks*).
+  - [x] **Telegraphs Universais de Laser (700ms com trava nos últimos 200ms):**
+    - Snipers, CryoBombers, Raiders e o canhão Railgun do `DreadnoughtLeviathanComponent` projetam laser de aviso de 700ms: rastreamento em âmbar (`#FFB300`) nos primeiros 500ms e trava rígida em carmesim neon (`#FF1744`) nos últimos 200ms (Zero-GC).
+  - [x] **Algoritmo de Separação de Enxames (*Boids Repulsion*):**
+    - Força suave de repulsão (`applyBoidsSeparation`) via `game.activeEnemies` (O(1) sem alocações) entre Scouts e Void Swarmers para erradicar sobreposição de sprites em hordas densas.
+  - [x] **Perigos Ambientais Bi-Direcionais:**
+    - `ProximityMineComponent` agora se arma e detona quando inimigos cruzam seu sensor (`evaluateProximityTriggers` / `onCollisionStart`), e colidir contra asteroides durante o Dash (`METEOR RAM!`) arremessa a rocha em alta velocidade esmagando qualquer nave inimiga no caminho (`CRUSH!`).
+  - [x] **Testes Automatizados:**
+    - Criada a suíte `test/sprint58_tactical_ai_test.dart` com 8 testes cobrindo Wedge, Pincer, Comboio, Telegraph 700ms + lock 200ms, Boids Repulsion, mina bi-direcional, asteroide arremessado por Dash e render Zero-GC. Total de 302 testes passando com 100% de sucesso.
 
 ---
 

@@ -7,11 +7,12 @@ import 'package:asteroids/game/glow.dart';
 import 'player.dart';
 import 'bullet.dart';
 import 'bomb.dart';
+import 'enemy_ship.dart';
 
-/// Mina Espacial de Proximidade (Setor 3: Cemitério de Dreadnoughts).
-/// Flutua perto de destroços militares. Quando a Valquíria se aproxima,
-/// seu sensor infravermelho começa a piscar rapidamente e detona após 1.1s
-/// (ou instantaneamente se atingida por disparos, podendo ser usada taticamente contra enxames!).
+/// Mina Espacial de Proximidade (Bi-direcional - Sprint 58).
+/// Flutua perto de destroços militares. Quando a Valquíria OU naves inimigas
+/// entram em seu sensor infravermelho, pisca rapidamente e detona (ou explode
+/// ao contato direto / impacto de projéteis), funcionando como armadilha tática!
 class ProximityMineComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius = 16.0;
@@ -59,18 +60,49 @@ class ProximityMineComponent extends PositionComponent
     _pulseTimer += dt * (isArmed ? 16.0 : 3.5);
 
     final player = game.player;
-    final dist = position.distanceTo(player.position);
+    evaluateProximityTriggers(
+      dt,
+      playerPos: player.position,
+      playerRadius: player.radius,
+      enemies: game.activeEnemies,
+    );
+  }
 
-    if (dist <= triggerRadius) {
+  /// Sprint 58: Avalia ativação bi-direcional (jogadora OU qualquer inimigo vivo em activeEnemies).
+  bool evaluateProximityTriggers(
+    double dt, {
+    required Vector2 playerPos,
+    required double playerRadius,
+    required Iterable<EnemyShipComponent> enemies,
+  }) {
+    if (isDetonated) return false;
+
+    final playerDist = position.distanceTo(playerPos);
+    bool immediateContact = playerDist <= radius + playerRadius + 8.0;
+    if (playerDist <= triggerRadius) {
       isArmed = true;
+    }
+
+    for (final enemy in enemies) {
+      if (enemy.hp <= 0 || enemy.isRemoving) continue;
+      final enemyDist = position.distanceTo(enemy.position);
+      if (enemyDist <= triggerRadius) {
+        isArmed = true;
+      }
+      if (enemyDist <= radius + enemy.radius + 8.0) {
+        immediateContact = true;
+        break;
+      }
     }
 
     if (isArmed) {
       armTimer += dt;
-      if (armTimer >= 1.10 || dist <= radius + player.radius + 8.0) {
+      if (immediateContact || armTimer >= 1.10) {
         detonate();
+        return true;
       }
     }
+    return false;
   }
 
   void detonate() {
@@ -104,7 +136,10 @@ class ProximityMineComponent extends PositionComponent
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (isDetonated) return;
 
@@ -115,7 +150,7 @@ class ProximityMineComponent extends PositionComponent
         other.piercesLeft--;
       }
       detonate();
-    } else if (other is PlayerComponent) {
+    } else if (other is PlayerComponent || other is EnemyShipComponent) {
       detonate();
     }
   }
@@ -135,9 +170,17 @@ class ProximityMineComponent extends PositionComponent
     final pulse = (math.sin(_pulseTimer) + 1.0) / 2.0;
 
     // 1. Anel de Sensor de Proximidade
-    final ringColor = isArmed ? const Color(0xFFFF1744) : const Color(0xFFFF9100);
-    _ringPaint.color = ringColor.withValues(alpha: isArmed ? (0.25 + 0.35 * pulse) : 0.12);
-    canvas.drawCircle(center, triggerRadius * (isArmed ? (1.0 - armTimer * 0.3).clamp(0.4, 1.0) : 1.0), _ringPaint);
+    final ringColor = isArmed
+        ? const Color(0xFFFF1744)
+        : const Color(0xFFFF9100);
+    _ringPaint.color = ringColor.withValues(
+      alpha: isArmed ? (0.25 + 0.35 * pulse) : 0.12,
+    );
+    canvas.drawCircle(
+      center,
+      triggerRadius * (isArmed ? (1.0 - armTimer * 0.3).clamp(0.4, 1.0) : 1.0),
+      _ringPaint,
+    );
 
     // 2. Corpo Metálico Espinhoso da Mina
     canvas.save();
@@ -146,8 +189,14 @@ class ProximityMineComponent extends PositionComponent
 
     for (var i = 0; i < 8; i++) {
       final a = i * (math.pi / 4);
-      final p1 = Offset(math.cos(a) * (radius * 0.6), math.sin(a) * (radius * 0.6));
-      final p2 = Offset(math.cos(a) * (radius * 1.35), math.sin(a) * (radius * 1.35));
+      final p1 = Offset(
+        math.cos(a) * (radius * 0.6),
+        math.sin(a) * (radius * 0.6),
+      );
+      final p2 = Offset(
+        math.cos(a) * (radius * 1.35),
+        math.sin(a) * (radius * 1.35),
+      );
       canvas.drawLine(p1, p2, _spikePaint);
     }
 

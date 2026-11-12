@@ -43,10 +43,22 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   double spiralAngle = 0.0;
   Vector2 velocity = Vector2.zero();
 
-  // Telegraphed Heavy Railgun Beam
+  // Telegraphed Heavy Railgun Beam (Sprint 58: 700ms universal window, 200ms aim-lock)
+  static const double universalTelegraphDuration = 0.70;
+  static const double universalTelegraphLockWindow = 0.20;
   bool isTelegraphingBeam = false;
   double beamTelegraphDuration = 0.0;
   Vector2 lockedBeamDir = Vector2.zero();
+
+  static final Paint _laserTelegraphPaint = Paint()
+    ..style = PaintingStyle.stroke;
+  static final Paint _hullFillPaint = Paint()
+    ..color = const Color(0xFF0F0B18).withValues(alpha: 0.96)
+    ..style = PaintingStyle.fill;
+
+  bool get isBeamAimLocked =>
+      isTelegraphingBeam &&
+      beamTelegraphDuration <= universalTelegraphLockWindow;
 
   DreadnoughtLeviathanComponent({required Vector2 position}) {
     this.position = position;
@@ -89,7 +101,12 @@ class DreadnoughtLeviathanComponent extends PositionComponent
         );
         game.spawnExplosionParticles(
           position: position + randOffset,
-          colorChoices: [const Color(0xFFFFD700), const Color(0xFFFF1744), Colors.white, Colors.orangeAccent],
+          colorChoices: [
+            const Color(0xFFFFD700),
+            const Color(0xFFFF1744),
+            Colors.white,
+            Colors.orangeAccent,
+          ],
           count: 12,
           minSize: 2.5,
           maxSize: 5.5,
@@ -110,7 +127,9 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     final player = game.player;
     final toPlayer = player.position - position;
     final distToPlayer = toPlayer.length;
-    final targetDir = distToPlayer > 1.0 ? toPlayer.normalized() : Vector2(0, 1);
+    final targetDir = distToPlayer > 1.0
+        ? toPlayer.normalized()
+        : Vector2(0, 1);
 
     // Rotate slowly towards player
     final targetAngle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
@@ -160,16 +179,21 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       _summonScoutEscorts();
     }
 
-    // 4. Telegraphed Railgun Beam (Phase 2 & 3)
+    // 4. Telegraphed Railgun Beam (Phase 2 & 3) — 700ms warning + 200ms aim lock
     if (hpFraction <= 0.66) {
       beamTimer += effectiveDt;
       if (!isTelegraphingBeam && beamTimer >= 6.5) {
         isTelegraphingBeam = true;
-        beamTelegraphDuration = 1.0;
-        lockedBeamDir = targetDir;
+        beamTelegraphDuration = universalTelegraphDuration;
+        lockedBeamDir = targetDir.clone();
         game.playSfx('dash.wav');
       } else if (isTelegraphingBeam) {
         beamTelegraphDuration -= effectiveDt;
+        if (beamTelegraphDuration > universalTelegraphLockWindow) {
+          lockedBeamDir = targetDir.clone();
+        }
+        // Mantém o ângulo visual do boss travado nos últimos 200ms
+        angle = math.atan2(lockedBeamDir.y, lockedBeamDir.x) + math.pi / 2;
         if (beamTelegraphDuration <= 0) {
           isTelegraphingBeam = false;
           beamTimer = 0.0;
@@ -218,12 +242,11 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     final random = math.Random();
     for (var i = 0; i < 3; i++) {
       final angle = random.nextDouble() * 2 * math.pi;
-      final spawnPos = position + Vector2(math.cos(angle), math.sin(angle)) * (radius + 40.0);
+      final spawnPos =
+          position +
+          Vector2(math.cos(angle), math.sin(angle)) * (radius + 40.0);
       game.world.add(
-        EnemyShipComponent(
-          position: spawnPos,
-          type: EnemyType.scout,
-        ),
+        EnemyShipComponent(position: spawnPos, type: EnemyType.scout),
       );
     }
   }
@@ -260,7 +283,11 @@ class DreadnoughtLeviathanComponent extends PositionComponent
 
     game.spawnExplosionParticles(
       position: hitPos,
-      colorChoices: [const Color(0xFFFFD700), const Color(0xFFFF1744), Colors.white],
+      colorChoices: [
+        const Color(0xFFFFD700),
+        const Color(0xFFFF1744),
+        Colors.white,
+      ],
       count: 4,
       minSize: 1.5,
       maxSize: 3.5,
@@ -319,7 +346,12 @@ class DreadnoughtLeviathanComponent extends PositionComponent
           game.playSfx('bomb_explode.wav');
           game.spawnExplosionParticles(
             position: position + offset,
-            colorChoices: const [Color(0xFFFF1744), Color(0xFFFFD700), Colors.white, Colors.orangeAccent],
+            colorChoices: const [
+              Color(0xFFFF1744),
+              Color(0xFFFFD700),
+              Colors.white,
+              Colors.orangeAccent,
+            ],
             count: 22,
             minSize: 3.0,
             maxSize: 7.0,
@@ -343,10 +375,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       final a = (i * 2 * math.pi / 5);
       final offset = Vector2(math.cos(a), math.sin(a)) * 25.0;
       game.world.add(
-        XpOrbComponent(
-          position: position + offset,
-          type: XpOrbType.large,
-        ),
+        XpOrbComponent(position: position + offset, type: XpOrbType.large),
       );
     }
 
@@ -382,7 +411,10 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerComponent) {
       other.takeHit(45.0);
@@ -396,14 +428,29 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     canvas.save();
     canvas.translate(radius, radius);
 
-    // 1. Draw Telegraphed Heavy Railgun Laser (along forward nose axis)
+    // 1. Draw Telegraphed Heavy Railgun Laser (Amber -> Crimson lock in last 200ms, Zero-GC)
     if (isTelegraphingBeam) {
-      final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
-      final laserPaint = Paint()
-        ..color = const Color(0xFFFF1744).withValues(alpha: 0.55 + pulse * 0.45)
-        ..strokeWidth = 3.5 + pulse * 2.0
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(0, -radius * 1.3), const Offset(0, -900.0), laserPaint);
+      final locked = isBeamAimLocked;
+      final progress =
+          (1.0 - (beamTelegraphDuration / universalTelegraphDuration)).clamp(
+            0.0,
+            1.0,
+          );
+      final pulse = locked
+          ? 1.0
+          : (0.45 + 0.55 * ((math.sin(progress * 26.0) + 1.0) * 0.5));
+      final telegraphColor = locked
+          ? const Color(0xFFFF1744)
+          : const Color(0xFFFFB300);
+      _laserTelegraphPaint.color = telegraphColor.withValues(
+        alpha: locked ? 0.95 : (0.45 + pulse * 0.40),
+      );
+      _laserTelegraphPaint.strokeWidth = locked ? 5.5 : (2.2 + progress * 2.0);
+      canvas.drawLine(
+        Offset(0, -radius * 1.3),
+        const Offset(0, -900.0),
+        _laserTelegraphPaint,
+      );
     }
 
     final isFlashing = hitFlashTimer > 0;
@@ -423,16 +470,15 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       ..lineTo(-radius * 0.5, -radius * 0.7)
       ..close();
 
-    final hullPaint = Paint()
-      ..color = const Color(0xFF0F0B18).withValues(alpha: 0.96)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(hullPath, hullPaint);
+    canvas.drawPath(hullPath, _hullFillPaint);
 
     final hullBorderColor = isFlashing
         ? Colors.white
         : (hpRatio > 0.66
-            ? const Color(0xFF00E5FF)
-            : (hpRatio > 0.30 ? const Color(0xFFD500F9) : const Color(0xFFFF1744)));
+              ? const Color(0xFF00E5FF)
+              : (hpRatio > 0.30
+                    ? const Color(0xFFD500F9)
+                    : const Color(0xFFFF1744)));
 
     Glow.strokePath(
       canvas,
@@ -446,10 +492,13 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     final coreColor = isFlashing
         ? Colors.white
         : (hpRatio > 0.66
-            ? const Color(0xFF00E5FF)
-            : (hpRatio > 0.30 ? const Color(0xFFE040FB) : const Color(0xFFFF1744)));
+              ? const Color(0xFF00E5FF)
+              : (hpRatio > 0.30
+                    ? const Color(0xFFE040FB)
+                    : const Color(0xFFFF1744)));
 
-    final coreRadius = 14.0 + 3.0 * math.sin(DateTime.now().millisecondsSinceEpoch / 120.0);
+    final coreRadius =
+        14.0 + 3.0 * math.sin(DateTime.now().millisecondsSinceEpoch / 120.0);
     final corePaint = Paint()
       ..color = coreColor
       ..style = PaintingStyle.fill;
@@ -469,8 +518,16 @@ class DreadnoughtLeviathanComponent extends PositionComponent
       ..color = hullBorderColor
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(-radius * 0.55, -radius * 0.2), Offset(-radius * 0.55, -radius * 1.1), wingGunPaint);
-    canvas.drawLine(Offset(radius * 0.55, -radius * 0.2), Offset(radius * 0.55, -radius * 1.1), wingGunPaint);
+    canvas.drawLine(
+      Offset(-radius * 0.55, -radius * 0.2),
+      Offset(-radius * 0.55, -radius * 1.1),
+      wingGunPaint,
+    );
+    canvas.drawLine(
+      Offset(radius * 0.55, -radius * 0.2),
+      Offset(radius * 0.55, -radius * 1.1),
+      wingGunPaint,
+    );
 
     canvas.restore();
   }

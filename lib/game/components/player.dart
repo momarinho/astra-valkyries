@@ -299,6 +299,33 @@ class PlayerComponent extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
     if (game.state != GameState.playing) return;
     if (other is AsteroidComponent) {
+      // Sprint 58: Colisão em Dash arremessa o asteroide como projétil cinético devastador!
+      if (isDashing) {
+        final delta = other.position - position;
+        final launchDir = delta.length2 > 1.0
+            ? delta.normalized()
+            : (velocity.length2 > 1.0 ? velocity.normalized() : Vector2(0, -1));
+        other.velocity.setFrom(launchDir * 520.0);
+        other.launchedByDashTimer = 1.6;
+        try {
+          game.playSfx('dash.wav');
+          game.triggerScreenShake(duration: 0.16, intensity: 7.0);
+          game.spawnSparks(
+            position: other.position,
+            color: const Color(0xFF00E5FF),
+            count: 8,
+            speed: 190.0,
+          );
+          game.spawnFloatingText(
+            other.position + Vector2(0, -other.radius - 6),
+            'METEOR RAM!',
+            color: const Color(0xFF00E5FF),
+            fontSize: 11.5,
+          );
+        } catch (_) {}
+        return;
+      }
+
       final double dmg;
       if (other.radius >= 40.0) {
         dmg = 35.0; // Large asteroid collision

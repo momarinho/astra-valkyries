@@ -9,8 +9,22 @@ import 'enemy_ship.dart';
 import 'cryo_pod.dart';
 import 'package:asteroids/services/localization_service.dart';
 
+/// Sprint 58: Formações coreografadas de esquadrilhas táticas (*Nova Drift / Galaga*).
+enum TacticalFormationType {
+  wedge, // Cunha Tática: 1 Líder Raider + 4 Scouts em V
+  pincer, // Pinça Dupla Flanqueadora: 2 esquadrões em quadrantes opostos
+  freightEscort, // Comboio de Suprimentos: 1 Flagship/Carrier + 2 AegisBulwarks frontais
+}
+
+class TacticalSpawnSpec {
+  final Vector2 position;
+  final EnemyType type;
+  const TacticalSpawnSpec(this.position, this.type);
+}
+
 class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
-  static const int maxActiveEnemiesCap = 40; // Teto estrito (35 a 45 naves) para manter 60 FPS cravados
+  static const int maxActiveEnemiesCap =
+      40; // Teto estrito (35 a 45 naves) para manter 60 FPS cravados
   final String mode;
   double spawnTimer = 0.0;
   double enemySpawnTimer = 0.0;
@@ -35,7 +49,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   @override
   void update(double dt) {
     super.update(dt);
-    
+
     // NUNCA spawnar entidades fora do estado de partida ativa
     if (game.state != GameState.playing || mode == 'campaign') {
       return;
@@ -48,7 +62,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     // Timeline Script do Roguelite (Hordas e Incursões Escaladas):
     if (difficultyTimer >= 20.0 && !swarm20Spawned) {
       swarm20Spawned = true;
-      _spawnSwarmRush(count: 4, label: '⚠️ PATRULHA DE RECONHECIMENTO DETECTADA! ⚠️');
+      _spawnSwarmRush(
+        count: 4,
+        label: '⚠️ PATRULHA DE RECONHECIMENTO DETECTADA! ⚠️',
+      );
     }
     // Sprint 46: Crise de Setor 1 - Tempestade de Meteoritos Magmáticos
     if (difficultyTimer >= 35.0 && !magmaSurgeSpawned) {
@@ -57,11 +74,17 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     }
     if (difficultyTimer >= 45.0 && !subBoss45Spawned) {
       subBoss45Spawned = true;
-      _spawnEliteCommander(1, label: '⚠️ SUB-CHEFE [0:45]: VANGUARDA DO VÁCUO!');
+      _spawnEliteCommander(
+        1,
+        label: '⚠️ SUB-CHEFE [0:45]: VANGUARDA DO VÁCUO!',
+      );
     }
     if (difficultyTimer >= 60.0 && !swarm60Spawned) {
       swarm60Spawned = true;
-      _spawnSwarmRush(count: 10, label: '⚠️ CERCO DE DRONES EM ALTA VELOCIDADE! ⚠️');
+      _spawnSwarmRush(
+        count: 10,
+        label: '⚠️ CERCO DE DRONES EM ALTA VELOCIDADE! ⚠️',
+      );
     }
     if (difficultyTimer >= 75.0 && !cryoPodSpawned) {
       cryoPodSpawned = true;
@@ -69,7 +92,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     }
     if (difficultyTimer >= 90.0 && !elite1Spawned) {
       elite1Spawned = true;
-      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [1:30]: EXECUTORES GÊMEOS!');
+      _spawnEliteCommander(
+        2,
+        label: '⚠️ SUB-CHEFES [1:30]: EXECUTORES GÊMEOS!',
+      );
     }
     // Sprint 46: Crise de Setor 2 - Cargueiro Contrabandista de Alta Prioridade
     if (difficultyTimer >= 110.0 && !smugglerSpawned) {
@@ -78,7 +104,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     }
     if (difficultyTimer >= 135.0 && !elite2Spawned) {
       elite2Spawned = true;
-      _spawnEliteCommander(2, label: '⚠️ SUB-CHEFES [2:15]: GUARDA DE ELITE DO SETOR!');
+      _spawnEliteCommander(
+        2,
+        label: '⚠️ SUB-CHEFES [2:15]: GUARDA DE ELITE DO SETOR!',
+      );
     }
     if (difficultyTimer >= 150.0 && !sectorClimaxSpawned) {
       sectorClimaxSpawned = true;
@@ -118,7 +147,8 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     // 3. Intervalo de Frota Inimiga (Curva Roguelite Progressiva)
     double enemyInterval;
     if (difficultyTimer < 25.0) {
-      enemyInterval = 3.4; // Onboarding suave: 1 nave por vez para coletar XP inicial e escolher upgrade
+      enemyInterval =
+          3.4; // Onboarding suave: 1 nave por vez para coletar XP inicial e escolher upgrade
     } else if (difficultyTimer < 50.0) {
       enemyInterval = 2.4; // Pequenas patrulhas para testar o primeiro upgrade
     } else if (difficultyTimer < 90.0) {
@@ -140,7 +170,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
 
     if (label != null) {
@@ -158,18 +191,17 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
     final random = math.Random();
     for (int i = 0; i < count; i++) {
-      final angle = (2 * math.pi * i / count) + (random.nextDouble() - 0.5) * 0.25;
+      final angle =
+          (2 * math.pi * i / count) + (random.nextDouble() - 0.5) * 0.25;
       final dist = 520.0 + random.nextDouble() * 80.0;
-      final spawnPos = playerPos + Vector2(math.cos(angle), math.sin(angle)) * dist;
+      final spawnPos =
+          playerPos + Vector2(math.cos(angle), math.sin(angle)) * dist;
 
       spawnPos.x = spawnPos.x.clamp(60.0, GameConstants.sectorWidth - 60.0);
       spawnPos.y = spawnPos.y.clamp(60.0, GameConstants.sectorHeight - 60.0);
 
       spawnOrPromoteEnemy(
-        EnemyShipComponent(
-          position: spawnPos,
-          type: EnemyType.voidSwarmer,
-        ),
+        EnemyShipComponent(position: spawnPos, type: EnemyType.voidSwarmer),
       );
     }
   }
@@ -185,7 +217,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       try {
         pPos = game.player.position;
       } catch (_) {
-        pPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+        pPos = Vector2(
+          GameConstants.sectorWidth / 2,
+          GameConstants.sectorHeight / 2,
+        );
       }
       game.spawnFloatingText(
         pPos + Vector2(0, -75),
@@ -206,7 +241,9 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
         ? game.activeEnemies
         : game.world.children.whereType<EnemyShipComponent>();
     if (enemies.length >= maxActiveEnemiesCap) {
-      final nonPromoted = enemies.where((e) => !e.isPromotedElite && e.hp > 0).toList();
+      final nonPromoted = enemies
+          .where((e) => !e.isPromotedElite && e.hp > 0)
+          .toList();
       if (nonPromoted.isNotEmpty) {
         nonPromoted.first.promoteToEliteWithAura();
       } else if (enemies.isNotEmpty) {
@@ -223,7 +260,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
 
     try {
@@ -248,10 +288,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       spawnPos.y = spawnPos.y.clamp(80.0, GameConstants.sectorHeight - 80.0);
 
       game.world.add(
-        EnemyShipComponent(
-          position: spawnPos,
-          type: EnemyType.eliteCommander,
-        ),
+        EnemyShipComponent(position: spawnPos, type: EnemyType.eliteCommander),
       );
     }
   }
@@ -261,7 +298,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
 
     try {
@@ -303,7 +343,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
 
     try {
@@ -334,7 +377,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
 
     // Determine enemy type based on clock timeline & Sprint 15 Sector Faction Bestiary
@@ -357,7 +403,9 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       }
     } else if (difficultyTimer < 110.0) {
       if (roll < 0.25) {
-        chosenType = (sectorId == SectorId.cryoAbyss) ? EnemyType.cryoBomber : EnemyType.raider;
+        chosenType = (sectorId == SectorId.cryoAbyss)
+            ? EnemyType.cryoBomber
+            : EnemyType.raider;
         count = 2;
       } else if (roll < 0.50) {
         if (sectorId == SectorId.graveyard) {
@@ -385,7 +433,9 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
         chosenType = EnemyType.carrierHive;
         count = 1;
       } else if (roll < 0.76) {
-        chosenType = (sectorId == SectorId.cryoAbyss) ? EnemyType.cryoBomber : EnemyType.gravityWeaver;
+        chosenType = (sectorId == SectorId.cryoAbyss)
+            ? EnemyType.cryoBomber
+            : EnemyType.gravityWeaver;
         count = 1;
       } else {
         chosenType = EnemyType.sniper;
@@ -393,21 +443,202 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       }
     }
 
+    // Sprint 58: A partir dos 45s, esquadrilhas coreografadas substituem spawns caóticos periodicamente
+    if (difficultyTimer >= 45.0 && roll < 0.38) {
+      Vector2 playerVel = Vector2.zero();
+      try {
+        playerVel = game.player.velocity;
+      } catch (_) {}
+
+      final TacticalFormationType formation;
+      if (difficultyTimer >= 95.0 && roll < 0.13) {
+        formation = TacticalFormationType.freightEscort;
+      } else if (roll < 0.26) {
+        formation = TacticalFormationType.wedge;
+      } else {
+        formation = TacticalFormationType.pincer;
+      }
+
+      spawnTacticalFormation(
+        formation,
+        playerPos: playerPos,
+        playerVel: playerVel,
+        spawnAngle: random.nextDouble() * 2 * math.pi,
+      );
+      return;
+    }
+
     // Spawn the batch around camera perimeter
     final baseAngle = random.nextDouble() * 2 * math.pi;
     for (var i = 0; i < count; i++) {
       final angle = baseAngle + (i * 0.25);
-      final dist = GameConstants.proximitySpawnMinRadius + random.nextDouble() * 120.0;
-      final spawnPos = playerPos + Vector2(math.cos(angle), math.sin(angle)) * dist;
+      final dist =
+          GameConstants.proximitySpawnMinRadius + random.nextDouble() * 120.0;
+      final spawnPos =
+          playerPos + Vector2(math.cos(angle), math.sin(angle)) * dist;
 
       spawnPos.x = spawnPos.x.clamp(60.0, GameConstants.sectorWidth - 60.0);
       spawnPos.y = spawnPos.y.clamp(60.0, GameConstants.sectorHeight - 60.0);
 
       spawnOrPromoteEnemy(
-        EnemyShipComponent(
-          position: spawnPos,
-          type: chosenType,
+        EnemyShipComponent(position: spawnPos, type: chosenType),
+      );
+    }
+  }
+
+  static Vector2 _clampFormationPoint(Vector2 p) {
+    return Vector2(
+      p.x.clamp(60.0, GameConstants.sectorWidth - 60.0),
+      p.y.clamp(60.0, GameConstants.sectorHeight - 60.0),
+    );
+  }
+
+  /// Cunha Tática (*Wedge Formation*): 1 Raider líder na ponta + 4 Scouts em V simétrico.
+  static List<TacticalSpawnSpec> buildWedgeFormation({
+    required Vector2 origin,
+    required Vector2 approachDir,
+    double spacing = 48.0,
+  }) {
+    final forward = approachDir.length2 > 0.0001
+        ? approachDir.normalized()
+        : Vector2(0, 1);
+    final right = Vector2(-forward.y, forward.x);
+
+    return [
+      TacticalSpawnSpec(_clampFormationPoint(origin), EnemyType.raider),
+      TacticalSpawnSpec(
+        _clampFormationPoint(origin - forward * spacing - right * spacing),
+        EnemyType.scout,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(origin - forward * spacing + right * spacing),
+        EnemyType.scout,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(
+          origin - forward * (spacing * 2.0) - right * (spacing * 2.0),
         ),
+        EnemyType.scout,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(
+          origin - forward * (spacing * 2.0) + right * (spacing * 2.0),
+        ),
+        EnemyType.scout,
+      ),
+    ];
+  }
+
+  /// Pinça Dupla Flanqueadora (*Pincer Maneuver*): 2 esquadrões em quadrantes opostos
+  /// interceptando o vetor de fuga da jogadora.
+  static List<TacticalSpawnSpec> buildPincerManeuver({
+    required Vector2 playerPos,
+    required Vector2 playerVel,
+    double forwardLead = 260.0,
+    double flankDistance = 380.0,
+  }) {
+    final forward = playerVel.length2 > 25.0
+        ? playerVel.normalized()
+        : Vector2(0, -1);
+    final right = Vector2(-forward.y, forward.x);
+    final interceptCenter = playerPos + forward * forwardLead;
+
+    final leftCenter = _clampFormationPoint(
+      interceptCenter - right * flankDistance,
+    );
+    final rightCenter = _clampFormationPoint(
+      interceptCenter + right * flankDistance,
+    );
+
+    return [
+      TacticalSpawnSpec(leftCenter, EnemyType.raider),
+      TacticalSpawnSpec(
+        _clampFormationPoint(leftCenter + forward * 42.0 - right * 28.0),
+        EnemyType.scout,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(leftCenter - forward * 42.0 - right * 28.0),
+        EnemyType.scout,
+      ),
+      TacticalSpawnSpec(rightCenter, EnemyType.raider),
+      TacticalSpawnSpec(
+        _clampFormationPoint(rightCenter + forward * 42.0 + right * 28.0),
+        EnemyType.scout,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(rightCenter - forward * 42.0 + right * 28.0),
+        EnemyType.scout,
+      ),
+    ];
+  }
+
+  /// Comboio de Suprimentos (*Freight Escort*): 1 nave capital/Carrier protegida
+  /// na vanguarda por 2 cruzadores de escudo frontal AegisBulwark.
+  static List<TacticalSpawnSpec> buildFreightEscort({
+    required Vector2 origin,
+    required Vector2 approachDir,
+    bool useEliteFlagship = false,
+  }) {
+    final forward = approachDir.length2 > 0.0001
+        ? approachDir.normalized()
+        : Vector2(0, 1);
+    final right = Vector2(-forward.y, forward.x);
+
+    return [
+      TacticalSpawnSpec(
+        _clampFormationPoint(origin),
+        useEliteFlagship ? EnemyType.eliteCommander : EnemyType.carrierHive,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(origin + forward * 68.0 - right * 54.0),
+        EnemyType.aegisBulwark,
+      ),
+      TacticalSpawnSpec(
+        _clampFormationPoint(origin + forward * 68.0 + right * 54.0),
+        EnemyType.aegisBulwark,
+      ),
+    ];
+  }
+
+  void spawnTacticalFormation(
+    TacticalFormationType formation, {
+    required Vector2 playerPos,
+    Vector2? playerVel,
+    double spawnAngle = 0.0,
+    bool useEliteFlagship = false,
+  }) {
+    final dist = GameConstants.proximitySpawnMinRadius + 80.0;
+    final origin = _clampFormationPoint(
+      playerPos + Vector2(math.cos(spawnAngle), math.sin(spawnAngle)) * dist,
+    );
+    final toPlayer = playerPos - origin;
+    final approachDir = toPlayer.length2 > 1.0
+        ? toPlayer.normalized()
+        : Vector2(0, 1);
+
+    final List<TacticalSpawnSpec> specs;
+    switch (formation) {
+      case TacticalFormationType.wedge:
+        specs = buildWedgeFormation(origin: origin, approachDir: approachDir);
+        break;
+      case TacticalFormationType.pincer:
+        specs = buildPincerManeuver(
+          playerPos: playerPos,
+          playerVel: playerVel ?? Vector2.zero(),
+        );
+        break;
+      case TacticalFormationType.freightEscort:
+        specs = buildFreightEscort(
+          origin: origin,
+          approachDir: approachDir,
+          useEliteFlagship: useEliteFlagship,
+        );
+        break;
+    }
+
+    for (final spec in specs) {
+      spawnOrPromoteEnemy(
+        EnemyShipComponent(position: spec.position.clone(), type: spec.type),
       );
     }
   }
@@ -424,13 +655,20 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
 
-    final spawnDist = GameConstants.proximitySpawnMinRadius +
-        random.nextDouble() * (GameConstants.proximitySpawnMaxRadius - GameConstants.proximitySpawnMinRadius);
+    final spawnDist =
+        GameConstants.proximitySpawnMinRadius +
+        random.nextDouble() *
+            (GameConstants.proximitySpawnMaxRadius -
+                GameConstants.proximitySpawnMinRadius);
     final spawnAngle = random.nextDouble() * 2 * math.pi;
-    final spawnOffset = Vector2(math.cos(spawnAngle), math.sin(spawnAngle))..scale(spawnDist);
+    final spawnOffset = Vector2(math.cos(spawnAngle), math.sin(spawnAngle))
+      ..scale(spawnDist);
     final position = playerPos + spawnOffset;
 
     position.x = position.x.clamp(60.0, GameConstants.sectorWidth - 60.0);
@@ -438,7 +676,8 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
     final speed = (35.0 + random.nextDouble() * 45.0) * speedMultiplier;
     final toPlayer = (playerPos - position).normalized();
-    final deviationAngle = (-45.0 + random.nextDouble() * 90.0) * math.pi / 180.0;
+    final deviationAngle =
+        (-45.0 + random.nextDouble() * 90.0) * math.pi / 180.0;
     final velocity = toPlayer.clone()..rotate(deviationAngle);
     velocity.scale(speed);
 
@@ -458,7 +697,8 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       variant = AsteroidVariant.golden;
     } else if (random.nextDouble() < 0.015) {
       variant = AsteroidVariant.golden;
-    } else if (game.currentSector.id == SectorId.orion && random.nextDouble() < 0.40) {
+    } else if (game.currentSector.id == SectorId.orion &&
+        random.nextDouble() < 0.40) {
       variant = AsteroidVariant.magma;
     } else if (difficultyTimer >= 30.0) {
       final roll = random.nextDouble();
@@ -466,7 +706,9 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
         variant = AsteroidVariant.titanium;
       } else if (roll < 0.35) {
         variant = AsteroidVariant.crystalline;
-      } else if (roll < 0.50 && (game.currentSector.id == SectorId.orion || difficultyTimer >= 120.0)) {
+      } else if (roll < 0.50 &&
+          (game.currentSector.id == SectorId.orion ||
+              difficultyTimer >= 120.0)) {
         variant = AsteroidVariant.magma;
       }
     }
@@ -486,7 +728,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     try {
       playerPos = game.player.position;
     } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
+      playerPos = Vector2(
+        GameConstants.sectorWidth / 2,
+        GameConstants.sectorHeight / 2,
+      );
     }
     final random = math.Random();
     final a = random.nextDouble() * 2 * math.pi;
