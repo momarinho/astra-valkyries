@@ -1,0 +1,1292 @@
+import 'dart:math' as math;
+import 'package:flame/components.dart';
+import 'package:flame/collisions.dart';
+import 'package:flutter/material.dart';
+import 'package:asteroids/constants.dart';
+import 'package:asteroids/game/asteroids_game.dart';
+import 'package:asteroids/game/glow.dart';
+import 'player.dart';
+import 'enemy_bullet.dart';
+import 'xp_orb.dart';
+import 'chest.dart';
+import 'drop.dart';
+import 'advanced_weapons.dart';
+import 'asteroid.dart';
+
+enum EnemyType {
+  scout,          // Swarmer / Fodder: direct fast pursuit
+  raider,         // Charger / Kamikaze: telegraphed laser dash
+  sniper,         // Artillery: stays back and shoots plasma orbs
+  eliteCommander, // Miniboss: large flagship with HP bar & guaranteed chest drop
+  voidSwarmer,    // Sprint 15: Ultra-fast swarm drone that spawns in packs of 15-30
+  aegisBulwark,   // Sprint 15: Heavy cruiser with impenetrable frontal shield (requires flanking/dash)
+  carrierHive,    // Sprint 15: Mothership that spawns Void Swarmers from afar
+  gravityWeaver,  // Sprint 15: Warps local gravity, pulling the player ship inward
+  cryoBomber,     // Sprint 15: Fires glacial cryo-shells that slow movement
+}
+
+enum EliteAuraType {
+  none,
+  cryoFrost,   // Aura Criogênica: desacelera alvos próximos
+  aegisShield, // Aura de Escudo: reduz dano recebido em 25%
+  ionShock,    // Aura de Choque: sobrecarrega velocidade e cadência
+  vortex,      // Campo Gravitacional (Sprint 45): atrai nave da jogadora para a zona de perigo
+  volatile,    // Detonação Estilhaçadora (Sprint 45): detona em estilhaços em 360° no abate
+}
+
+enum RaiderState {
+  stalking,
+  telegraphing,
+  charging,
+  recovering,
+}
+
+class VoidSwarmComponent extends EnemyShipComponent {
+  VoidSwarmComponent({required super.position}) : super(type: EnemyType.voidSwarmer);
+}
+
+class EnemyShipComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  final EnemyType type;
+  late final double radius;
+  late final double baseMaxHp;
+  late double maxHp;
+  late double hp;
+  late double baseSpeed;
+  late int scoreValue;
+
+  // Sprint 20: Promoção de Elite pelo Horde Director ao atingir o teto de entidades
+  bool isPromotedElite = false;
+  EliteAuraType eliteAura = EliteAuraType.none;
+
+  static double calculateScaledHp({
+    required double baseHp,
+    required double minutesElapsed,
+    required int voidCells,
+  }) {
+    final safeMin = math.max(0.0, minutesElapsed);
+    final safeCells = math.max(0, voidCells);
+    return baseHp * (1.0 + safeMin * 0.25) * (1.0 + safeCells * 0.35);
+  }
+
+  // Zero-GC Cached Paint Instances for high-performance rendering (60-120 FPS)
+  static final Paint _sharedFillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _sharedStrokePaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _shadowRimPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = const Color(0xFF000000).withValues(alpha: 0.90);
+  static final Paint _healthBarBgPaint = Paint()
+    ..style = PaintingStyle.fill
+    ..color = Colors.black.withValues(alpha: 0.8);
+  static final Paint _healthBarFillPaint = Paint()
+    ..style = PaintingStyle.fill
+    ..color = const Color(0xFFFFD700);
+  static final Paint _healthBarBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.0
+    ..color = Colors.white.withValues(alpha: 0.7);
+  static final Paint _laserTelegraphPaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _laserReticlePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+
+  void applyDynamicScaling({
+    required double minutesElapsed,
+    required int voidCells,
+  }) {
+    maxHp = calculateScaledHp(
+      baseHp: baseMaxHp,
+      minutesElapsed: minutesElapsed,
+      voidCells: voidCells,
+    );
+    if (isPromotedElite) {
+      maxHp *= 1.65;
+    }
+    hp = maxHp;
+  }
+
+  void promoteToEliteWithAura([EliteAuraType? aura]) {
+    if (isPromotedElite) {
+      hp = (hp + maxHp * 0.35).clamp(1.0, maxHp * 1.25);
+      return;
+    }
+    isPromotedElite = true;
+    final availableAuras = const [
+      EliteAuraType.cryoFrost,
+      EliteAuraType.aegisShield,
+      EliteAuraType.ionShock,
+      EliteAuraType.vortex,
+      EliteAuraType.volatile,
+    ];
+    eliteAura = aura ?? availableAuras[position.x.toInt().abs() % availableAuras.length];
+    maxHp *= 1.65;
+    hp = maxHp;
+    scoreValue = (scoreValue * 1.8).round();
+    if (eliteAura == EliteAuraType.ionShock) {
+      baseSpeed *= 1.18;
+    }
+  }
+
+  Vector2 velocity = Vector2.zero();
+  double hitFlashTimer = 0.0;
+  double shootCooldown = 0.0;
+  double spiralAngle = 0.0;
+
+  // Phantom Raider specific states
+  RaiderState raiderState = RaiderState.stalking;
+  double raiderTimer = 0.0;
+  Vector2 lockedChargeDirection = Vector2.zero();
+
+  // Sprint 14: 4 Elemental Status Effects & Cross-Elemental Synergy
+  final Map<ElementalStatus, double> activeStatuses = {};
+  double _burnTickTimer = 0.0;
+
+  bool hasStatus(ElementalStatus status) => (activeStatuses[status] ?? 0.0) > 0.0;
+
+  double get cryoFreezeTimer => activeStatuses[ElementalStatus.cryoFreeze] ?? 0.0;
+  set cryoFreezeTimer(double duration) {
+    if (duration > 0) {
+      applyElementalStatus(ElementalStatus.cryoFreeze, duration: duration);
+    } else {
+      activeStatuses.remove(ElementalStatus.cryoFreeze);
+    }
+  }
+
+  void applyElementalStatus(ElementalStatus status, {double duration = 4.0}) {
+    if (status == ElementalStatus.none || hp <= 0) return;
+
+    // Check for Cross-Elemental Synergy Reaction (e.g. Freeze + Burn, Shock + Freeze, Rupture + Element)
+    final hadOtherElement = activeStatuses.entries.any((e) => e.key != status && e.value > 0);
+    activeStatuses[status] = math.max(activeStatuses[status] ?? 0.0, duration);
+
+    if (hadOtherElement) {
+      try {
+        game.spawnFloatingText(
+          position + Vector2(0, -radius - 10),
+          '⚡ ELEMENTAL SYNERGY!',
+          color: const Color(0xFFFFD700),
+          fontSize: 11.0,
+        );
+      } catch (_) {}
+      hp -= 28.0;
+      if (hp <= 0) {
+        die();
+        return;
+      }
+    }
+
+    // Ion Shock arcs electricity to a nearby enemy within 170px (O(1) Entity Registry)
+    if (status == ElementalStatus.ionShock) {
+      try {
+        for (final other in game.activeEnemies) {
+          if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 170.0) {
+            other.hp -= 14.0;
+            if (other.hp <= 0) {
+              other.die();
+            }
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  EnemyShipComponent({
+    required Vector2 position,
+    required this.type,
+  }) {
+    this.position = position;
+    anchor = Anchor.center;
+
+    switch (type) {
+      case EnemyType.scout:
+        radius = 12.0;
+        maxHp = 22.0;
+        baseSpeed = 145.0;
+        scoreValue = 80;
+        break;
+      case EnemyType.raider:
+        radius = 15.0;
+        maxHp = 55.0;
+        baseSpeed = 110.0;
+        scoreValue = 200;
+        raiderTimer = 1.6;
+        break;
+      case EnemyType.sniper:
+        radius = 16.0;
+        maxHp = 70.0;
+        baseSpeed = 80.0;
+        scoreValue = 260;
+        shootCooldown = 1.8;
+        break;
+      case EnemyType.eliteCommander:
+        radius = 32.0;
+        maxHp = 650.0;
+        baseSpeed = 55.0;
+        scoreValue = 1500;
+        shootCooldown = 2.4;
+        break;
+      case EnemyType.voidSwarmer:
+        radius = 11.5;
+        maxHp = 14.0;
+        baseSpeed = 195.0;
+        scoreValue = 55;
+        break;
+      case EnemyType.aegisBulwark:
+        radius = 22.0;
+        maxHp = 190.0;
+        baseSpeed = 72.0;
+        scoreValue = 420;
+        break;
+      case EnemyType.carrierHive:
+        radius = 28.0;
+        maxHp = 340.0;
+        baseSpeed = 48.0;
+        scoreValue = 750;
+        shootCooldown = 3.2;
+        break;
+      case EnemyType.gravityWeaver:
+        radius = 18.0;
+        maxHp = 115.0;
+        baseSpeed = 85.0;
+        scoreValue = 340;
+        shootCooldown = 2.0;
+        break;
+      case EnemyType.cryoBomber:
+        radius = 17.0;
+        maxHp = 95.0;
+        baseSpeed = 90.0;
+        scoreValue = 310;
+        shootCooldown = 2.2;
+        break;
+    }
+
+    baseMaxHp = maxHp;
+    hp = maxHp;
+    size = Vector2.all(radius * 2);
+  }
+
+  @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    add(CircleHitbox());
+    try {
+      final elapsedMin = math.max(
+        (AsteroidsGame.fairRoundDuration - game.timeRemaining).clamp(0.0, 600.0) / 60.0,
+        (game.asteroidField?.difficultyTimer ?? 0.0) / 60.0,
+      );
+      if (elapsedMin > 0.01 || game.voidCellsLevel > 0) {
+        applyDynamicScaling(minutesElapsed: elapsedMin, voidCells: game.voidCellsLevel);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void onMount() {
+    super.onMount();
+    game.activeEnemies.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeEnemies.remove(this);
+    super.onRemove();
+  }
+
+  void resolveAsteroidImpact(AsteroidComponent asteroid) {
+    if (asteroid.isRemoving || asteroid.hp <= 0 || hp <= 0) return;
+    final dist = position.distanceTo(asteroid.position);
+    if (dist < radius + asteroid.radius) {
+      final pushDir = dist > 0.1 ? (position - asteroid.position).normalized() : Vector2(0, -1);
+      position = asteroid.position + pushDir * (radius + asteroid.radius + 1.0);
+      velocity = pushDir * (baseSpeed * 1.15);
+
+      // Naves leves (Void Swarmers & Scouts) sofrem dano de impacto ao colidirem contra asteroides massivos
+      if ((type == EnemyType.voidSwarmer || type == EnemyType.scout) && asteroid.radius >= 24.0) {
+        takeDamage(asteroid.radius * 0.90, position);
+      }
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (game.state != GameState.playing) {
+      removeFromParent();
+      return;
+    }
+
+    if (hitFlashTimer > 0) {
+      hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
+    }
+
+    // Tick Elemental Statuses (Solar Burn DoT & Cryo Freeze Slow)
+    if (activeStatuses.isNotEmpty) {
+      final expired = <ElementalStatus>[];
+      activeStatuses.forEach((st, remaining) {
+        final next = remaining - dt;
+        if (next <= 0) {
+          expired.add(st);
+        } else {
+          activeStatuses[st] = next;
+        }
+      });
+      for (final st in expired) {
+        activeStatuses.remove(st);
+      }
+
+      if (hasStatus(ElementalStatus.solarBurn)) {
+        _burnTickTimer += dt;
+        if (_burnTickTimer >= 0.5) {
+          _burnTickTimer = 0.0;
+          takeDamage(14.0, position);
+          if (hp <= 0) return;
+        }
+      }
+    }
+
+    final cryoSlowFactor = hasStatus(ElementalStatus.cryoFreeze) ? 0.50 : 1.0;
+    final effectiveDt = dt * cryoSlowFactor;
+
+    final player = game.player;
+    final toPlayer = player.position - position;
+    final distToPlayer = toPlayer.length;
+
+    // Despawn non-elite enemies if drifted far outside the camera radius
+    if (type != EnemyType.eliteCommander &&
+        type != EnemyType.carrierHive &&
+        distToPlayer > GameConstants.proximityDespawnRadius * 1.35) {
+      removeFromParent();
+      return;
+    }
+
+    switch (type) {
+      case EnemyType.scout:
+        _updateScout(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.raider:
+        _updateRaider(effectiveDt, player, toPlayer, distToPlayer);
+        break;
+      case EnemyType.sniper:
+        _updateSniper(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.eliteCommander:
+        _updateElite(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.voidSwarmer:
+        _updateVoidSwarmer(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.aegisBulwark:
+        _updateAegisBulwark(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.carrierHive:
+        _updateCarrierHive(effectiveDt, toPlayer, distToPlayer);
+        break;
+      case EnemyType.gravityWeaver:
+        _updateGravityWeaver(effectiveDt, player, toPlayer, distToPlayer);
+        break;
+      case EnemyType.cryoBomber:
+        _updateCryoBomber(effectiveDt, toPlayer, distToPlayer);
+        break;
+    }
+
+    position += velocity * cryoSlowFactor * dt;
+    _enforceSectorBounds();
+
+    // Sprint 19: Colisão de naves leves contra asteroides massivos (Zero-GC Entity Registry)
+    if (type == EnemyType.voidSwarmer || type == EnemyType.scout) {
+      try {
+        for (final a in game.activeAsteroids) {
+          if (hp <= 0) break;
+          resolveAsteroidImpact(a);
+        }
+      } catch (_) {}
+    }
+
+    // Sprint 20: Aura Criogênica de Elite desacelera a nave da jogadora se muito próxima
+    if (isPromotedElite && eliteAura == EliteAuraType.cryoFrost && distToPlayer <= 145.0) {
+      player.velocity.scale(math.pow(0.82, dt).toDouble());
+    }
+
+    // Sprint 45: Aura Vortex de Elite atrai a nave da jogadora para a zona perigosa
+    if (isPromotedElite && eliteAura == EliteAuraType.vortex && distToPlayer <= 220.0 && distToPlayer > 10.0) {
+      final pullDir = (position - player.position).normalized();
+      player.position += pullDir * (42.0 * dt);
+    }
+  }
+
+  void _updateVoidSwarmer(double dt, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final dir = toPlayer.normalized();
+      final tangent = Vector2(-dir.y, dir.x) * math.sin( spiralAngle += dt * 7.0 ) * 0.35;
+      final combined = (dir + tangent).normalized();
+      velocity = combined * baseSpeed;
+      angle = math.atan2(combined.y, combined.x) + math.pi / 2;
+    }
+  }
+
+  void _updateAegisBulwark(double dt, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final targetDir = toPlayer.normalized();
+      final desiredAngle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+      double diff = (desiredAngle - angle) % (math.pi * 2);
+      if (diff > math.pi) diff -= math.pi * 2;
+      if (diff < -math.pi) diff += math.pi * 2;
+      // Turns deliberately so the player can Dash behind its frontal shield!
+      angle += diff.clamp(-1.8 * dt, 1.8 * dt);
+      final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
+      velocity = forwardDir * baseSpeed;
+    }
+  }
+
+  void _updateCarrierHive(double dt, Vector2 toPlayer, double dist) {
+    final targetDir = dist > 1.0 ? toPlayer.normalized() : Vector2(0, -1);
+    angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+    if (dist > 520) {
+      velocity = targetDir * baseSpeed;
+    } else if (dist < 360) {
+      velocity = -targetDir * (baseSpeed * 0.8);
+    } else {
+      velocity = Vector2(-targetDir.y, targetDir.x) * (baseSpeed * 0.5);
+    }
+
+    shootCooldown -= dt;
+    if (shootCooldown <= 0) {
+      shootCooldown = 3.8;
+      // Spawns a mini-squad of 3 Void Swarmers if under enemy cap (O(1) count)
+      final currentEnemies = game.activeEnemies.length;
+      if (currentEnemies < 32) {
+        for (var i = -1; i <= 1; i++) {
+          final offset = Vector2(i * 24.0, 24.0);
+          game.world.add(
+            EnemyShipComponent(
+              position: position + offset,
+              type: EnemyType.voidSwarmer,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _updateGravityWeaver(double dt, PlayerComponent player, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final dir = toPlayer.normalized();
+      angle += 2.5 * dt;
+      velocity = dir * baseSpeed;
+      // Pulls the player ship gently toward the Gravity Weaver within 340px
+      if (dist <= 340.0) {
+        final pullToWeaver = (position - player.position).normalized();
+        player.velocity += pullToWeaver * (110.0 * dt);
+      }
+    }
+  }
+
+  void _updateCryoBomber(double dt, Vector2 toPlayer, double dist) {
+    final targetDir = dist > 1.0 ? toPlayer.normalized() : Vector2(0, -1);
+    angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+    velocity = targetDir * baseSpeed;
+
+    shootCooldown -= dt;
+    if (shootCooldown <= 0 && dist <= 520) {
+      shootCooldown = 2.4;
+      game.world.add(
+        EnemyBulletComponent(
+          position: position + targetDir * (radius + 5.0),
+          radius: 6.0,
+          velocity: targetDir * 195.0,
+          damage: 1.0,
+          bulletColor: const Color(0xFF80D8FF),
+        ),
+      );
+    }
+  }
+
+  void _updateScout(double dt, Vector2 toPlayer, double dist) {
+    if (dist > 1.0) {
+      final targetDir = toPlayer.normalized();
+      velocity = targetDir * baseSpeed;
+      angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+    }
+  }
+
+  void _updateRaider(double dt, PlayerComponent player, Vector2 toPlayer, double dist) {
+    raiderTimer -= dt;
+
+    switch (raiderState) {
+      case RaiderState.stalking:
+        // Orbit and drift near the player at ~350px
+        final targetDir = toPlayer.normalized();
+        final desiredAngle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+        double diff = (desiredAngle - angle) % (math.pi * 2);
+        if (diff > math.pi) diff -= math.pi * 2;
+        if (diff < -math.pi) diff += math.pi * 2;
+        angle += diff.clamp(-7.0 * dt, 7.0 * dt);
+
+        if (dist > 380) {
+          velocity = targetDir * baseSpeed;
+        } else if (dist < 260) {
+          velocity = -targetDir * (baseSpeed * 0.7);
+        } else {
+          // Tangential circling
+          final tangent = Vector2(-targetDir.y, targetDir.x);
+          velocity = tangent * baseSpeed;
+        }
+
+        if (raiderTimer <= 0) {
+          raiderState = RaiderState.telegraphing;
+          raiderTimer = 0.8; // 0.8s telegraphed laser warning
+          lockedChargeDirection = targetDir;
+          angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+          velocity = Vector2.zero();
+        }
+        break;
+
+      case RaiderState.telegraphing:
+        // Keep aim locked on target vector
+        angle = math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) + math.pi / 2;
+        velocity = Vector2.zero();
+
+        if (raiderTimer <= 0) {
+          raiderState = RaiderState.charging;
+          raiderTimer = 1.1; // 1.1s high speed charge
+          velocity = lockedChargeDirection * 390.0;
+          game.playSfx('dash.wav');
+        }
+        break;
+
+      case RaiderState.charging:
+        // Dash along locked trajectory with flame particles
+        angle = math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) + math.pi / 2;
+        if (math.Random().nextDouble() < 0.45) {
+          game.spawnExplosionParticles(
+            position: position,
+            colorChoices: [const Color(0xFFFF1744), Colors.amberAccent, Colors.orange],
+            count: 2,
+            minSize: 1.5,
+            maxSize: 3.0,
+            minSpeed: 20.0,
+            maxSpeed: 60.0,
+          );
+        }
+
+        if (raiderTimer <= 0) {
+          raiderState = RaiderState.recovering;
+          raiderTimer = 0.6;
+          velocity = lockedChargeDirection * (baseSpeed * 0.5);
+        }
+        break;
+
+      case RaiderState.recovering:
+        velocity.scale(math.exp(-2.5 * dt));
+        if (raiderTimer <= 0) {
+          raiderState = RaiderState.stalking;
+          raiderTimer = 2.0;
+        }
+        break;
+    }
+  }
+
+  void _updateSniper(double dt, Vector2 toPlayer, double dist) {
+    final targetDir = toPlayer.normalized();
+    angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+
+    // Maintain artillery distance between 320px and 450px
+    if (dist > 450) {
+      velocity = targetDir * baseSpeed;
+    } else if (dist < 320) {
+      velocity = -targetDir * (baseSpeed * 0.9);
+    } else {
+      final tangent = Vector2(-targetDir.y, targetDir.x);
+      velocity = tangent * (baseSpeed * 0.6);
+    }
+
+    shootCooldown -= dt;
+    if (shootCooldown <= 0 && dist <= 550) {
+      shootCooldown = 2.5;
+      final bulletVel = targetDir * 230.0;
+      game.world.add(
+        EnemyBulletComponent(
+          position: position + targetDir * (radius + 4.0),
+          radius: 4.5,
+          velocity: bulletVel,
+          damage: 1.0,
+          bulletColor: const Color(0xFFE040FB), // Magenta
+        ),
+      );
+      game.playSfx('shoot.wav');
+    }
+  }
+
+  void _updateElite(double dt, Vector2 toPlayer, double dist) {
+    final targetDir = toPlayer.normalized();
+    angle = math.atan2(targetDir.y, targetDir.x) + math.pi / 2;
+
+    // Slow relentless advance toward player
+    velocity = targetDir * baseSpeed;
+
+    shootCooldown -= dt;
+    if (shootCooldown <= 0 && dist <= 700) {
+      shootCooldown = 3.2;
+      spiralAngle += 0.35;
+
+      // 5-way spiral salvo
+      const int count = 5;
+      const double spread = 0.38; // radians
+      final baseAngle = math.atan2(targetDir.y, targetDir.x) + spiralAngle;
+
+      for (var i = 0; i < count; i++) {
+        final currentSalvoAngle = baseAngle + (i - (count - 1) / 2) * spread;
+        final dir = Vector2(math.cos(currentSalvoAngle), math.sin(currentSalvoAngle));
+        game.world.add(
+          EnemyBulletComponent(
+            position: position + dir * (radius + 6.0),
+            radius: 5.5,
+            velocity: dir * 210.0,
+            damage: 1.0,
+            bulletColor: const Color(0xFFFFD700), // Imperial Gold
+          ),
+        );
+      }
+      game.playSfx('shoot.wav');
+    }
+  }
+
+  void _enforceSectorBounds() {
+    position.x = position.x.clamp(radius, GameConstants.sectorWidth - radius);
+    position.y = position.y.clamp(radius, GameConstants.sectorHeight - radius);
+  }
+
+  bool takeDamage(double damage, Vector2 hitPos) {
+    double effectiveDamage = damage;
+
+    // Void Rupture amplification (+35% damage from all sources)
+    if (hasStatus(ElementalStatus.voidRupture)) {
+      effectiveDamage *= 1.35;
+    }
+
+    // Sprint 20: Aura de Escudo de Elite reduz dano recebido em 25%
+    if (isPromotedElite && eliteAura == EliteAuraType.aegisShield) {
+      effectiveDamage *= 0.75;
+    }
+
+    // Aegis Bulwark directional frontal shield: blocks 80% of damage hitting the front arc!
+    if (type == EnemyType.aegisBulwark) {
+      final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
+      Vector2 toAttacker = hitPos - position;
+      if (toAttacker.length <= 0.1) {
+        try {
+          toAttacker = game.player.position - position;
+        } catch (_) {}
+      }
+      if (toAttacker.length > 0.1 && toAttacker.normalized().dot(forwardDir) > 0.30) {
+        effectiveDamage *= 0.20;
+        try {
+          game.spawnFloatingText(
+            hitPos,
+            '🛡️ SHIELDED!',
+            color: const Color(0xFF00E5FF),
+            fontSize: 10.0,
+          );
+        } catch (_) {}
+      }
+    }
+
+    hp -= effectiveDamage;
+    hitFlashTimer = 0.12;
+
+    try {
+      game.spawnSparks(
+        position: hitPos,
+        color: Colors.white,
+        count: 5,
+        speed: 130.0,
+      );
+    } catch (_) {}
+
+    ElementalStatus? currentElement;
+    if (hasStatus(ElementalStatus.voidRupture)) {
+      currentElement = ElementalStatus.voidRupture;
+    } else if (hasStatus(ElementalStatus.cryoFreeze)) {
+      currentElement = ElementalStatus.cryoFreeze;
+    } else if (hasStatus(ElementalStatus.solarBurn)) {
+      currentElement = ElementalStatus.solarBurn;
+    } else if (hasStatus(ElementalStatus.ionShock)) {
+      currentElement = ElementalStatus.ionShock;
+    }
+
+    final isCrit = effectiveDamage >= 50.0 || hasStatus(ElementalStatus.voidRupture);
+    try {
+      game.spawnCombatDamageText(
+        position: hitPos,
+        damage: effectiveDamage,
+        isCritical: isCrit,
+        element: currentElement,
+      );
+    } catch (_) {}
+
+    if (hp <= 0) {
+      die();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  void die() {
+    try {
+      game.notifyEnemyKilledForUnlocks(type);
+    } catch (_) {}
+    game.playSfx('asteroid_split.wav');
+    game.addScore(scoreValue);
+    try {
+      final isEliteEnemy = type == EnemyType.eliteCommander || type == EnemyType.carrierHive;
+      game.gainUltimateCharge(isEliteEnemy ? 0.05 : 0.015);
+    } catch (_) {}
+
+    // Award scrap credits based on enemy tier
+    final int scrapReward;
+    switch (type) {
+      case EnemyType.scout:
+        scrapReward = 6;
+        break;
+      case EnemyType.raider:
+        scrapReward = 20;
+        break;
+      case EnemyType.sniper:
+        scrapReward = 35;
+        break;
+      case EnemyType.eliteCommander:
+        scrapReward = 120;
+        break;
+      case EnemyType.voidSwarmer:
+        scrapReward = 4;
+        break;
+      case EnemyType.aegisBulwark:
+        scrapReward = 45;
+        break;
+      case EnemyType.carrierHive:
+        scrapReward = 80;
+        break;
+      case EnemyType.gravityWeaver:
+        scrapReward = 35;
+        break;
+      case EnemyType.cryoBomber:
+        scrapReward = 30;
+        break;
+    }
+    game.addRunCredits(scrapReward);
+    game.spawnFloatingText(position, '+$scoreValue', color: Colors.white, fontSize: 13.0);
+
+    // Solar Burn Death Detonation Synergy: enemies dying while burning explode! (Zero-GC)
+    if (hasStatus(ElementalStatus.solarBurn)) {
+      for (final other in game.activeEnemies) {
+        if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 105.0) {
+          other.takeDamage(35.0, other.position);
+        }
+      }
+    }
+
+    // Sprint 45: Elite Volatile Affix death detonation (fragmentation burst)
+    if (isPromotedElite && eliteAura == EliteAuraType.volatile) {
+      game.triggerScreenShake(duration: 0.35, intensity: 12.0);
+      game.playSfx('bomb_explode.wav');
+      const numBullets = 6;
+      for (int i = 0; i < numBullets; i++) {
+        final bulletAngle = (2 * math.pi / numBullets) * i;
+        final dir = Vector2(math.cos(bulletAngle), math.sin(bulletAngle));
+        game.world.add(
+          EnemyBulletComponent(
+            position: position.clone(),
+            radius: 4.5,
+            velocity: dir * 140.0,
+            damage: 10.0,
+            bulletColor: const Color(0xFFFF5252),
+          ),
+        );
+      }
+    }
+
+    // Blueprint Drop (Sprint 16): Elites and Carrier Hives can drop technological Blueprints!
+    if (type == EnemyType.eliteCommander || type == EnemyType.carrierHive) {
+      game.tryDropBlueprint(position);
+    }
+
+    final isElite = type == EnemyType.eliteCommander;
+    final shake = isElite ? 16.0 : (type == EnemyType.raider ? 6.0 : 4.0);
+    game.triggerScreenShake(duration: isElite ? 0.45 : 0.2, intensity: shake);
+
+    // Explosion particles
+    final List<Color> colors = isElite
+        ? [const Color(0xFFFFD700), const Color(0xFFD500F9), Colors.white, Colors.orange]
+        : [const Color(0xFFFF1744), const Color(0xFFFF5252), Colors.white];
+
+    game.spawnExplosionParticles(
+      position: position,
+      colorChoices: colors,
+      count: isElite ? 45 : 16,
+      minSize: 2.0,
+      maxSize: isElite ? 5.5 : 3.5,
+      minSpeed: 50.0,
+      maxSpeed: isElite ? 280.0 : 160.0,
+    );
+
+    // Vampire Survivors formula: Drop Stardust XP / Chest
+    if (isElite) {
+      game.chargeBossBeacon('SUB-CHEFE ABATIDO');
+      // ⚠️ GUARANTEED COSMIC CHEST FROM ELITE COMMANDER!
+      game.world.add(
+        ChestComponent(
+          position: position.clone(),
+          tier: ChestTier.gold,
+        ),
+      );
+      // Extra large XP burst
+      game.world.add(XpOrbComponent(position: position + Vector2(-15, 0), type: XpOrbType.large));
+      game.world.add(XpOrbComponent(position: position + Vector2(15, 0), type: XpOrbType.large));
+
+      game.spawnFloatingText(
+        position + Vector2(0, -35),
+        '⚠️ VOID COMMANDER DESTROYED!',
+        color: const Color(0xFFFFD700),
+        fontSize: 16.0,
+      );
+    } else if (type == EnemyType.raider || type == EnemyType.sniper) {
+      game.world.add(XpOrbComponent(position: position.clone(), type: XpOrbType.medium));
+    } else {
+      game.world.add(XpOrbComponent(position: position.clone(), type: XpOrbType.small));
+    }
+
+    // Health capsule drop (Vampire Survivors balance):
+    // Inimigos normais NUNCA dropam vida (0%). Apenas Elites têm 25% de chance (50% se HP < 25%).
+    double hpRatio = 1.0;
+    try {
+      hpRatio = game.player.hpPercent;
+    } catch (_) {}
+    final healthChance = isElite ? (hpRatio < 0.25 ? 0.50 : 0.25) : 0.0;
+    if (healthChance > 0 && math.Random().nextDouble() < healthChance) {
+      game.world.add(
+        DropComponent(
+          position: position.clone(),
+          type: DropType.health,
+          initialVelocity: Vector2(
+            (math.Random().nextDouble() - 0.5) * 30.0,
+            (math.Random().nextDouble() - 0.5) * 30.0,
+          ),
+        ),
+      );
+    }
+
+    // Memory Core drop: 35% on Elite Commander to foster pilot bond progression
+    if (isElite && math.Random().nextDouble() < 0.35) {
+      game.world.add(
+        DropComponent(
+          position: position.clone() + Vector2(15, 0),
+          type: DropType.memoryCore,
+          initialVelocity: Vector2(
+            (math.Random().nextDouble() - 0.5) * 40.0,
+            (math.Random().nextDouble() - 0.5) * 40.0,
+          ),
+        ),
+      );
+    }
+    removeFromParent();
+  }
+
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollisionStart(intersectionPoints, other);
+    if (other is PlayerComponent) {
+      final double dmg;
+      switch (type) {
+        case EnemyType.scout:
+          dmg = 16.0;
+          break;
+        case EnemyType.raider:
+          dmg = 32.0;
+          break;
+        case EnemyType.sniper:
+          dmg = 22.0;
+          break;
+        case EnemyType.eliteCommander:
+          dmg = 45.0;
+          break;
+        case EnemyType.voidSwarmer:
+          dmg = 10.0;
+          break;
+        case EnemyType.aegisBulwark:
+          dmg = 34.0;
+          break;
+        case EnemyType.carrierHive:
+          dmg = 38.0;
+          break;
+        case EnemyType.gravityWeaver:
+          dmg = 24.0;
+          break;
+        case EnemyType.cryoBomber:
+          dmg = 22.0;
+          break;
+      }
+      other.takeHit(dmg);
+      // Small bounce/recoil away from player
+      final push = (position - other.position).normalized();
+      velocity = push * (baseSpeed * 1.5);
+    } else if (other is AsteroidComponent) {
+      resolveAsteroidImpact(other);
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.save();
+    canvas.translate(radius, radius);
+
+    // Sprint 20: Aura visual de Inimigo Promovido a Elite pelo Horde Director
+    if (isPromotedElite && eliteAura != EliteAuraType.none) {
+      final Color auraColor;
+      switch (eliteAura) {
+        case EliteAuraType.cryoFrost:
+          auraColor = const Color(0xFF80D8FF);
+          break;
+        case EliteAuraType.aegisShield:
+          auraColor = const Color(0xFF00E676);
+          break;
+        case EliteAuraType.ionShock:
+          auraColor = const Color(0xFFFFD700);
+          break;
+        case EliteAuraType.vortex:
+          auraColor = const Color(0xFFE040FB);
+          break;
+        case EliteAuraType.volatile:
+          auraColor = const Color(0xFFFF5252);
+          break;
+        case EliteAuraType.none:
+          auraColor = const Color(0xFFFFD700);
+          break;
+      }
+      _sharedFillPaint.color = auraColor.withValues(alpha: 0.16);
+      canvas.drawCircle(
+        Offset.zero,
+        radius * 1.45,
+        _sharedFillPaint,
+      );
+      _sharedStrokePaint.color = auraColor.withValues(alpha: 0.78);
+      _sharedStrokePaint.strokeWidth = 1.8;
+      canvas.drawCircle(
+        Offset.zero,
+        radius * 1.45,
+        _sharedStrokePaint,
+      );
+    }
+
+    // 1. Draw Telegraphed Red Aiming Laser for Raider (straight out of ship's nose)
+    if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {
+      final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 50.0) + 1) / 2;
+      _laserTelegraphPaint.color = const Color(0xFFFF1744).withValues(alpha: 0.45 + pulse * 0.45);
+      _laserTelegraphPaint.strokeWidth = 1.8 + pulse * 1.2;
+
+      // In local coordinates, ship's nose is (0, -radius), facing forward (0, -1)
+      canvas.drawLine(Offset(0, -radius), const Offset(0, -650.0), _laserTelegraphPaint);
+    }
+
+    final isFlashing = hitFlashTimer > 0;
+    final flashColor = Colors.white;
+
+    switch (type) {
+      case EnemyType.scout:
+        _renderScout(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.raider:
+        _renderRaider(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.sniper:
+        _renderSniper(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.eliteCommander:
+        _renderElite(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.voidSwarmer:
+        _renderVoidSwarmer(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.aegisBulwark:
+        _renderBulwark(canvas, isFlashing, flashColor);
+        break;
+      case EnemyType.carrierHive:
+        _renderElite(canvas, isFlashing, const Color(0xFF00E676));
+        break;
+      case EnemyType.gravityWeaver:
+        _renderSniper(canvas, isFlashing, const Color(0xFFAA00FF));
+        break;
+      case EnemyType.cryoBomber:
+        _renderSniper(canvas, isFlashing, const Color(0xFF80D8FF));
+        break;
+    }
+
+    canvas.restore();
+
+    // 2. Floating Health Bar for Elite Commander & Carrier Hive (counter-rotated so it stays horizontal)
+    if (type == EnemyType.eliteCommander || type == EnemyType.carrierHive) {
+      canvas.save();
+      canvas.translate(radius, radius);
+      canvas.rotate(-angle);
+      _renderHealthBar(canvas);
+      canvas.restore();
+    }
+  }
+
+  void _renderScout(Canvas canvas, bool isFlashing, Color flashColor) {
+    final path = Path()
+      ..moveTo(0, -radius)
+      ..lineTo(radius * 0.8, radius)
+      ..lineTo(0, radius * 0.4)
+      ..lineTo(-radius * 0.8, radius)
+      ..close();
+
+    // High-contrast dark shadow rim (makes neon pop against any nebula backdrop)
+    _shadowRimPaint.strokeWidth = 4.2;
+    canvas.drawPath(path, _shadowRimPaint);
+
+    // Rear engine thruster plume
+    final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 50.0);
+    _sharedStrokePaint.color = const Color(0xFF00E5FF).withValues(alpha: 0.85);
+    _sharedStrokePaint.strokeWidth = 2.0;
+    canvas.drawLine(Offset(0, radius * 0.4), Offset(0, radius * (0.7 + 0.4 * thrustPulse)), _sharedStrokePaint);
+
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF1B0B24).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
+    final strokeColor = isFlashing ? flashColor : const Color(0xFFFF4081);
+    Glow.strokePath(canvas, path, strokeColor, width: 2.2, intensity: 1.4);
+
+    // Glowing cockpit core
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFFF80AB);
+    canvas.drawCircle(Offset(0, -radius * 0.15), 2.2, _sharedFillPaint);
+  }
+
+  void _renderVoidSwarmer(Canvas canvas, bool isFlashing, Color flashColor) {
+    final path = Path()
+      ..moveTo(0, -radius * 1.25)
+      ..lineTo(radius * 0.85, radius * 0.85)
+      ..lineTo(0, radius * 0.35)
+      ..lineTo(-radius * 0.85, radius * 0.85)
+      ..close();
+
+    // High-contrast dark shadow rim
+    _shadowRimPaint.strokeWidth = 4.5;
+    canvas.drawPath(path, _shadowRimPaint);
+
+    // Twin plasma micro-jets
+    final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 35.0);
+    _sharedStrokePaint.color = const Color(0xFF00E5FF).withValues(alpha: 0.90);
+    _sharedStrokePaint.strokeWidth = 2.2;
+    canvas.drawLine(Offset(-radius * 0.3, radius * 0.6), Offset(-radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), _sharedStrokePaint);
+    canvas.drawLine(Offset(radius * 0.3, radius * 0.6), Offset(radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), _sharedStrokePaint);
+
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF280738).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
+    final strokeColor = isFlashing ? flashColor : const Color(0xFFE040FB);
+    Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.6);
+
+    // Pulsing cybernetic sensor eye
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFFF007F);
+    canvas.drawCircle(Offset(0, -radius * 0.2), 2.8, _sharedFillPaint);
+  }
+
+  void _renderRaider(Canvas canvas, bool isFlashing, Color flashColor) {
+    final path = Path()
+      ..moveTo(0, -radius * 1.2)
+      ..lineTo(radius * 0.7, radius * 0.8)
+      ..lineTo(radius * 0.3, radius * 0.4)
+      ..lineTo(0, radius * 0.6)
+      ..lineTo(-radius * 0.3, radius * 0.4)
+      ..lineTo(-radius * 0.7, radius * 0.8)
+      ..close();
+
+    // High-contrast dark shadow rim
+    _shadowRimPaint.strokeWidth = 4.5;
+    canvas.drawPath(path, _shadowRimPaint);
+
+    // Heavy crimson engine thruster plume
+    final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 45.0);
+    _sharedStrokePaint.color = const Color(0xFFFF5252).withValues(alpha: 0.85);
+    _sharedStrokePaint.strokeWidth = 2.4;
+    canvas.drawLine(Offset(0, radius * 0.6), Offset(0, radius * (1.0 + 0.5 * thrustPulse)), _sharedStrokePaint);
+
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF2B0B0E).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
+    final strokeColor = isFlashing ? flashColor : const Color(0xFFFF1744);
+    Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.5);
+
+    // Glowing crimson core
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFFF5252);
+    canvas.drawCircle(Offset(0, -radius * 0.2), 3.2, _sharedFillPaint);
+
+    // Sprint 39: Telegraphed Dash Trajectory Corridor (Nova Drift / Hades)
+    if (raiderState == RaiderState.telegraphing) {
+      final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
+      _laserTelegraphPaint.color = const Color(0xFFFF1744).withValues(alpha: 0.35 + pulse * 0.45);
+      _laserTelegraphPaint.strokeWidth = 2.2 + pulse * 1.5;
+
+      canvas.drawLine(
+        Offset(0, -radius * 1.2),
+        const Offset(0, -260.0),
+        _laserTelegraphPaint,
+      );
+
+      _sharedStrokePaint.color = const Color(0xFFFF1744).withValues(alpha: 0.15 + pulse * 0.20);
+      _sharedStrokePaint.strokeWidth = 1.2;
+      canvas.drawLine(Offset(-12, -radius * 1.2), const Offset(-22, -260.0), _sharedStrokePaint);
+      canvas.drawLine(Offset(12, -radius * 1.2), const Offset(22, -260.0), _sharedStrokePaint);
+    }
+  }
+
+  void _renderSniper(Canvas canvas, bool isFlashing, Color flashColor) {
+    // Hexagonal hull with front gun prongs
+    final path = Path()
+      ..moveTo(0, -radius)
+      ..lineTo(radius * 0.8, -radius * 0.3)
+      ..lineTo(radius * 0.8, radius * 0.6)
+      ..lineTo(0, radius)
+      ..lineTo(-radius * 0.8, radius * 0.6)
+      ..lineTo(-radius * 0.8, -radius * 0.3)
+      ..close();
+
+    // High-contrast dark shadow rim
+    _shadowRimPaint.strokeWidth = 4.5;
+    canvas.drawPath(path, _shadowRimPaint);
+
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF100E2B).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
+    final strokeColor = isFlashing ? flashColor : (flashColor != Colors.white ? flashColor : const Color(0xFF7C4DFF));
+    Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.4);
+
+    // Twin sniper railgun barrels
+    _sharedStrokePaint.color = isFlashing ? flashColor : const Color(0xFFE040FB);
+    _sharedStrokePaint.strokeWidth = 2.2;
+    canvas.drawLine(Offset(-radius * 0.45, -radius * 0.3), Offset(-radius * 0.45, -radius * 1.3), _sharedStrokePaint);
+    canvas.drawLine(Offset(radius * 0.45, -radius * 0.3), Offset(radius * 0.45, -radius * 1.3), _sharedStrokePaint);
+
+    // Glowing core
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFF80D8FF);
+    canvas.drawCircle(Offset.zero, 3.0, _sharedFillPaint);
+
+    // Sprint 39: Telegraphed Laser Aiming Line (Hades / Nova Drift)
+    if (shootCooldown <= 0.70 && shootCooldown > 0) {
+      final telegraphProgress = (1.0 - (shootCooldown / 0.70)).clamp(0.0, 1.0);
+      final alpha = (0.25 + 0.65 * telegraphProgress).clamp(0.0, 1.0);
+      _laserTelegraphPaint.color = Color.lerp(const Color(0xFFE040FB), const Color(0xFFFF1744), telegraphProgress)!.withValues(alpha: alpha);
+      _laserTelegraphPaint.strokeWidth = 1.0 + telegraphProgress * 1.8;
+
+      canvas.drawLine(
+        Offset(0, -radius * 1.3),
+        const Offset(0, -380.0),
+        _laserTelegraphPaint,
+      );
+
+      // Warning target reticle at tip
+      _laserReticlePaint.color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.8);
+      canvas.drawCircle(
+        const Offset(0, -380.0),
+        3.0 + telegraphProgress * 2.5,
+        _laserReticlePaint,
+      );
+    }
+  }
+
+  void _renderElite(Canvas canvas, bool isFlashing, Color flashColor) {
+    // Majestic armored command cruiser hull
+    final path = Path()
+      ..moveTo(0, -radius * 1.25)
+      ..lineTo(radius * 0.65, -radius * 0.4)
+      ..lineTo(radius, radius * 0.7)
+      ..lineTo(radius * 0.35, radius * 0.95)
+      ..lineTo(0, radius * 0.6)
+      ..lineTo(-radius * 0.35, radius * 0.95)
+      ..lineTo(-radius, radius * 0.7)
+      ..lineTo(-radius * 0.65, -radius * 0.4)
+      ..close();
+
+    // High-contrast dark shadow rim
+    _shadowRimPaint.strokeWidth = 5.2;
+    canvas.drawPath(path, _shadowRimPaint);
+
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF180A28).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
+    final strokeColor = isFlashing ? flashColor : (flashColor != Colors.white ? flashColor : const Color(0xFFFFD700));
+    Glow.strokePath(canvas, path, strokeColor, width: 2.8, intensity: 1.8);
+
+    // Inner imperial insignia & purple energy core
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFD500F9);
+    canvas.drawCircle(Offset(0, -radius * 0.1), 7.0, _sharedFillPaint);
+
+    Glow.drawGlowCircle(
+      canvas,
+      Offset(0, -radius * 0.1),
+      10.0,
+      const Color(0xFFD500F9),
+      strokeWidth: 2.2,
+      intensity: 1.6,
+    );
+  }
+
+  void _renderBulwark(Canvas canvas, bool isFlashing, Color flashColor) {
+    final path = Path()
+      ..moveTo(-radius * 0.9, -radius * 0.7)
+      ..lineTo(radius * 0.9, -radius * 0.7)
+      ..lineTo(radius * 0.7, radius * 0.9)
+      ..lineTo(-radius * 0.7, radius * 0.9)
+      ..close();
+
+    // High-contrast dark shadow rim
+    _shadowRimPaint.strokeWidth = 4.8;
+    canvas.drawPath(path, _shadowRimPaint);
+
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF0A1E2E).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
+    final strokeColor = isFlashing ? flashColor : const Color(0xFF00E5FF);
+    Glow.strokePath(canvas, path, strokeColor, width: 2.6, intensity: 1.5);
+
+    // Glowing Frontal Directional Energy Shield Arc
+    final shieldRect = Rect.fromCircle(center: Offset.zero, radius: radius * 1.22);
+    _sharedStrokePaint.color = const Color(0xFF00E5FF);
+    _sharedStrokePaint.strokeWidth = 4.2;
+    canvas.drawArc(
+      shieldRect,
+      -math.pi * 0.85,
+      math.pi * 0.70,
+      false,
+      _sharedStrokePaint,
+    );
+  }
+
+  void _renderHealthBar(Canvas canvas) {
+    const barWidth = 60.0;
+    const barHeight = 6.0;
+    final barY = -radius - 14.0;
+    const barX = -barWidth / 2;
+
+    // Background
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth, barHeight), const Radius.circular(3)),
+      _healthBarBgPaint,
+    );
+
+    // Health Fill (Gold gradient)
+    final healthRatio = (hp / maxHp).clamp(0.0, 1.0);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth * healthRatio, barHeight), const Radius.circular(3)),
+      _healthBarFillPaint,
+    );
+
+    // Border
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth, barHeight), const Radius.circular(3)),
+      _healthBarBorderPaint,
+    );
+  }
+}

@@ -1,0 +1,225 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+
+import 'dart:io' as io;
+
+class ApiService {
+  static String get baseUrl {
+    if (!kIsWeb && io.Platform.isAndroid) {
+      return 'http://10.0.2.2:8080';
+    }
+    return 'http://localhost:8080';
+  }
+  static const String secretKey = 'asteroids-secret-token-key-2026';
+
+  // Shared preferences keys
+  static const String _keyPlayerId = 'player_id';
+  static const String _keyPlayerUsername = 'player_username';
+
+  // 1. Get saved player profile from local storage
+  static Future<Map<String, String>?> getLocalProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString(_keyPlayerId);
+    final username = prefs.getString(_keyPlayerUsername);
+    
+    if (id != null && username != null) {
+      return {'id': id, 'username': username};
+    }
+    return null;
+  }
+
+  // 2. Save player profile to local storage
+  static Future<void> saveLocalProfile(String id, String username) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyPlayerId, id);
+    await prefs.setString(_keyPlayerUsername, username);
+  }
+
+  // 3. Register a new player with the Go API
+  static Future<Map<String, String>?> registerPlayer(String username) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/players'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username}),
+      ).timeout(const Duration(milliseconds: 1500));
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final id = data['id'] as String;
+        final name = data['username'] as String;
+        
+        await saveLocalProfile(id, name);
+        return {'id': id, 'username': name};
+      }
+    } catch (e) {
+      debugPrint('Error registering player: $e');
+    }
+    return null;
+  }
+
+  // 4. Submit score with anti-cheat signature
+  static Future<bool> submitScore({
+    required String playerId,
+    required int score,
+    required int level,
+    required String mode,
+    String? scientist,
+  }) async {
+    try {
+      // Generate HMAC-SHA256 signature
+      final payload = '$playerId:$score:$level:$mode';
+      final keyBytes = utf8.encode(secretKey);
+      final payloadBytes = utf8.encode(payload);
+      final hmacSha256 = Hmac(sha256, keyBytes);
+      final digest = hmacSha256.convert(payloadBytes);
+      final signature = digest.toString();
+
+      final body = <String, dynamic>{
+        'player_id': playerId,
+        'score': score,
+        'level': level,
+        'mode': mode,
+        'signature': signature,
+      };
+      if (scientist != null) {
+        body['scientist'] = scientist;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/scores'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ).timeout(const Duration(milliseconds: 1500));
+
+      if (response.statusCode == 201) {
+        debugPrint('Score submitted successfully to cloud leaderboard!');
+        return true;
+      } else {
+        debugPrint('Failed to submit score. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error submitting score to backend: $e');
+    }
+    return false;
+  }
+
+  // 5. Fair Leaderboard: Local + Online Dual-Persistence
+  static const String _keyFairLeaderboard = 'fair_leaderboard';
+
+  static Future<void> saveFairScore({
+    required String playerName,
+    required String scientistName,
+    required int score,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final existingJson = prefs.getString(_keyFairLeaderboard);
+      List<dynamic> list = [];
+      if (existingJson != null) {
+        list = jsonDecode(existingJson);
+      }
+      list.add({
+        'username': playerName,
+        'scientist': scientistName,
+        'score': score,
+        'level': 1,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      // Sort descending by score
+      list.sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
+      // Save immediately to local persistent storage for instant arcade response
+      await prefs.setString(_keyFairLeaderboard, jsonEncode(list));
+
+      // Synchronize with Go backend if online
+      final safeUsername = playerName.length >= 2 ? playerName : '$playerName ';
+      try {
+        final registered = await registerPlayer(safeUsername);
+        if (registered != null) {
+          await submitScore(
+            playerId: registered['id']!,
+            score: score,
+            level: 1,
+            mode: 'arcade',
+            scientist: scientistName,
+          );
+        }
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('Error saving fair score: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getFairLeaderboard({String period = 'all', int limit = 10}) async {
+    // 1. Fetch local scores from SharedPreferences
+    List<Map<String, dynamic>> localScores = [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final existingJson = prefs.getString(_keyFairLeaderboard);
+      if (existingJson != null) {
+        final List<dynamic> list = jsonDecode(existingJson);
+        localScores = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error reading local fair leaderboard: $e');
+    }
+
+    // 2. Fetch remote scores from Go backend
+    List<Map<String, dynamic>> backendScores = [];
+    try {
+      backendScores = await getLeaderboard('arcade', period: period, limit: limit);
+    } catch (e) {
+      debugPrint('Error reading backend leaderboard: $e');
+    }
+
+    // 3. Merge both sources (combine and deduplicate by username + score + scientist)
+    final Map<String, Map<String, dynamic>> combined = {};
+    for (final s in backendScores) {
+      final key = '${s['username']}_${s['score']}_${s['scientist']}';
+      combined[key] = s;
+    }
+    for (final s in localScores) {
+      final key = '${s['username']}_${s['score']}_${s['scientist']}';
+      if (!combined.containsKey(key)) {
+        combined[key] = s;
+      }
+    }
+
+    List<Map<String, dynamic>> allScores = combined.values.toList();
+
+    // 4. Apply period filter if 'today'
+    if (period == 'today') {
+      final now = DateTime.now();
+      final todayPrefix = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      allScores = allScores.where((e) {
+        final createdAt = (e['created_at'] ?? '').toString();
+        return createdAt.startsWith(todayPrefix);
+      }).toList();
+    }
+
+    // 5. Sort descending by score
+    allScores.sort((a, b) => ((b['score'] ?? 0) as int).compareTo((a['score'] ?? 0) as int));
+
+    return allScores.take(limit).toList();
+  }
+
+  // 6. Get leaderboards list
+  static Future<List<Map<String, dynamic>>> getLeaderboard(String mode, {String period = 'all', int limit = 10}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/scores?mode=$mode&period=$period&limit=$limit'),
+      ).timeout(const Duration(milliseconds: 1500));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((entry) => entry as Map<String, dynamic>).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching leaderboard: $e');
+    }
+    return [];
+  }
+}
