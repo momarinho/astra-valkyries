@@ -15,6 +15,17 @@ This document tracks the execution of Sprints 55 to 60, as officially documented
 
 ---
 
+## Sprint 55.5: Flutter 3.50 Modernization, Zero-GC Hardening & Open-Source Pivot (DONE ✅)
+* **Goal**: Upgrade stack to Flutter 3.50 / Dart 3.14, eliminate linter warnings, establish O(1) Entity Registry and sanitize repository for public portfolio.
+* **Deliverables**:
+  - Zero-warning linter standard (0 errors, 0 warnings, 0 lints in `flutter analyze`).
+  - Pre-allocated entity registry sets in `AsteroidsGame` eliminating $O(N)$ `whereType` loops.
+  - Interactive FPS & Telemetry switch in SettingsOverlay and HudOverlay.
+  - Replaced legacy content with 10 high-resolution Tactical Mission Dossiers.
+  - Published clean initial release to GitHub (`momarinho/astra-valkyries`) under MIT License.
+
+---
+
 ## Sprint 56: Cosmic Atmosphere, Directional Star Lighting & Kinetic Space Dust (IN PROGRESS ⏳)
 * **Goal**: Enrich biome depth with kinetic space dust and directional celestial rim-lighting.
 * **Deliverables**:
@@ -38,23 +49,23 @@ This document tracks the execution of Sprints 55 to 60, as officially documented
 * **Deliverables**:
   - Tactical squad spawn patterns (Wedge, Pincer, Freight Escort).
   - Telegraph laser lines for Snipers and Elites with countdown color transition.
-  - Elite Affixes (Gravitational Well, Overcharged Barrier, Volatile Core).
+  - Algorithmic swarm separation (Boids Repulsion) preventing sprite overlap.
 
 ---
 
-## Sprint 59: Environmental Interactivity & Dynamic Audio Stems
-* **Goal**: Explorable battlegrounds and responsive music.
+## Sprint 59: Roguelite Expansion & Transparent Build Stats (Brotato Model)
+* **Goal**: Deep tactical build diversity and high-risk trade-offs.
 * **Deliverables**:
-  - Destructible debris physics pushing hazards into enemy formations.
-  - Dynamic audio stem mixing (exploration vs high-threat combat crossfades).
-  - Jackpot chest opening sequences with celebratory sensory feedback.
+  - High-risk/high-reward passive modules (Glass Cannon, Juggernaut Plating, Unstable Payloads).
+  - Ordered level-up queue (`pendingLevelUps`) to prevent lost cards during mass XP bursts.
+  - Transparent pause-screen statistics dashboard (real DPS, Crit %, Armor %, Speed %).
 
 ---
 
-## Sprint 60: Architectural Zero-GC Hardening & Steam Deck Performance Lock
-* **Goal**: Guaranteed 60–120 FPS rock-solid frametime on Linux / Steam Deck.
+## Sprint 60: Cloud Deploy & Web Playability (Zero VPS / Free-Tier Cloud)
+* **Goal**: Playable directly in browser with automated GitHub Pages CI/CD and free cloud Go leaderboard.
 * **Deliverables**:
-  - Complete elimination of in-render `Paint()` allocations (Zero-GC across all components).
-  - Granular `ValueNotifier` reactive HUD decoupling (eliminating the 30 FPS `setState()` ticker).
-  - Pre-allocated entity registry sets in `AsteroidsGame` eliminating `whereType` loops.
-  - Automated CI performance architecture tests (`test/architecture_performance_test.dart`).
+  - Flutter Web compilation pipeline and automated GitHub Pages deployment via GitHub Actions.
+  - Multi-stage minimal `Dockerfile` (~20MB) for `go-backend` ready for zero-cost deployment on Render.com / Fly.io.
+  - Dynamic API base URL configuration in client with resilient offline-first fallback.
+  - "Play in Browser" badge and one-click demo link in repository README.

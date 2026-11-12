@@ -530,16 +530,19 @@ flowchart TD
 
 ---
 
-## 🎮 SPRINT 60: Suporte Integral ao Steam Deck, HUD Isolado & Paisagem Sonora Adaptativa
+## 🌐 SPRINT 60: Deploy Online, Global Leaderboard Cloud & Web Playability (Zero VPS / Free-Tier Cloud)
 - **Status:** 📋 **PLANEJADA**
-- **Objetivo:** Obter conformidade total para o selo **Steam Deck Verified**, erradicar gargalos de renderização do HUD e criar uma identidade sonora viva.
+- **Objetivo:** Disponibilizar o jogo para ser jogado diretamente no navegador via web (sem instalação) e publicar a API de Leaderboard em nuvem gratuita, sem necessidade de VPS paga ou manutenção de infraestrutura complexa.
 - **Entregáveis Planejados:**
-  - [ ] **Navegação 100% via Gamepad nos Menus & Level-Up:**
-    - Suporte a D-Pad / Analógico para navegar entre cartas de Level-Up, Botão A para confirmar escolha, Botão X para Reroll e Botão Y para Banish.
-    - Suporte completo a gamepad na Oficina, Seleção de Valquírias e Menus de Configurações.
-  - [ ] **Desacoplamento de Performance do HUD Overlay:**
-    - Eliminar o `setState` a 30 FPS na raiz do HUD de 2.700 linhas; encapsular medidores de vida, radar tático e cronômetro em `ValueNotifier` e `RepaintBoundary` isolados.
-  - [ ] **Painel Profissional de Acessibilidade:**
-    - Sliders no menu de opções para: Intensidade de Screen Shake (0% a 100%), Redução de Flashes Estroboscópicos e Escala de Textos de Dano.
-  - [ ] **Trilhas Sonoras Adaptativas por Bioma:**
-    - Trilha musical exclusiva para cada um dos 5 setores principais, com crossfade suave de 1.2s para stems de combate intenso ao invocar o Titã do Setor.
+  - [ ] **Compilação & Otimização do Flutter Web (WASM / CanvasKit):**
+    - Configurar pipeline de build Web do Flutter com canvas responsivo e proporções adaptativas de tela.
+    - Automação de CI/CD via **GitHub Actions** no repositório `momarinho/astra-valkyries` para publicar novas versões automaticamente no **GitHub Pages** (`https://momarinho.github.io/astra-valkyries`).
+    - Pacote empacotado para distribuição opcional no **Itch.io** (Play in Browser).
+  - [ ] **Deploy do Backend Go Sem VPS (Cloud Free-Tier):**
+    - Criação de `Dockerfile` multi-stage mínimo (~20MB) para compilar e rodar o `go-backend` com SQLite embarcado.
+    - Configuração de deploy gratuito em serviços como **Render.com** ou **Fly.io** com certificado SSL/HTTPS automático e zero custo mensal.
+  - [ ] **Sincronização Híbrida & Resiliência Offline:**
+    - Configuração de `API_BASE_URL` dinâmica no cliente Flutter apontando para o endpoint na nuvem.
+    - Garantia do fallback transparente: se o serviço na nuvem estiver em *cold start* ou o jogador estiver sem internet, o jogo salva recordes e afinidade localmente via `SharedPreferences` sem qualquer travamento.
+  - [ ] **Badge "Play in Browser" no README do GitHub:**
+    - Botão de acesso direto no topo do repositório para que recrutadores e jogadores testem o jogo instantaneamente no navegador.
