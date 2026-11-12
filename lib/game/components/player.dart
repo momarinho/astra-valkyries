@@ -177,6 +177,8 @@ class PlayerComponent extends PositionComponent
   int pierceCount = 0;
   double damageMultiplier = 1.0;
   double cooldownMultiplier = 1.0;
+  double armorReduction = 0.0;
+  double dashCooldownMultiplier = 1.0;
   bool hasChainLightning = false;
   bool hasFieryDash = false;
   bool hasClusterBombs = false;
@@ -228,6 +230,8 @@ class PlayerComponent extends PositionComponent
     pierceCount = 0;
     damageMultiplier = 1.0;
     cooldownMultiplier = 1.0;
+    armorReduction = 0.0;
+    dashCooldownMultiplier = 1.0;
     hasChainLightning = false;
     hasFieryDash = false;
     hasClusterBombs = false;
@@ -380,6 +384,9 @@ class PlayerComponent extends PositionComponent
     }
 
     double adjustedDamage = damage;
+    if (armorReduction > 0.0) {
+      adjustedDamage *= (1.0 - armorReduction.clamp(0.0, 0.65));
+    }
     if (game.activeMutations.contains('mut_emergency_protocol') &&
         hpPercent <= 0.40) {
       adjustedDamage *= 0.60;
@@ -760,9 +767,10 @@ class PlayerComponent extends PositionComponent
     }
 
     invulnerableTimer = math.max(0.0, invulnerableTimer - dt);
+    final dashDt = dt / dashCooldownMultiplier.clamp(0.35, 2.0);
     if (valkyrie?.id == 'vesper') {
       if (dashCharges < maxDashCharges) {
-        dashRechargeTimer = math.max(0.0, dashRechargeTimer - dt);
+        dashRechargeTimer = math.max(0.0, dashRechargeTimer - dashDt);
         if (dashRechargeTimer <= 0) {
           dashCharges++;
           if (dashCharges < maxDashCharges) {
@@ -772,7 +780,7 @@ class PlayerComponent extends PositionComponent
       }
       dashCooldownTimer = (dashCharges > 0) ? 0.0 : dashRechargeTimer;
     } else {
-      dashCooldownTimer = math.max(0.0, dashCooldownTimer - dt);
+      dashCooldownTimer = math.max(0.0, dashCooldownTimer - dashDt);
     }
 
     // SPRINT 57: Processa fila de input buffer para Dash (executa no primeiro frame válido)

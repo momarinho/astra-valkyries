@@ -80,6 +80,43 @@ class BossCinematicData {
   });
 }
 
+/// Sprint 59: Snapshot matemático transparente dos modificadores da build atual (*Brotato Standard*).
+class BuildStatsSnapshot {
+  final double estimatedDps;
+  final double damageMultiplier;
+  final double fireRatePercent;
+  final double critChance;
+  final double critMultiplier;
+  final double armorReduction;
+  final double lifesteal;
+  final double areaMultiplier;
+  final int pierceCount;
+  final double maxSpeed;
+  final double magnetRadius;
+  final double luckBonus;
+  final double currentHp;
+  final double maxHp;
+  final List<String> activeTradeOffIds;
+
+  const BuildStatsSnapshot({
+    required this.estimatedDps,
+    required this.damageMultiplier,
+    required this.fireRatePercent,
+    required this.critChance,
+    required this.critMultiplier,
+    required this.armorReduction,
+    required this.lifesteal,
+    required this.areaMultiplier,
+    required this.pierceCount,
+    required this.maxSpeed,
+    required this.magnetRadius,
+    required this.luckBonus,
+    required this.currentHp,
+    required this.maxHp,
+    required this.activeTradeOffIds,
+  });
+}
+
 enum GameState {
   menu,
   valkyrieSelection,
@@ -545,7 +582,8 @@ class AsteroidsGame extends FlameGame
         .where((bp) => !foundBlueprints.contains(bp.weaponId))
         .toList();
     if (unfound.isEmpty) return;
-    if (!guaranteed && math.Random().nextDouble() > 0.35) return;
+    final dropChance = (0.35 + rogueLuckBonus).clamp(0.0, 0.95);
+    if (!guaranteed && math.Random().nextDouble() > dropChance) return;
 
     final bp = unfound.first;
     foundBlueprints.add(bp.weaponId);
@@ -671,9 +709,59 @@ class AsteroidsGame extends FlameGame
   Sector currentSector = Sector.defaultSector;
   final Set<String> activePassives = {};
   double rogueCritChance = 0.05;
+  double rogueCritMultiplier = 2.0;
   double rogueFireRateMultiplier = 1.0;
   double rogueDamageMultiplier = 1.0;
   double rogueMagnetRadius = 150.0;
+  double rogueLifesteal = 0.0;
+  double rogueAreaMultiplier = 1.0;
+  double rogueLuckBonus = 0.0;
+
+  static const Set<String> tradeOffPassiveIds = {
+    'passive_glass_cannon',
+    'passive_juggernaut',
+    'passive_unstable_payloads',
+  };
+
+  /// Sprint 59: Consolida matematicamente os atributos reais da build atual.
+  BuildStatsSnapshot getBuildStatsSnapshot() {
+    final p = player;
+    final combinedDmgMult = rogueDamageMultiplier * p.damageMultiplier;
+    final effectiveCooldownScale =
+        (rogueFireRateMultiplier * p.cooldownMultiplier).clamp(0.20, 4.0);
+    final totalCritChance = (rogueCritChance + p.bonusCritChance).clamp(
+      0.0,
+      1.0,
+    );
+    final critFactor =
+        1.0 + totalCritChance * math.max(0.0, rogueCritMultiplier - 1.0);
+
+    double totalDps = 0.0;
+    for (final w in p.activeWeapons) {
+      final effectiveCd = math.max(0.06, w.cooldown * effectiveCooldownScale);
+      totalDps += (w.damage * combinedDmgMult * critFactor) / effectiveCd;
+    }
+
+    return BuildStatsSnapshot(
+      estimatedDps: totalDps,
+      damageMultiplier: combinedDmgMult,
+      fireRatePercent: 100.0 / effectiveCooldownScale,
+      critChance: totalCritChance,
+      critMultiplier: rogueCritMultiplier,
+      armorReduction: p.armorReduction,
+      lifesteal: rogueLifesteal,
+      areaMultiplier: rogueAreaMultiplier,
+      pierceCount: p.pierceCount,
+      maxSpeed: p.movementMaxSpeed * p.speedModifier,
+      magnetRadius: p.magnetRadius,
+      luckBonus: rogueLuckBonus,
+      currentHp: p.hp,
+      maxHp: p.maxHp,
+      activeTradeOffIds: activePassives
+          .where((id) => tradeOffPassiveIds.contains(id))
+          .toList(growable: false),
+    );
+  }
 
   void addStardust(int amount) => addXp(amount);
   void addScrap(int amount) {
@@ -760,10 +848,11 @@ class AsteroidsGame extends FlameGame
   double cometAlertTimer = 0.0;
   String? cometAlertMessage;
 
-  // Roguelike In-Run Progression (XP & Escolha de Cartas)
+  // Roguelike In-Run Progression (XP, Fila de Level-Up & Escolha de Cartas)
   int runLevel = 1;
   int runXp = 0;
   int runXpNextLevel = 30;
+  int pendingLevelUps = 0;
   List<RoguePerk> currentLevelUpChoices = [];
 
   static int calculateNextLevelXp(int level) {
@@ -775,11 +864,14 @@ class AsteroidsGame extends FlameGame
     gainUltimateCharge(amount * 0.003);
     final effective = isHyperMode ? (amount * 1.5).round() : amount;
     runXp += effective;
-    if (runXp >= runXpNextLevel) {
+    while (runXp >= runXpNextLevel) {
       runXp -= runXpNextLevel;
       runLevel++;
       runXpNextLevel = calculateNextLevelXp(runLevel);
-      triggerLevelUp();
+      pendingLevelUps++;
+    }
+    if (pendingLevelUps > 0) {
+      _openNextQueuedLevelUp();
     }
   }
 
@@ -808,6 +900,13 @@ class AsteroidsGame extends FlameGame
     );
   }
 
+  void _openNextQueuedLevelUp() {
+    if (pendingLevelUps > 0) {
+      pendingLevelUps--;
+    }
+    triggerLevelUp();
+  }
+
   void triggerLevelUp() {
     // Sprint 26: Tomo de Fusão Térmica concede permanentemente +1 escolha no Level-Up (4 em vez de 3)
     final choiceCount = unlockedRelics.contains('thermal_tome') ? 4 : 3;
@@ -831,12 +930,18 @@ class AsteroidsGame extends FlameGame
     triggerScreenShake(duration: 0.35, intensity: 7.0);
     pauseEngine();
     state = GameState.levelUp;
+    // Se já estava em levelUp (fila > 0), força reabertura/refresh limpo do overlay
+    overlays.remove('levelUp');
     _safeAddOverlay('levelUp');
   }
 
   void selectLevelUpPerk(RoguePerk perk) {
     perk.onSelect(this);
     playSfx('purchase.wav');
+    if (pendingLevelUps > 0) {
+      _openNextQueuedLevelUp();
+      return;
+    }
     overlays.remove('levelUp');
     state = GameState.playing;
     _safeAddOverlay('hud');
@@ -879,8 +984,12 @@ class AsteroidsGame extends FlameGame
         );
       } catch (_) {}
     }
-    state = GameState.playing;
     addRunCredits(50);
+    if (pendingLevelUps > 0) {
+      _openNextQueuedLevelUp();
+      return;
+    }
+    state = GameState.playing;
     try {
       overlays.remove('levelUp');
       _safeAddOverlay('hud');
@@ -903,7 +1012,9 @@ class AsteroidsGame extends FlameGame
         break;
       case ChestTier.gold:
         final luckBonus =
-            (rogueCritChance * 0.5) + metaProgression.jackpotChanceBonus;
+            (rogueCritChance * 0.5) +
+            metaProgression.jackpotChanceBonus +
+            rogueLuckBonus;
         final roll = math.Random().nextDouble();
         if (roll < 0.12 + luckBonus) {
           itemCount = 5;
@@ -913,7 +1024,7 @@ class AsteroidsGame extends FlameGame
         break;
       case ChestTier.silver:
         final roll = math.Random().nextDouble();
-        final luckBonus = metaProgression.jackpotChanceBonus;
+        final luckBonus = metaProgression.jackpotChanceBonus + rogueLuckBonus;
         if (roll < 0.20 + luckBonus) {
           itemCount = 3;
         } else {
@@ -1679,8 +1790,13 @@ class AsteroidsGame extends FlameGame
           0.0,
           1.0,
         );
+    rogueCritMultiplier = 2.0;
     rogueDamageMultiplier = 1.0 + metaProgression.damageBonusMultiplier;
     rogueFireRateMultiplier = 1.0;
+    rogueLifesteal = 0.0;
+    rogueAreaMultiplier = 1.0;
+    rogueLuckBonus = 0.0;
+    pendingLevelUps = 0;
     rogueMagnetRadius =
         (150.0 * selectedValkyrie.magnetRadiusMultiplier) *
         metaProgression.magnetMultiplier;

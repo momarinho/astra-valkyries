@@ -60,12 +60,14 @@ This document tracks the execution of Sprints 55 to 60, as officially documented
 
 ---
 
-## Sprint 59: Roguelite Expansion & Transparent Build Stats (Brotato Model)
+## Sprint 59: Roguelite Expansion & Transparent Build Stats (Brotato Model) (DONE ✅)
 * **Goal**: Deep tactical build diversity and high-risk trade-offs.
 * **Deliverables**:
-  - High-risk/high-reward passive modules (Glass Cannon, Juggernaut Plating, Unstable Payloads).
-  - Ordered level-up queue (`pendingLevelUps`) to prevent lost cards during mass XP bursts.
-  - Transparent pause-screen statistics dashboard (real DPS, Crit %, Armor %, Speed %).
+  - Expanded passive pool to 16 modules in `RoguePerkGenerator.buildPassiveCatalog()`, connecting Armor, Crit Multiplier, Lifesteal, AoE Radius, Pierce, and Luck directly into combat mechanics.
+  - High-risk/high-reward trade-off modules (`isTradeOff: true`: *Glass Cannon Reactor*, *Juggernaut Plating*, *Unstable Payloads*).
+  - Ordered level-up queue (`pendingLevelUps`) with queue badge in `LevelUpOverlay` so mass XP bursts never drop choices.
+  - Transparent mathematical build dashboard (`BuildStatsSnapshot` + `📊 STATS` tab in `PauseOverlay`: real DPS, Crit %/Mult, Armor %, Lifesteal %, AoE %, Speed, Magnet, Luck).
+  - 7 automated tests in `test/sprint59_roguelite_expansion_test.dart` (309 total tests passing).
 
 ---
 

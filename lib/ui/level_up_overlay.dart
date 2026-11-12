@@ -14,7 +14,8 @@ class LevelUpOverlay extends StatefulWidget {
   State<LevelUpOverlay> createState() => _LevelUpOverlayState();
 }
 
-class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProviderStateMixin {
+class _LevelUpOverlayState extends State<LevelUpOverlay>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   late final FocusNode _focusNode;
   late final AnimationController _animController;
@@ -48,9 +49,11 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
 
     if (event.logicalKey == LogicalKeyboardKey.digit1 && choices.isNotEmpty) {
       _selectPerk(0);
-    } else if (event.logicalKey == LogicalKeyboardKey.digit2 && choices.length > 1) {
+    } else if (event.logicalKey == LogicalKeyboardKey.digit2 &&
+        choices.length > 1) {
       _selectPerk(1);
-    } else if (event.logicalKey == LogicalKeyboardKey.digit3 && choices.length > 2) {
+    } else if (event.logicalKey == LogicalKeyboardKey.digit3 &&
+        choices.length > 2) {
       _selectPerk(2);
     } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
         event.logicalKey == LogicalKeyboardKey.keyA) {
@@ -77,7 +80,8 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
       }
     } else if (event.logicalKey == LogicalKeyboardKey.keyB) {
       if (choices.isNotEmpty) {
-        final perkToBanish = choices[_selectedIndex.clamp(0, choices.length - 1)];
+        final perkToBanish =
+            choices[_selectedIndex.clamp(0, choices.length - 1)];
         if (widget.game.banishLevelUpPerk(perkToBanish)) {
           setState(() {
             _selectedIndex = 0;
@@ -113,9 +117,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
-                child: Container(
-                  color: Colors.black.withOpacity(0.65),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.65)),
               ),
             ),
 
@@ -124,7 +126,10 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                 opacity: _animController,
                 child: ScaleTransition(
                   scale: Tween<double>(begin: 0.92, end: 1.0).animate(
-                    CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+                    CurvedAnimation(
+                      parent: _animController,
+                      curve: Curves.easeOutBack,
+                    ),
                   ),
                   child: Container(
                     width: MediaQuery.of(context).size.width > 980
@@ -133,7 +138,10 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                     constraints: BoxConstraints(
                       maxHeight: MediaQuery.of(context).size.height * 0.90,
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 20.0,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D1117).withOpacity(0.92),
                       borderRadius: BorderRadius.circular(22),
@@ -153,19 +161,30 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Header com Badge de Nível
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 10.0,
+                          runSpacing: 6.0,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 6.0,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+                                  colors: [
+                                    Color(0xFFFFB300),
+                                    Color(0xFFFF6D00),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFFFB300).withOpacity(0.4),
+                                    color: const Color(
+                                      0xFFFFB300,
+                                    ).withOpacity(0.4),
                                     blurRadius: 12,
                                   ),
                                 ],
@@ -173,10 +192,16 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.bolt, color: Colors.black, size: 20),
+                                  const Icon(
+                                    Icons.bolt,
+                                    color: Colors.black,
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    I18n.t('level_up.badge', {'level': '$level'}),
+                                    I18n.t('level_up.badge', {
+                                      'level': '$level',
+                                    }),
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
                                       fontSize: 16,
@@ -188,6 +213,37 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                                 ],
                               ),
                             ),
+                            if (widget.game.pendingLevelUps > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10.0,
+                                  vertical: 5.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF00E5FF,
+                                  ).withValues(alpha: 0.16),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF00E5FF,
+                                    ).withValues(alpha: 0.75),
+                                  ),
+                                ),
+                                child: Text(
+                                  I18n.select(
+                                    pt: '+${widget.game.pendingLevelUps} NA FILA',
+                                    en: '+${widget.game.pendingLevelUps} QUEUED',
+                                  ),
+                                  style: const TextStyle(
+                                    fontFamily: 'Orbitron',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                    color: Color(0xFF00E5FF),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
 
@@ -213,11 +269,16 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                               final isRow = constraints.maxWidth > 650;
                               return isRow
                                   ? Row(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: List.generate(choices.length, (i) {
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: List.generate(choices.length, (
+                                        i,
+                                      ) {
                                         return Expanded(
                                           child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0,
+                                            ),
                                             child: _buildCard(choices[i], i),
                                           ),
                                         );
@@ -226,7 +287,8 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                                   : ListView.separated(
                                       shrinkWrap: true,
                                       itemCount: choices.length,
-                                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                                      separatorBuilder: (_, _) =>
+                                          const SizedBox(height: 10),
                                       itemBuilder: (_, i) => SizedBox(
                                         height: 120,
                                         child: _buildCard(choices[i], i),
@@ -245,7 +307,10 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
 
                         // Mobile / Touch Interaction Prompt
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.04),
                             borderRadius: BorderRadius.circular(10),
@@ -254,7 +319,11 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.touch_app_rounded, color: Colors.cyanAccent, size: 16),
+                              const Icon(
+                                Icons.touch_app_rounded,
+                                color: Colors.cyanAccent,
+                                size: 16,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'TOQUE EM UMA CARTA PARA INSTALAR NO SEU CAÇA',
@@ -343,11 +412,16 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: perk.rarityColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: perk.rarityColor.withOpacity(0.5)),
+                      border: Border.all(
+                        color: perk.rarityColor.withOpacity(0.5),
+                      ),
                     ),
                     child: Text(
                       perk.rarityLabel,
@@ -371,7 +445,10 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: perk.accentColor.withOpacity(0.12),
-                  border: Border.all(color: perk.accentColor.withOpacity(0.6), width: 1.5),
+                  border: Border.all(
+                    color: perk.accentColor.withOpacity(0.6),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: perk.accentColor.withOpacity(0.2),
@@ -388,15 +465,50 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    perk.typeLabel,
-                    style: TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      color: perk.accentColor,
-                    ),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        perk.typeLabel,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                          color: perk.accentColor,
+                        ),
+                      ),
+                      if (perk.isTradeOff)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFFFF1744,
+                            ).withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(
+                                0xFFFF5252,
+                              ).withValues(alpha: 0.75),
+                            ),
+                          ),
+                          child: const Text(
+                            '⚠ TRADE-OFF',
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 8.0,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF8A80),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -442,7 +554,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? perk.accentColor : Colors.white.withOpacity(0.08),
+                  color: isSelected
+                      ? perk.accentColor
+                      : Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 alignment: Alignment.center,
@@ -500,9 +614,13 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF00E5FF),
               disabledForegroundColor: Colors.white24,
-              side: BorderSide(color: canReroll ? const Color(0xFF00E5FF) : Colors.white12),
+              side: BorderSide(
+                color: canReroll ? const Color(0xFF00E5FF) : Colors.white12,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -511,7 +629,8 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
             key: const Key('level_up_banish_button'),
             onPressed: canBanish
                 ? () {
-                    final perkToBanish = choices[_selectedIndex.clamp(0, choices.length - 1)];
+                    final perkToBanish =
+                        choices[_selectedIndex.clamp(0, choices.length - 1)];
                     if (game.banishLevelUpPerk(perkToBanish)) {
                       setState(() {
                         _selectedIndex = 0;
@@ -532,9 +651,13 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFFF5252),
               disabledForegroundColor: Colors.white24,
-              side: BorderSide(color: canBanish ? const Color(0xFFFF5252) : Colors.white12),
+              side: BorderSide(
+                color: canBanish ? const Color(0xFFFF5252) : Colors.white12,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -558,7 +681,9 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
               foregroundColor: const Color(0xFFFFB300),
               side: const BorderSide(color: Color(0xFFFFB300)),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         ],

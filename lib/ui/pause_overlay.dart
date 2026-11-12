@@ -18,7 +18,8 @@ class PauseOverlay extends StatefulWidget {
 
 class _PauseOverlayState extends State<PauseOverlay> {
   final FocusNode _focusNode = FocusNode();
-  int _selectedButtonIndex = 0; // 0 = Resume Sortie, 1 = Return to Hangar, 2 = Main Menu
+  int _selectedButtonIndex =
+      0; // 0 = Resume Sortie, 1 = Return to Hangar, 2 = Main Menu
   int _activeTab = 0; // 0 = Mission Status, 1 = Cosmic Grimoire
 
   @override
@@ -97,7 +98,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
                 child: Container(
                   width: 470,
-                  padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 26.0),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24.0,
+                    horizontal: 26.0,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.90),
                     borderRadius: BorderRadius.circular(20),
@@ -119,7 +123,11 @@ class _PauseOverlayState extends State<PauseOverlay> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.pause_circle_filled, color: valkyrie.primaryColor, size: 28),
+                          Icon(
+                            Icons.pause_circle_filled,
+                            color: valkyrie.primaryColor,
+                            size: 28,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             I18n.t('pause.title'),
@@ -146,7 +154,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                       const SizedBox(height: 14),
 
-                      // Tab Toggle: Mission Status vs Cosmic Grimoire vs Achievements
+                      // Tab Toggle: Mission Status vs Build Stats vs Cosmic Grimoire vs Achievements
                       Row(
                         children: [
                           Expanded(
@@ -156,14 +164,21 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 game.playSfx('menu_select.wav');
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _activeTab == 0
-                                      ? valkyrie.primaryColor.withValues(alpha: 0.22)
+                                      ? valkyrie.primaryColor.withValues(
+                                          alpha: 0.22,
+                                        )
                                       : Colors.white.withValues(alpha: 0.04),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: _activeTab == 0 ? valkyrie.primaryColor : Colors.white12,
+                                    color: _activeTab == 0
+                                        ? valkyrie.primaryColor
+                                        : Colors.white12,
                                   ),
                                 ),
                                 child: Center(
@@ -173,17 +188,59 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
-                                      fontSize: 9,
+                                      fontSize: 8.5,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
-                                      letterSpacing: 0.6,
+                                      letterSpacing: 0.4,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => _activeTab = 3);
+                                game.playSfx('menu_select.wav');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _activeTab == 3
+                                      ? const Color(
+                                          0xFFFF9100,
+                                        ).withValues(alpha: 0.22)
+                                      : Colors.white.withValues(alpha: 0.04),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _activeTab == 3
+                                        ? const Color(0xFFFF9100)
+                                        : Colors.white12,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    I18n.select(pt: '📊 STATS', en: '📊 STATS'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFFFAB40),
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 5),
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -191,14 +248,21 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 game.playSfx('menu_select.wav');
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _activeTab == 1
-                                      ? const Color(0xFFFFD700).withValues(alpha: 0.22)
+                                      ? const Color(
+                                          0xFFFFD700,
+                                        ).withValues(alpha: 0.22)
                                       : Colors.white.withValues(alpha: 0.04),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: _activeTab == 1 ? const Color(0xFFFFD700) : Colors.white12,
+                                    color: _activeTab == 1
+                                        ? const Color(0xFFFFD700)
+                                        : Colors.white12,
                                   ),
                                 ),
                                 child: Center(
@@ -208,17 +272,17 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
-                                      fontSize: 9,
+                                      fontSize: 8.5,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFFFFD700),
-                                      letterSpacing: 0.6,
+                                      letterSpacing: 0.4,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -226,14 +290,21 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 game.playSfx('menu_select.wav');
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _activeTab == 2
-                                      ? const Color(0xFF64FFDA).withValues(alpha: 0.22)
+                                      ? const Color(
+                                          0xFF64FFDA,
+                                        ).withValues(alpha: 0.22)
                                       : Colors.white.withValues(alpha: 0.04),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: _activeTab == 2 ? const Color(0xFF64FFDA) : Colors.white12,
+                                    color: _activeTab == 2
+                                        ? const Color(0xFF64FFDA)
+                                        : Colors.white12,
                                   ),
                                 ),
                                 child: Center(
@@ -243,10 +314,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontFamily: 'Orbitron',
-                                      fontSize: 9,
+                                      fontSize: 8.5,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF64FFDA),
-                                      letterSpacing: 0.6,
+                                      letterSpacing: 0.4,
                                     ),
                                   ),
                                 ),
@@ -262,6 +333,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         _buildCosmicGrimoire(game)
                       else if (_activeTab == 2)
                         _buildAchievementsTab()
+                      else if (_activeTab == 3)
+                        _buildTransparentStatsTab(game)
                       else
                         // Round Summary Box
                         Container(
@@ -281,7 +354,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                     height: 48,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: valkyrie.accentColor, width: 1.5),
+                                      border: Border.all(
+                                        color: valkyrie.accentColor,
+                                        width: 1.5,
+                                      ),
                                     ),
                                     child: ClipOval(
                                       child: Image.asset(
@@ -298,7 +374,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           '${valkyrie.name.toUpperCase()} // ${valkyrie.callsign.toUpperCase()}',
@@ -328,7 +405,8 @@ class _PauseOverlayState extends State<PauseOverlay> {
 
                               // Quick Stats Row
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
                                 children: [
                                   Column(
                                     children: [
@@ -353,11 +431,18 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                       ),
                                     ],
                                   ),
-                                  Container(width: 1, height: 32, color: Colors.white12),
+                                  Container(
+                                    width: 1,
+                                    height: 32,
+                                    color: Colors.white12,
+                                  ),
                                   Column(
                                     children: [
                                       Text(
-                                        I18n.select(pt: 'NÍVEL', en: 'RUN LEVEL'),
+                                        I18n.select(
+                                          pt: 'NÍVEL',
+                                          en: 'RUN LEVEL',
+                                        ),
                                         style: const TextStyle(
                                           fontFamily: 'Rajdhani',
                                           fontSize: 11,
@@ -377,11 +462,18 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                       ),
                                     ],
                                   ),
-                                  Container(width: 1, height: 32, color: Colors.white12),
+                                  Container(
+                                    width: 1,
+                                    height: 32,
+                                    color: Colors.white12,
+                                  ),
                                   Column(
                                     children: [
                                       Text(
-                                        I18n.select(pt: 'POEIRA', en: 'STARDUST'),
+                                        I18n.select(
+                                          pt: 'POEIRA',
+                                          en: 'STARDUST',
+                                        ),
                                         style: const TextStyle(
                                           fontFamily: 'Rajdhani',
                                           fontSize: 11,
@@ -414,12 +506,19 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 children: game.player.activeWeapons.map((w) {
                                   final isMax = w.level >= w.maxLevel;
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white10,
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(
-                                        color: isMax ? const Color(0xFFFFD700) : valkyrie.primaryColor.withOpacity(0.5),
+                                        color: isMax
+                                            ? const Color(0xFFFFD700)
+                                            : valkyrie.primaryColor.withOpacity(
+                                                0.5,
+                                              ),
                                       ),
                                     ),
                                     child: Text(
@@ -428,7 +527,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                         fontFamily: 'Rajdhani',
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
-                                        color: isMax ? const Color(0xFFFFD700) : Colors.white,
+                                        color: isMax
+                                            ? const Color(0xFFFFD700)
+                                            : Colors.white,
                                       ),
                                     ),
                                   );
@@ -446,13 +547,17 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _selectedButtonIndex == 0 ? Colors.white : Colors.transparent,
+                            color: _selectedButtonIndex == 0
+                                ? Colors.white
+                                : Colors.transparent,
                             width: 2.0,
                           ),
                           boxShadow: _selectedButtonIndex == 0
                               ? [
                                   BoxShadow(
-                                    color: valkyrie.primaryColor.withOpacity(0.6),
+                                    color: valkyrie.primaryColor.withOpacity(
+                                      0.6,
+                                    ),
                                     blurRadius: 12,
                                   ),
                                 ]
@@ -464,7 +569,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           },
                           icon: const Icon(Icons.play_arrow, size: 22),
                           label: Text(
-                            _selectedButtonIndex == 0 ? '► ${I18n.t('pause.resume')}' : I18n.t('pause.resume'),
+                            _selectedButtonIndex == 0
+                                ? '► ${I18n.t('pause.resume')}'
+                                : I18n.t('pause.resume'),
                             style: const TextStyle(
                               fontFamily: 'Orbitron',
                               fontSize: 13,
@@ -492,7 +599,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _selectedButtonIndex == 1 ? Colors.white : Colors.transparent,
+                            color: _selectedButtonIndex == 1
+                                ? Colors.white
+                                : Colors.transparent,
                             width: 2.0,
                           ),
                           boxShadow: _selectedButtonIndex == 1
@@ -509,22 +618,33 @@ class _PauseOverlayState extends State<PauseOverlay> {
                             game.resumeGame();
                             game.changeState(GameState.valkyrieSelection);
                           },
-                          icon: const Icon(Icons.rocket_launch_rounded, size: 18),
+                          icon: const Icon(
+                            Icons.rocket_launch_rounded,
+                            size: 18,
+                          ),
                           label: Text(
-                            _selectedButtonIndex == 1 ? '► ${I18n.t('pause.hangar')}' : I18n.t('pause.hangar'),
+                            _selectedButtonIndex == 1
+                                ? '► ${I18n.t('pause.hangar')}'
+                                : I18n.t('pause.hangar'),
                             style: TextStyle(
                               fontFamily: 'Orbitron',
                               fontSize: 12.0,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.1,
-                              color: _selectedButtonIndex == 1 ? Colors.white : Colors.white70,
+                              color: _selectedButtonIndex == 1
+                                  ? Colors.white
+                                  : Colors.white70,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white70,
-                            backgroundColor: _selectedButtonIndex == 1 ? Colors.white12 : Colors.transparent,
+                            backgroundColor: _selectedButtonIndex == 1
+                                ? Colors.white12
+                                : Colors.transparent,
                             side: BorderSide(
-                              color: _selectedButtonIndex == 1 ? Colors.white70 : Colors.white24,
+                              color: _selectedButtonIndex == 1
+                                  ? Colors.white70
+                                  : Colors.white24,
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(
@@ -542,7 +662,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _selectedButtonIndex == 2 ? const Color(0xFF00E5FF) : Colors.transparent,
+                            color: _selectedButtonIndex == 2
+                                ? const Color(0xFF00E5FF)
+                                : Colors.transparent,
                             width: 2.0,
                           ),
                         ),
@@ -553,20 +675,28 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           },
                           icon: const Icon(Icons.home_rounded, size: 18),
                           label: Text(
-                            _selectedButtonIndex == 2 ? '► ${I18n.t('pause.menu')}' : I18n.t('pause.menu'),
+                            _selectedButtonIndex == 2
+                                ? '► ${I18n.t('pause.menu')}'
+                                : I18n.t('pause.menu'),
                             style: TextStyle(
                               fontFamily: 'Orbitron',
                               fontSize: 12.0,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.1,
-                              color: _selectedButtonIndex == 2 ? const Color(0xFF00E5FF) : Colors.white60,
+                              color: _selectedButtonIndex == 2
+                                  ? const Color(0xFF00E5FF)
+                                  : Colors.white60,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white60,
-                            backgroundColor: _selectedButtonIndex == 2 ? Colors.white10 : Colors.transparent,
+                            backgroundColor: _selectedButtonIndex == 2
+                                ? Colors.white10
+                                : Colors.transparent,
                             side: BorderSide(
-                              color: _selectedButtonIndex == 2 ? const Color(0xFF00E5FF) : Colors.white12,
+                              color: _selectedButtonIndex == 2
+                                  ? const Color(0xFF00E5FF)
+                                  : Colors.white12,
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(
@@ -586,7 +716,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         },
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(20),
@@ -595,7 +728,11 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.language_rounded, size: 14, color: Color(0xFF64FFDA)),
+                              const Icon(
+                                Icons.language_rounded,
+                                size: 14,
+                                color: Color(0xFF64FFDA),
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 '${I18n.t('pause.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
@@ -636,7 +773,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
         req2: 'Void Cluster Mines (MK 3)',
         hasReq1: game.player.unlockedWeapons['blaster']?.level == 3,
         hasReq2: game.player.unlockedWeapons['void_mines']?.level == 3,
-        isEquipped: game.player.unlockedWeapons.containsKey('union_void_singularity'),
+        isEquipped: game.player.unlockedWeapons.containsKey(
+          'union_void_singularity',
+        ),
         desc: I18n.select(
           pt: 'Fusão de Blaster e Minas do Vazio. Libera 1 slot de arma e dispara feixes quânticos.',
           en: 'Fuses Blaster and Void Mines. Frees 1 arsenal slot and fires quantum singularity beams.',
@@ -649,7 +788,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
         req2: 'Tesla Arc Cannon (MK 3)',
         hasReq1: game.player.unlockedWeapons['solar_lance']?.level == 3,
         hasReq2: game.player.unlockedWeapons['tesla_arc']?.level == 3,
-        isEquipped: game.player.unlockedWeapons.containsKey('union_thunderstorm'),
+        isEquipped: game.player.unlockedWeapons.containsKey(
+          'union_thunderstorm',
+        ),
         desc: I18n.select(
           pt: 'Fusão de Lance Solar e Canhão Tesla. Libera 1 slot e emite raios solares bifurcados.',
           en: 'Fuses Solar Lance and Tesla Arc. Frees 1 slot and emits branched solar lightning.',
@@ -667,7 +808,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.04),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.35)),
+              border: Border.all(
+                color: const Color(0xFFFFD700).withOpacity(0.35),
+              ),
             ),
             child: Column(
               children: [
@@ -709,7 +852,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                   child: LinearProgressIndicator(
                     value: SecretGrimoireService.progressFraction,
                     backgroundColor: Colors.white12,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFFD700),
+                    ),
                     minHeight: 5,
                   ),
                 ),
@@ -722,19 +867,25 @@ class _PauseOverlayState extends State<PauseOverlay> {
               children: [
                 // Super-Unions Section
                 ...superUnions.map((u) {
-                  final isDiscovered = SecretGrimoireService.isDiscovered(u.key);
+                  final isDiscovered = SecretGrimoireService.isDiscovered(
+                    u.key,
+                  );
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: u.isEquipped
                           ? const Color(0xFFE040FB).withOpacity(0.20)
-                          : (isDiscovered ? Colors.black.withOpacity(0.45) : Colors.white.withOpacity(0.02)),
+                          : (isDiscovered
+                                ? Colors.black.withOpacity(0.45)
+                                : Colors.white.withOpacity(0.02)),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: u.isEquipped
                             ? const Color(0xFFE040FB)
-                            : (isDiscovered ? const Color(0xFFFFD700).withOpacity(0.5) : Colors.white12),
+                            : (isDiscovered
+                                  ? const Color(0xFFFFD700).withOpacity(0.5)
+                                  : Colors.white12),
                         width: isDiscovered ? 1.2 : 0.8,
                       ),
                     ),
@@ -746,23 +897,36 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           children: [
                             Expanded(
                               child: Text(
-                                isDiscovered ? '★ SUPER-UNIÃO: ${u.name.toUpperCase()}' : '★ ??? [SUPER-UNIÃO SECRETA]',
+                                isDiscovered
+                                    ? '★ SUPER-UNIÃO: ${u.name.toUpperCase()}'
+                                    : '★ ??? [SUPER-UNIÃO SECRETA]',
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 10.0,
                                   fontWeight: FontWeight.bold,
-                                  color: isDiscovered ? const Color(0xFFE040FB) : Colors.white38,
+                                  color: isDiscovered
+                                      ? const Color(0xFFE040FB)
+                                      : Colors.white38,
                                 ),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1.5,
+                              ),
                               decoration: BoxDecoration(
-                                color: (u.isEquipped ? const Color(0xFFE040FB) : Colors.white10),
+                                color: (u.isEquipped
+                                    ? const Color(0xFFE040FB)
+                                    : Colors.white10),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                u.isEquipped ? 'EQUIPADA!' : (isDiscovered ? 'LIBERA 1 SLOT' : 'SEGREDO'),
+                                u.isEquipped
+                                    ? 'EQUIPADA!'
+                                    : (isDiscovered
+                                          ? 'LIBERA 1 SLOT'
+                                          : 'SEGREDO'),
                                 style: const TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 8.0,
@@ -782,7 +946,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                             fontFamily: 'Rajdhani',
                             fontSize: 11.0,
                             fontWeight: FontWeight.w600,
-                            color: isDiscovered ? const Color(0xFF64FFDA) : Colors.white30,
+                            color: isDiscovered
+                                ? const Color(0xFF64FFDA)
+                                : Colors.white30,
                           ),
                         ),
                         if (isDiscovered)
@@ -800,10 +966,16 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 }),
                 // Standard 13 Weapon Evolutions
                 ...WeaponSynergy.allSynergies.map((s) {
-                  final isDiscovered = SecretGrimoireService.isDiscovered(s.weaponId);
-                  final weaponMatch = game.player.activeWeapons.where((w) => w.id == s.weaponId).toList();
+                  final isDiscovered = SecretGrimoireService.isDiscovered(
+                    s.weaponId,
+                  );
+                  final weaponMatch = game.player.activeWeapons
+                      .where((w) => w.id == s.weaponId)
+                      .toList();
                   final hasWeapon = weaponMatch.isNotEmpty;
-                  final isMaxWeapon = hasWeapon && weaponMatch.first.level >= weaponMatch.first.maxLevel;
+                  final isMaxWeapon =
+                      hasWeapon &&
+                      weaponMatch.first.level >= weaponMatch.first.maxLevel;
                   final isEvolved = hasWeapon && weaponMatch.first.isEvolved;
                   final hasPassive = game.activePassives.contains(s.passiveId);
 
@@ -813,14 +985,18 @@ class _PauseOverlayState extends State<PauseOverlay> {
                     decoration: BoxDecoration(
                       color: isEvolved
                           ? const Color(0xFFFFD700).withOpacity(0.14)
-                          : (isDiscovered ? Colors.black.withOpacity(0.45) : Colors.white.withOpacity(0.02)),
+                          : (isDiscovered
+                                ? Colors.black.withOpacity(0.45)
+                                : Colors.white.withOpacity(0.02)),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isEvolved
                             ? const Color(0xFFFFD700)
                             : (isMaxWeapon && hasPassive
-                                ? const Color(0xFF00E676)
-                                : (isDiscovered ? Colors.white24 : Colors.white10)),
+                                  ? const Color(0xFF00E676)
+                                  : (isDiscovered
+                                        ? Colors.white24
+                                        : Colors.white10)),
                       ),
                     ),
                     child: Column(
@@ -833,14 +1009,18 @@ class _PauseOverlayState extends State<PauseOverlay> {
                               child: Text(
                                 isDiscovered
                                     ? '★ ${s.evolvedName.toUpperCase()}'
-                                    : (hasWeapon ? '★ ${s.weaponId.toUpperCase()} + ??? [SEGREDO]' : '★ ??? [SEGREDO DO VAZIO]'),
+                                    : (hasWeapon
+                                          ? '★ ${s.weaponId.toUpperCase()} + ??? [SEGREDO]'
+                                          : '★ ??? [SEGREDO DO VAZIO]'),
                                 style: TextStyle(
                                   fontFamily: 'Orbitron',
                                   fontSize: 10.0,
                                   fontWeight: FontWeight.bold,
                                   color: isEvolved
                                       ? const Color(0xFFFFD700)
-                                      : (isDiscovered ? Colors.white : Colors.white38),
+                                      : (isDiscovered
+                                            ? Colors.white
+                                            : Colors.white38),
                                 ),
                               ),
                             ),
@@ -848,10 +1028,19 @@ class _PauseOverlayState extends State<PauseOverlay> {
                               isEvolved
                                   ? I18n.select(pt: 'EVOLUÍDA!', en: 'EVOLVED!')
                                   : (isMaxWeapon && hasPassive
-                                      ? I18n.select(pt: 'PRONTA!', en: 'READY!')
-                                      : (isDiscovered
-                                          ? I18n.select(pt: 'DESCOBERTA', en: 'KNOWN')
-                                          : I18n.select(pt: 'OCULTO', en: 'HIDDEN'))),
+                                        ? I18n.select(
+                                            pt: 'PRONTA!',
+                                            en: 'READY!',
+                                          )
+                                        : (isDiscovered
+                                              ? I18n.select(
+                                                  pt: 'DESCOBERTA',
+                                                  en: 'KNOWN',
+                                                )
+                                              : I18n.select(
+                                                  pt: 'OCULTO',
+                                                  en: 'HIDDEN',
+                                                ))),
                               style: TextStyle(
                                 fontFamily: 'Orbitron',
                                 fontSize: 8.5,
@@ -859,8 +1048,10 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 color: isEvolved
                                     ? const Color(0xFFFFD700)
                                     : (isMaxWeapon && hasPassive
-                                        ? const Color(0xFF00E676)
-                                        : (isDiscovered ? Colors.cyanAccent : Colors.white24)),
+                                          ? const Color(0xFF00E676)
+                                          : (isDiscovered
+                                                ? Colors.cyanAccent
+                                                : Colors.white24)),
                               ),
                             ),
                           ],
@@ -870,13 +1061,15 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           isDiscovered
                               ? '${hasWeapon ? "✅" : "⬜"} ${s.weaponId.toUpperCase()} (MK 3)  +  ${hasPassive ? "✅" : "⬜"} ${s.passiveTitle}'
                               : (hasWeapon
-                                  ? '✅ ${s.weaponId.toUpperCase()} (MK 3)  +  ⬜ ??? [Módulo Desconhecido]'
-                                  : '⬜ ??? + ⬜ ??? [Descubra fundindo em combate]'),
+                                    ? '✅ ${s.weaponId.toUpperCase()} (MK 3)  +  ⬜ ??? [Módulo Desconhecido]'
+                                    : '⬜ ??? + ⬜ ??? [Descubra fundindo em combate]'),
                           style: TextStyle(
                             fontFamily: 'Rajdhani',
                             fontSize: 11.0,
                             fontWeight: FontWeight.w600,
-                            color: isDiscovered ? Colors.cyanAccent : Colors.white38,
+                            color: isDiscovered
+                                ? Colors.cyanAccent
+                                : Colors.white38,
                           ),
                         ),
                         if (isDiscovered)
@@ -915,7 +1108,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.04),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+              border: Border.all(
+                color: const Color(0xFFFFD700).withOpacity(0.3),
+              ),
             ),
             child: Column(
               children: [
@@ -950,7 +1145,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                     value: total == 0 ? 0.0 : unlocked / total,
                     minHeight: 5,
                     backgroundColor: Colors.white12,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFFD700),
+                    ),
                   ),
                 ),
               ],
@@ -968,14 +1165,19 @@ class _PauseOverlayState extends State<PauseOverlay> {
                 final isUnlocked = AchievementService.isUnlocked(ach.id);
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isUnlocked
                         ? ach.color.withOpacity(0.12)
                         : Colors.white.withOpacity(0.02),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isUnlocked ? ach.color.withOpacity(0.5) : Colors.white10,
+                      color: isUnlocked
+                          ? ach.color.withOpacity(0.5)
+                          : Colors.white10,
                       width: 1.0,
                     ),
                   ),
@@ -986,7 +1188,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         height: 32,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isUnlocked ? ach.color.withOpacity(0.2) : Colors.white10,
+                          color: isUnlocked
+                              ? ach.color.withOpacity(0.2)
+                              : Colors.white10,
                           border: Border.all(
                             color: isUnlocked ? ach.color : Colors.white24,
                             width: 1.0,
@@ -1009,7 +1213,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 fontFamily: 'Orbitron',
                                 fontSize: 10.0,
                                 fontWeight: FontWeight.bold,
-                                color: isUnlocked ? Colors.white : Colors.white38,
+                                color: isUnlocked
+                                    ? Colors.white
+                                    : Colors.white38,
                               ),
                             ),
                             Text(
@@ -1017,16 +1223,185 @@ class _PauseOverlayState extends State<PauseOverlay> {
                               style: TextStyle(
                                 fontFamily: 'Rajdhani',
                                 fontSize: 10.0,
-                                color: isUnlocked ? Colors.white70 : Colors.white30,
+                                color: isUnlocked
+                                    ? Colors.white70
+                                    : Colors.white30,
                               ),
                             ),
                           ],
                         ),
                       ),
                       if (isUnlocked)
-                        const Icon(Icons.check_circle_rounded, color: Color(0xFF64FFDA), size: 16),
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF64FFDA),
+                          size: 16,
+                        ),
                     ],
                   ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sprint 59: Matriz matemática transparente de atributos da build atual (*Brotato Standard*).
+  Widget _buildTransparentStatsTab(AsteroidsGame game) {
+    final stats = game.getBuildStatsSnapshot();
+    final rows = <(String label, String value, Color color)>[
+      (
+        I18n.select(pt: 'DPS Estimado', en: 'Estimated DPS'),
+        '${stats.estimatedDps.toStringAsFixed(1)} /s',
+        const Color(0xFFFFD740),
+      ),
+      (
+        I18n.select(pt: 'Dano Global', en: 'Damage Mult'),
+        '${(stats.damageMultiplier * 100).round()}%',
+        const Color(0xFFFF5252),
+      ),
+      (
+        I18n.select(pt: 'Cadência de Tiro', en: 'Fire Rate'),
+        '${stats.fireRatePercent.round()}%',
+        const Color(0xFFFFAB40),
+      ),
+      (
+        I18n.select(pt: 'Crítico / Mult', en: 'Crit % / Mult'),
+        '${(stats.critChance * 100).round()}% / ${stats.critMultiplier.toStringAsFixed(2)}x',
+        const Color(0xFFFF8A80),
+      ),
+      (
+        I18n.select(pt: 'Blindagem (Armor)', en: 'Armor Mitigation'),
+        '${(stats.armorReduction * 100).round()}%',
+        const Color(0xFF90CAF9),
+      ),
+      (
+        I18n.select(pt: 'Sifão Vital (Lifesteal)', en: 'Lifesteal'),
+        '${(stats.lifesteal * 100).toStringAsFixed(1)}%',
+        const Color(0xFFFF80AB),
+      ),
+      (
+        I18n.select(pt: 'Área / Explosão (AoE)', en: 'Area / Blast (AoE)'),
+        '${(stats.areaMultiplier * 100).round()}%',
+        const Color(0xFFFF9100),
+      ),
+      (
+        I18n.select(pt: 'Perfuração (Pierce)', en: 'Pierce'),
+        '+${stats.pierceCount}',
+        const Color(0xFF80D8FF),
+      ),
+      (
+        I18n.select(pt: 'Velocidade Máx.', en: 'Max Speed'),
+        '${stats.maxSpeed.round()} px/s',
+        const Color(0xFF69F0AE),
+      ),
+      (
+        I18n.select(pt: 'Raio do Ímã', en: 'Magnet Range'),
+        '${stats.magnetRadius.round()} px',
+        const Color(0xFF00E5FF),
+      ),
+      (
+        I18n.select(pt: 'Sorte (Luck)', en: 'Luck Drop Bonus'),
+        '+${(stats.luckBonus * 100).round()}%',
+        const Color(0xFFFFD700),
+      ),
+      (
+        I18n.select(pt: 'Integridade (HP)', en: 'Hull HP'),
+        '${stats.currentHp.round()} / ${stats.maxHp.round()}',
+        const Color(0xFF00E676),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(14.0),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFFF9100).withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.analytics_outlined,
+                color: Color(0xFFFFAB40),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  I18n.select(
+                    pt: 'MATRIZ DE ATRIBUTOS DA BUILD',
+                    en: 'TRANSPARENT BUILD ATTRIBUTES',
+                  ),
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFAB40),
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              if (stats.activeTradeOffIds.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF1744).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFFF5252)),
+                  ),
+                  child: Text(
+                    '⚠ ${stats.activeTradeOffIds.length} TRADE-OFF',
+                    style: const TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF8A80),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: 14, color: Colors.white12),
+          SizedBox(
+            height: 220,
+            child: ListView.separated(
+              itemCount: rows.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 6),
+              itemBuilder: (_, idx) {
+                final r = rows[idx];
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      r.$1,
+                      style: const TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    Text(
+                      r.$2,
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: r.$3,
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

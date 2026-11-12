@@ -41,16 +41,15 @@ This document outlines the current active engineering milestones for **Astra Val
 - Zero-GC Boids Repulsion (`applyBoidsSeparation`) over `game.activeEnemies` + bi-directional `ProximityMineComponent` & Dash-rammed kinetic asteroid crushing.
 - 302 automated tests passing (`test/sprint58_tactical_ai_test.dart`) with 0 linter issues.
 
+### ⚖️ Sprint 59: Expansão Roguelite, Trade-offs Radicais & Estatísticas (*Brotato Model*) ✅ (CONCLUÍDA)
+- Expanded passives from 5 to 16 in `RoguePerkGenerator.buildPassiveCatalog()` with 3 Brotato radical trade-offs (*Glass Cannon*, *Juggernaut Plating*, *Unstable Payloads*).
+- Ordered `pendingLevelUps` queue on `AsteroidsGame.addXp()` with `LevelUpOverlay` queue & trade-off badges.
+- Real combat hooks (`armorReduction`, `rogueCritMultiplier`, `rogueLifesteal`, `rogueAreaMultiplier`, `rogueLuckBonus`) + `BuildStatsSnapshot` and `📊 STATS` tab in `PauseOverlay`.
+- 309 automated tests passing (`test/sprint59_roguelite_expansion_test.dart`) with 0 linter issues.
+
 ---
 
 ## 🎯 Active & Upcoming Sprints
-
-### ⚖️ Sprint 59: Expansão Roguelite, Trade-offs Radicais & Estatísticas (*Brotato Model*)
-- **Target:** High-risk/high-reward build variety and transparent combat statistics.
-- **Deliverables:**
-  - Radical trade-off passives (*Glass Cannon Reactor*, *Juggernaut Plating*, *Unstable Payloads*).
-  - Ordered level-up queue (`pendingLevelUps`) to handle massive XP spikes without losing perks.
-  - Transparent pause-screen statistics dashboard (consolidated DPS, Armor, Crit, Speed).
 
 ### 🌐 Sprint 60: Deploy Online, Global Leaderboard Cloud & Web Playability (Zero VPS / Free-Tier Cloud)
 - **Target:** Playable in any web browser without installation, backed by a free cloud leaderboard API.

@@ -166,15 +166,15 @@ abstract class Weapon {
 
 class Blaster extends Weapon {
   Blaster()
-      : super(
-          id: 'blaster',
-          name: "Pulse Blaster",
-          evolvedName: "Supernova Annihilator",
-          cooldown: 0.70,
-          recoil: 12.0,
-          muzzleFlashSize: 8.0,
-          damage: 26.0,
-        );
+    : super(
+        id: 'blaster',
+        name: "Pulse Blaster",
+        evolvedName: "Supernova Annihilator",
+        cooldown: 0.70,
+        recoil: 12.0,
+        muzzleFlashSize: 8.0,
+        damage: 26.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -185,7 +185,8 @@ class Blaster extends Weapon {
     if (isEvolved) {
       final right = Vector2(-player.forward.y, player.forward.x);
       for (final offset in [-8.0, 8.0]) {
-        final spawnPos = player.position + player.forward * player.radius + right * offset;
+        final spawnPos =
+            player.position + player.forward * player.radius + right * offset;
         final bullet = BulletComponent(
           position: spawnPos,
           radius: 5.5,
@@ -205,7 +206,8 @@ class Blaster extends Weapon {
       // Level 3: Dual parallel high-density plasma bolts
       final right = Vector2(-player.forward.y, player.forward.x);
       for (final offset in [-6.0, 6.0]) {
-        final spawnPos = player.position + player.forward * player.radius + right * offset;
+        final spawnPos =
+            player.position + player.forward * player.radius + right * offset;
         final bullet = BulletComponent(
           position: spawnPos,
           radius: GameConstants.shotRadius,
@@ -220,7 +222,9 @@ class Blaster extends Weapon {
       return true;
     }
 
-    final velocity = player.forward * (GameConstants.playerShootSpeed + (level == 2 ? 30.0 : 0.0));
+    final velocity =
+        player.forward *
+        (GameConstants.playerShootSpeed + (level == 2 ? 30.0 : 0.0));
     final bullet = BulletComponent(
       position: player.position + player.forward * player.radius,
       radius: GameConstants.shotRadius + (level == 2 ? 1.0 : 0.0),
@@ -260,15 +264,15 @@ class Blaster extends Weapon {
 
 class SpreadShot extends Weapon {
   SpreadShot()
-      : super(
-          id: 'spread_shot',
-          name: "Spread Cannon",
-          evolvedName: "Hyperion Flak Storm",
-          cooldown: 0.95,
-          recoil: 14.0,
-          muzzleFlashSize: 11.0,
-          damage: 14.0,
-        );
+    : super(
+        id: 'spread_shot',
+        name: "Spread Cannon",
+        evolvedName: "Hyperion Flak Storm",
+        cooldown: 0.95,
+        recoil: 14.0,
+        muzzleFlashSize: 11.0,
+        damage: 14.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -312,7 +316,7 @@ class SpreadShot extends Weapon {
     for (final angleDeg in angles) {
       final angleRad = angleDeg * math.pi / 180.0;
       final shootAngle = player.angle + angleRad;
-      
+
       final direction = Vector2(
         math.cos(shootAngle - math.pi / 2),
         math.sin(shootAngle - math.pi / 2),
@@ -358,15 +362,15 @@ class SpreadShot extends Weapon {
 
 class RapidFire extends Weapon {
   RapidFire()
-      : super(
-          id: 'rapid_fire',
-          name: "Phase Laser",
-          evolvedName: "Absolute Zero Tachyon Beam",
-          cooldown: 0.32,
-          recoil: 4.0,
-          muzzleFlashSize: 6.0,
-          damage: 10.0,
-        );
+    : super(
+        id: 'rapid_fire',
+        name: "Phase Laser",
+        evolvedName: "Absolute Zero Tachyon Beam",
+        cooldown: 0.32,
+        recoil: 4.0,
+        muzzleFlashSize: 6.0,
+        damage: 10.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -375,7 +379,8 @@ class RapidFire extends Weapon {
 
     // Super-Evolution: Absolute Zero Tachyon Beam (Hyper-dense piercing glacial stream)
     if (isEvolved) {
-      final velocity = player.forward * (GameConstants.playerShootSpeed + 140.0);
+      final velocity =
+          player.forward * (GameConstants.playerShootSpeed + 140.0);
       final bullet = BulletComponent(
         position: player.position + player.forward * player.radius,
         radius: 4.5,
@@ -430,15 +435,15 @@ class RapidFire extends Weapon {
 
 class BombLauncher extends Weapon {
   BombLauncher()
-      : super(
-          id: 'bomb_launcher',
-          name: "Antimatter Torpedo",
-          evolvedName: "Singularity Rift Torpedo",
-          cooldown: 1.80,
-          recoil: 22.0,
-          muzzleFlashSize: 18.0,
-          damage: 80.0,
-        );
+    : super(
+        id: 'bomb_launcher',
+        name: "Antimatter Torpedo",
+        evolvedName: "Singularity Rift Torpedo",
+        cooldown: 1.80,
+        recoil: 22.0,
+        muzzleFlashSize: 18.0,
+        damage: 80.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -461,7 +466,8 @@ class BombLauncher extends Weapon {
     }
 
     if (closestTarget == null || closestDistSq > 400.0 * 400.0) {
-      final asteroids = player.game.world.children.whereType<AsteroidComponent>();
+      final asteroids = player.game.world.children
+          .whereType<AsteroidComponent>();
       for (final ast in asteroids) {
         final dSq = player.position.distanceToSquared(ast.position);
         if (dSq < closestDistSq) {
@@ -479,7 +485,9 @@ class BombLauncher extends Weapon {
     }
 
     final velocity = fireDir * speed;
-    final explosionRadius = (isEvolved ? 140.0 : 95.0) + (level - 1) * 15.0;
+    final areaMult = player.game.rogueAreaMultiplier;
+    final explosionRadius =
+        ((isEvolved ? 140.0 : 95.0) + (level - 1) * 15.0) * areaMult;
 
     final bomb = BombComponent(
       position: player.position + fireDir * player.radius,
@@ -519,15 +527,15 @@ class BombLauncher extends Weapon {
 /// 5. Aegis Sawblades -> Celestial Buzzsaw Ring (Orbitais estilo King Bible)
 class AegisSawblades extends Weapon {
   AegisSawblades()
-      : super(
-          id: 'aegis_sawblades',
-          name: 'Aegis Sawblades',
-          evolvedName: 'Celestial Buzzsaw Ring',
-          cooldown: 3.8,
-          recoil: 0.0,
-          muzzleFlashSize: 4.0,
-          damage: 16.0,
-        );
+    : super(
+        id: 'aegis_sawblades',
+        name: 'Aegis Sawblades',
+        evolvedName: 'Celestial Buzzsaw Ring',
+        cooldown: 3.8,
+        recoil: 0.0,
+        muzzleFlashSize: 4.0,
+        damage: 16.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -537,7 +545,9 @@ class AegisSawblades extends Weapon {
     final orbitRadius = isEvolved ? 115.0 : 88.0;
 
     // Remove lâminas anteriores para renovar o anel orbital
-    final existing = player.game.world.children.whereType<OrbitalSawbladeComponent>().toList();
+    final existing = player.game.world.children
+        .whereType<OrbitalSawbladeComponent>()
+        .toList();
     for (final b in existing) {
       b.removeFromParent();
     }
@@ -578,15 +588,15 @@ class AegisSawblades extends Weapon {
 /// 6. Tesla Arc Cannon -> Mjolnir Storm Conduit (Corrente Elétrica em Cadeia)
 class TeslaArcCannon extends Weapon {
   TeslaArcCannon()
-      : super(
-          id: 'tesla_arc',
-          name: 'Tesla Arc Cannon',
-          evolvedName: 'Mjolnir Storm Conduit',
-          cooldown: 0.90,
-          recoil: 3.0,
-          muzzleFlashSize: 10.0,
-          damage: 20.0,
-        );
+    : super(
+        id: 'tesla_arc',
+        name: 'Tesla Arc Cannon',
+        evolvedName: 'Mjolnir Storm Conduit',
+        cooldown: 0.90,
+        recoil: 3.0,
+        muzzleFlashSize: 10.0,
+        damage: 20.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -603,7 +613,8 @@ class TeslaArcCannon extends Weapon {
       PositionComponent? bestTarget;
       double bestDist = jumpRange;
 
-      for (final e in player.game.world.children.whereType<EnemyShipComponent>()) {
+      for (final e
+          in player.game.world.children.whereType<EnemyShipComponent>()) {
         if (hitTargets.contains(e)) continue;
         final d = e.position.distanceTo(currentOrigin);
         if (d < bestDist) {
@@ -614,13 +625,15 @@ class TeslaArcCannon extends Weapon {
       if (bestTarget == null) {
         final boss = player.game.activeBoss;
         if (boss != null && !boss.isDefeated && !hitTargets.contains(boss)) {
-          if (boss.position.distanceTo(currentOrigin) <= jumpRange + boss.radius) {
+          if (boss.position.distanceTo(currentOrigin) <=
+              jumpRange + boss.radius) {
             bestTarget = boss;
           }
         }
       }
       if (bestTarget == null) {
-        for (final a in player.game.world.children.whereType<AsteroidComponent>()) {
+        for (final a
+            in player.game.world.children.whereType<AsteroidComponent>()) {
           if (hitTargets.contains(a)) continue;
           final d = a.position.distanceTo(currentOrigin);
           if (d < bestDist) {
@@ -636,14 +649,23 @@ class TeslaArcCannon extends Weapon {
       currentOrigin = bestTarget.position.clone();
 
       if (bestTarget is EnemyShipComponent) {
-        bestTarget.applyElementalStatus(ElementalStatus.ionShock, duration: 4.0);
+        bestTarget.applyElementalStatus(
+          ElementalStatus.ionShock,
+          duration: 4.0,
+        );
         bestTarget.takeDamage(effectiveDamage, bestTarget.position);
       } else if (bestTarget is SectorBoss) {
-        bestTarget.applyElementalStatus(ElementalStatus.ionShock, duration: 4.0);
+        bestTarget.applyElementalStatus(
+          ElementalStatus.ionShock,
+          duration: 4.0,
+        );
         bestTarget.takeDamage(effectiveDamage, bestTarget.position);
       } else if (bestTarget is AsteroidComponent) {
         if (bestTarget.takeDamage(effectiveDamage, bestTarget.position)) {
-          player.game.onAsteroidDestroyed(bestTarget.position, bestTarget.scoreValue);
+          player.game.onAsteroidDestroyed(
+            bestTarget.position,
+            bestTarget.scoreValue,
+          );
         }
       }
     }
@@ -683,15 +705,15 @@ class TeslaArcCannon extends Weapon {
 /// 7. Quantum Chakram -> Chronos Eclipse Glaive (Bumerangue Espacial)
 class QuantumChakram extends Weapon {
   QuantumChakram()
-      : super(
-          id: 'quantum_chakram',
-          name: 'Quantum Chakram',
-          evolvedName: 'Chronos Eclipse Glaive',
-          cooldown: 1.15,
-          recoil: 4.0,
-          muzzleFlashSize: 8.0,
-          damage: 24.0,
-        );
+    : super(
+        id: 'quantum_chakram',
+        name: 'Quantum Chakram',
+        evolvedName: 'Chronos Eclipse Glaive',
+        cooldown: 1.15,
+        recoil: 4.0,
+        muzzleFlashSize: 8.0,
+        damage: 24.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -737,21 +759,23 @@ class QuantumChakram extends Weapon {
 /// 8. Repulsor Gravity Aura -> Event Horizon Nova Pulse (Pulso 360° estilo Garlic)
 class RepulsorGravityAura extends Weapon {
   RepulsorGravityAura()
-      : super(
-          id: 'repulsor_aura',
-          name: 'Repulsor Gravity Aura',
-          evolvedName: 'Event Horizon Nova Pulse',
-          cooldown: 1.35,
-          recoil: 0.0,
-          muzzleFlashSize: 6.0,
-          damage: 18.0,
-        );
+    : super(
+        id: 'repulsor_aura',
+        name: 'Repulsor Gravity Aura',
+        evolvedName: 'Event Horizon Nova Pulse',
+        cooldown: 1.35,
+        recoil: 0.0,
+        muzzleFlashSize: 6.0,
+        damage: 18.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
     final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
-    final radius = (isEvolved ? 235.0 : 145.0) + (level - 1) * 22.0;
+    final radius =
+        ((isEvolved ? 235.0 : 145.0) + (level - 1) * 22.0) *
+        player.game.rogueAreaMultiplier;
 
     player.game.world.add(
       GravityAuraPulseComponent(
@@ -785,15 +809,15 @@ class RepulsorGravityAura extends Weapon {
 /// 9. Solar Thermal Lance -> Helios Core Melter (Feixe Contínuo de Fusão Solar)
 class SolarThermalLance extends Weapon {
   SolarThermalLance()
-      : super(
-          id: 'solar_lance',
-          name: 'Solar Thermal Lance',
-          evolvedName: 'Helios Core Melter',
-          cooldown: 0.65,
-          recoil: 6.0,
-          muzzleFlashSize: 14.0,
-          damage: 28.0,
-        );
+    : super(
+        id: 'solar_lance',
+        name: 'Solar Thermal Lance',
+        evolvedName: 'Helios Core Melter',
+        cooldown: 0.65,
+        recoil: 6.0,
+        muzzleFlashSize: 14.0,
+        damage: 28.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -813,14 +837,20 @@ class SolarThermalLance extends Weapon {
     );
 
     // Colisão linear ao longo do feixe térmico
-    for (final e in List<EnemyShipComponent>.from(player.game.world.children.whereType<EnemyShipComponent>())) {
-      if (_distancePointToSegment(e.position, start, end) <= e.radius + beamWidth) {
+    for (final e in List<EnemyShipComponent>.from(
+      player.game.world.children.whereType<EnemyShipComponent>(),
+    )) {
+      if (_distancePointToSegment(e.position, start, end) <=
+          e.radius + beamWidth) {
         e.applyElementalStatus(ElementalStatus.solarBurn, duration: 4.5);
         e.takeDamage(effectiveDamage, e.position);
       }
     }
-    for (final a in List<AsteroidComponent>.from(player.game.world.children.whereType<AsteroidComponent>())) {
-      if (_distancePointToSegment(a.position, start, end) <= a.radius + beamWidth) {
+    for (final a in List<AsteroidComponent>.from(
+      player.game.world.children.whereType<AsteroidComponent>(),
+    )) {
+      if (_distancePointToSegment(a.position, start, end) <=
+          a.radius + beamWidth) {
         if (a.takeDamage(effectiveDamage, a.position)) {
           player.game.onAsteroidDestroyed(a.position, a.scoreValue);
         }
@@ -828,7 +858,8 @@ class SolarThermalLance extends Weapon {
     }
     final boss = player.game.activeBoss;
     if (boss != null && !boss.isDefeated) {
-      if (_distancePointToSegment(boss.position, start, end) <= boss.radius + beamWidth) {
+      if (_distancePointToSegment(boss.position, start, end) <=
+          boss.radius + beamWidth) {
         boss.applyElementalStatus(ElementalStatus.solarBurn, duration: 4.5);
         boss.takeDamage(effectiveDamage, boss.position);
       }
@@ -866,15 +897,15 @@ class SolarThermalLance extends Weapon {
 /// 10. Inferno Plasma Cone -> Phoenix Dragon Breath (Lança-Chamas Espacial)
 class InfernoPlasmaCone extends Weapon {
   InfernoPlasmaCone()
-      : super(
-          id: 'inferno_cone',
-          name: 'Inferno Plasma Cone',
-          evolvedName: 'Phoenix Dragon Breath',
-          cooldown: 0.28,
-          recoil: 2.0,
-          muzzleFlashSize: 12.0,
-          damage: 9.0,
-        );
+    : super(
+        id: 'inferno_cone',
+        name: 'Inferno Plasma Cone',
+        evolvedName: 'Phoenix Dragon Breath',
+        cooldown: 0.28,
+        recoil: 2.0,
+        muzzleFlashSize: 12.0,
+        damage: 9.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -923,15 +954,15 @@ class InfernoPlasmaCone extends Weapon {
 /// 11. Valkyrie Wingmen -> Seraphim Drone Squadron (Drones Aliados Caçadores)
 class ValkyrieWingmen extends Weapon {
   ValkyrieWingmen()
-      : super(
-          id: 'valkyrie_wingmen',
-          name: 'Valkyrie Wingmen',
-          evolvedName: 'Seraphim Drone Squadron',
-          cooldown: 4.5,
-          recoil: 0.0,
-          muzzleFlashSize: 4.0,
-          damage: 12.0,
-        );
+    : super(
+        id: 'valkyrie_wingmen',
+        name: 'Valkyrie Wingmen',
+        evolvedName: 'Seraphim Drone Squadron',
+        cooldown: 4.5,
+        recoil: 0.0,
+        muzzleFlashSize: 4.0,
+        damage: 12.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -939,7 +970,9 @@ class ValkyrieWingmen extends Weapon {
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
     final droneCount = isEvolved ? 4 : (level >= 3 ? 3 : 2);
 
-    final existing = player.game.world.children.whereType<WingmanDroneComponent>().toList();
+    final existing = player.game.world.children
+        .whereType<WingmanDroneComponent>()
+        .toList();
     for (final d in existing) {
       d.removeFromParent();
     }
@@ -977,15 +1010,15 @@ class ValkyrieWingmen extends Weapon {
 /// 12. Void Cluster Mines -> Abyssal Minefield Matrix (Minas Traseiras de Kiting)
 class VoidClusterMines extends Weapon {
   VoidClusterMines()
-      : super(
-          id: 'void_mines',
-          name: 'Void Cluster Mines',
-          evolvedName: 'Abyssal Minefield Matrix',
-          cooldown: 1.40,
-          recoil: 0.0,
-          muzzleFlashSize: 5.0,
-          damage: 45.0,
-        );
+    : super(
+        id: 'void_mines',
+        name: 'Void Cluster Mines',
+        evolvedName: 'Abyssal Minefield Matrix',
+        cooldown: 1.40,
+        recoil: 0.0,
+        muzzleFlashSize: 5.0,
+        damage: 45.0,
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -997,12 +1030,16 @@ class VoidClusterMines extends Weapon {
 
     for (var i = 0; i < count; i++) {
       final sideOffset = count == 1 ? 0.0 : (i - (count - 1) / 2.0) * 28.0;
-      final dropPos = player.position + backward * (player.radius + 18.0) + right * sideOffset;
+      final dropPos =
+          player.position +
+          backward * (player.radius + 18.0) +
+          right * sideOffset;
       player.game.world.add(
         PlayerClusterMineComponent(
           position: dropPos,
           damage: effectiveDamage,
-          blastRadius: isEvolved ? 155.0 : 110.0,
+          blastRadius:
+              (isEvolved ? 155.0 : 110.0) * player.game.rogueAreaMultiplier,
           isEvolved: isEvolved,
         ),
       );
@@ -1031,15 +1068,15 @@ class VoidClusterMines extends Weapon {
 /// 13. Tachyon Katana -> Void Muramasa (Lâminas de Corte Dimensional de Alta Velocidade)
 class TachyonKatana extends Weapon {
   TachyonKatana()
-      : super(
-          id: 'tachyon_katana',
-          name: 'Tachyon Katana',
-          evolvedName: 'Void Muramasa',
-          cooldown: 0.60,
-          recoil: 2.0,
-          muzzleFlashSize: 6.0,
-          damage: 14.0, // Calibrado: dano inicial moderado e justo
-        );
+    : super(
+        id: 'tachyon_katana',
+        name: 'Tachyon Katana',
+        evolvedName: 'Void Muramasa',
+        cooldown: 0.60,
+        recoil: 2.0,
+        muzzleFlashSize: 6.0,
+        damage: 14.0, // Calibrado: dano inicial moderado e justo
+      );
 
   @override
   bool fire(PlayerComponent player) {
@@ -1054,7 +1091,10 @@ class TachyonKatana extends Weapon {
       for (final angleDeg in angles) {
         final angleRad = angleDeg * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
-        final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
+        final dir = Vector2(
+          math.cos(shootAngle - math.pi / 2),
+          math.sin(shootAngle - math.pi / 2),
+        );
         final slash = KatanaSlashComponent(
           position: player.position + dir * (player.radius + 10.0),
           angle: shootAngle,
@@ -1064,7 +1104,7 @@ class TachyonKatana extends Weapon {
           slashWidth: 52.0,
           slashHeight: 16.0,
           slashColor: const Color(0xFFE040FB), // Void Muramasa Violet
-          coreColor: const Color(0xFF00E5FF),  // Tachyon Core Cyan
+          coreColor: const Color(0xFF00E5FF), // Tachyon Core Cyan
           piercesLeft: 6,
           isVoidMuramasa: true,
           weaponSource: this,
@@ -1080,7 +1120,10 @@ class TachyonKatana extends Weapon {
       for (final angleDeg in angles) {
         final angleRad = angleDeg * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
-        final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
+        final dir = Vector2(
+          math.cos(shootAngle - math.pi / 2),
+          math.sin(shootAngle - math.pi / 2),
+        );
         final slash = KatanaSlashComponent(
           position: player.position + dir * (player.radius + 8.0),
           angle: shootAngle,
@@ -1106,9 +1149,15 @@ class TachyonKatana extends Weapon {
       for (int i = 0; i < 2; i++) {
         final angleRad = angles[i] * math.pi / 180.0;
         final shootAngle = player.angle + angleRad;
-        final dir = Vector2(math.cos(shootAngle - math.pi / 2), math.sin(shootAngle - math.pi / 2));
+        final dir = Vector2(
+          math.cos(shootAngle - math.pi / 2),
+          math.sin(shootAngle - math.pi / 2),
+        );
         final slash = KatanaSlashComponent(
-          position: player.position + player.forward * (player.radius + 8.0) + right * offsets[i],
+          position:
+              player.position +
+              player.forward * (player.radius + 8.0) +
+              right * offsets[i],
           angle: shootAngle,
           velocity: dir * 370.0,
           lifeTimer: 0.36, // Alcance ~130px
@@ -1171,15 +1220,15 @@ class TachyonKatana extends Weapon {
 
 class VoidSingularityNova extends Weapon {
   VoidSingularityNova()
-      : super(
-          id: 'union_void_singularity',
-          name: 'Void Singularity Nova',
-          evolvedName: 'Void Singularity Nova ★',
-          cooldown: 0.38,
-          recoil: 8.0,
-          muzzleFlashSize: 14.0,
-          damage: 85.0,
-        ) {
+    : super(
+        id: 'union_void_singularity',
+        name: 'Void Singularity Nova',
+        evolvedName: 'Void Singularity Nova ★',
+        cooldown: 0.38,
+        recoil: 8.0,
+        muzzleFlashSize: 14.0,
+        damage: 85.0,
+      ) {
     isEvolved = true;
   }
 
@@ -1191,7 +1240,8 @@ class VoidSingularityNova extends Weapon {
     // Disparos duplos frontais de matéria negra com perfuração infinita
     final right = Vector2(-player.forward.y, player.forward.x);
     for (final offset in [-10.0, 10.0]) {
-      final spawnPos = player.position + player.forward * player.radius + right * offset;
+      final spawnPos =
+          player.position + player.forward * player.radius + right * offset;
       final bullet = BulletComponent(
         position: spawnPos,
         radius: 6.5,
@@ -1232,15 +1282,15 @@ class VoidSingularityNova extends Weapon {
 
 class ThunderstormCoreMelter extends Weapon {
   ThunderstormCoreMelter()
-      : super(
-          id: 'union_thunderstorm',
-          name: 'Thunderstorm Core Melter',
-          evolvedName: 'Thunderstorm Core Melter ★',
-          cooldown: 0.28,
-          recoil: 6.0,
-          muzzleFlashSize: 16.0,
-          damage: 68.0,
-        ) {
+    : super(
+        id: 'union_thunderstorm',
+        name: 'Thunderstorm Core Melter',
+        evolvedName: 'Thunderstorm Core Melter ★',
+        cooldown: 0.28,
+        recoil: 6.0,
+        muzzleFlashSize: 16.0,
+        damage: 68.0,
+      ) {
     isEvolved = true;
   }
 

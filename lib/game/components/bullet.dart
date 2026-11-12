@@ -13,7 +13,8 @@ import 'sector_boss.dart';
 import 'advanced_weapons.dart';
 import 'package:asteroids/game/weapons.dart';
 
-class BulletComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+class BulletComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final double radius;
   final Vector2 velocity;
   double lifeTimer;
@@ -70,7 +71,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         } catch (_) {}
       }
     }
-    
+
     lifeTimer -= dt;
     if (lifeTimer <= 0) {
       removeFromParent();
@@ -86,19 +87,28 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
   }
 
+  (double damage, bool isCrit) _computeDealtDamage() {
+    double dealtDamage = damage;
+    bool isCrit = false;
+    try {
+      final totalCritChance =
+          (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
+      if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
+        dealtDamage *= game.rogueCritMultiplier;
+        isCrit = true;
+      }
+    } catch (_) {}
+    return (dealtDamage, isCrit);
+  }
+
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is AsteroidComponent) {
-      double dealtDamage = damage;
-      bool isCrit = false;
-      try {
-        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
-        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
-          dealtDamage *= 2.0;
-          isCrit = true;
-        }
-      } catch (_) {}
+      final (dealtDamage, isCrit) = _computeDealtDamage();
 
       final destroyed = other.takeDamage(dealtDamage, position);
       weaponSource?.totalDamageDealt += dealtDamage;
@@ -136,13 +146,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         removeFromParent();
       }
     } else if (other is CargoWreckComponent) {
-      double dealtDamage = damage;
-      try {
-        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
-        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
-          dealtDamage *= 2.0;
-        }
-      } catch (_) {}
+      final (dealtDamage, _) = _computeDealtDamage();
 
       final destroyed = other.takeDamage(dealtDamage, position);
       weaponSource?.totalDamageDealt += dealtDamage;
@@ -155,13 +159,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         removeFromParent();
       }
     } else if (other is BreakablePropComponent) {
-      double dealtDamage = damage;
-      try {
-        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
-        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
-          dealtDamage *= 2.0;
-        }
-      } catch (_) {}
+      final (dealtDamage, _) = _computeDealtDamage();
 
       final destroyed = other.takeDamage(dealtDamage, position);
       weaponSource?.totalDamageDealt += dealtDamage;
@@ -174,15 +172,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         removeFromParent();
       }
     } else if (other is EnemyShipComponent) {
-      double dealtDamage = damage;
-      bool isCrit = false;
-      try {
-        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
-        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
-          dealtDamage *= 2.0;
-          isCrit = true;
-        }
-      } catch (_) {}
+      final (dealtDamage, isCrit) = _computeDealtDamage();
 
       if (elementalStatus != ElementalStatus.none) {
         other.applyElementalStatus(elementalStatus, duration: 4.0);
@@ -216,15 +206,7 @@ class BulletComponent extends PositionComponent with HasGameReference<AsteroidsG
         removeFromParent();
       }
     } else if (other is SectorBoss) {
-      double dealtDamage = damage;
-      bool isCrit = false;
-      try {
-        final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
-        if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
-          dealtDamage *= 2.0;
-          isCrit = true;
-        }
-      } catch (_) {}
+      final (dealtDamage, isCrit) = _computeDealtDamage();
 
       if (elementalStatus != ElementalStatus.none) {
         other.applyElementalStatus(elementalStatus, duration: 4.0);

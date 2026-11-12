@@ -521,19 +521,21 @@ flowchart TD
 ---
 
 ## ⚖️ SPRINT 59: Expansão Roguelite, Trade-offs Radicais & Fila de Level-Up (*Brotato & Vampire Survivors*)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA (Sprint 59)**
 - **Objetivo:** Transformar o pool de Level-Up de 5 passivas genéricas em um sistema rico de especialização com atributos visíveis e decisões de alto risco/recompensa.
-- **Entregáveis Planejados:**
-  - [ ] **Expansão de 5 para 15+ Passivas de Arsenal:**
-    - Criação de módulos para *Armor Plating*, *Critical Strike Multiplier*, *Lifesteal Matrix*, *Area of Effect Radius*, *Projectile Piercing* e *Luck Drop Rate*.
-  - [ ] **Passivas com Trade-offs Radicais (*Brotato Model*):**
+- **Entregáveis Implementados:**
+  - [x] **Expansão de 5 para 16 Passivas de Arsenal (`RoguePerkGenerator.buildPassiveCatalog`):**
+    - Adicionados módulos para *Armor Plating* (`armorReduction`), *Precision Crit Optics* (`rogueCritChance` + `rogueCritMultiplier`), *Lifesteal Matrix* (`rogueLifesteal`), *Thermobaric Warheads* (`rogueAreaMultiplier`), *Tungsten Sabot Cores* (`pierceCount`), *Quantum Luck Array* (`rogueLuckBonus`), *Relativistic Damper* (`dashCooldownMultiplier`) e *Nanobot Hull Repair*.
+  - [x] **Passivas com Trade-offs Radicais (*Brotato Model*, `isTradeOff: true`):**
     - *Glass Cannon Reactor:* +45% Dano Global, -25% HP Máximo.
-    - *Juggernaut Plating:* +60 HP Máximo e blindagem a impacto, -15% Velocidade Máxima.
-    - *Unstable Payloads:* +40% Área de Explosão, -20% Cadência de Disparo.
-  - [ ] **Fila Ordenada de Level-Up (`pendingLevelUps`):**
-    - Tratar overflow de XP maciço (ex: derrotar chefe ou abrir cápsula de estase no nível 1) para enfileirar as seleções sem descartar cartas.
-  - [ ] **Tela de Estatísticas Matemáticas Transparentes:**
-    - Visualização no menu de pausa de todos os modificadores consolidados da run (DPS, Crit %, Armor %, Speed %, Magnet Range).
+    - *Juggernaut Plating:* +60 HP Máximo e +18% Blindagem (*Armor*), -15% Velocidade Máxima.
+    - *Unstable Payloads:* +40% Área de Explosão (*AoE*), -20% Cadência de Disparo.
+  - [x] **Fila Ordenada de Level-Up (`pendingLevelUps`):**
+    - Loop `while` em `AsteroidsGame.addXp` enfileira múltiplos níveis ganhos num único pico de XP (Boss/CryoPod), exibindo badge `+N NA FILA` no `LevelUpOverlay` e consumindo sequencialmente sem perder escolhas.
+  - [x] **Tela de Estatísticas Matemáticas Transparentes (`PauseOverlay` / `BuildStatsSnapshot`):**
+    - Nova aba `📊 STATS` no `PauseOverlay` exibindo DPS Estimado, Dano Global %, Cadência %, Crítico / Mult, Blindagem %, Lifesteal %, Área %, Perfuração, Velocidade, Raio do Ímã, Sorte % e Trade-offs ativos.
+  - [x] **Testes Automatizados:**
+    - Criada a suíte `test/sprint59_roguelite_expansion_test.dart` com 7 testes (total de 309 testes passando com 100% de sucesso).
 
 ---
 

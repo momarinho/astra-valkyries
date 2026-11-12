@@ -975,6 +975,16 @@ class EnemyShipComponent extends PositionComponent
     try {
       game.notifyEnemyKilledForUnlocks(type);
     } catch (_) {}
+    // Sprint 59: Lifesteal Matrix — sifona HP proporcional ao abate quando equipado
+    try {
+      if (game.rogueLifesteal > 0 && game.player.hp < game.player.maxHp) {
+        final siphonHeal = math.max(
+          1.0,
+          (scoreValue >= 500 ? 50.0 : 25.0) * game.rogueLifesteal,
+        );
+        game.player.heal(siphonHeal);
+      }
+    } catch (_) {}
     game.playSfx('asteroid_split.wav');
     game.addScore(scoreValue);
     try {
