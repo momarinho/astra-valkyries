@@ -14,39 +14,36 @@ import 'advanced_weapons.dart';
 import 'asteroid.dart';
 
 enum EnemyType {
-  scout,          // Swarmer / Fodder: direct fast pursuit
-  raider,         // Charger / Kamikaze: telegraphed laser dash
-  sniper,         // Artillery: stays back and shoots plasma orbs
+  scout, // Swarmer / Fodder: direct fast pursuit
+  raider, // Charger / Kamikaze: telegraphed laser dash
+  sniper, // Artillery: stays back and shoots plasma orbs
   eliteCommander, // Miniboss: large flagship with HP bar & guaranteed chest drop
-  voidSwarmer,    // Sprint 15: Ultra-fast swarm drone that spawns in packs of 15-30
-  aegisBulwark,   // Sprint 15: Heavy cruiser with impenetrable frontal shield (requires flanking/dash)
-  carrierHive,    // Sprint 15: Mothership that spawns Void Swarmers from afar
-  gravityWeaver,  // Sprint 15: Warps local gravity, pulling the player ship inward
-  cryoBomber,     // Sprint 15: Fires glacial cryo-shells that slow movement
+  voidSwarmer, // Sprint 15: Ultra-fast swarm drone that spawns in packs of 15-30
+  aegisBulwark, // Sprint 15: Heavy cruiser with impenetrable frontal shield (requires flanking/dash)
+  carrierHive, // Sprint 15: Mothership that spawns Void Swarmers from afar
+  gravityWeaver, // Sprint 15: Warps local gravity, pulling the player ship inward
+  cryoBomber, // Sprint 15: Fires glacial cryo-shells that slow movement
 }
 
 enum EliteAuraType {
   none,
-  cryoFrost,   // Aura Criogênica: desacelera alvos próximos
+  cryoFrost, // Aura Criogênica: desacelera alvos próximos
   aegisShield, // Aura de Escudo: reduz dano recebido em 25%
-  ionShock,    // Aura de Choque: sobrecarrega velocidade e cadência
-  vortex,      // Campo Gravitacional (Sprint 45): atrai nave da jogadora para a zona de perigo
-  volatile,    // Detonação Estilhaçadora (Sprint 45): detona em estilhaços em 360° no abate
+  ionShock, // Aura de Choque: sobrecarrega velocidade e cadência
+  vortex, // Campo Gravitacional (Sprint 45): atrai nave da jogadora para a zona de perigo
+  volatile, // Detonação Estilhaçadora (Sprint 45): detona em estilhaços em 360° no abate
 }
 
-enum RaiderState {
-  stalking,
-  telegraphing,
-  charging,
-  recovering,
-}
+enum RaiderState { stalking, telegraphing, charging, recovering }
 
 class VoidSwarmComponent extends EnemyShipComponent {
-  VoidSwarmComponent({required super.position}) : super(type: EnemyType.voidSwarmer);
+  VoidSwarmComponent({required super.position})
+    : super(type: EnemyType.voidSwarmer);
 }
 
 class EnemyShipComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+  AsteroidsGame? testGame;
   final EnemyType type;
   late final double radius;
   late final double baseMaxHp;
@@ -58,6 +55,7 @@ class EnemyShipComponent extends PositionComponent
   // Sprint 20: Promoção de Elite pelo Horde Director ao atingir o teto de entidades
   bool isPromotedElite = false;
   EliteAuraType eliteAura = EliteAuraType.none;
+  double localFreezeTimer = 0.0;
 
   static double calculateScaledHp({
     required double baseHp,
@@ -85,7 +83,8 @@ class EnemyShipComponent extends PositionComponent
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.0
     ..color = Colors.white.withValues(alpha: 0.7);
-  static final Paint _laserTelegraphPaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _laserTelegraphPaint = Paint()
+    ..style = PaintingStyle.stroke;
   static final Paint _laserReticlePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5;
@@ -118,7 +117,9 @@ class EnemyShipComponent extends PositionComponent
       EliteAuraType.vortex,
       EliteAuraType.volatile,
     ];
-    eliteAura = aura ?? availableAuras[position.x.toInt().abs() % availableAuras.length];
+    eliteAura =
+        aura ??
+        availableAuras[position.x.toInt().abs() % availableAuras.length];
     maxHp *= 1.65;
     hp = maxHp;
     scoreValue = (scoreValue * 1.8).round();
@@ -141,9 +142,11 @@ class EnemyShipComponent extends PositionComponent
   final Map<ElementalStatus, double> activeStatuses = {};
   double _burnTickTimer = 0.0;
 
-  bool hasStatus(ElementalStatus status) => (activeStatuses[status] ?? 0.0) > 0.0;
+  bool hasStatus(ElementalStatus status) =>
+      (activeStatuses[status] ?? 0.0) > 0.0;
 
-  double get cryoFreezeTimer => activeStatuses[ElementalStatus.cryoFreeze] ?? 0.0;
+  double get cryoFreezeTimer =>
+      activeStatuses[ElementalStatus.cryoFreeze] ?? 0.0;
   set cryoFreezeTimer(double duration) {
     if (duration > 0) {
       applyElementalStatus(ElementalStatus.cryoFreeze, duration: duration);
@@ -156,7 +159,9 @@ class EnemyShipComponent extends PositionComponent
     if (status == ElementalStatus.none || hp <= 0) return;
 
     // Check for Cross-Elemental Synergy Reaction (e.g. Freeze + Burn, Shock + Freeze, Rupture + Element)
-    final hadOtherElement = activeStatuses.entries.any((e) => e.key != status && e.value > 0);
+    final hadOtherElement = activeStatuses.entries.any(
+      (e) => e.key != status && e.value > 0,
+    );
     activeStatuses[status] = math.max(activeStatuses[status] ?? 0.0, duration);
 
     if (hadOtherElement) {
@@ -179,7 +184,9 @@ class EnemyShipComponent extends PositionComponent
     if (status == ElementalStatus.ionShock) {
       try {
         for (final other in game.activeEnemies) {
-          if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 170.0) {
+          if (other != this &&
+              other.hp > 0 &&
+              other.position.distanceTo(position) <= 170.0) {
             other.hp -= 14.0;
             if (other.hp <= 0) {
               other.die();
@@ -191,10 +198,7 @@ class EnemyShipComponent extends PositionComponent
     }
   }
 
-  EnemyShipComponent({
-    required Vector2 position,
-    required this.type,
-  }) {
+  EnemyShipComponent({required Vector2 position, required this.type}) {
     this.position = position;
     anchor = Anchor.center;
 
@@ -272,11 +276,18 @@ class EnemyShipComponent extends PositionComponent
     add(CircleHitbox());
     try {
       final elapsedMin = math.max(
-        (AsteroidsGame.fairRoundDuration - game.timeRemaining).clamp(0.0, 600.0) / 60.0,
+        (AsteroidsGame.fairRoundDuration - game.timeRemaining).clamp(
+              0.0,
+              600.0,
+            ) /
+            60.0,
         (game.asteroidField?.difficultyTimer ?? 0.0) / 60.0,
       );
       if (elapsedMin > 0.01 || game.voidCellsLevel > 0) {
-        applyDynamicScaling(minutesElapsed: elapsedMin, voidCells: game.voidCellsLevel);
+        applyDynamicScaling(
+          minutesElapsed: elapsedMin,
+          voidCells: game.voidCellsLevel,
+        );
       }
     } catch (_) {}
   }
@@ -297,12 +308,15 @@ class EnemyShipComponent extends PositionComponent
     if (asteroid.isRemoving || asteroid.hp <= 0 || hp <= 0) return;
     final dist = position.distanceTo(asteroid.position);
     if (dist < radius + asteroid.radius) {
-      final pushDir = dist > 0.1 ? (position - asteroid.position).normalized() : Vector2(0, -1);
+      final pushDir = dist > 0.1
+          ? (position - asteroid.position).normalized()
+          : Vector2(0, -1);
       position = asteroid.position + pushDir * (radius + asteroid.radius + 1.0);
       velocity = pushDir * (baseSpeed * 1.15);
 
       // Naves leves (Void Swarmers & Scouts) sofrem dano de impacto ao colidirem contra asteroides massivos
-      if ((type == EnemyType.voidSwarmer || type == EnemyType.scout) && asteroid.radius >= 24.0) {
+      if ((type == EnemyType.voidSwarmer || type == EnemyType.scout) &&
+          asteroid.radius >= 24.0) {
         takeDamage(asteroid.radius * 0.90, position);
       }
     }
@@ -313,6 +327,12 @@ class EnemyShipComponent extends PositionComponent
     super.update(dt);
     if (game.state != GameState.playing) {
       removeFromParent();
+      return;
+    }
+
+    // SPRINT 57: Hit-Stop local micro-freeze check (Hades Standard)
+    if (localFreezeTimer > 0) {
+      localFreezeTimer = math.max(0.0, localFreezeTimer - dt);
       return;
     }
 
@@ -404,12 +424,17 @@ class EnemyShipComponent extends PositionComponent
     }
 
     // Sprint 20: Aura Criogênica de Elite desacelera a nave da jogadora se muito próxima
-    if (isPromotedElite && eliteAura == EliteAuraType.cryoFrost && distToPlayer <= 145.0) {
+    if (isPromotedElite &&
+        eliteAura == EliteAuraType.cryoFrost &&
+        distToPlayer <= 145.0) {
       player.velocity.scale(math.pow(0.82, dt).toDouble());
     }
 
     // Sprint 45: Aura Vortex de Elite atrai a nave da jogadora para a zona perigosa
-    if (isPromotedElite && eliteAura == EliteAuraType.vortex && distToPlayer <= 220.0 && distToPlayer > 10.0) {
+    if (isPromotedElite &&
+        eliteAura == EliteAuraType.vortex &&
+        distToPlayer <= 220.0 &&
+        distToPlayer > 10.0) {
       final pullDir = (position - player.position).normalized();
       player.position += pullDir * (42.0 * dt);
     }
@@ -418,7 +443,8 @@ class EnemyShipComponent extends PositionComponent
   void _updateVoidSwarmer(double dt, Vector2 toPlayer, double dist) {
     if (dist > 1.0) {
       final dir = toPlayer.normalized();
-      final tangent = Vector2(-dir.y, dir.x) * math.sin( spiralAngle += dt * 7.0 ) * 0.35;
+      final tangent =
+          Vector2(-dir.y, dir.x) * math.sin(spiralAngle += dt * 7.0) * 0.35;
       final combined = (dir + tangent).normalized();
       velocity = combined * baseSpeed;
       angle = math.atan2(combined.y, combined.x) + math.pi / 2;
@@ -434,7 +460,10 @@ class EnemyShipComponent extends PositionComponent
       if (diff < -math.pi) diff += math.pi * 2;
       // Turns deliberately so the player can Dash behind its frontal shield!
       angle += diff.clamp(-1.8 * dt, 1.8 * dt);
-      final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
+      final forwardDir = Vector2(
+        math.cos(angle - math.pi / 2),
+        math.sin(angle - math.pi / 2),
+      );
       velocity = forwardDir * baseSpeed;
     }
   }
@@ -469,7 +498,12 @@ class EnemyShipComponent extends PositionComponent
     }
   }
 
-  void _updateGravityWeaver(double dt, PlayerComponent player, Vector2 toPlayer, double dist) {
+  void _updateGravityWeaver(
+    double dt,
+    PlayerComponent player,
+    Vector2 toPlayer,
+    double dist,
+  ) {
     if (dist > 1.0) {
       final dir = toPlayer.normalized();
       angle += 2.5 * dt;
@@ -510,7 +544,12 @@ class EnemyShipComponent extends PositionComponent
     }
   }
 
-  void _updateRaider(double dt, PlayerComponent player, Vector2 toPlayer, double dist) {
+  void _updateRaider(
+    double dt,
+    PlayerComponent player,
+    Vector2 toPlayer,
+    double dist,
+  ) {
     raiderTimer -= dt;
 
     switch (raiderState) {
@@ -544,7 +583,9 @@ class EnemyShipComponent extends PositionComponent
 
       case RaiderState.telegraphing:
         // Keep aim locked on target vector
-        angle = math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) + math.pi / 2;
+        angle =
+            math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) +
+            math.pi / 2;
         velocity = Vector2.zero();
 
         if (raiderTimer <= 0) {
@@ -557,11 +598,17 @@ class EnemyShipComponent extends PositionComponent
 
       case RaiderState.charging:
         // Dash along locked trajectory with flame particles
-        angle = math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) + math.pi / 2;
+        angle =
+            math.atan2(lockedChargeDirection.y, lockedChargeDirection.x) +
+            math.pi / 2;
         if (math.Random().nextDouble() < 0.45) {
           game.spawnExplosionParticles(
             position: position,
-            colorChoices: [const Color(0xFFFF1744), Colors.amberAccent, Colors.orange],
+            colorChoices: [
+              const Color(0xFFFF1744),
+              Colors.amberAccent,
+              Colors.orange,
+            ],
             count: 2,
             minSize: 1.5,
             maxSize: 3.0,
@@ -637,7 +684,10 @@ class EnemyShipComponent extends PositionComponent
 
       for (var i = 0; i < count; i++) {
         final currentSalvoAngle = baseAngle + (i - (count - 1) / 2) * spread;
-        final dir = Vector2(math.cos(currentSalvoAngle), math.sin(currentSalvoAngle));
+        final dir = Vector2(
+          math.cos(currentSalvoAngle),
+          math.sin(currentSalvoAngle),
+        );
         game.world.add(
           EnemyBulletComponent(
             position: position + dir * (radius + 6.0),
@@ -672,14 +722,18 @@ class EnemyShipComponent extends PositionComponent
 
     // Aegis Bulwark directional frontal shield: blocks 80% of damage hitting the front arc!
     if (type == EnemyType.aegisBulwark) {
-      final forwardDir = Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
+      final forwardDir = Vector2(
+        math.cos(angle - math.pi / 2),
+        math.sin(angle - math.pi / 2),
+      );
       Vector2 toAttacker = hitPos - position;
       if (toAttacker.length <= 0.1) {
         try {
           toAttacker = game.player.position - position;
         } catch (_) {}
       }
-      if (toAttacker.length > 0.1 && toAttacker.normalized().dot(forwardDir) > 0.30) {
+      if (toAttacker.length > 0.1 &&
+          toAttacker.normalized().dot(forwardDir) > 0.30) {
         effectiveDamage *= 0.20;
         try {
           game.spawnFloatingText(
@@ -715,7 +769,8 @@ class EnemyShipComponent extends PositionComponent
       currentElement = ElementalStatus.ionShock;
     }
 
-    final isCrit = effectiveDamage >= 50.0 || hasStatus(ElementalStatus.voidRupture);
+    final isCrit =
+        effectiveDamage >= 50.0 || hasStatus(ElementalStatus.voidRupture);
     try {
       game.spawnCombatDamageText(
         position: hitPos,
@@ -725,10 +780,26 @@ class EnemyShipComponent extends PositionComponent
       );
     } catch (_) {}
 
+    final isElite =
+        type == EnemyType.eliteCommander || type == EnemyType.carrierHive;
+    final g = testGame ?? (isMounted ? game : null);
     if (hp <= 0) {
+      g?.triggerScaledHitStop(
+        damage: effectiveDamage,
+        isCrit: isCrit,
+        isEliteKill: isElite,
+      );
       die();
       return true;
     } else {
+      if (effectiveDamage >= 45.0 || isCrit) {
+        localFreezeTimer = isCrit ? 0.07 : 0.035;
+        g?.triggerScaledHitStop(
+          damage: effectiveDamage,
+          isCrit: isCrit,
+          isEliteKill: false,
+        );
+      }
       return false;
     }
   }
@@ -740,7 +811,8 @@ class EnemyShipComponent extends PositionComponent
     game.playSfx('asteroid_split.wav');
     game.addScore(scoreValue);
     try {
-      final isEliteEnemy = type == EnemyType.eliteCommander || type == EnemyType.carrierHive;
+      final isEliteEnemy =
+          type == EnemyType.eliteCommander || type == EnemyType.carrierHive;
       game.gainUltimateCharge(isEliteEnemy ? 0.05 : 0.015);
     } catch (_) {}
 
@@ -776,12 +848,19 @@ class EnemyShipComponent extends PositionComponent
         break;
     }
     game.addRunCredits(scrapReward);
-    game.spawnFloatingText(position, '+$scoreValue', color: Colors.white, fontSize: 13.0);
+    game.spawnFloatingText(
+      position,
+      '+$scoreValue',
+      color: Colors.white,
+      fontSize: 13.0,
+    );
 
     // Solar Burn Death Detonation Synergy: enemies dying while burning explode! (Zero-GC)
     if (hasStatus(ElementalStatus.solarBurn)) {
       for (final other in game.activeEnemies) {
-        if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 105.0) {
+        if (other != this &&
+            other.hp > 0 &&
+            other.position.distanceTo(position) <= 105.0) {
           other.takeDamage(35.0, other.position);
         }
       }
@@ -818,7 +897,12 @@ class EnemyShipComponent extends PositionComponent
 
     // Explosion particles
     final List<Color> colors = isElite
-        ? [const Color(0xFFFFD700), const Color(0xFFD500F9), Colors.white, Colors.orange]
+        ? [
+            const Color(0xFFFFD700),
+            const Color(0xFFD500F9),
+            Colors.white,
+            Colors.orange,
+          ]
         : [const Color(0xFFFF1744), const Color(0xFFFF5252), Colors.white];
 
     game.spawnExplosionParticles(
@@ -836,14 +920,21 @@ class EnemyShipComponent extends PositionComponent
       game.chargeBossBeacon('SUB-CHEFE ABATIDO');
       // ⚠️ GUARANTEED COSMIC CHEST FROM ELITE COMMANDER!
       game.world.add(
-        ChestComponent(
-          position: position.clone(),
-          tier: ChestTier.gold,
-        ),
+        ChestComponent(position: position.clone(), tier: ChestTier.gold),
       );
       // Extra large XP burst
-      game.world.add(XpOrbComponent(position: position + Vector2(-15, 0), type: XpOrbType.large));
-      game.world.add(XpOrbComponent(position: position + Vector2(15, 0), type: XpOrbType.large));
+      game.world.add(
+        XpOrbComponent(
+          position: position + Vector2(-15, 0),
+          type: XpOrbType.large,
+        ),
+      );
+      game.world.add(
+        XpOrbComponent(
+          position: position + Vector2(15, 0),
+          type: XpOrbType.large,
+        ),
+      );
 
       game.spawnFloatingText(
         position + Vector2(0, -35),
@@ -852,9 +943,13 @@ class EnemyShipComponent extends PositionComponent
         fontSize: 16.0,
       );
     } else if (type == EnemyType.raider || type == EnemyType.sniper) {
-      game.world.add(XpOrbComponent(position: position.clone(), type: XpOrbType.medium));
+      game.world.add(
+        XpOrbComponent(position: position.clone(), type: XpOrbType.medium),
+      );
     } else {
-      game.world.add(XpOrbComponent(position: position.clone(), type: XpOrbType.small));
+      game.world.add(
+        XpOrbComponent(position: position.clone(), type: XpOrbType.small),
+      );
     }
 
     // Health capsule drop (Vampire Survivors balance):
@@ -894,7 +989,10 @@ class EnemyShipComponent extends PositionComponent
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerComponent) {
       final double dmg;
@@ -941,6 +1039,13 @@ class EnemyShipComponent extends PositionComponent
     canvas.save();
     canvas.translate(radius, radius);
 
+    // SPRINT 57: Hit-Stop Micro-Jiggle (Hades Standard)
+    if (localFreezeTimer > 0) {
+      final jiggleX = math.sin(localFreezeTimer * 90.0) * 1.6;
+      final jiggleY = math.cos(localFreezeTimer * 90.0) * 1.2;
+      canvas.translate(jiggleX, jiggleY);
+    }
+
     // Sprint 20: Aura visual de Inimigo Promovido a Elite pelo Horde Director
     if (isPromotedElite && eliteAura != EliteAuraType.none) {
       final Color auraColor;
@@ -965,28 +1070,27 @@ class EnemyShipComponent extends PositionComponent
           break;
       }
       _sharedFillPaint.color = auraColor.withValues(alpha: 0.16);
-      canvas.drawCircle(
-        Offset.zero,
-        radius * 1.45,
-        _sharedFillPaint,
-      );
+      canvas.drawCircle(Offset.zero, radius * 1.45, _sharedFillPaint);
       _sharedStrokePaint.color = auraColor.withValues(alpha: 0.78);
       _sharedStrokePaint.strokeWidth = 1.8;
-      canvas.drawCircle(
-        Offset.zero,
-        radius * 1.45,
-        _sharedStrokePaint,
-      );
+      canvas.drawCircle(Offset.zero, radius * 1.45, _sharedStrokePaint);
     }
 
     // 1. Draw Telegraphed Red Aiming Laser for Raider (straight out of ship's nose)
     if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {
-      final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 50.0) + 1) / 2;
-      _laserTelegraphPaint.color = const Color(0xFFFF1744).withValues(alpha: 0.45 + pulse * 0.45);
+      final pulse =
+          (math.sin(DateTime.now().millisecondsSinceEpoch / 50.0) + 1) / 2;
+      _laserTelegraphPaint.color = const Color(
+        0xFFFF1744,
+      ).withValues(alpha: 0.45 + pulse * 0.45);
       _laserTelegraphPaint.strokeWidth = 1.8 + pulse * 1.2;
 
       // In local coordinates, ship's nose is (0, -radius), facing forward (0, -1)
-      canvas.drawLine(Offset(0, -radius), const Offset(0, -650.0), _laserTelegraphPaint);
+      canvas.drawLine(
+        Offset(0, -radius),
+        const Offset(0, -650.0),
+        _laserTelegraphPaint,
+      );
     }
 
     final isFlashing = hitFlashTimer > 0;
@@ -1047,12 +1151,19 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawPath(path, _shadowRimPaint);
 
     // Rear engine thruster plume
-    final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 50.0);
+    final thrustPulse =
+        0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 50.0);
     _sharedStrokePaint.color = const Color(0xFF00E5FF).withValues(alpha: 0.85);
     _sharedStrokePaint.strokeWidth = 2.0;
-    canvas.drawLine(Offset(0, radius * 0.4), Offset(0, radius * (0.7 + 0.4 * thrustPulse)), _sharedStrokePaint);
+    canvas.drawLine(
+      Offset(0, radius * 0.4),
+      Offset(0, radius * (0.7 + 0.4 * thrustPulse)),
+      _sharedStrokePaint,
+    );
 
-    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF1B0B24).withValues(alpha: 0.95);
+    _sharedFillPaint.color = isFlashing
+        ? Colors.white
+        : const Color(0xFF1B0B24).withValues(alpha: 0.95);
     canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFFFF4081);
@@ -1076,13 +1187,24 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawPath(path, _shadowRimPaint);
 
     // Twin plasma micro-jets
-    final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 35.0);
+    final thrustPulse =
+        0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 35.0);
     _sharedStrokePaint.color = const Color(0xFF00E5FF).withValues(alpha: 0.90);
     _sharedStrokePaint.strokeWidth = 2.2;
-    canvas.drawLine(Offset(-radius * 0.3, radius * 0.6), Offset(-radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), _sharedStrokePaint);
-    canvas.drawLine(Offset(radius * 0.3, radius * 0.6), Offset(radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), _sharedStrokePaint);
+    canvas.drawLine(
+      Offset(-radius * 0.3, radius * 0.6),
+      Offset(-radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)),
+      _sharedStrokePaint,
+    );
+    canvas.drawLine(
+      Offset(radius * 0.3, radius * 0.6),
+      Offset(radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)),
+      _sharedStrokePaint,
+    );
 
-    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF280738).withValues(alpha: 0.95);
+    _sharedFillPaint.color = isFlashing
+        ? Colors.white
+        : const Color(0xFF280738).withValues(alpha: 0.95);
     canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFFE040FB);
@@ -1108,12 +1230,19 @@ class EnemyShipComponent extends PositionComponent
     canvas.drawPath(path, _shadowRimPaint);
 
     // Heavy crimson engine thruster plume
-    final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 45.0);
+    final thrustPulse =
+        0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 45.0);
     _sharedStrokePaint.color = const Color(0xFFFF5252).withValues(alpha: 0.85);
     _sharedStrokePaint.strokeWidth = 2.4;
-    canvas.drawLine(Offset(0, radius * 0.6), Offset(0, radius * (1.0 + 0.5 * thrustPulse)), _sharedStrokePaint);
+    canvas.drawLine(
+      Offset(0, radius * 0.6),
+      Offset(0, radius * (1.0 + 0.5 * thrustPulse)),
+      _sharedStrokePaint,
+    );
 
-    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF2B0B0E).withValues(alpha: 0.95);
+    _sharedFillPaint.color = isFlashing
+        ? Colors.white
+        : const Color(0xFF2B0B0E).withValues(alpha: 0.95);
     canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFFFF1744);
@@ -1125,8 +1254,11 @@ class EnemyShipComponent extends PositionComponent
 
     // Sprint 39: Telegraphed Dash Trajectory Corridor (Nova Drift / Hades)
     if (raiderState == RaiderState.telegraphing) {
-      final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
-      _laserTelegraphPaint.color = const Color(0xFFFF1744).withValues(alpha: 0.35 + pulse * 0.45);
+      final pulse =
+          (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
+      _laserTelegraphPaint.color = const Color(
+        0xFFFF1744,
+      ).withValues(alpha: 0.35 + pulse * 0.45);
       _laserTelegraphPaint.strokeWidth = 2.2 + pulse * 1.5;
 
       canvas.drawLine(
@@ -1135,10 +1267,20 @@ class EnemyShipComponent extends PositionComponent
         _laserTelegraphPaint,
       );
 
-      _sharedStrokePaint.color = const Color(0xFFFF1744).withValues(alpha: 0.15 + pulse * 0.20);
+      _sharedStrokePaint.color = const Color(
+        0xFFFF1744,
+      ).withValues(alpha: 0.15 + pulse * 0.20);
       _sharedStrokePaint.strokeWidth = 1.2;
-      canvas.drawLine(Offset(-12, -radius * 1.2), const Offset(-22, -260.0), _sharedStrokePaint);
-      canvas.drawLine(Offset(12, -radius * 1.2), const Offset(22, -260.0), _sharedStrokePaint);
+      canvas.drawLine(
+        Offset(-12, -radius * 1.2),
+        const Offset(-22, -260.0),
+        _sharedStrokePaint,
+      );
+      canvas.drawLine(
+        Offset(12, -radius * 1.2),
+        const Offset(22, -260.0),
+        _sharedStrokePaint,
+      );
     }
   }
 
@@ -1157,17 +1299,31 @@ class EnemyShipComponent extends PositionComponent
     _shadowRimPaint.strokeWidth = 4.5;
     canvas.drawPath(path, _shadowRimPaint);
 
-    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF100E2B).withValues(alpha: 0.95);
+    _sharedFillPaint.color = isFlashing
+        ? Colors.white
+        : const Color(0xFF100E2B).withValues(alpha: 0.95);
     canvas.drawPath(path, _sharedFillPaint);
 
-    final strokeColor = isFlashing ? flashColor : (flashColor != Colors.white ? flashColor : const Color(0xFF7C4DFF));
+    final strokeColor = isFlashing
+        ? flashColor
+        : (flashColor != Colors.white ? flashColor : const Color(0xFF7C4DFF));
     Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.4);
 
     // Twin sniper railgun barrels
-    _sharedStrokePaint.color = isFlashing ? flashColor : const Color(0xFFE040FB);
+    _sharedStrokePaint.color = isFlashing
+        ? flashColor
+        : const Color(0xFFE040FB);
     _sharedStrokePaint.strokeWidth = 2.2;
-    canvas.drawLine(Offset(-radius * 0.45, -radius * 0.3), Offset(-radius * 0.45, -radius * 1.3), _sharedStrokePaint);
-    canvas.drawLine(Offset(radius * 0.45, -radius * 0.3), Offset(radius * 0.45, -radius * 1.3), _sharedStrokePaint);
+    canvas.drawLine(
+      Offset(-radius * 0.45, -radius * 0.3),
+      Offset(-radius * 0.45, -radius * 1.3),
+      _sharedStrokePaint,
+    );
+    canvas.drawLine(
+      Offset(radius * 0.45, -radius * 0.3),
+      Offset(radius * 0.45, -radius * 1.3),
+      _sharedStrokePaint,
+    );
 
     // Glowing core
     _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFF80D8FF);
@@ -1177,7 +1333,11 @@ class EnemyShipComponent extends PositionComponent
     if (shootCooldown <= 0.70 && shootCooldown > 0) {
       final telegraphProgress = (1.0 - (shootCooldown / 0.70)).clamp(0.0, 1.0);
       final alpha = (0.25 + 0.65 * telegraphProgress).clamp(0.0, 1.0);
-      _laserTelegraphPaint.color = Color.lerp(const Color(0xFFE040FB), const Color(0xFFFF1744), telegraphProgress)!.withValues(alpha: alpha);
+      _laserTelegraphPaint.color = Color.lerp(
+        const Color(0xFFE040FB),
+        const Color(0xFFFF1744),
+        telegraphProgress,
+      )!.withValues(alpha: alpha);
       _laserTelegraphPaint.strokeWidth = 1.0 + telegraphProgress * 1.8;
 
       canvas.drawLine(
@@ -1187,7 +1347,9 @@ class EnemyShipComponent extends PositionComponent
       );
 
       // Warning target reticle at tip
-      _laserReticlePaint.color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.8);
+      _laserReticlePaint.color = const Color(
+        0xFFFF1744,
+      ).withValues(alpha: alpha * 0.8);
       canvas.drawCircle(
         const Offset(0, -380.0),
         3.0 + telegraphProgress * 2.5,
@@ -1213,10 +1375,14 @@ class EnemyShipComponent extends PositionComponent
     _shadowRimPaint.strokeWidth = 5.2;
     canvas.drawPath(path, _shadowRimPaint);
 
-    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF180A28).withValues(alpha: 0.95);
+    _sharedFillPaint.color = isFlashing
+        ? Colors.white
+        : const Color(0xFF180A28).withValues(alpha: 0.95);
     canvas.drawPath(path, _sharedFillPaint);
 
-    final strokeColor = isFlashing ? flashColor : (flashColor != Colors.white ? flashColor : const Color(0xFFFFD700));
+    final strokeColor = isFlashing
+        ? flashColor
+        : (flashColor != Colors.white ? flashColor : const Color(0xFFFFD700));
     Glow.strokePath(canvas, path, strokeColor, width: 2.8, intensity: 1.8);
 
     // Inner imperial insignia & purple energy core
@@ -1245,14 +1411,19 @@ class EnemyShipComponent extends PositionComponent
     _shadowRimPaint.strokeWidth = 4.8;
     canvas.drawPath(path, _shadowRimPaint);
 
-    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF0A1E2E).withValues(alpha: 0.95);
+    _sharedFillPaint.color = isFlashing
+        ? Colors.white
+        : const Color(0xFF0A1E2E).withValues(alpha: 0.95);
     canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFF00E5FF);
     Glow.strokePath(canvas, path, strokeColor, width: 2.6, intensity: 1.5);
 
     // Glowing Frontal Directional Energy Shield Arc
-    final shieldRect = Rect.fromCircle(center: Offset.zero, radius: radius * 1.22);
+    final shieldRect = Rect.fromCircle(
+      center: Offset.zero,
+      radius: radius * 1.22,
+    );
     _sharedStrokePaint.color = const Color(0xFF00E5FF);
     _sharedStrokePaint.strokeWidth = 4.2;
     canvas.drawArc(
@@ -1272,20 +1443,29 @@ class EnemyShipComponent extends PositionComponent
 
     // Background
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth, barHeight), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(barX, barY, barWidth, barHeight),
+        const Radius.circular(3),
+      ),
       _healthBarBgPaint,
     );
 
     // Health Fill (Gold gradient)
     final healthRatio = (hp / maxHp).clamp(0.0, 1.0);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth * healthRatio, barHeight), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(barX, barY, barWidth * healthRatio, barHeight),
+        const Radius.circular(3),
+      ),
       _healthBarFillPaint,
     );
 
     // Border
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth, barHeight), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(barX, barY, barWidth, barHeight),
+        const Radius.circular(3),
+      ),
       _healthBarBorderPaint,
     );
   }

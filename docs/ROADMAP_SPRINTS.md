@@ -480,21 +480,24 @@ flowchart TD
 ---
 
 ## 🕹️ SPRINT 57: Game Feel Visceral, Input Buffering & Hit-Stop Dinâmico (*Hades Standard*)
-- **Status:** 📋 **PLANEJADA**
+- **Status:** ✅ **CONCLUÍDA**
 - **Objetivo:** Eliminar perda de comandos por recuperação de animações, escalonar congelamentos de impacto por severidade e aprimorar a física tátil dos caças.
-- **Entregáveis Planejados:**
-  - [ ] **Fila Universal de Input Buffering (120ms):**
-    - Adicionar `InputBuffer` em `PlayerComponent` para registrar Dash e Especial/Ultimate caso o jogador aperte o botão durante o final de recargas, executando no primeiro frame válido.
-  - [ ] **Hit-Stop Escalonado por Severidade de Dano:**
-    - Desacoplar o congelamento global cego; aplicar `localFreezeTimer` na entidade e projétil:
-      - *Tiro comum:* 0ms (fluidez mantida).
+- **Entregáveis Concluídos:**
+  - [x] **Fila Universal de Input Buffering (120ms):**
+    - Adicionado sistema de `dashBufferTimer` e `specialBufferTimer` no `PlayerComponent` e `AsteroidsGame`, permitindo enfileirar comandos de Dash e Ultimate até 120ms antes do término de recargas ou congelamentos, executando no primeiríssimo frame válido.
+  - [x] **Hit-Stop Escalonado por Severidade de Dano:**
+    - Congelamentos dinâmicos micro-calibrados por impacto (`triggerScaledHitStop`):
+      - *Tiro comum (< 45 dmg):* 0ms (fluidez contínua a 120 FPS).
       - *Dano moderado (>= 45):* 35ms.
-      - *Acerto crítico / Katana:* 70ms com micro-jiggle do sprite.
-      - *Abate de Elite / Golpe Finalizador:* 140ms com vibração direcional.
-  - [ ] **Inércia Vetorial e Pluma Dinâmica de Propulsão:**
-    - Calcular a taxa de emissão e velocidade das partículas de motor a partir do vetor de aceleração real ($\vec{a} = \frac{\Delta \vec{v}}{\Delta t}$), diferenciando o peso do caça pesado (Astraea) do caça ágil (Lyra e Vesper).
-  - [ ] **Testes de Automação:**
-    - Criar `test/commercial_game_feel_and_buffering_test.dart` comprovando execução com sucesso de comandos bufferizados a 40ms do término do cooldown.
+      - *Acerto crítico / Katana:* 70ms com tremor direcional e micro-jiggle do sprite.
+      - *Abate de Elite / Golpe Finalizador:* 140ms com forte impacto háptico/screenshake.
+    - Partículas, telas de tremor e temporizadores de buffer continuam ativos durante o hit-stop, eliminando a sensação de travamento estático.
+  - [x] **Inércia Vetorial e Pluma Dinâmica de Propulsão:**
+    - Medição em tempo real da aceleração física real ($\vec{a} = \frac{\Delta \vec{v}}{\Delta t}$), expandindo dinamicamente o comprimento e a largura da chama do motor com diferenciação de massa por nave (Astraea possui exaustores pesados largos, Lyra possui pluma longa de alta agilidade e Dash dispara hyper-boost).
+  - [x] **Erradicação de Alocações em Hot Path (Zero-GC):**
+    - Substituição de todas as instâncias de `Paint()` e `Path()` em `PlayerComponent.render()`, `muzzleFlash`, `_renderTacticalLaserSight` e `DashGhost` por instâncias estáticas cacheadas.
+  - [x] **Testes Automatizados:**
+    - Criada a suíte `test/sprint57_visceral_game_feel_test.dart` com 7 novos testes comprovando execução de comandos bufferizados a 40ms do término do cooldown e escalonamento de hit-stop. Total de 294 testes passando com 100% de sucesso.
 
 ---
 

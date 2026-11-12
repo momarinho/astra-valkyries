@@ -1090,6 +1090,46 @@ class AsteroidsGame extends FlameGame
   double shakeIntensity = 0.0;
   double hitStopTimer = 0.0;
 
+  // SPRINT 57: Universal Special / Ultimate Input Buffering (120ms)
+  double specialBufferTimer = 0.0;
+  static const double inputBufferWindow = 0.12;
+
+  void requestSpecial() {
+    if (specialAvailable && state == GameState.playing) {
+      specialBufferTimer = 0.0;
+      triggerSpecial();
+    } else {
+      specialBufferTimer = inputBufferWindow;
+    }
+  }
+
+  /// SPRINT 57: Hit-Stop Escalonado por Severidade de Dano (Hades Standard)
+  /// - Tiro comum: 0ms (fluidez contínua)
+  /// - Dano moderado (>= 45): 35ms
+  /// - Acerto crítico / lâmina: 70ms com tremor direcional
+  /// - Abate de Elite / Golpe Finalizador: 140ms
+  void triggerScaledHitStop({
+    required double damage,
+    bool isCrit = false,
+    bool isEliteKill = false,
+    Vector2? impactDir,
+  }) {
+    double duration = 0.0;
+    if (isEliteKill) {
+      duration = 0.14;
+      triggerScreenShake(duration: 0.35, intensity: 14.0);
+    } else if (isCrit) {
+      duration = 0.07;
+      triggerScreenShake(duration: 0.20, intensity: 8.0);
+    } else if (damage >= 45.0) {
+      duration = 0.035;
+    }
+
+    if (duration > 0) {
+      hitStopTimer = math.max(hitStopTimer, duration);
+    }
+  }
+
   // Sprint 50: Painel de Mixagem de Áudio
   double masterVolume = 1.0;
   double sfxVolume = 1.0;
@@ -1810,10 +1850,26 @@ class AsteroidsGame extends FlameGame
   @override
   void update(double dt) {
     super.update(dt);
-    // Sprint 48: Arcade Hit-Stop visceral impact freeze
+    // Sprint 57: Scaled Hit-Stop visceral impact freeze (Hades Standard)
     if (hitStopTimer > 0) {
       hitStopTimer = math.max(0.0, hitStopTimer - dt);
+      if (shakeTimer > 0) {
+        shakeTimer = math.max(0.0, shakeTimer - dt);
+      }
+      particlePool.update(dt);
+      if (specialBufferTimer > 0) {
+        specialBufferTimer = math.max(0.0, specialBufferTimer - dt);
+      }
       return;
+    }
+
+    // Processa fila de input buffer para Ultimate/Especial
+    if (specialBufferTimer > 0) {
+      specialBufferTimer = math.max(0.0, specialBufferTimer - dt);
+      if (specialAvailable && state == GameState.playing) {
+        specialBufferTimer = 0.0;
+        triggerSpecial();
+      }
     }
     if (dt > 0) {
       final instantFps = (1.0 / dt).clamp(1.0, 240.0);

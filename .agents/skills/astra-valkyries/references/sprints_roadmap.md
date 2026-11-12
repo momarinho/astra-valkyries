@@ -38,12 +38,14 @@ This document tracks the execution of Sprints 55 to 60, as officially documented
 
 ---
 
-## Sprint 57: Hades-Grade Combat Feel & Tactile Inertia
+## Sprint 57: Hades-Grade Combat Feel & Tactile Inertia (DONE ✅)
 * **Goal**: Frame-level impact, input buffering, and ship weight.
 * **Deliverables**:
-  - Frame-buffered Dash and Ultimate inputs (120ms buffer queue).
-  - Scaled hit-stop ($30\text{ms}$–$80\text{ms}$) calibrated by weapon mass and critical hits.
-  - Ship-specific inertia tuning and dynamic thruster flame expansion.
+  - Universal 120ms Input Buffer for Dash and Special/Ultimate abilities (zero dropped inputs).
+  - Scaled hit-stop micro-freezes ($0\text{ms}$ common, $35\text{ms}$ heavy, $70\text{ms}$ crit/katana, $140\text{ms}$ elite kill) with sprite micro-jiggle.
+  - Inertia-driven dynamic thruster flame plume scaling with acceleration ($\vec{a} = \Delta \vec{v} / \Delta t$) and craft mass.
+  - Zero-GC hot path hardening across `PlayerComponent` and `DashGhost`.
+  - 7 automated tests in `test/sprint57_visceral_game_feel_test.dart` (294 total tests passing).
 
 ---
 

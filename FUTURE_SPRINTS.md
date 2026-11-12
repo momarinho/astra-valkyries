@@ -28,16 +28,16 @@ This document outlines the current active engineering milestones for **Astra Val
 - `SpaceTimeWarpGridComponent`: Einsteinian cosmic coordinate grid warping toward massive gravity wells (black holes, massive asteroids, sector bosses).
 - 287 automated tests passing with 100% green status and 0 linter issues.
 
+### ✅ Sprint 57: Game Feel Visceral, Input Buffering & Hit-Stop Dinâmico (*Hades Standard*)
+- 120ms Universal Input Buffering in `PlayerComponent` and `AsteroidsGame` for Dash and Special/Ultimate actions.
+- Scaled Hit-Stop system (`triggerScaledHitStop`): 0ms for common shots, 35ms for moderate hits (>= 45), 70ms for critical strikes / katana slices with micro-jiggle, 140ms for elite kills with directional shake.
+- Physics-driven dynamic propulsion plume responsive to real craft acceleration ($\Delta \vec{v} / \Delta t$) with ship mass scaling (Astraea wide fusion plume, Lyra sharp afterburner).
+- Zero-GC hardening across hot path renderers (`PlayerComponent`, `DashGhost`).
+- 294 automated tests passing with 100% green status and 0 linter issues.
+
 ---
 
 ## 🎯 Active & Upcoming Sprints
-
-### 🕹️ Sprint 57: Game Feel Visceral, Input Buffering & Hit-Stop Dinâmico (*Hades Standard*)
-- **Target:** Eliminate dropped inputs and provide weighty, physical combat feel.
-- **Deliverables:**
-  - 120ms Universal Input Buffer for Dash and Special/Ultimate abilities.
-  - Scaled hit-stop freeze frames ($0\text{ms}$ to $140\text{ms}$) calibrated by impact severity and critical strikes.
-  - Inertial propulsion flame expansion responsive to real craft acceleration ($\Delta \vec{v} / \Delta t$).
 
 ### 👾 Sprint 58: Coreografia Tática de Esquadrões & Telegraphs Universais (*Nova Drift & Galaga*)
 - **Target:** Intelligent enemy flight choreography and clear telegraphing.

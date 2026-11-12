@@ -37,6 +37,7 @@ class AsteroidComponent extends PositionComponent
   late double maxHp;
   late double hp;
   double hitFlashTimer = 0.0;
+  double localFreezeTimer = 0.0;
 
   // Zero-GC Cached Paint instances for high-performance asteroid rendering (60-120 FPS)
   static final Paint _sharedFillPaint = Paint()..style = PaintingStyle.fill;
@@ -171,6 +172,11 @@ class AsteroidComponent extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    // SPRINT 57: Hit-Stop local micro-freeze check (Hades Standard)
+    if (localFreezeTimer > 0) {
+      localFreezeTimer = math.max(0.0, localFreezeTimer - dt);
+      return;
+    }
     if (hitFlashTimer > 0) {
       hitFlashTimer = math.max(0.0, hitFlashTimer - dt);
     }
@@ -213,10 +219,25 @@ class AsteroidComponent extends PositionComponent
       maxSpeed: 90.0,
     );
 
+    final isCrit = damage >= 45.0;
     if (hp <= 0) {
+      final isLarge = radius > 45.0;
+      game.triggerScaledHitStop(
+        damage: damage,
+        isCrit: isCrit,
+        isEliteKill: isLarge,
+      );
       split();
       return true; // Destroyed
     } else {
+      if (damage >= 45.0 || isCrit) {
+        localFreezeTimer = isCrit ? 0.07 : 0.035;
+        game.triggerScaledHitStop(
+          damage: damage,
+          isCrit: isCrit,
+          isEliteKill: false,
+        );
+      }
       game.spawnFloatingText(
         hitPos,
         '-${damage.toInt()}',
@@ -263,6 +284,13 @@ class AsteroidComponent extends PositionComponent
     } catch (_) {}
 
     canvas.translate(radius, radius);
+
+    // SPRINT 57: Hit-Stop Micro-Jiggle (Hades Standard)
+    if (localFreezeTimer > 0) {
+      final jiggleX = math.sin(localFreezeTimer * 90.0) * 1.6;
+      final jiggleY = math.cos(localFreezeTimer * 90.0) * 1.2;
+      canvas.translate(jiggleX, jiggleY);
+    }
 
     final isFlashing = hitFlashTimer > 0;
     final path = cachedPath;

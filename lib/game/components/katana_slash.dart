@@ -84,7 +84,10 @@ class KatanaSlashComponent extends PositionComponent
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
 
     // 1. 🛡️ TACHYON PARRY: Anula e destrói projéteis inimigos em voo
@@ -119,7 +122,8 @@ class KatanaSlashComponent extends PositionComponent
     double dealtDamage = damage;
     bool isCrit = false;
     try {
-      final totalCritChance = (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
+      final totalCritChance =
+          (game.rogueCritChance + game.player.bonusCritChance).clamp(0.0, 1.0);
       if (totalCritChance > 0 && math.Random().nextDouble() < totalCritChance) {
         dealtDamage *= 2.0;
         isCrit = true;
@@ -131,6 +135,7 @@ class KatanaSlashComponent extends PositionComponent
       weaponSource?.totalDamageDealt += dealtDamage;
       if (destroyed) weaponSource?.totalKills++;
       if (isCrit) {
+        game.triggerScaledHitStop(damage: dealtDamage, isCrit: true);
         game.spawnFloatingText(
           position + Vector2(0, -18),
           'SLICE CRIT!',
@@ -152,6 +157,7 @@ class KatanaSlashComponent extends PositionComponent
       weaponSource?.totalDamageDealt += dealtDamage;
       if (destroyed) weaponSource?.totalKills++;
       if (isCrit) {
+        game.triggerScaledHitStop(damage: dealtDamage, isCrit: true);
         game.spawnFloatingText(
           position + Vector2(0, -18),
           'SLICE CRIT!',

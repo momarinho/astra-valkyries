@@ -21,7 +21,8 @@ import 'speech_bubble.dart';
 import 'singularity_rift.dart';
 import 'breakable_prop.dart';
 
-class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
+class PlayerComponent extends PositionComponent
+    with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? customGame;
 
   @override
@@ -43,11 +44,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   Vector2 velocity = Vector2.zero();
-  
+
   double movementAcceleration = GameConstants.playerAcceleration;
   double movementMaxSpeed = GameConstants.playerMaxSpeed;
   double movementFriction = GameConstants.playerFriction;
-  
+
   double radius = GameConstants.playerRadius;
   double invulnerableTimer = GameConstants.playerInvulnerableSeconds;
   double dashCooldownTimer = 0.0;
@@ -66,6 +67,53 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   int get maxDashCharges => (valkyrie?.id == 'vesper') ? 2 : 1;
   double dashRechargeTimer = 0.0;
   static const double vesperRechargeCooldown = 1.8;
+
+  // SPRINT 57: Universal Input Buffering (120ms)
+  static const double inputBufferWindow = 0.12;
+  double dashBufferTimer = 0.0;
+
+  // SPRINT 57: Inércia Vetorial & Pluma Dinâmica de Propulsão
+  final Vector2 previousVelocity = Vector2.zero();
+  double currentAcceleration = 0.0;
+  double localFreezeTimer = 0.0;
+
+  bool get canDash {
+    if (localFreezeTimer > 0) return false;
+    final vId = valkyrie?.id ?? 'lyra';
+    if (vId == 'vesper') {
+      return dashCharges > 0;
+    }
+    return !isDashing && dashCooldownTimer <= 0;
+  }
+
+  void requestDash() {
+    if (canDash) {
+      dashBufferTimer = 0.0;
+      dash();
+    } else {
+      dashBufferTimer = inputBufferWindow;
+    }
+  }
+
+  // Zero-GC Cached Paints & Paths
+  static final Paint _auraPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3.0;
+  static final Paint _flashDiamondPaint = Paint()
+    ..blendMode = BlendMode.plus
+    ..style = PaintingStyle.fill;
+  static final Paint _flashCoronaPaint = Paint()
+    ..blendMode = BlendMode.plus
+    ..style = PaintingStyle.fill;
+  static final Paint _tacticalSightPaint = Paint()
+    ..style = PaintingStyle.stroke;
+  static final Paint _shipAccentPaint = Paint();
+  static final Paint _shipFillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _shipCorePaint = Paint()..style = PaintingStyle.fill;
+
+  final Path _flamePath = Path();
+  final Path _flameCorePath = Path();
+  final Path _muzzleFlashPath = Path();
 
   // Hull Points (HP) & Damage System
   double maxHp = 100.0;
@@ -96,19 +144,24 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   final List<Weapon> activeWeapons = [];
   final Map<String, Weapon> unlockedWeapons = {};
 
-  double get totalDamageDealt => activeWeapons.fold(0.0, (sum, w) => sum + w.totalDamageDealt);
+  double get totalDamageDealt =>
+      activeWeapons.fold(0.0, (sum, w) => sum + w.totalDamageDealt);
 
   Weapon? get mvpWeapon {
     if (activeWeapons.isEmpty) return null;
-    return activeWeapons.reduce((a, b) => a.totalDamageDealt >= b.totalDamageDealt ? a : b);
+    return activeWeapons.reduce(
+      (a, b) => a.totalDamageDealt >= b.totalDamageDealt ? a : b,
+    );
   }
 
-  Weapon get weapon => activeWeapons.isNotEmpty ? activeWeapons.first : Blaster();
+  Weapon get weapon =>
+      activeWeapons.isNotEmpty ? activeWeapons.first : Blaster();
   set weapon(Weapon w) {
     setWeapon(w);
   }
 
-  double get shootTimer => activeWeapons.isNotEmpty ? activeWeapons.first.currentCooldown : 0.0;
+  double get shootTimer =>
+      activeWeapons.isNotEmpty ? activeWeapons.first.currentCooldown : 0.0;
   set shootTimer(double val) {
     if (activeWeapons.isNotEmpty) {
       activeWeapons.first.currentCooldown = val;
@@ -239,7 +292,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (game.state != GameState.playing) return;
     if (other is AsteroidComponent) {
@@ -297,7 +353,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
 
     double adjustedDamage = damage;
-    if (game.activeMutations.contains('mut_emergency_protocol') && hpPercent <= 0.40) {
+    if (game.activeMutations.contains('mut_emergency_protocol') &&
+        hpPercent <= 0.40) {
       adjustedDamage *= 0.60;
     }
 
@@ -306,7 +363,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     hitFlashTimer = 0.12;
     seleneShieldRegenTimer = 0.0;
 
-    game.triggerScreenShake(duration: 0.35, intensity: math.min(18.0, 8.0 + actualDamage * 0.25));
+    game.triggerScreenShake(
+      duration: 0.35,
+      intensity: math.min(18.0, 8.0 + actualDamage * 0.25),
+    );
     game.spawnFloatingText(
       position + Vector2(0, -28),
       '-${actualDamage.toInt()} HP',
@@ -315,8 +375,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       velocity: Vector2(0, -35),
     );
 
-    final pColor = scientist?.primaryColor ?? valkyrie?.primaryColor ?? Colors.cyan;
-    final aColor = scientist?.accentColor ?? valkyrie?.accentColor ?? Colors.white;
+    final pColor =
+        scientist?.primaryColor ?? valkyrie?.primaryColor ?? Colors.cyan;
+    final aColor =
+        scientist?.accentColor ?? valkyrie?.accentColor ?? Colors.white;
 
     game.spawnExplosionParticles(
       position: position,
@@ -343,10 +405,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     }
   }
 
-  Vector2 get forward => Vector2(
-        math.cos(angle - math.pi / 2),
-        math.sin(angle - math.pi / 2),
-      );
+  Vector2 get forward =>
+      Vector2(math.cos(angle - math.pi / 2), math.sin(angle - math.pi / 2));
 
   void rotate(double dt, double direction) {
     if (cryoFreezeTimer > 0) return;
@@ -355,7 +415,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
   void accelerate(double dt, double directionMultiplier) {
     if (cryoFreezeTimer > 0) return;
-    velocity += forward *
+    velocity +=
+        forward *
         (movementAcceleration * cryoMistAccelerationMultiplier) *
         directionMultiplier *
         dt;
@@ -363,7 +424,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
   void accelerateInDirection(double dt, Vector2 direction, double power) {
     if (direction.length <= 0.001 || cryoFreezeTimer > 0) return;
-    velocity += direction.normalized() *
+    velocity +=
+        direction.normalized() *
         (movementAcceleration * cryoMistAccelerationMultiplier) *
         power *
         dt;
@@ -384,7 +446,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   void _triggerMirrorDashDeflection() {
     try {
       if (!game.activeMutations.contains('mut_mirror_dash')) return;
-      final enemyBullets = game.world.children.whereType<EnemyBulletComponent>().toList();
+      final enemyBullets = game.world.children
+          .whereType<EnemyBulletComponent>()
+          .toList();
       for (final eb in enemyBullets) {
         if (eb.position.distanceTo(position) <= 150.0) {
           eb.removeFromParent();
@@ -396,7 +460,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   void _triggerRelicDashSynergy() {
     try {
       if (game.unlockedRelics.contains('chrono_crystal')) {
-        final enemyBullets = game.world.children.whereType<EnemyBulletComponent>().toList();
+        final enemyBullets = game.world.children
+            .whereType<EnemyBulletComponent>()
+            .toList();
         for (final eb in enemyBullets) {
           if (eb.position.distanceTo(position) <= 220.0) {
             eb.velocity.scale(0.5);
@@ -407,6 +473,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
   }
 
   void dash() {
+    if (!canDash) {
+      dashBufferTimer = inputBufferWindow;
+      return;
+    }
+    dashBufferTimer = 0.0;
     final vId = valkyrie?.id ?? 'lyra';
     _triggerMirrorDashDeflection();
     _triggerRelicDashSynergy();
@@ -438,7 +509,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     if (dashCooldownTimer > 0) return;
 
-    if (vId == 'kaede' || vId == 'kbr' || vId == 'kbr_01' || vId == 'kimberly') {
+    if (vId == 'kaede' ||
+        vId == 'kbr' ||
+        vId == 'kbr_01' ||
+        vId == 'kimberly') {
       // ⚔️ TACHYON SWORDMASTER: PHANTOM SHUNPO (Instant Dimensional Blink & Spatial Slice Corridor)
       dashCooldownTimer = 1.9;
       invulnerableTimer = 0.40;
@@ -468,7 +542,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       final sliceDir = sliceVector.normalized();
 
       // Clear enemy bullets along the slash corridor (radius ~36px)
-      for (final bullet in game.world.children.whereType<EnemyBulletComponent>().toList()) {
+      for (final bullet
+          in game.world.children.whereType<EnemyBulletComponent>().toList()) {
         final toBullet = bullet.position - startPos;
         final proj = toBullet.dot(sliceDir);
         if (proj >= -8.0 && proj <= sliceLen + 8.0) {
@@ -489,7 +564,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       }
 
       // Slice enemy ships along the corridor
-      for (final enemy in game.world.children.whereType<EnemyShipComponent>().toList()) {
+      for (final enemy
+          in game.world.children.whereType<EnemyShipComponent>().toList()) {
         final toEnemy = enemy.position - startPos;
         final proj = toEnemy.dot(sliceDir);
         if (proj >= -8.0 && proj <= sliceLen + 8.0) {
@@ -516,7 +592,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       }
 
       // Slice asteroids along the corridor
-      for (final ast in game.world.children.whereType<AsteroidComponent>().toList()) {
+      for (final ast
+          in game.world.children.whereType<AsteroidComponent>().toList()) {
         final toAst = ast.position - startPos;
         final proj = toAst.dot(sliceDir);
         if (proj >= -8.0 && proj <= sliceLen + 8.0) {
@@ -631,6 +708,24 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     super.update(dt);
     if (game.state != GameState.playing) return;
 
+    // SPRINT 57: Hit-Stop micro-freeze check (Hades Standard)
+    if (localFreezeTimer > 0) {
+      localFreezeTimer = math.max(0.0, localFreezeTimer - dt);
+      if (dashBufferTimer > 0) {
+        dashBufferTimer = math.max(0.0, dashBufferTimer - dt);
+      }
+      return;
+    }
+
+    // SPRINT 57: Inércia Vetorial (Medição da taxa de aceleração real)
+    if (dt > 0.0001) {
+      final realAccX = (velocity.x - previousVelocity.x) / dt;
+      final realAccY = (velocity.y - previousVelocity.y) / dt;
+      final realAccMag = math.sqrt(realAccX * realAccX + realAccY * realAccY);
+      currentAcceleration = currentAcceleration * 0.75 + realAccMag * 0.25;
+      previousVelocity.setFrom(velocity);
+    }
+
     _updateNebulaModifiers();
     if (cryoFreezeTimer > 0) {
       cryoFreezeTimer = math.max(0.0, cryoFreezeTimer - dt);
@@ -651,6 +746,15 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       dashCooldownTimer = (dashCharges > 0) ? 0.0 : dashRechargeTimer;
     } else {
       dashCooldownTimer = math.max(0.0, dashCooldownTimer - dt);
+    }
+
+    // SPRINT 57: Processa fila de input buffer para Dash (executa no primeiro frame válido)
+    if (dashBufferTimer > 0) {
+      dashBufferTimer = math.max(0.0, dashBufferTimer - dt);
+      if (canDash) {
+        dashBufferTimer = 0.0;
+        dash();
+      }
     }
     muzzleFlashTimer = math.max(0.0, muzzleFlashTimer - dt);
     _soundCooldownTimer = math.max(0.0, _soundCooldownTimer - dt);
@@ -680,15 +784,21 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       if (w.currentCooldown <= 0) {
         if (w.fire(this)) {
           final bloodCooldownMult = bloodOverdriveTimer > 0 ? 0.60 : 1.0;
-          final cooldownMultiplier = ((activeNebulaName == 'ION NEBULA') ? 0.70 : 1.0) * bloodCooldownMult;
-          final effectiveCooldown = w.cooldown * game.rogueFireRateMultiplier * cooldownMultiplier;
+          final cooldownMultiplier =
+              ((activeNebulaName == 'ION NEBULA') ? 0.70 : 1.0) *
+              bloodCooldownMult;
+          final effectiveCooldown =
+              w.cooldown * game.rogueFireRateMultiplier * cooldownMultiplier;
           w.currentCooldown = effectiveCooldown;
 
           // Newtonian Recoil Kickback (Nova Drift game feel)
           double recoilKick = w.recoil;
           if (w.recoil >= 15.0) {
             recoilKick *= 1.5; // Torpedo / Bomb: heavy kickback (-33 impulse)
-            game.triggerScreenShake(duration: 0.08, intensity: math.min(6.0, w.recoil * 0.25));
+            game.triggerScreenShake(
+              duration: 0.08,
+              intensity: math.min(6.0, w.recoil * 0.25),
+            );
           } else if (w.recoil >= 8.0) {
             recoilKick *= 1.2; // Shotgun / Spread cannon (-17 impulse)
             game.triggerScreenShake(duration: 0.05, intensity: 2.5);
@@ -732,15 +842,19 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       final speed = (valkyrie?.id == 'kaede')
           ? 540.0
           : (valkyrie?.id == 'lyra'
-              ? 520.0
-              : (valkyrie?.id == 'vesper' ? 440.0 : GameConstants.playerDashSpeed));
+                ? 520.0
+                : (valkyrie?.id == 'vesper'
+                      ? 440.0
+                      : GameConstants.playerDashSpeed));
       velocity = dashDirection * speed;
       position += velocity * dt;
       enforceSectorBounds(dt);
 
       final ghostColor = (valkyrie?.id == 'kaede')
           ? const Color(0xFF00E5FF)
-          : ((valkyrie?.id == 'vesper') ? const Color(0xFFE040FB) : const Color(0xFFFF9100));
+          : ((valkyrie?.id == 'vesper')
+                ? const Color(0xFFE040FB)
+                : const Color(0xFFFF9100));
       game.world.add(
         DashGhost(
           position: position,
@@ -759,24 +873,36 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     } catch (_) {}
     final stick = joy?.stickInput ?? Vector2.zero();
 
-    final isLeft = keys.contains(LogicalKeyboardKey.arrowLeft) ||
+    final isLeft =
+        keys.contains(LogicalKeyboardKey.arrowLeft) ||
         keys.contains(LogicalKeyboardKey.keyA) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowLeft) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.arrowLeft,
+        ) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyA);
 
-    final isRight = keys.contains(LogicalKeyboardKey.arrowRight) ||
+    final isRight =
+        keys.contains(LogicalKeyboardKey.arrowRight) ||
         keys.contains(LogicalKeyboardKey.keyD) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowRight) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.arrowRight,
+        ) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyD);
 
-    final isUp = keys.contains(LogicalKeyboardKey.arrowUp) ||
+    final isUp =
+        keys.contains(LogicalKeyboardKey.arrowUp) ||
         keys.contains(LogicalKeyboardKey.keyW) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowUp) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.arrowUp,
+        ) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyW);
 
-    final isDown = keys.contains(LogicalKeyboardKey.arrowDown) ||
+    final isDown =
+        keys.contains(LogicalKeyboardKey.arrowDown) ||
         keys.contains(LogicalKeyboardKey.keyS) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.arrowDown) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.arrowDown,
+        ) ||
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyS);
 
     final kbDir = Vector2.zero();
@@ -806,7 +932,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           diff -= 2 * math.pi;
         }
 
-        final turnAmount = (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
+        final turnAmount =
+            (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
         if (diff.abs() < turnAmount) {
           angle = targetAngle;
         } else {
@@ -829,7 +956,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             diff -= 2 * math.pi;
           }
 
-          final turnAmount = (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
+          final turnAmount =
+              (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
           if (diff.abs() < turnAmount) {
             angle = targetAngle;
           } else {
@@ -861,18 +989,27 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       }
     }
 
-    final isDash = keys.contains(LogicalKeyboardKey.shiftLeft) ||
+    final isDash =
+        keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight) ||
         keys.contains(LogicalKeyboardKey.gameButtonB) ||
         keys.contains(LogicalKeyboardKey.gameButtonLeft1) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.shiftLeft) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.shiftRight) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonB) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonLeft1) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.shiftLeft,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.shiftRight,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.gameButtonB,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.gameButtonLeft1,
+        ) ||
         game.mobileDashPressed;
 
     if (isDash) {
-      dash();
+      requestDash();
       game.mobileDashPressed = false;
     }
 
@@ -883,7 +1020,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     // Disparo multi-tecla: Espaço, Z, X, C, Ctrl, Numpad 0, Enter ou Gamepad A/R1
     // Isso resolve completamente qualquer conflito de ghosting em teclados escolares
-    final isShoot = keys.contains(LogicalKeyboardKey.space) ||
+    final isShoot =
+        keys.contains(LogicalKeyboardKey.space) ||
         keys.contains(LogicalKeyboardKey.keyZ) ||
         keys.contains(LogicalKeyboardKey.keyX) ||
         keys.contains(LogicalKeyboardKey.keyC) ||
@@ -894,37 +1032,71 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         keys.contains(LogicalKeyboardKey.numpadEnter) ||
         keys.contains(LogicalKeyboardKey.gameButtonA) ||
         keys.contains(LogicalKeyboardKey.gameButtonRight1) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.space) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyZ) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyX) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyC) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.controlLeft) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.controlRight) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.numpad0) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.enter) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.numpadEnter) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonA) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonRight1) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.space,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.keyZ,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.keyX,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.keyC,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.controlLeft,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.controlRight,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.numpad0,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.enter,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.numpadEnter,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.gameButtonA,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.gameButtonRight1,
+        ) ||
         game.mobileShootPressed;
 
     if (isShoot) {
       shoot();
     }
 
-    final isSpecial = keys.contains(LogicalKeyboardKey.keyE) ||
+    final isSpecial =
+        keys.contains(LogicalKeyboardKey.keyE) ||
         keys.contains(LogicalKeyboardKey.keyQ) ||
         keys.contains(LogicalKeyboardKey.gameButtonX) ||
         keys.contains(LogicalKeyboardKey.gameButtonY) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyE) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.keyQ) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonX) ||
-        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.gameButtonY) ||
-        (game.specialAvailable && (keys.contains(LogicalKeyboardKey.space) || HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.space)));
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.keyE,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.keyQ,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.gameButtonX,
+        ) ||
+        HardwareKeyboard.instance.isLogicalKeyPressed(
+          LogicalKeyboardKey.gameButtonY,
+        ) ||
+        (game.specialAvailable &&
+            (keys.contains(LogicalKeyboardKey.space) ||
+                HardwareKeyboard.instance.isLogicalKeyPressed(
+                  LogicalKeyboardKey.space,
+                )));
 
     if (isSpecial) {
-      game.triggerSpecial();
+      game.requestSpecial();
     }
-
   }
 
   void shoot() {
@@ -947,14 +1119,20 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     final distTop = position.y;
     final distBottom = maxY - position.y;
 
-    boundaryDistance = math.min(math.min(distLeft, distRight), math.min(distTop, distBottom));
+    boundaryDistance = math.min(
+      math.min(distLeft, distRight),
+      math.min(distTop, distBottom),
+    );
     isNearBoundary = boundaryDistance < warnDist;
 
     // Repulsive acceleration towards center when venturing into hazard perimeter
     if (isNearBoundary) {
       final centerX = maxX / 2;
       final centerY = maxY / 2;
-      final toCenter = Vector2(centerX - position.x, centerY - position.y).normalized();
+      final toCenter = Vector2(
+        centerX - position.x,
+        centerY - position.y,
+      ).normalized();
       final pushFactor = (1.0 - (boundaryDistance / warnDist).clamp(0.0, 1.0));
       velocity += toCenter * (pushFactor * 320.0 * dt);
     }
@@ -988,15 +1166,18 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     cryoMistAccelerationMultiplier = 1.0;
 
     try {
-      for (final mist in game.world.children.whereType<CryoMistZoneComponent>()) {
+      for (final mist
+          in game.world.children.whereType<CryoMistZoneComponent>()) {
         if (mist.containsPoint(position)) {
-          cryoMistAccelerationMultiplier = CryoMistZoneComponent.accelerationReductionFactor;
+          cryoMistAccelerationMultiplier =
+              CryoMistZoneComponent.accelerationReductionFactor;
           activeNebulaName ??= 'CRYO MIST';
           activeNebulaModifier ??= '❄️ NEBLINA CRIOGÊNICA (-30% ACELERAÇÃO)';
           break;
         }
       }
-      for (final nebula in game.world.children.whereType<CosmicNebulaComponent>()) {
+      for (final nebula
+          in game.world.children.whereType<CosmicNebulaComponent>()) {
         if (nebula.containsPoint(position)) {
           activeNebulaName = nebula.name;
           activeNebulaModifier = nebula.modifierText;
@@ -1025,13 +1206,18 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
     canvas.translate(radius, radius);
 
+    // SPRINT 57: Hit-Stop Micro-Jiggle (Hades Standard)
+    if (localFreezeTimer > 0) {
+      final jiggleX = math.sin(localFreezeTimer * 90.0) * 1.8;
+      final jiggleY = math.cos(localFreezeTimer * 90.0) * 1.4;
+      canvas.translate(jiggleX, jiggleY);
+    }
+
     if (bloodOverdriveTimer > 0) {
-      final pulse = 1.0 + 0.15 * math.sin(DateTime.now().millisecondsSinceEpoch * 0.015);
-      final auraPaint = Paint()
-        ..color = const Color(0xFFE040FB).withValues(alpha: 0.38)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0;
-      canvas.drawCircle(Offset.zero, (radius + 8.0) * pulse, auraPaint);
+      final pulse =
+          1.0 + 0.15 * math.sin(DateTime.now().millisecondsSinceEpoch * 0.015);
+      _auraPaint.color = const Color(0xFFE040FB).withValues(alpha: 0.38);
+      canvas.drawCircle(Offset.zero, (radius + 8.0) * pulse, _auraPaint);
     }
 
     if (hasTacticalLaserSight) {
@@ -1049,24 +1235,22 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       final tip = Offset(0, -radius * 1.18);
 
       // Sharp directional diamond spark
-      final diamond = Path()
-        ..moveTo(tip.dx, tip.dy - flashLen)
-        ..lineTo(tip.dx - flashWidth, tip.dy)
-        ..lineTo(tip.dx, tip.dy + flashLen * 0.4)
-        ..lineTo(tip.dx + flashWidth, tip.dy)
-        ..close();
+      _muzzleFlashPath.reset();
+      _muzzleFlashPath.moveTo(tip.dx, tip.dy - flashLen);
+      _muzzleFlashPath.lineTo(tip.dx - flashWidth, tip.dy);
+      _muzzleFlashPath.lineTo(tip.dx, tip.dy + flashLen * 0.4);
+      _muzzleFlashPath.lineTo(tip.dx + flashWidth, tip.dy);
+      _muzzleFlashPath.close();
 
-      final flashPaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.95 * flashRatio)
-        ..blendMode = BlendMode.plus
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(diamond, flashPaint);
+      _flashDiamondPaint.color = Colors.white.withValues(
+        alpha: 0.95 * flashRatio,
+      );
+      canvas.drawPath(_muzzleFlashPath, _flashDiamondPaint);
 
-      final coronaPaint = Paint()
-        ..color = const Color(0xFFFFEB3B).withValues(alpha: 0.40 * flashRatio)
-        ..blendMode = BlendMode.plus
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(tip, flashLen * 0.6, coronaPaint);
+      _flashCoronaPaint.color = const Color(
+        0xFFFFEB3B,
+      ).withValues(alpha: 0.40 * flashRatio);
+      canvas.drawCircle(tip, flashLen * 0.6, _flashCoronaPaint);
     }
   }
 
@@ -1083,10 +1267,9 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         ? const Color(0xFFFF1744)
         : (valkyrie?.accentColor ?? const Color(0xFF00E5FF));
     final alpha = isLocked ? 0.55 : 0.26;
-    final sightPaint = Paint()
+    _tacticalSightPaint
       ..color = sightColor.withValues(alpha: alpha)
-      ..strokeWidth = isLocked ? 1.8 : 1.2
-      ..style = PaintingStyle.stroke;
+      ..strokeWidth = isLocked ? 1.8 : 1.2;
 
     // Feixe de mira tracejado saindo do nariz da nave (Sprint 17: Tactical Laser Sight)
     const double startY = -24.0;
@@ -1096,54 +1279,95 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
     double y = startY;
     while (y > endY) {
       final nextY = math.max(endY, y - dashLen);
-      canvas.drawLine(Offset(0, y), Offset(0, nextY), sightPaint);
+      canvas.drawLine(Offset(0, y), Offset(0, nextY), _tacticalSightPaint);
       y = nextY - gapLen;
     }
 
     // Retícula holográfica na ponta do feixe
     final reticleCenter = const Offset(0, endY);
-    canvas.drawCircle(
-      reticleCenter,
-      isLocked ? 6.5 : 4.5,
-      sightPaint,
-    );
+    canvas.drawCircle(reticleCenter, isLocked ? 6.5 : 4.5, _tacticalSightPaint);
     if (isLocked) {
-      canvas.drawLine(const Offset(-10, endY), const Offset(-4, endY), sightPaint);
-      canvas.drawLine(const Offset(4, endY), const Offset(10, endY), sightPaint);
+      canvas.drawLine(
+        const Offset(-10, endY),
+        const Offset(-4, endY),
+        _tacticalSightPaint,
+      );
+      canvas.drawLine(
+        const Offset(4, endY),
+        const Offset(10, endY),
+        _tacticalSightPaint,
+      );
     }
   }
 
   void _renderShip(Canvas canvas) {
     final isHitFlashing = hitFlashTimer > 0;
-    final primary = isHitFlashing ? Colors.white : (valkyrie?.primaryColor ?? scientist?.primaryColor ?? Colors.white);
-    final accent = isHitFlashing ? Colors.white : (valkyrie?.accentColor ?? scientist?.accentColor ?? Colors.cyanAccent);
+    final primary = isHitFlashing
+        ? Colors.white
+        : (valkyrie?.primaryColor ?? scientist?.primaryColor ?? Colors.white);
+    final accent = isHitFlashing
+        ? Colors.white
+        : (valkyrie?.accentColor ??
+              scientist?.accentColor ??
+              Colors.cyanAccent);
 
-    final accentPaint = Paint()
+    final accentPaint = _shipAccentPaint
       ..color = accent
       ..style = isHitFlashing ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = isHitFlashing ? 2.5 : 1.5;
 
-    final fillPaint = Paint()
-      ..color = isHitFlashing ? Colors.white.withOpacity(0.92) : primary.withOpacity(0.12)
-      ..style = PaintingStyle.fill;
+    final fillPaint = _shipFillPaint
+      ..color = isHitFlashing
+          ? Colors.white.withValues(alpha: 0.92)
+          : primary.withValues(alpha: 0.12);
 
-    // Thruster flames if accelerating forward
-    if (isThrusting) {
-      final flameFlicker = (DateTime.now().millisecondsSinceEpoch % 150) / 150.0;
-      final flameLength = radius * (0.6 + flameFlicker * 0.5);
+    // SPRINT 57: Pluma Dinâmica de Propulsão reativa à aceleração física real e massa da Valquíria
+    if (isThrusting || isDashing) {
+      final flameFlicker =
+          (DateTime.now().millisecondsSinceEpoch % 150) / 150.0;
+      final accFactor = (currentAcceleration / 450.0).clamp(0.0, 1.8);
+      final speedFactor = (velocity.length / movementMaxSpeed).clamp(0.0, 1.0);
+      final massMultiplier = (valkyrie?.id == 'astraea')
+          ? 1.45 // Astraea: Exaustor de fusão pesado e largo
+          : (valkyrie?.id == 'lyra' ? 0.92 : 1.10);
 
-      final flamePath = Path()
-        ..moveTo(-radius * 0.25, radius * 0.7)
-        ..lineTo(0, radius * 0.7 + flameLength)
-        ..lineTo(radius * 0.25, radius * 0.7);
-      Glow.strokePath(canvas, flamePath, accent, width: 2.0, intensity: 1.4);
+      final double flameLength = isDashing
+          ? radius * 2.2
+          : radius *
+                (0.55 +
+                    (accFactor * 0.65 + speedFactor * 0.45) * massMultiplier +
+                    flameFlicker * 0.35);
 
-      // Núcleo quente da chama, quase branco
-      final corePath = Path()
-        ..moveTo(-radius * 0.12, radius * 0.72)
-        ..lineTo(0, radius * 0.72 + flameLength * 0.55)
-        ..lineTo(radius * 0.12, radius * 0.72);
-      Glow.strokePath(canvas, corePath, Glow.mix(accent, Colors.white, 0.8), width: 1.5, intensity: 0.8);
+      final double flameWidth = isDashing
+          ? radius * 0.55
+          : radius * (0.22 + (valkyrie?.id == 'astraea' ? 0.14 : 0.06));
+
+      _flamePath.reset();
+      _flamePath.moveTo(-flameWidth, radius * 0.7);
+      _flamePath.lineTo(0, radius * 0.7 + flameLength);
+      _flamePath.lineTo(flameWidth, radius * 0.7);
+
+      Glow.strokePath(
+        canvas,
+        _flamePath,
+        isDashing ? Colors.white : accent,
+        width: 2.2,
+        intensity: isDashing ? 2.5 : 1.5,
+      );
+
+      // Núcleo ultra-quente da chama, quase branco
+      _flameCorePath.reset();
+      _flameCorePath.moveTo(-flameWidth * 0.45, radius * 0.72);
+      _flameCorePath.lineTo(0, radius * 0.72 + flameLength * 0.6);
+      _flameCorePath.lineTo(flameWidth * 0.45, radius * 0.72);
+
+      Glow.strokePath(
+        canvas,
+        _flameCorePath,
+        Colors.white,
+        width: 1.5,
+        intensity: 1.0,
+      );
     }
 
     if (valkyrie != null) {
@@ -1155,7 +1379,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(-radius * 0.16, -radius * 0.65) // Fuselage taper L
             ..lineTo(-radius * 0.32, -radius * 0.35) // Leading canard
             ..lineTo(-radius * 0.20, -radius * 0.15)
-            ..lineTo(-radius * 0.95, radius * 0.50) // Razor wingtip L (katana blade)
+            ..lineTo(
+              -radius * 0.95,
+              radius * 0.50,
+            ) // Razor wingtip L (katana blade)
             ..lineTo(-radius * 0.50, radius * 0.38) // Trailing edge notch
             ..lineTo(-radius * 0.22, radius * 0.90) // Sub-light thruster L
             ..lineTo(0, radius * 0.60) // Tail centerline
@@ -1167,7 +1394,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(radius * 0.16, -radius * 0.65)
             ..close();
           canvas.drawPath(path, fillPaint);
-          Glow.heroStrokePath(canvas, path, const Color(0xFF00E5FF), width: GameConstants.lineWidth);
+          Glow.heroStrokePath(
+            canvas,
+            path,
+            const Color(0xFF00E5FF),
+            width: GameConstants.lineWidth,
+          );
 
           // Sleek Cyan Cockpit Canopy (Streamlined diamond)
           final canopy = Path()
@@ -1185,8 +1417,20 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           final bladeEdgeR = Path()
             ..moveTo(radius * 0.20, -radius * 0.15)
             ..lineTo(radius * 0.95, radius * 0.50);
-          Glow.strokePath(canvas, bladeEdgeL, const Color(0xFF80D8FF), width: 1.5, intensity: 0.9);
-          Glow.strokePath(canvas, bladeEdgeR, const Color(0xFF80D8FF), width: 1.5, intensity: 0.9);
+          Glow.strokePath(
+            canvas,
+            bladeEdgeL,
+            const Color(0xFF80D8FF),
+            width: 1.5,
+            intensity: 0.9,
+          );
+          Glow.strokePath(
+            canvas,
+            bladeEdgeR,
+            const Color(0xFF80D8FF),
+            width: 1.5,
+            intensity: 0.9,
+          );
           return;
 
         case ValkyrieShipDesign.solBlaze:
@@ -1202,7 +1446,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(radius * 0.85, radius * 0.75) // Wingtip R
             ..close();
           canvas.drawPath(path, fillPaint);
-          Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+          Glow.heroStrokePath(
+            canvas,
+            path,
+            primary,
+            width: GameConstants.lineWidth,
+          );
 
           // Cockpit canopy
           final canopy = Path()
@@ -1227,7 +1476,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(radius * 0.7, radius * 0.2)
             ..close();
           canvas.drawPath(path, fillPaint);
-          Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+          Glow.heroStrokePath(
+            canvas,
+            path,
+            primary,
+            width: GameConstants.lineWidth,
+          );
 
           // Crystalline core
           final core = Path()
@@ -1252,10 +1506,19 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(radius * 0.45, -radius * 0.95) // Forward Fang R
             ..close();
           canvas.drawPath(path, fillPaint);
-          Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+          Glow.heroStrokePath(
+            canvas,
+            path,
+            primary,
+            width: GameConstants.lineWidth,
+          );
 
           // Dark matter reactor ring
-          canvas.drawCircle(Offset(0, radius * 0.05), radius * 0.22, accentPaint);
+          canvas.drawCircle(
+            Offset(0, radius * 0.05),
+            radius * 0.22,
+            accentPaint,
+          );
           return;
 
         case ValkyrieShipDesign.originPrime:
@@ -1273,7 +1536,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(radius * 0.5, -radius * 0.2)
             ..close();
           canvas.drawPath(path, fillPaint);
-          Glow.heroStrokePath(canvas, path, const Color(0xFFFFD700), width: GameConstants.lineWidth + 0.5);
+          Glow.heroStrokePath(
+            canvas,
+            path,
+            const Color(0xFFFFD700),
+            width: GameConstants.lineWidth + 0.5,
+          );
 
           // Celestial Diamond Core
           final core = Path()
@@ -1282,7 +1550,8 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
             ..lineTo(0, radius * 0.3)
             ..lineTo(radius * 0.22, 0)
             ..close();
-          canvas.drawPath(core, Paint()..color = Colors.white..style = PaintingStyle.fill);
+          _shipCorePaint.color = Colors.white;
+          canvas.drawPath(core, _shipCorePaint);
           return;
       }
     }
@@ -1303,7 +1572,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           ..close();
 
         canvas.drawPath(path, fillPaint);
-        Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+        Glow.heroStrokePath(
+          canvas,
+          path,
+          primary,
+          width: GameConstants.lineWidth,
+        );
 
         // Cockpit canopy
         final cockpit = Path()
@@ -1327,7 +1601,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           ..close();
 
         canvas.drawPath(path, fillPaint);
-        Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+        Glow.heroStrokePath(
+          canvas,
+          path,
+          primary,
+          width: GameConstants.lineWidth,
+        );
 
         // Outer data wings / stabilizer struts
         final wingLines = Path()
@@ -1341,7 +1620,11 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
         // Core data module
         canvas.drawRect(
-          Rect.fromCenter(center: Offset(0, -radius * 0.05), width: radius * 0.35, height: radius * 0.35),
+          Rect.fromCenter(
+            center: Offset(0, -radius * 0.05),
+            width: radius * 0.35,
+            height: radius * 0.35,
+          ),
           accentPaint,
         );
         break;
@@ -1349,26 +1632,61 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       case ShipDesign.hubbleScout:
         // Nancy Grace Roman: Hubble Scout (Telescope barrel + solar panel wings)
         final barrel = RRect.fromRectAndRadius(
-          Rect.fromCenter(center: const Offset(0, 0), width: radius * 0.7, height: radius * 1.8),
+          Rect.fromCenter(
+            center: const Offset(0, 0),
+            width: radius * 0.7,
+            height: radius * 1.8,
+          ),
           const Radius.circular(3),
         );
         canvas.drawRRect(barrel, fillPaint);
-        Glow.heroStrokePath(canvas, Path()..addRRect(barrel), primary, width: GameConstants.lineWidth);
+        Glow.heroStrokePath(
+          canvas,
+          Path()..addRRect(barrel),
+          primary,
+          width: GameConstants.lineWidth,
+        );
 
         // Optical aperture at top
         canvas.drawCircle(Offset(0, -radius * 0.8), radius * 0.26, accentPaint);
 
         // Left solar panel
-        final leftPanel = Rect.fromLTRB(-radius * 1.25, -radius * 0.35, -radius * 0.35, radius * 0.35);
+        final leftPanel = Rect.fromLTRB(
+          -radius * 1.25,
+          -radius * 0.35,
+          -radius * 0.35,
+          radius * 0.35,
+        );
         canvas.drawRect(leftPanel, accentPaint);
-        canvas.drawLine(Offset(-radius * 0.8, -radius * 0.35), Offset(-radius * 0.8, radius * 0.35), accentPaint);
-        canvas.drawLine(Offset(-radius * 1.25, 0), Offset(-radius * 0.35, 0), accentPaint);
+        canvas.drawLine(
+          Offset(-radius * 0.8, -radius * 0.35),
+          Offset(-radius * 0.8, radius * 0.35),
+          accentPaint,
+        );
+        canvas.drawLine(
+          Offset(-radius * 1.25, 0),
+          Offset(-radius * 0.35, 0),
+          accentPaint,
+        );
 
         // Right solar panel
-        final rightPanel = Rect.fromLTRB(radius * 0.35, -radius * 0.35, radius * 1.25, radius * 0.35);
+        final rightPanel = Rect.fromLTRB(
+          radius * 0.35,
+          -radius * 0.35,
+          radius * 1.25,
+          radius * 0.35,
+        );
         canvas.drawRect(rightPanel, accentPaint);
-        canvas.drawLine(Offset(radius * 0.8, -radius * 0.35), Offset(radius * 0.8, radius * 0.35), accentPaint);
-        canvas.drawLine(Offset(radius * 0.35, 0), Offset(radius * 1.25, 0), accentPaint);
+        canvas.drawLine(
+          Offset(radius * 0.8, -radius * 0.35),
+          Offset(radius * 0.8, radius * 0.35),
+          accentPaint,
+        );
+        canvas.drawLine(
+          Offset(radius * 0.35, 0),
+          Offset(radius * 1.25, 0),
+          accentPaint,
+        );
         break;
 
       case ShipDesign.orbitalTitan:
@@ -1386,7 +1704,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
           ..close();
 
         canvas.drawPath(path, fillPaint);
-        Glow.heroStrokePath(canvas, path, primary, width: GameConstants.lineWidth);
+        Glow.heroStrokePath(
+          canvas,
+          path,
+          primary,
+          width: GameConstants.lineWidth,
+        );
 
         // Central science module
         canvas.drawCircle(Offset(0, radius * 0.05), radius * 0.28, accentPaint);
@@ -1411,7 +1734,17 @@ class DashGhost extends PositionComponent {
     angle = initialAngle;
     anchor = Anchor.center;
     size = Vector2.all(radius * 2);
+    _ghostPath = Path()
+      ..moveTo(0, -radius)
+      ..lineTo(-radius / 1.5, radius)
+      ..lineTo(radius / 1.5, radius)
+      ..close();
   }
+
+  static final Paint _ghostPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.4;
+  late final Path _ghostPath;
 
   @override
   void update(double dt) {
@@ -1428,18 +1761,7 @@ class DashGhost extends PositionComponent {
     if (alpha <= 0) return;
 
     canvas.translate(radius, radius);
-
-    final paint = Paint()
-      ..color = ghostColor.withAlpha(alpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
-
-    final path = Path()
-      ..moveTo(0, -radius)
-      ..lineTo(-radius / 1.5, radius)
-      ..lineTo(radius / 1.5, radius)
-      ..close();
-
-    canvas.drawPath(path, paint);
+    _ghostPaint.color = ghostColor.withAlpha(alpha);
+    canvas.drawPath(_ghostPath, _ghostPaint);
   }
 }
