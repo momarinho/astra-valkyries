@@ -24,6 +24,7 @@ import 'breakable_prop.dart';
 class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   AsteroidsGame? customGame;
 
+  @override
   set game(AsteroidsGame? g) {
     customGame = g;
     try {
@@ -142,7 +143,6 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
 
   // Powerup Temporário estilo Vampire Survivors Nduja Fritta (Sobrecarga de Vórtice)
   double vortexSurgeTimer = 0.0;
-  double _vortexSurgePulseTimer = 0.0;
 
   // Sobrecarga Sangrenta Temporária (Pactos e Santuários: dano x2 e alta cadência por poucos segundos)
   double bloodOverdriveTimer = 0.0;
@@ -799,8 +799,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
       if (!isStrafeLock) {
         final targetAngle = math.atan2(stick.y, stick.x) + math.pi / 2;
         double diff = targetAngle - angle;
-        while (diff < -math.pi) diff += 2 * math.pi;
-        while (diff > math.pi) diff -= 2 * math.pi;
+        while (diff < -math.pi) {
+          diff += 2 * math.pi;
+        }
+        while (diff > math.pi) {
+          diff -= 2 * math.pi;
+        }
 
         final turnAmount = (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
         if (diff.abs() < turnAmount) {
@@ -818,8 +822,12 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         if (!isStrafeLock) {
           final targetAngle = math.atan2(kbDir.y, kbDir.x) + math.pi / 2;
           double diff = targetAngle - angle;
-          while (diff < -math.pi) diff += 2 * math.pi;
-          while (diff > math.pi) diff -= 2 * math.pi;
+          while (diff < -math.pi) {
+            diff += 2 * math.pi;
+          }
+          while (diff > math.pi) {
+            diff -= 2 * math.pi;
+          }
 
           final turnAmount = (GameConstants.playerTurnSpeed * 2.1 * math.pi / 180.0) * dt;
           if (diff.abs() < turnAmount) {
@@ -1024,6 +1032,10 @@ class PlayerComponent extends PositionComponent with HasGameReference<AsteroidsG
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.0;
       canvas.drawCircle(Offset.zero, (radius + 8.0) * pulse, auraPaint);
+    }
+
+    if (hasTacticalLaserSight) {
+      _renderTacticalLaserSight(canvas);
     }
 
     _renderShip(canvas);

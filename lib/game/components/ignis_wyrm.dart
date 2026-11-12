@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
-import 'player.dart';
 import 'sector_boss.dart';
 import 'enemy_bullet.dart';
 import 'chest.dart';
@@ -14,10 +13,10 @@ import 'xp_orb.dart';
 import 'hyperspace_gate.dart';
 import 'solar_fire_trail.dart';
 
-class _WyrmSegment {
+class WyrmSegment {
   Vector2 position;
   double radius;
-  _WyrmSegment({required this.position, required this.radius});
+  WyrmSegment({required this.position, required this.radius});
 }
 
 /// Chefe do Setor 2 (Forja Solar de Órion): Ignis Wyrm (Solar Leviathan).
@@ -42,7 +41,7 @@ class IgnisWyrmComponent extends PositionComponent
   String get bossName => 'IGNIS WYRM // SOLAR LEVIATHAN';
 
   final int segmentCount = 8;
-  final List<_WyrmSegment> segments = [];
+  final List<WyrmSegment> segments = [];
 
   double _slitherTimer = 0.0;
   double _shootTimer = 0.0;
@@ -65,7 +64,7 @@ class IgnisWyrmComponent extends PositionComponent
     for (var i = 0; i < segmentCount; i++) {
       final segR = radius * (1.0 - (i * 0.07));
       segments.add(
-        _WyrmSegment(
+        WyrmSegment(
           position: position - Vector2(i * 35.0, 0),
           radius: segR.clamp(20.0, radius),
         ),

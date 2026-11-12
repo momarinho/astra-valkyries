@@ -3,7 +3,6 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/indoor_environment.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'package:asteroids/game/components/living_biomes.dart';

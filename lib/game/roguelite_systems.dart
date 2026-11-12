@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'weapons.dart';
 
 /// Definição de um Diagrama Tecnológico (Blueprint) da Forja da Oficina (Sprint 16 & Sprint 22 Lore)
 class BlueprintDef {

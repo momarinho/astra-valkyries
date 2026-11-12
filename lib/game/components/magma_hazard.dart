@@ -3,7 +3,6 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/glow.dart';
-import 'player.dart';
 import 'enemy_ship.dart';
 
 class MagmaHazardComponent extends PositionComponent with HasGameReference<AsteroidsGame> {

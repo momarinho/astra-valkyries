@@ -6,8 +6,6 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/sector.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
-import 'dreadnought_leviathan.dart';
-import 'ignis_wyrm.dart';
 import 'cryo_pod.dart';
 import 'package:asteroids/services/localization_service.dart';
 
@@ -218,51 +216,6 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
     }
     game.activeEnemies.add(candidate);
     game.world.add(candidate);
-  }
-
-  void _spawnLeviathanBoss() {
-    Vector2 playerPos;
-    try {
-      playerPos = game.player.position;
-    } catch (_) {
-      playerPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
-    }
-
-    final random = math.Random();
-    final angle = random.nextDouble() * 2 * math.pi;
-    final spawnDist = 850.0;
-    final spawnPos = playerPos + Vector2(math.cos(angle), math.sin(angle)) * spawnDist;
-
-    spawnPos.x = spawnPos.x.clamp(120.0, GameConstants.sectorWidth - 120.0);
-    spawnPos.y = spawnPos.y.clamp(120.0, GameConstants.sectorHeight - 120.0);
-
-    if (game.currentSector.id == SectorId.orion) {
-      final boss = IgnisWyrmComponent(position: spawnPos);
-      game.world.add(boss);
-      try {
-        game.playSfx('powerup.wav');
-        game.triggerScreenShake(duration: 0.9, intensity: 22.0);
-        game.spawnFloatingText(
-          playerPos + Vector2(0, -60),
-          '🔥 IGNIS WYRM SOLAR LEVIATHAN DETECTED! (SECTOR CLIMAX)',
-          color: const Color(0xFFFF5722),
-          fontSize: 18.0,
-        );
-      } catch (_) {}
-    } else {
-      final boss = DreadnoughtLeviathanComponent(position: spawnPos);
-      game.world.add(boss);
-      try {
-        game.playSfx('powerup.wav');
-        game.triggerScreenShake(duration: 0.9, intensity: 22.0);
-        game.spawnFloatingText(
-          playerPos + Vector2(0, -60),
-          '🚨 TITANIC DREADNOUGHT LEVIATHAN DETECTED! (SECTOR CLIMAX)',
-          color: const Color(0xFFFF1744),
-          fontSize: 18.0,
-        );
-      } catch (_) {}
-    }
   }
 
   void _spawnEliteCommander(int count, {String? label}) {

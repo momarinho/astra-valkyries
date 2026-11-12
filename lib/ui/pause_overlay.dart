@@ -287,7 +287,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                       child: Image.asset(
                                         valkyrie.hudNeutralAsset,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Icon(
+                                        errorBuilder: (_, _, _) => Icon(
                                           Icons.rocket_launch,
                                           color: valkyrie.primaryColor,
                                           size: 28,
@@ -962,7 +962,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: AchievementService.all.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              separatorBuilder: (_, _) => const SizedBox(height: 6),
               itemBuilder: (context, index) {
                 final ach = AchievementService.all[index];
                 final isUnlocked = AchievementService.isUnlocked(ach.id);

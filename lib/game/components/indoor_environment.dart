@@ -1,12 +1,8 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/bullet.dart';
 import 'package:asteroids/game/components/enemy_bullet.dart';
 import 'package:asteroids/game/components/asteroid.dart';

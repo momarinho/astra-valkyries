@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/ending_manager.dart';
-import 'package:asteroids/services/api_service.dart';
 import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/game/weapons.dart';
 

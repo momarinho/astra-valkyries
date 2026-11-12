@@ -44,16 +44,6 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
     priority = -40; // Renderiza logo acima do BiomeBackdropComponent (-45)
   }
 
-  // Paleta da nebulosa por instante da partida (segundos decorridos).
-  // Acompanha as fases de dificuldade do AsteroidField (0/50/105/150/180s).
-  static const List<({double t, Color a, Color b})> _paletteStops = [
-    (t: 0.0, a: Color(0xFF1E3C9E), b: Color(0xFF0E8A9E)), // azul / turquesa
-    (t: 50.0, a: Color(0xFF1E3C9E), b: Color(0xFF0E8A9E)),
-    (t: 105.0, a: Color(0xFF5B2A9E), b: Color(0xFF1E3C9E)), // violeta
-    (t: 150.0, a: Color(0xFFB35A12), b: Color(0xFF7A2A9E)), // âmbar
-    (t: 180.0, a: Color(0xFFC4122A), b: Color(0xFF8A3A0E)), // tempestade final
-  ];
-
   static const List<Color> _starTints = [
     Color(0xFFFFFFFF),
     Color(0xFFCFE3FF),

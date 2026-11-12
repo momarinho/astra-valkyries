@@ -2,7 +2,6 @@ import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:asteroids/constants.dart';
 import 'package:asteroids/game/asteroids_game.dart';
@@ -12,10 +11,7 @@ import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/comet.dart';
 import 'package:asteroids/game/components/space_station.dart';
-import 'package:asteroids/game/components/cargo_wreck.dart';
-import 'package:asteroids/game/components/cosmic_nebula.dart';
 import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/chest.dart';
 import 'package:asteroids/game/components/phase4_biome_elements.dart';
 import 'package:asteroids/game/map/sector_map_data.dart';
 import 'package:asteroids/services/achievement_service.dart';
@@ -122,12 +118,9 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     final player = game.player;
     final valkyrie = game.selectedValkyrie;
 
-    final livesLeft = game.lives;
     final isInvulnerable = player.isInvulnerable();
     final invulTime = player.invulnerableTimer;
-    final shootCooldown = player.shootTimer;
     final dashCooldown = player.dashCooldownTimer;
-    final currentWeapon = player.weapon;
 
     // Station uplink telemetry (O(1) Entity Registry)
     SpaceStationComponent? station;

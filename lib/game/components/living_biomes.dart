@@ -11,7 +11,6 @@ import 'enemy_bullet.dart';
 import 'enemy_ship.dart';
 import 'chest.dart';
 import 'xp_orb.dart';
-import 'drop.dart';
 import 'sector_boss.dart';
 import 'hyperspace_gate.dart';
 import 'dead_cells_biome.dart';

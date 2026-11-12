@@ -36,10 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   flame: ^1.37.0
   flame_audio: ^2.12.1
+  audioplayers: ^6.2.0
   http: ^1.6.0
   shared_preferences: ^2.5.5
-  crypto: ^3.0.3
-
+  crypto: ^3.0.8
 dev_dependencies:
   flutter_test:
     sdk: flutter

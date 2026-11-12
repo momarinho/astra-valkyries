@@ -25,7 +25,7 @@ class _ScientistSelectionOverlayState extends State<ScientistSelectionOverlay> w
   late final AnimationController _animController;
   final List<_InlineBullet> _bullets = [];
   final List<_InlineSpark> _sparks = [];
-  Offset _dummyAsteroidPos = const Offset(120, 22);
+  final Offset _dummyAsteroidPos = const Offset(120, 22);
   double _asteroidFlashTimer = 0.0;
   double _fireTimer = 0.0;
 

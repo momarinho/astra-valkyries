@@ -78,8 +78,6 @@ class SingularityVortexComponent extends PositionComponent with HasGameReference
     final alpha = (progress * 230).toInt();
     if (alpha <= 0) return;
 
-    final center = Offset(pullRadius, pullRadius);
-
     canvas.save();
     canvas.translate(pullRadius, pullRadius);
     canvas.rotate(rotation);

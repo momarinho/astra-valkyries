@@ -51,12 +51,7 @@ class CryoPodComponent extends PositionComponent with HasGameReference<Asteroids
     game.addScrap(250);
     game.playSfx('powerup.wav');
 
-    // 2. Chronostasis field: freeze all enemies & asteroids temporarily
-    for (final enemy in game.world.children.whereType<PositionComponent>()) {
-      // Small visual particle reaction
-    }
-
-    // 3. Floating announcement
+    // 2. Floating announcement
     game.spawnFloatingText(
       position + Vector2(0, -40),
       '🌟 ANCIENT CRYO-POD RECOVERED! +500 XP // +250 SCRAP',

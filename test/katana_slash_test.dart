@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
 import 'package:asteroids/game/asteroids_game.dart';
@@ -7,7 +6,6 @@ import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/katana_slash.dart';
 import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/asteroid.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

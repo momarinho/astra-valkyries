@@ -582,7 +582,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                             child: Image.asset(
                               v.hudNeutralAsset,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (_, _, _) => Container(
                                 color: isSelected ? v.primaryColor : Colors.grey[800],
                                 child: Icon(
                                   Icons.person,
@@ -930,7 +930,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   Image.asset(
                     sector.biomeImageAsset,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       color: sector.primaryColor.withOpacity(0.2),
                       child: Icon(sector.icon, color: sector.primaryColor, size: 24),
                     ),
@@ -1205,7 +1205,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       } else {
                         return ListView.separated(
                           itemCount: upgrades.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, _) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             return _buildMetaUpgradeCard(upgrades[index], meta);
                           },
@@ -1266,7 +1266,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     final blueprints = BlueprintDef.allBlueprints;
     return ListView.separated(
       itemCount: blueprints.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final bp = blueprints[index];
         final isFound = widget.game.foundBlueprints.contains(bp.weaponId);
@@ -1366,7 +1366,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     final milestones = MilestoneAchievement.allMilestones;
     return ListView.separated(
       itemCount: milestones.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final m = milestones[index];
         final isUnlocked = widget.game.unlockedMilestones.contains(m.id);
@@ -1427,7 +1427,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     final factions = FactionCodexEntry.allFactions;
     return ListView.separated(
       itemCount: factions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final f = factions[index];
         return Container(
@@ -1510,7 +1510,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     final logs = FlightRecorderLog.allFlightRecorders;
     return ListView.separated(
       itemCount: logs.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final log = logs[index];
         final isUnlocked = widget.game.unlockedFlightRecorders.contains(log.id);
@@ -1580,7 +1580,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     final relics = PermanentRelic.allRelics;
     return ListView.separated(
       itemCount: relics.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final relic = relics[index];
         final isUnlocked = widget.game.unlockedRelics.contains(relic.id);
@@ -2634,7 +2634,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               memory.imageAsset,
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 color: const Color(0xFF1A2232),
                 child: Center(
                   child: Icon(
@@ -2823,7 +2823,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               child: Image.asset(
                 memory.imageAsset,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Center(
+                errorBuilder: (_, _, _) => Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [

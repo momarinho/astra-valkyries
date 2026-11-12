@@ -1,12 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/game.dart';
 import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/hyperspace_gate.dart';
 import 'package:asteroids/game/components/void_reaper.dart';
 import 'package:asteroids/game/components/ignis_wyrm.dart';
-import 'package:asteroids/game/components/dreadnought_leviathan.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/valkyrie.dart';
 

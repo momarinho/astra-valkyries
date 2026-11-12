@@ -149,7 +149,6 @@ void main() {
       final pod = CryoPodComponent(position: Vector2(10, 10));
       pod.game = game;
 
-      final prevXp = game.runXp;
       final prevCredits = game.totalCredits;
 
       pod.salvage();

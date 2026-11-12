@@ -8,7 +8,6 @@ import 'package:asteroids/game/asteroids_game.dart';
 import 'package:asteroids/game/sector.dart';
 import 'package:asteroids/game/weapons.dart';
 import 'package:asteroids/game/rogue_perks.dart';
-import 'package:asteroids/game/roguelite_systems.dart';
 import 'package:asteroids/game/valkyrie.dart';
 import 'package:asteroids/game/affinity_system.dart';
 import 'package:asteroids/game/map/sector_map_generator.dart';

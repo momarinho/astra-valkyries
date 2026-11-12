@@ -7,7 +7,6 @@ import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/enemy_bullet.dart';
 import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/asteroid_field.dart';
-import 'package:asteroids/game/components/dreadnought_leviathan.dart';
 import 'package:asteroids/game/components/xp_orb.dart';
 import 'package:asteroids/services/localization_service.dart';
 

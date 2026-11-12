@@ -226,7 +226,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> with SingleTickerProvid
                                   : ListView.separated(
                                       shrinkWrap: true,
                                       itemCount: choices.length,
-                                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                                       itemBuilder: (_, i) => SizedBox(
                                         height: 120,
                                         child: _buildCard(choices[i], i),

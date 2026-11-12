@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:asteroids/game/asteroids_game.dart';
@@ -66,8 +65,8 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
   void _precacheValkyrieArt() {
     for (final v in Valkyrie.roster) {
       try {
-        precacheImage(AssetImage(v.hangarFullBodyAsset), context, onError: (_, __) {}).ignore();
-        precacheImage(AssetImage(v.hudNeutralAsset), context, onError: (_, __) {}).ignore();
+        precacheImage(AssetImage(v.hangarFullBodyAsset), context, onError: (_, _) {}).ignore();
+        precacheImage(AssetImage(v.hudNeutralAsset), context, onError: (_, _) {}).ignore();
       } catch (_) {}
     }
   }
@@ -698,7 +697,7 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                             v.hangarFullBodyAsset,
                             fit: BoxFit.cover,
                             alignment: Alignment.topCenter,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               color: Colors.black54,
                               child: Icon(Icons.person, color: v.primaryColor, size: 42),
                             ),

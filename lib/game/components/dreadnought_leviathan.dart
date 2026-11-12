@@ -37,6 +37,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
   double beamTimer = 0.0;
   double deathTimer = 0.0;
 
+  @override
   bool isDefeated = false;
   bool isEnraged = false;
   double spiralAngle = 0.0;
@@ -251,6 +252,7 @@ class DreadnoughtLeviathanComponent extends PositionComponent
     position.y = position.y.clamp(radius, GameConstants.sectorHeight - radius);
   }
 
+  @override
   bool takeDamage(double damage, Vector2 hitPos) {
     if (isDefeated) return false;
     hp -= damage;

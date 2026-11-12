@@ -476,47 +476,6 @@ abstract class BiomeMapArchitect {
       }
     }
   }
-
-  void _spawnLockdownChamber(
-    AsteroidsGame game,
-    Sector sector,
-    math.Random random,
-    List<MapNode> nodes,
-  ) {
-    if (nodes.any((n) => n.type == MapNodeType.lockdownChamber)) return;
-
-    // Escolhe uma posição estratégica nos quadrantes industriais afastados do centro
-    final chamberPositions = [
-      Vector2(3250, 1650),
-      Vector2(1550, 3150),
-      Vector2(3250, 3150),
-      Vector2(1550, 1650),
-    ]..shuffle(random);
-
-    for (final pos in chamberPositions) {
-      if (isClearOfPois(pos, nodes, 450.0)) {
-        final chamber = LockdownChamberComponent(
-          position: pos,
-          chamberSize: Vector2(760.0, 700.0),
-          chamberName: 'COMPLEXO DE CONTENÇÃO // ${sector.name.toUpperCase()}',
-        );
-        game.world.add(chamber);
-        nodes.add(
-          MapNode(
-            id: 'lockdown_chamber',
-            type: MapNodeType.lockdownChamber,
-            position: pos,
-            label: 'CÂMARA DE QUARENTENA // ${sector.name.toUpperCase()}',
-            description: 'Entre para ativar o protocolo de contenção, eliminar a horda e desbloquear o Baú Dourado.',
-            icon: Icons.shield_outlined,
-            primaryColor: const Color(0xFF00E676),
-            isDiscovered: false,
-          ),
-        );
-        break;
-      }
-    }
-  }
 }
 
 /// 1. BIOMA 1: Cinturão de Mineração de Vesta (Cordilheiras de Asteroides e Docas Industriais Procedurais)

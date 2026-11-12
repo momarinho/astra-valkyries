@@ -55,7 +55,6 @@ void main() {
       final manager = AffinityManager();
       final lyra = manager.getAffinity('lyra');
       final selene = manager.getAffinity('selene');
-      final vesper = manager.getAffinity('vesper');
 
       lyra.addXp(100); // Lvl 2
       selene.addXp(350); // Lvl 3

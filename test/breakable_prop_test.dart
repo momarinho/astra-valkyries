@@ -6,7 +6,6 @@ import 'package:asteroids/game/components/breakable_prop.dart';
 import 'package:asteroids/game/components/player.dart';
 import 'package:asteroids/game/components/enemy_ship.dart';
 import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/asteroid.dart';
 import 'package:asteroids/game/components/xp_orb.dart';
 import 'package:asteroids/game/components/drop.dart';
 import 'package:asteroids/game/map/sector_map_generator.dart';
