@@ -78,64 +78,64 @@
 
 ---
 
-## 2. Galeria de Memórias Íntimas / CGs de Romance (Formato 16:9 — 1536x864 ou 2048x1152)
+## 2. Galeria de Dossiês Táticos & Concept Art de Reconhecimento (Formato 16:9 — 1280x720 ou 1920x1080)
 
 ### A) SELENE
-* **Pinup 1 (Elo 3 — Descompressão nos Aposentos Privados):**
-  * *Destino:* `assets/art/valkyries/selene/pinup_memory_1.jpg`
+* **Dossiê Tático 1 (Elo 3 — Matriz Quântica em Cryo Abyss):**
+  * *Destino:* `assets/art/valkyries/selene/tactical_log_1.jpg`
   ```text
-  horizontal wallpaper, 1girl, selene, mature elegant woman, resting on luxury bed, private quarters, looking over shoulder at viewer, seductive inviting gaze, glasses resting on nightstand, long silver hair with lavender tips cascading down bare back, unzipped sheer white resting undersuit, sideboob, voluptuous curves, panoramic space window, soft starlight, romantic intimate lighting,
+  horizontal wallpaper, 1girl, selene, mature tactical commander, standing on command bridge, looking at holographic tactical starcharts, glasses on, long silver hair with lavender tips, sleek military pilot suit with glowing cyan circuits, panoramic space window showing ice asteroids, cool blue starlight, professional high-tech atmosphere
   ```
 
-* **Pinup 2 (Elo 5 — Ressonância Estelar Eterna):**
-  * *Destino:* `assets/art/valkyries/selene/pinup_memory_2.jpg`
+* **Dossiê Tático 2 (Elo 5 — Ressonância Quântica Total):**
+  * *Destino:* `assets/art/valkyries/selene/tactical_log_2.jpg`
   ```text
-  horizontal wallpaper, 1girl, selene, holding hands towards viewer, tender loving smile, glasses on, glowing cyan eyes, flowing silver hair, elegant white and navy dress with sheer panels, cleavage, surrounded by glowing floating holographic constellations and stardust, deep blue celestial nebula background, ethereal romantic atmosphere,
+  horizontal wallpaper, 1girl, selene, commanding starship bridge, confident salute towards viewer, glowing cyan eyes, flowing silver hair, pristine white and navy pilot uniform, surrounded by floating tactical schematics and particle fields, deep celestial nebula background, epic sci-fi space opera climax
   ```
 
 ---
 
 ### B) VESPER
-* **Pinup 1 (Elo 3 — Oficina de Munições Pós-Combate):**
-  * *Destino:* `assets/art/valkyries/vesper/pinup_memory_1.jpg`
+* **Dossiê Tático 1 (Elo 3 — Calibração de Torpedos de Antimatéria):**
+  * *Destino:* `assets/art/valkyries/vesper/tactical_log_1.jpg`
   ```text
-  horizontal wallpaper, 1girl, vesper, tomboy, sitting back leaning against ammo crates, surrounded by spent golden shell casings, taking off leather jacket, glistening sweaty skin, grease smudge on collarbone and cleavage, black sports bra, shorts, toned abs, thick thighs, daring seductive smirk at viewer, warm orange hangar lights,
+  horizontal wallpaper, 1girl, vesper, tomboy mecha specialist, holding heavy wrench, calibrating antimatter rocket launcher in starship armory, black tactical flight jacket, mechanical belt with tools, toned athletic build, confident grin, warm orange hangar maintenance lights, epic sci-fi workshop
   ```
 
-* **Pinup 2 (Elo 5 — Promessa Selvagem sob a Aurora do Vácuo):**
-  * *Destino:* `assets/art/valkyries/vesper/pinup_memory_2.jpg`
+* **Dossiê Tático 2 (Elo 5 — Protocolo Singularity no Vácuo):**
+  * *Destino:* `assets/art/valkyries/vesper/tactical_log_2.jpg`
   ```text
-  horizontal wallpaper, 1girl, vesper, sitting on starship wing in space dock, looking at viewer with rare soft affectionate smile, slight blush, short black hair with magenta tips blowing in air vents, leather jacket slung over one shoulder, cleavage, breathtaking purple and magenta cosmic aurora background, romantic tender mood,
+  horizontal wallpaper, 1girl, vesper, standing on starship hull in orbital drydock, looking at viewer with proud victorious smile, short black hair with magenta tips, sleek stealth pilot suit, cosmic purple supernova aurora in background, epic space warrior aesthetic
   ```
 
 ---
 
 ### C) ASTRAEA
-* **Pinup 1 (Elo 3 — Berço da Criação):**
-  * *Destino:* `assets/art/valkyries/astraea/pinup_memory_1.jpg`
+* **Dossiê Tático 1 (Elo 3 — Núcleo Cósmico Ancestral):**
+  * *Destino:* `assets/art/valkyries/astraea/tactical_log_1.jpg`
   ```text
-  horizontal wallpaper, 1girl, astraea, celestial goddess, floating weightlessly in cosmic sanctuary, translucent white silk drapery over voluptuous curves, cleavage, cascading golden hair floating, looking at viewer with tender gaze, reaching one gentle hand forward, baby stars and glowing golden nebulae, ethereal intimacy,
+  horizontal wallpaper, 1girl, astraea, celestial admiral, floating weightlessly in ancient orbital observatory, ornate white and gold armor chassis, cascading golden hair floating in microgravity, holding glowing data stardust sphere, majestic celestial sanctuary
   ```
 
-* **Pinup 2 (Elo 5 — Aliança Cósmica Suprema):**
-  * *Destino:* `assets/art/valkyries/astraea/pinup_memory_2.jpg`
+* **Dossiê Tático 2 (Elo 5 — Aliança Cósmica Suprema):**
+  * *Destino:* `assets/art/valkyries/astraea/tactical_log_2.jpg`
   ```text
-  horizontal wallpaper, 1girl, astraea, standing on ancient marble balcony overlooking a solar eclipse, golden halo shining bright, ornate white and polished gold gown, cleavage, divine loving smile, golden eyes, offering a glowing celestial stardust crystal to viewer, god rays, majestic romantic climax,
+  horizontal wallpaper, 1girl, astraea, standing at space station command balcony, solar eclipse in distance, ornate polished gold mecha pauldrons, divine serene expression, golden eyes, offering glowing tactical core crystal to viewer, god rays, space opera climax
   ```
 
 ---
 
 ### D) LYRA
-* **Pinup 1 (Elo 3 — Calor do Hangar):**
-  * *Destino:* `assets/art/valkyries/lyra/pinup_memory_1.jpg`
+* **Dossiê Tático 1 (Elo 3 — Decolagem e Sobrecarga em Vesta Belt):**
+  * *Destino:* `assets/art/valkyries/lyra/tactical_log_1.jpg`
   ```text
-  horizontal wallpaper, 1girl, lyra, resting in pilot cockpit lounge, cat ear headphone around neck, red hair with orange tips, deeply unzipped flight suit, cleavage, bare belly, sweaty skin, drinking energy soda, playful wink at viewer, warm sunset orange hangar lighting,
+  horizontal wallpaper, 1girl, lyra, pilot inside cockpit of Sol Blaze starfighter, cat ear communications headset, red hair with orange tips, white and orange high-g pilot pressure suit, hands on flight controls, focused determined expression, HUD holographic targeting brackets, asteroid field in viewport
   ```
 
-* **Pinup 2 (Elo 5 — Supernova da Paixão):**
-  * *Destino:* `assets/art/valkyries/lyra/pinup_memory_2.jpg`
+* **Dossiê Tático 2 (Elo 5 — Supernova Convergente):**
+  * *Destino:* `assets/art/valkyries/lyra/tactical_log_2.jpg`
   ```text
-  horizontal wallpaper, 1girl, lyra, sitting on starship nose cone under twin binary suns, looking at viewer with deeply affectionate loving smile, red hair glowing golden in sunlight, white suit with orange accents, cleavage, reaching hand out, breathtaking orange and gold cosmic sunset, eternal romantic vow,
+  horizontal wallpaper, 1girl, lyra, standing proudly in front of her Sol Blaze starfighter, twin binary suns shining behind, heroic friendly smile, thumb up to viewer, red hair glowing in sunlight, crisp clean pilot suit, breathtaking orange and gold cosmic sunset, victory sortie celebration
   ```
 
 ---

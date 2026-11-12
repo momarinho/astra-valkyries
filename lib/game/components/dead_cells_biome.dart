@@ -19,7 +19,6 @@ class MegastructureWallComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final Vector2 wallSize;
   final Color wallColor;
-  ui.Image? _wallImage;
 
   MegastructureWallComponent({
     required Vector2 position,
@@ -35,14 +34,6 @@ class MegastructureWallComponent extends PositionComponent
   Future<void> onLoad() async {
     await super.onLoad();
     add(RectangleHitbox());
-    try {
-      final byteData = await rootBundle.load('assets/art/environment/metalStructure.png');
-      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
-      final frame = await codec.getNextFrame();
-      _wallImage = frame.image;
-    } catch (_) {
-      _wallImage = null;
-    }
   }
 
   void resolveAsteroidCollision(AsteroidComponent a) {
@@ -174,17 +165,17 @@ class MegastructureWallComponent extends PositionComponent
   void render(Canvas canvas) {
     // 1. Sombra projetada para profundidade cósmica (Drop Shadow)
     final shadowRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(3, 4, size.x, size.y),
+      Rect.fromLTWH(4, 5, size.x, size.y),
       const Radius.circular(5),
     );
     canvas.drawRRect(
       shadowRect,
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.50)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0),
+        ..color = Colors.black.withValues(alpha: 0.60)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0),
     );
 
-    // 2. Chapa de aço base (Substrato Industrial escuro)
+    // 2. Chapa de liga aeroespacial escura (Hard-surface titanium alloy)
     final mainRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.x, size.y),
       const Radius.circular(5),
@@ -192,71 +183,71 @@ class MegastructureWallComponent extends PositionComponent
     canvas.drawRRect(
       mainRect,
       Paint()
-        ..color = const Color(0xFF0F172A)
+        ..color = const Color(0xFF090D1A)
         ..style = PaintingStyle.fill,
     );
 
-    // 3. Textura modular do sprite CC0 se disponível
-    if (_wallImage != null) {
-      final imgW = _wallImage!.width.toDouble();
-      final imgH = _wallImage!.height.toDouble();
-      final isHorizontal = size.x >= size.y;
+    final isHorizontal = size.x >= size.y;
 
-      if (isHorizontal) {
-        final tiles = (size.x / 48.0).ceil();
-        for (var i = 0; i < tiles; i++) {
-          final x = i * 48.0;
-          final w = math.min(48.0, size.x - x);
-          final dst = Rect.fromLTWH(x, 0, w, size.y);
-          final src = Rect.fromLTWH(0, 0, imgW * (w / 48.0), imgH);
-          canvas.drawImageRect(_wallImage!, src, dst, Paint()..filterQuality = FilterQuality.medium);
-        }
-      } else {
-        final tiles = (size.y / 48.0).ceil();
-        for (var i = 0; i < tiles; i++) {
-          final y = i * 48.0;
-          final h = math.min(48.0, size.y - y);
-          final dst = Rect.fromLTWH(0, y, size.x, h);
-          final src = Rect.fromLTWH(0, 0, imgW, imgH * (h / 48.0));
-          canvas.drawImageRect(_wallImage!, src, dst, Paint()..filterQuality = FilterQuality.medium);
-        }
-      }
-    } else {
-      // Procedural Industrial Greebles & Seams (Fallback vetorial)
-      final seamPaint = Paint()
-        ..color = const Color(0xFF1E293B)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      if (size.x > size.y) {
-        for (double x = 48.0; x < size.x; x += 48.0) {
-          canvas.drawLine(Offset(x, 0), Offset(x, size.y), seamPaint);
-        }
-      } else {
-        for (double y = 48.0; y < size.y; y += 48.0) {
-          canvas.drawLine(Offset(0, y), Offset(size.x, y), seamPaint);
-        }
-      }
-    }
-
-    // 4. Duto de Energia Néon iluminado no centro da fuselagem
-    final conduitPaint = Paint()
-      ..color = wallColor.withValues(alpha: 0.85)
+    // 3. Segmentos de blindagem chanfrados procedurais com micro-costuras laser
+    final seamPaint = Paint()
+      ..color = const Color(0xFF1E293B)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    if (size.x >= size.y) {
-      canvas.drawLine(Offset(6, size.y / 2), Offset(size.x - 6, size.y / 2), conduitPaint);
+      ..strokeWidth = 1.6;
+
+    if (isHorizontal) {
+      for (double x = 44.0; x < size.x - 20.0; x += 44.0) {
+        canvas.drawLine(Offset(x, 2), Offset(x, size.y - 2), seamPaint);
+        // Rebites nos painéis modulares
+        canvas.drawCircle(Offset(x, 4.5), 1.3, Paint()..color = const Color(0xFF475569));
+        canvas.drawCircle(Offset(x, size.y - 4.5), 1.3, Paint()..color = const Color(0xFF475569));
+      }
     } else {
-      canvas.drawLine(Offset(size.x / 2, 6), Offset(size.x / 2, size.y - 6), conduitPaint);
+      for (double y = 44.0; y < size.y - 20.0; y += 44.0) {
+        canvas.drawLine(Offset(2, y), Offset(size.x - 2, y), seamPaint);
+        canvas.drawCircle(Offset(4.5, y), 1.3, Paint()..color = const Color(0xFF475569));
+        canvas.drawCircle(Offset(size.x - 4.5, y), 1.3, Paint()..color = const Color(0xFF475569));
+      }
     }
 
-    // 5. Chanfro de borda e rebites metálicos
+    // 4. Faixas de perigo industrial amarelas e pretas nas pontas da megaestrutura
+    final hazardPaint = Paint()
+      ..color = const Color(0xFFFFD600).withValues(alpha: 0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2;
+    if (isHorizontal && size.x >= 80.0) {
+      // Extremidade esquerda
+      canvas.drawLine(const Offset(4, 2), Offset(18, size.y - 2), hazardPaint);
+      canvas.drawLine(const Offset(12, 2), Offset(26, size.y - 2), hazardPaint);
+      // Extremidade direita
+      canvas.drawLine(Offset(size.x - 26, 2), Offset(size.x - 12, size.y - 2), hazardPaint);
+      canvas.drawLine(Offset(size.x - 18, 2), Offset(size.x - 4, size.y - 2), hazardPaint);
+    } else if (!isHorizontal && size.y >= 80.0) {
+      canvas.drawLine(const Offset(2, 4), Offset(size.x - 2, 18), hazardPaint);
+      canvas.drawLine(const Offset(2, 12), Offset(size.x - 2, 26), hazardPaint);
+      canvas.drawLine(Offset(2, size.y - 26), Offset(size.x - 2, size.y - 12), hazardPaint);
+      canvas.drawLine(Offset(2, size.y - 18), Offset(size.x - 2, size.y - 4), hazardPaint);
+    }
+
+    // 5. Conduíte central de plasma com emissão neon sutil
+    final conduitPath = Path();
+    if (isHorizontal) {
+      conduitPath.moveTo(24, size.y / 2);
+      conduitPath.lineTo(size.x - 24, size.y / 2);
+    } else {
+      conduitPath.moveTo(size.x / 2, 24);
+      conduitPath.lineTo(size.x / 2, size.y - 24);
+    }
+    Glow.strokePath(canvas, conduitPath, wallColor, width: 2.0, intensity: 1.1);
+
+    // 6. Borda exterior reforçada cortada a laser
     final borderPaint = Paint()
-      ..color = wallColor.withValues(alpha: 0.70)
+      ..color = wallColor.withValues(alpha: 0.65)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 1.6;
     canvas.drawRRect(mainRect, borderPaint);
 
-    // Rebites nos 4 cantos
+    // Rebites nos 4 cantos principais
     final rivetPaint = Paint()
       ..color = const Color(0xFF94A3B8)
       ..style = PaintingStyle.fill;

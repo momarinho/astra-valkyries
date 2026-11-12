@@ -14,7 +14,7 @@ flowchart TD
     
     B --> B1["One-Thumb Auto-Fire Navigation"]
     B --> B2["Vampire Survivors Multi-Weapon Stacking"]
-    B --> B3["Reactive Anime HUD & Waifu Cast"]
+    B --> B3["Reactive Anime HUD & Pilot Cast"]
     
     C --> C1["Global Leaderboards & Sector Seasons"]
     C --> C2["Cloud Cross-Save & Profile Sync"]
@@ -41,11 +41,11 @@ flowchart TD
      - Player accounts & cloud save backups
      - Daily pilot missions and live-ops sector alerts
 
-4. **Monetization Fit for the Anime / Waifu Audience:**
-   - **Fair Free-to-Play:** No pay-to-win gates.
-   - **Rewarded Ads:** *"Watch transmission to emergency recharge shields (1x per run)"* or *"Double Stardust extraction"*.
-   - **No-Ads Convenience Pass:** Single one-time purchase removing all non-rewarded ads.
-   - **Cosmetics & Pilots:** Premium pilot skins, visual effects, and Secret Memory Gallery unlocks.
+4. **Open-Source Showcase & Architecture:**
+   - **Fair & Complete:** 100% playable offline without predatory mechanics.
+   - **Performance First:** Zero-GC game loop architecture targeting stable 60/120 FPS on mobile and desktop.
+   - **Fullstack Mastery:** Clean separation between client engine (Flutter/Flame) and API layer (Go/SQLite).
+   - **Lore & Progression:** Tactical pilot roster, unlocks, skill trees and combat dossiers.
 
 ---
 

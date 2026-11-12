@@ -69,8 +69,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       final scoreChanged = targetScore != _lastScore;
 
       _hudAccumulator += dt;
-      // Atualiza imediatamente se HP ou Pontuação mudou; caso contrário, sincroniza o HUD a 30 FPS
-      if (hpChanged || scoreChanged || _hudAccumulator >= 0.033) {
+      // Rebuild reativo: atualiza imediatamente se HP/Score mudou; caso contrário, sincroniza telemetria a 15 FPS (Zero-GC)
+      if (hpChanged || scoreChanged || (widget.game.state == GameState.playing && _hudAccumulator >= 0.066)) {
         _hudAccumulator = 0.0;
         if (mounted) {
           setState(() {});
@@ -129,10 +129,10 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     final dashCooldown = player.dashCooldownTimer;
     final currentWeapon = player.weapon;
 
-    // Station uplink telemetry
+    // Station uplink telemetry (O(1) Entity Registry)
     SpaceStationComponent? station;
     try {
-      final stations = game.world.children.whereType<SpaceStationComponent>();
+      final stations = game.activeStations;
       if (stations.isNotEmpty) station = stations.first;
     } catch (_) {}
     final showStationBanner = station != null && (station.isPlayerInZone || station.uploadProgress > 0);
@@ -720,6 +720,12 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       ),
                     ),
                     const SizedBox(width: 8),
+
+                    // FPS & Engine Telemetry Badge (Configurable in Settings)
+                    if (game.showFpsOverlay) ...[
+                      _buildFpsDiagnosticBadge(),
+                      const SizedBox(width: 8),
+                    ],
 
                     // Pause Button
                     GestureDetector(
@@ -2098,7 +2104,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     final asteroidBlips = <Offset>[];
     final titaniumBlips = <Offset>[];
     try {
-      final asteroids = widget.game.world.children.whereType<AsteroidComponent>();
+      final asteroids = widget.game.activeAsteroids;
       for (final a in asteroids) {
         final offset = a.position - playerPos;
         if (offset.length <= GameConstants.radarRange) {
@@ -2125,7 +2131,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     Offset? stationOffset;
     bool stationSecured = false;
     try {
-      final stations = widget.game.world.children.whereType<SpaceStationComponent>();
+      final stations = widget.game.activeStations;
       if (stations.isNotEmpty) {
         final s = stations.first;
         final offset = s.position - playerPos;
@@ -2136,7 +2142,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
     final cargoBlips = <Offset>[];
     try {
-      final wrecks = widget.game.world.children.whereType<CargoWreckComponent>();
+      final wrecks = widget.game.activeCargoWrecks;
       for (final w in wrecks) {
         final offset = w.position - playerPos;
         if (offset.length <= GameConstants.radarRange) {
@@ -2147,7 +2153,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
     final nebulaBlips = <({Offset offset, Color color, double radius})>[];
     try {
-      final nebulae = widget.game.world.children.whereType<CosmicNebulaComponent>();
+      final nebulae = widget.game.activeNebulae;
       for (final n in nebulae) {
         final offset = n.position - playerPos;
         if (offset.length <= GameConstants.radarRange + n.radius) {
@@ -2162,7 +2168,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
     final enemyBlips = <({Offset offset, bool isElite})>[];
     try {
-      final enemies = widget.game.world.children.whereType<EnemyShipComponent>();
+      final enemies = widget.game.activeEnemies;
       for (final e in enemies) {
         final offset = e.position - playerPos;
         if (offset.length <= GameConstants.radarRange) {
@@ -2176,7 +2182,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
     final chestBlips = <Offset>[];
     try {
-      final chests = widget.game.world.children.whereType<ChestComponent>();
+      final chests = widget.game.activeChests;
       for (final c in chests) {
         final offset = c.position - playerPos;
         if (offset.length <= GameConstants.radarRange) {

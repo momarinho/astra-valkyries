@@ -30,6 +30,15 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
   double pulseTimer = 0.0;
   final double radius = 12.0;
 
+  // Zero-GC Cached Paint and Path instances (60-120 FPS)
+  static final Paint _glowPaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _innerPaint = Paint()
+    ..color = Colors.black.withOpacity(0.85)
+    ..style = PaintingStyle.fill;
+  static final Paint _strokePaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  static final Path _scratchPath = Path();
+
   DropComponent({
     required Vector2 position,
     required this.type,
@@ -44,6 +53,18 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
   Future<void> onLoad() async {
     await super.onLoad();
     add(CircleHitbox());
+  }
+
+  @override
+  void onMount() {
+    super.onMount();
+    game.activeDrops.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeDrops.remove(this);
+    super.onRemove();
   }
 
   @override
@@ -260,121 +281,102 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
         break;
     }
 
-    // Outer glowing ring
-    final glowPaint = Paint()
-      ..color = mainColor.withOpacity((type == DropType.darkMatter || type == DropType.cometDust) ? 0.48 : 0.28)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = (type == DropType.darkMatter || type == DropType.cometDust) ? 4.5 : 3.0;
-    canvas.drawCircle(Offset.zero, radius * pulseScale, glowPaint);
+    // Outer glowing ring (Zero-GC)
+    _glowPaint.color = mainColor.withOpacity((type == DropType.darkMatter || type == DropType.cometDust) ? 0.48 : 0.28);
+    _glowPaint.strokeWidth = (type == DropType.darkMatter || type == DropType.cometDust) ? 4.5 : 3.0;
+    canvas.drawCircle(Offset.zero, radius * pulseScale, _glowPaint);
 
     if (type == DropType.darkMatter || type == DropType.cometDust) {
       // Secondary outer orbital halo
-      final orbitPaint = Paint()
-        ..color = (type == DropType.cometDust ? Colors.amberAccent : mainColor).withOpacity(0.35)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      canvas.drawCircle(Offset.zero, radius * (pulseScale + 0.3), orbitPaint);
+      _strokePaint.color = (type == DropType.cometDust ? Colors.amberAccent : mainColor).withOpacity(0.35);
+      _strokePaint.strokeWidth = 1.5;
+      canvas.drawCircle(Offset.zero, radius * (pulseScale + 0.3), _strokePaint);
     }
 
     // Inner filled circle
-    final innerPaint = Paint()
-      ..color = Colors.black.withOpacity(0.85)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset.zero, radius * 0.85, innerPaint);
+    canvas.drawCircle(Offset.zero, radius * 0.85, _innerPaint);
 
-    final borderPaint = Paint()
-      ..color = mainColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8;
-    canvas.drawCircle(Offset.zero, radius * 0.85, borderPaint);
+    _strokePaint.color = mainColor;
+    _strokePaint.strokeWidth = 1.8;
+    canvas.drawCircle(Offset.zero, radius * 0.85, _strokePaint);
 
     // Draw vector symbol inside
-    final symbolPaint = Paint()
-      ..color = mainColor
-      ..style = PaintingStyle.fill;
+    _fillPaint.color = mainColor;
 
     if (type == DropType.health) {
       // Cross
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 3, height: 10), symbolPaint);
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 10, height: 3), symbolPaint);
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 3, height: 10), _fillPaint);
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 10, height: 3), _fillPaint);
     } else if (type == DropType.lunarSample) {
       // Diamond Crystal
-      final path = Path()
-        ..moveTo(0, -6)
-        ..lineTo(5, 0)
-        ..lineTo(0, 6)
-        ..lineTo(-5, 0)
-        ..close();
-      canvas.drawPath(path, symbolPaint);
+      _scratchPath.reset();
+      _scratchPath.moveTo(0, -6);
+      _scratchPath.lineTo(5, 0);
+      _scratchPath.lineTo(0, 6);
+      _scratchPath.lineTo(-5, 0);
+      _scratchPath.close();
+      canvas.drawPath(_scratchPath, _fillPaint);
     } else if (type == DropType.rareHelium) {
       // Star / Hexagon
-      final path = Path();
+      _scratchPath.reset();
       for (int i = 0; i < 6; i++) {
         final a = (i * math.pi) / 3;
         final r = (i % 2 == 0) ? 6.0 : 3.0;
         final x = r * math.cos(a);
         final y = r * math.sin(a);
         if (i == 0) {
-          path.moveTo(x, y);
+          _scratchPath.moveTo(x, y);
         } else {
-          path.lineTo(x, y);
+          _scratchPath.lineTo(x, y);
         }
       }
-      path.close();
-      canvas.drawPath(path, symbolPaint);
+      _scratchPath.close();
+      canvas.drawPath(_scratchPath, _fillPaint);
     } else if (type == DropType.darkMatter) {
       // Cosmic core: circle + cross flares
-      canvas.drawCircle(Offset.zero, 3.5, symbolPaint);
-      final flarePaint = Paint()
-        ..color = mainColor
-        ..strokeWidth = 1.8
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(const Offset(-6, 0), const Offset(6, 0), flarePaint);
-      canvas.drawLine(const Offset(0, -6), const Offset(0, 6), flarePaint);
+      canvas.drawCircle(Offset.zero, 3.5, _fillPaint);
+      _strokePaint.color = mainColor;
+      _strokePaint.strokeWidth = 1.8;
+      canvas.drawLine(const Offset(-6, 0), const Offset(6, 0), _strokePaint);
+      canvas.drawLine(const Offset(0, -6), const Offset(0, 6), _strokePaint);
     } else if (type == DropType.shield) {
       // Shield circle outline
-      final sPaint = Paint()
-        ..color = mainColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      canvas.drawCircle(Offset.zero, 4.5, sPaint);
+      _strokePaint.color = mainColor;
+      _strokePaint.strokeWidth = 2.0;
+      canvas.drawCircle(Offset.zero, 4.5, _strokePaint);
     } else if (type == DropType.cometDust) {
       // Comet nucleus core + star flare ring
-      canvas.drawCircle(Offset.zero, 3.5, symbolPaint);
-      final ringPaint = Paint()
-        ..color = Colors.amberAccent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.3;
-      canvas.drawCircle(Offset.zero, 6.5, ringPaint);
+      canvas.drawCircle(Offset.zero, 3.5, _fillPaint);
+      _strokePaint.color = Colors.amberAccent;
+      _strokePaint.strokeWidth = 1.3;
+      canvas.drawCircle(Offset.zero, 6.5, _strokePaint);
     } else if (type == DropType.memoryCore) {
       // Stylized Heart Gem
-      final heartPath = Path()
-        ..moveTo(0, 4.5)
-        ..lineTo(-4.5, -0.5)
-        ..cubicTo(-6.0, -3.0, -3.0, -6.0, 0, -2.5)
-        ..cubicTo(3.0, -6.0, 6.0, -3.0, 4.5, -0.5)
-        ..close();
-      canvas.drawPath(heartPath, symbolPaint);
+      _scratchPath.reset();
+      _scratchPath.moveTo(0, 4.5);
+      _scratchPath.lineTo(-4.5, -0.5);
+      _scratchPath.cubicTo(-6.0, -3.0, -3.0, -6.0, 0, -2.5);
+      _scratchPath.cubicTo(3.0, -6.0, 6.0, -3.0, 4.5, -0.5);
+      _scratchPath.close();
+      canvas.drawPath(_scratchPath, _fillPaint);
     } else if (type == DropType.vortexSurge) {
       // Swirling Vortex Spiral
-      final spiralPaint = Paint()
-        ..color = mainColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      canvas.drawCircle(Offset.zero, 3.0, symbolPaint);
+      _strokePaint.color = mainColor;
+      _strokePaint.strokeWidth = 2.0;
+      canvas.drawCircle(Offset.zero, 3.0, _fillPaint);
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 6.0),
         pulseTimer * 4.0,
         math.pi * 1.3,
         false,
-        spiralPaint,
+        _strokePaint,
       );
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 8.5),
         pulseTimer * 4.0 + math.pi,
         math.pi * 1.2,
         false,
-        spiralPaint,
+        _strokePaint,
       );
     }
   }

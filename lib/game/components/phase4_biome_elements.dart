@@ -14,12 +14,11 @@ import 'bullet.dart';
 /// RELÍQUIAS PERMANENTES & CÁPSULAS DE ESTASE (COFFINS)
 /// ============================================================================
 
-/// Camada 0 e Camada 1: Backdrop Abissal e Sub-Piso Arquitetural fiel às 6 Imagens Modelo.
+/// Camada 0 e Camada 1: Backdrop Abissal e Sub-Piso Arquitetural puramente vetorial de alta definição.
 class BiomeBackdropComponent extends PositionComponent
     with HasGameReference<AsteroidsGame> {
   final SectorId sectorId;
   double _animTimer = 0.0;
-  ui.Image? _backdropImage;
   final List<Vector2> _ambientMotes = [];
 
   BiomeBackdropComponent({required this.sectorId})
@@ -32,13 +31,6 @@ class BiomeBackdropComponent extends PositionComponent
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    try {
-      final sector = Sector.findById(sectorId);
-      final assetPath = sector.biomeImageAsset.replaceFirst('assets/images/', '');
-      _backdropImage = await game.images.load(assetPath);
-    } catch (_) {
-      _backdropImage = null;
-    }
 
     final rng = math.Random(sectorId.index * 7919);
     for (int i = 0; i < 48; i++) {
@@ -120,57 +112,81 @@ class BiomeBackdropComponent extends PositionComponent
       camPos = Vector2(GameConstants.sectorWidth / 2, GameConstants.sectorHeight / 2);
     }
 
-    // 1. Renderiza o Backdrop Fotorrealista do Bioma com Parallax Suave e Scrim de Alto Contraste
-    if (_backdropImage != null) {
-      canvas.save();
-      canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
+    // 1. Renderiza o Fundo Espacial Procedural Profundo com Parallax e Cores Vivas do Bioma
+    canvas.save();
+    canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
 
-      final normX = (camPos.x / GameConstants.sectorWidth).clamp(0.0, 1.0);
-      final normY = (camPos.y / GameConstants.sectorHeight).clamp(0.0, 1.0);
+    final sector = Sector.findById(sectorId);
+    final normX = (camPos.x / GameConstants.sectorWidth).clamp(0.0, 1.0);
+    final normY = (camPos.y / GameConstants.sectorHeight).clamp(0.0, 1.0);
 
-      // Cobre 130% do viewport para permitir o deslocamento de profundidade cósmica
-      final viewW = width * 1.30;
-      final viewH = height * 1.30;
-      final offsetX = -(normX * (viewW - width));
-      final offsetY = -(normY * (viewH - height));
+    // Gradiente Abissal de Profundidade Cósmica do Bioma
+    final deepVoidShader = RadialGradient(
+      center: Alignment(
+        -0.4 + normX * 0.8,
+        -0.4 + normY * 0.8,
+      ),
+      radius: 1.1,
+      colors: [
+        sector.primaryColor.withValues(alpha: 0.08),
+        sector.secondaryColor.withValues(alpha: 0.03),
+        const Color(0xFF02040A),
+      ],
+      stops: const [0.0, 0.55, 1.0],
+    ).createShader(Rect.fromLTWH(0, 0, width, height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, width, height), Paint()..shader = deepVoidShader);
 
-      final srcRect = Rect.fromLTWH(
-        0,
-        0,
-        _backdropImage!.width.toDouble(),
-        _backdropImage!.height.toDouble(),
-      );
-      final dstRect = Rect.fromLTWH(offsetX, offsetY, viewW, viewH);
-
-      // Opacidade balanceada do backdrop para não ofuscar naves inimigas e asteroides
-      final bgAlpha = sectorId == SectorId.vesta ? 0.08 : 0.30;
-      final bgPaint = Paint()
-        ..color = Colors.white.withValues(alpha: bgAlpha)
-        ..filterQuality = FilterQuality.medium;
-      canvas.drawImageRect(_backdropImage!, srcRect, dstRect, bgPaint);
-
-      // Scrim cósmico de alto contraste (garante que os monstros, lasers e orbs saltem aos olhos)
-      final scrimPaint = Paint()
-        ..color = const Color(0xFF040711).withValues(alpha: 0.52);
-      canvas.drawRect(Rect.fromLTWH(0, 0, width, height), scrimPaint);
-
-      // Vinheta atmosférica tática
-      final vignettePaint = Paint()
+    // Nuvens de Poeira Cósmica Volumétrica com Parallax Suave (BlendMode.plus)
+    final cloudOffset1 = Offset(
+      width * 0.35 - (normX - 0.5) * 80.0,
+      height * 0.40 - (normY - 0.5) * 60.0,
+    );
+    canvas.drawCircle(
+      cloudOffset1,
+      width * 0.45,
+      Paint()
+        ..blendMode = BlendMode.plus
         ..shader = RadialGradient(
           colors: [
+            sector.primaryColor.withValues(alpha: 0.06),
             Colors.transparent,
-            Colors.black.withValues(alpha: 0.35),
-            Colors.black.withValues(alpha: 0.85),
           ],
-          stops: const [0.45, 0.75, 1.0],
-        ).createShader(Rect.fromLTWH(0, 0, width, height));
-      canvas.drawRect(Rect.fromLTWH(0, 0, width, height), vignettePaint);
+        ).createShader(Rect.fromCircle(center: cloudOffset1, radius: width * 0.45)),
+    );
 
-      // Partículas atmosféricas temáticas flutuantes sutis (micro-fagulhas, geada, esporos)
-      _renderAmbientMotes(canvas, width, height);
+    final cloudOffset2 = Offset(
+      width * 0.75 - (normX - 0.5) * 120.0,
+      height * 0.70 - (normY - 0.5) * 90.0,
+    );
+    canvas.drawCircle(
+      cloudOffset2,
+      width * 0.50,
+      Paint()
+        ..blendMode = BlendMode.plus
+        ..shader = RadialGradient(
+          colors: [
+            sector.secondaryColor.withValues(alpha: 0.04),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromCircle(center: cloudOffset2, radius: width * 0.50)),
+    );
 
-      canvas.restore();
-    }
+    // Vinheta atmosférica cinematográfica
+    final vignettePaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.transparent,
+          Colors.black.withValues(alpha: 0.30),
+          Colors.black.withValues(alpha: 0.82),
+        ],
+        stops: const [0.55, 0.80, 1.0],
+      ).createShader(Rect.fromLTWH(0, 0, width, height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, width, height), vignettePaint);
+
+    // Partículas atmosféricas temáticas flutuantes sutis (micro-fagulhas, geada, esporos)
+    _renderAmbientMotes(canvas, width, height);
+
+    canvas.restore();
 
     // 2. Renderiza as Macro-Estruturas e Sub-Pisos Arquiteturais nos slots globais do mapa
     final center = const Offset(

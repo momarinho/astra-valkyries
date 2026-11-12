@@ -60,21 +60,26 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.tune_rounded, color: Colors.cyanAccent, size: 26),
-                              const SizedBox(width: 10),
-                              Text(
-                                I18n.t('settings.title'),
-                                style: const TextStyle(
-                                  fontFamily: 'Orbitron',
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 2,
-                                  color: Colors.white,
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.tune_rounded, color: Colors.cyanAccent, size: 26),
+                                const SizedBox(width: 10),
+                                Flexible(
+                                  child: Text(
+                                    I18n.t('settings.title'),
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           IconButton(
                             onPressed: () => game.changeState(game.previousMenuState),
@@ -326,6 +331,22 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
                         );
                       }),
 
+                      const SizedBox(height: 20),
+
+                      // Section 4: Performance & Display (FPS & Engine Telemetry)
+                      Text(
+                        I18n.t('settings.performance_header'),
+                        style: const TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: Color(0xFF00E676),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildFpsToggleOption(context: context),
+
                       const SizedBox(height: 22),
 
                       // Save & Return Button
@@ -548,6 +569,76 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
             ),
             if (isSelected)
               const Icon(Icons.check_circle, color: Color(0xFFFFD700), size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFpsToggleOption({required BuildContext context}) {
+    final isEnabled = widget.game.showFpsOverlay;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          widget.game.toggleFpsOverlay(!isEnabled);
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 14.0),
+        decoration: BoxDecoration(
+          color: isEnabled
+              ? const Color(0xFF00E676).withValues(alpha: 0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isEnabled ? const Color(0xFF00E676) : Colors.white12,
+            width: isEnabled ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.speed_rounded,
+                        color: isEnabled ? const Color(0xFF00E676) : Colors.white70,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        I18n.t('settings.show_fps'),
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.bold,
+                          color: isEnabled ? const Color(0xFF00E676) : Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    I18n.t('settings.show_fps_desc'),
+                    style: const TextStyle(fontSize: 11.0, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: isEnabled,
+              activeColor: const Color(0xFF00E676),
+              onChanged: (val) {
+                setState(() {
+                  widget.game.toggleFpsOverlay(val);
+                });
+              },
+            ),
           ],
         ),
       ),

@@ -35,6 +35,10 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   late double hp;
   double hitFlashTimer = 0.0;
 
+  // Zero-GC Cached Paint instances for high-performance asteroid rendering (60-120 FPS)
+  static final Paint _sharedFillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _sharedStrokePaint = Paint()..style = PaintingStyle.stroke;
+
   int get scoreValue {
     final base = (radius <= GameConstants.asteroidMinRadius * 1.25)
         ? 300
@@ -109,6 +113,18 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
   Future<void> onLoad() async {
     await super.onLoad();
     add(CircleHitbox());
+  }
+
+  @override
+  void onMount() {
+    super.onMount();
+    game.activeAsteroids.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeAsteroids.remove(this);
+    super.onRemove();
   }
 
   bool shouldPrune(Vector2 playerPosition) {
@@ -209,22 +225,18 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     final isFlashing = hitFlashTimer > 0;
     final path = cachedPath;
 
-    // Interior shading based on variant
+    // Interior shading based on variant (Zero-GC Reusable Paints)
     if (variant == AsteroidVariant.crystalline) {
-      final fillPaint = Paint()
-        ..color = const Color(0xFF00E5FF).withValues(alpha: isFlashing ? 0.45 : 0.15)
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(path, fillPaint);
+      _sharedFillPaint.color = const Color(0xFF00E5FF).withValues(alpha: isFlashing ? 0.45 : 0.15);
+      canvas.drawPath(path, _sharedFillPaint);
 
       // Facet interior crystal lines
-      final facetPaint = Paint()
-        ..color = const Color(0xFFE040FB).withValues(alpha: isFlashing ? 0.8 : 0.4)
-        ..strokeWidth = 1.0
-        ..style = PaintingStyle.stroke;
+      _sharedStrokePaint.color = const Color(0xFFE040FB).withValues(alpha: isFlashing ? 0.8 : 0.4);
+      _sharedStrokePaint.strokeWidth = 1.0;
       for (var i = 0; i < numPoints; i += 2) {
         final pointAngle = (2 * math.pi * i) / numPoints;
         final r = radius * pointsOffsets[i];
-        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), facetPaint);
+        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), _sharedStrokePaint);
       }
 
       Glow.strokePath(
@@ -235,20 +247,16 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         intensity: isFlashing ? 1.8 : 1.2,
       );
     } else if (variant == AsteroidVariant.magma) {
-      final fillPaint = Paint()
-        ..color = const Color(0xFF260C05).withValues(alpha: 0.95)
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(path, fillPaint);
+      _sharedFillPaint.color = const Color(0xFF260C05).withValues(alpha: 0.95);
+      canvas.drawPath(path, _sharedFillPaint);
 
       // Molten veins
-      final veinPaint = Paint()
-        ..color = isFlashing ? Colors.white : const Color(0xFFFF5722)
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
+      _sharedStrokePaint.color = isFlashing ? Colors.white : const Color(0xFFFF5722);
+      _sharedStrokePaint.strokeWidth = 1.5;
       for (var i = 0; i < numPoints; i += 3) {
         final pointAngle = (2 * math.pi * i) / numPoints;
         final r = radius * pointsOffsets[i] * 0.7;
-        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), veinPaint);
+        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), _sharedStrokePaint);
       }
 
       Glow.strokePath(
@@ -260,10 +268,8 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       );
     } else if (variant == AsteroidVariant.golden) {
       // Golden Asteroid: Radiant metallic gold hull with bright solar glow
-      final fillPaint = Paint()
-        ..color = const Color(0xFFFFD700).withValues(alpha: isFlashing ? 0.6 : 0.25)
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(path, fillPaint);
+      _sharedFillPaint.color = const Color(0xFFFFD700).withValues(alpha: isFlashing ? 0.6 : 0.25);
+      canvas.drawPath(path, _sharedFillPaint);
 
       final strokeColor = isFlashing ? Colors.white : const Color(0xFFFFD700);
       Glow.strokePath(
@@ -275,19 +281,15 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       );
     } else if (variant == AsteroidVariant.titanium) {
       // Titanium Ore Asteroid: Slate-metallic hull with bright cyan-titanium mineral seams
-      final fillPaint = Paint()
-        ..color = isFlashing ? Colors.white : const Color(0xFF101B2B).withValues(alpha: 0.94)
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(path, fillPaint);
+      _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF101B2B).withValues(alpha: 0.94);
+      canvas.drawPath(path, _sharedFillPaint);
 
-      final veinPaint = Paint()
-        ..color = isFlashing ? Colors.white : const Color(0xFF80D8FF).withValues(alpha: 0.85)
-        ..strokeWidth = 1.8
-        ..style = PaintingStyle.stroke;
+      _sharedStrokePaint.color = isFlashing ? Colors.white : const Color(0xFF80D8FF).withValues(alpha: 0.85);
+      _sharedStrokePaint.strokeWidth = 1.8;
       for (var i = 0; i < numPoints; i += 2) {
         final pointAngle = (2 * math.pi * i) / numPoints;
         final r = radius * pointsOffsets[i] * 0.75;
-        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), veinPaint);
+        canvas.drawLine(Offset.zero, Offset(r * math.cos(pointAngle), r * math.sin(pointAngle)), _sharedStrokePaint);
       }
 
       Glow.strokePath(
@@ -299,12 +301,10 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
       );
     } else {
       // Standard rock: preenchimento opaco escuro para ocluir estrelas/bioma + borda luminosa nítida
-      final rockFill = Paint()
-        ..color = isFlashing
-            ? Colors.white.withValues(alpha: 0.90)
-            : const Color(0xFF0C101A).withValues(alpha: 0.88)
-        ..style = PaintingStyle.fill;
-      canvas.drawPath(path, rockFill);
+      _sharedFillPaint.color = isFlashing
+          ? Colors.white.withValues(alpha: 0.90)
+          : const Color(0xFF0C101A).withValues(alpha: 0.88);
+      canvas.drawPath(path, _sharedFillPaint);
 
       Glow.strokePath(
         canvas,
@@ -442,8 +442,11 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
         game.world.add(XpOrbComponent(position: position + offset, type: XpOrbType.medium));
       }
 
-      // Tactical Corridor Carving Shockwave: slows nearby enemies by 30% for 3.0s
-      for (final enemy in game.world.children.whereType<EnemyShipComponent>()) {
+      // Tactical Corridor Carving Shockwave: slows nearby enemies by 30% for 3.0s (O(1) Entity Registry)
+      final enemies = game.activeEnemies.isNotEmpty
+          ? game.activeEnemies
+          : game.world.children.whereType<EnemyShipComponent>();
+      for (final enemy in enemies) {
         if (enemy.position.distanceToSquared(position) <= 140.0 * 140.0) {
           enemy.applyElementalStatus(ElementalStatus.cryoFreeze, duration: 3.0);
         }
@@ -476,7 +479,9 @@ class AsteroidComponent extends PositionComponent with HasGameReference<Asteroid
     game.world.add(XpOrbComponent(position: position.clone(), type: orbType));
 
     final random = math.Random();
-    final activeDrops = game.world.children.whereType<DropComponent>().length;
+    final activeDrops = game.activeDrops.isNotEmpty
+        ? game.activeDrops.length
+        : game.world.children.whereType<DropComponent>().length;
     double dropChance = 0.05;
     if (radius >= 50.0) {
       dropChance = 0.25;

@@ -69,6 +69,27 @@ class EnemyShipComponent extends PositionComponent
     return baseHp * (1.0 + safeMin * 0.25) * (1.0 + safeCells * 0.35);
   }
 
+  // Zero-GC Cached Paint Instances for high-performance rendering (60-120 FPS)
+  static final Paint _sharedFillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _sharedStrokePaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _shadowRimPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = const Color(0xFF000000).withValues(alpha: 0.90);
+  static final Paint _healthBarBgPaint = Paint()
+    ..style = PaintingStyle.fill
+    ..color = Colors.black.withValues(alpha: 0.8);
+  static final Paint _healthBarFillPaint = Paint()
+    ..style = PaintingStyle.fill
+    ..color = const Color(0xFFFFD700);
+  static final Paint _healthBarBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.0
+    ..color = Colors.white.withValues(alpha: 0.7);
+  static final Paint _laserTelegraphPaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _laserReticlePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+
   void applyDynamicScaling({
     required double minutesElapsed,
     required int voidCells,
@@ -154,10 +175,10 @@ class EnemyShipComponent extends PositionComponent
       }
     }
 
-    // Ion Shock arcs electricity to a nearby enemy within 170px
+    // Ion Shock arcs electricity to a nearby enemy within 170px (O(1) Entity Registry)
     if (status == ElementalStatus.ionShock) {
       try {
-        for (final other in game.world.children.whereType<EnemyShipComponent>()) {
+        for (final other in game.activeEnemies) {
           if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 170.0) {
             other.hp -= 14.0;
             if (other.hp <= 0) {
@@ -260,6 +281,18 @@ class EnemyShipComponent extends PositionComponent
     } catch (_) {}
   }
 
+  @override
+  void onMount() {
+    super.onMount();
+    game.activeEnemies.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeEnemies.remove(this);
+    super.onRemove();
+  }
+
   void resolveAsteroidImpact(AsteroidComponent asteroid) {
     if (asteroid.isRemoving || asteroid.hp <= 0 || hp <= 0) return;
     final dist = position.distanceTo(asteroid.position);
@@ -360,10 +393,10 @@ class EnemyShipComponent extends PositionComponent
     position += velocity * cryoSlowFactor * dt;
     _enforceSectorBounds();
 
-    // Sprint 19: Colisão de naves leves contra asteroides massivos
+    // Sprint 19: Colisão de naves leves contra asteroides massivos (Zero-GC Entity Registry)
     if (type == EnemyType.voidSwarmer || type == EnemyType.scout) {
       try {
-        for (final a in List<AsteroidComponent>.from(game.world.children.whereType<AsteroidComponent>())) {
+        for (final a in game.activeAsteroids) {
           if (hp <= 0) break;
           resolveAsteroidImpact(a);
         }
@@ -420,8 +453,8 @@ class EnemyShipComponent extends PositionComponent
     shootCooldown -= dt;
     if (shootCooldown <= 0) {
       shootCooldown = 3.8;
-      // Spawns a mini-squad of 3 Void Swarmers if under enemy cap
-      final currentEnemies = game.world.children.whereType<EnemyShipComponent>().length;
+      // Spawns a mini-squad of 3 Void Swarmers if under enemy cap (O(1) count)
+      final currentEnemies = game.activeEnemies.length;
       if (currentEnemies < 32) {
         for (var i = -1; i <= 1; i++) {
           final offset = Vector2(i * 24.0, 24.0);
@@ -745,9 +778,9 @@ class EnemyShipComponent extends PositionComponent
     game.addRunCredits(scrapReward);
     game.spawnFloatingText(position, '+$scoreValue', color: Colors.white, fontSize: 13.0);
 
-    // Solar Burn Death Detonation Synergy: enemies dying while burning explode!
+    // Solar Burn Death Detonation Synergy: enemies dying while burning explode! (Zero-GC)
     if (hasStatus(ElementalStatus.solarBurn)) {
-      for (final other in List<EnemyShipComponent>.from(game.world.children.whereType<EnemyShipComponent>())) {
+      for (final other in game.activeEnemies) {
         if (other != this && other.hp > 0 && other.position.distanceTo(position) <= 105.0) {
           other.takeDamage(35.0, other.position);
         }
@@ -931,33 +964,29 @@ class EnemyShipComponent extends PositionComponent
           auraColor = const Color(0xFFFFD700);
           break;
       }
+      _sharedFillPaint.color = auraColor.withValues(alpha: 0.16);
       canvas.drawCircle(
         Offset.zero,
         radius * 1.45,
-        Paint()
-          ..color = auraColor.withValues(alpha: 0.16)
-          ..style = PaintingStyle.fill,
+        _sharedFillPaint,
       );
+      _sharedStrokePaint.color = auraColor.withValues(alpha: 0.78);
+      _sharedStrokePaint.strokeWidth = 1.8;
       canvas.drawCircle(
         Offset.zero,
         radius * 1.45,
-        Paint()
-          ..color = auraColor.withValues(alpha: 0.78)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8,
+        _sharedStrokePaint,
       );
     }
 
     // 1. Draw Telegraphed Red Aiming Laser for Raider (straight out of ship's nose)
     if (type == EnemyType.raider && raiderState == RaiderState.telegraphing) {
       final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 50.0) + 1) / 2;
-      final laserPaint = Paint()
-        ..color = const Color(0xFFFF1744).withValues(alpha: 0.45 + pulse * 0.45)
-        ..strokeWidth = 1.8 + pulse * 1.2
-        ..style = PaintingStyle.stroke;
+      _laserTelegraphPaint.color = const Color(0xFFFF1744).withValues(alpha: 0.45 + pulse * 0.45);
+      _laserTelegraphPaint.strokeWidth = 1.8 + pulse * 1.2;
 
       // In local coordinates, ship's nose is (0, -radius), facing forward (0, -1)
-      canvas.drawLine(Offset(0, -radius), const Offset(0, -650.0), laserPaint);
+      canvas.drawLine(Offset(0, -radius), const Offset(0, -650.0), _laserTelegraphPaint);
     }
 
     final isFlashing = hitFlashTimer > 0;
@@ -1014,35 +1043,24 @@ class EnemyShipComponent extends PositionComponent
       ..close();
 
     // High-contrast dark shadow rim (makes neon pop against any nebula backdrop)
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.90)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.2,
-    );
+    _shadowRimPaint.strokeWidth = 4.2;
+    canvas.drawPath(path, _shadowRimPaint);
 
     // Rear engine thruster plume
     final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 50.0);
-    final thrustPaint = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.85)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, radius * 0.4), Offset(0, radius * (0.7 + 0.4 * thrustPulse)), thrustPaint);
+    _sharedStrokePaint.color = const Color(0xFF00E5FF).withValues(alpha: 0.85);
+    _sharedStrokePaint.strokeWidth = 2.0;
+    canvas.drawLine(Offset(0, radius * 0.4), Offset(0, radius * (0.7 + 0.4 * thrustPulse)), _sharedStrokePaint);
 
-    final bodyPaint = Paint()
-      ..color = isFlashing ? Colors.white : const Color(0xFF1B0B24).withValues(alpha: 0.95)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(path, bodyPaint);
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF1B0B24).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFFFF4081);
     Glow.strokePath(canvas, path, strokeColor, width: 2.2, intensity: 1.4);
 
     // Glowing cockpit core
-    final corePaint = Paint()
-      ..color = isFlashing ? flashColor : const Color(0xFFFF80AB)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(0, -radius * 0.15), 2.2, corePaint);
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFFF80AB);
+    canvas.drawCircle(Offset(0, -radius * 0.15), 2.2, _sharedFillPaint);
   }
 
   void _renderVoidSwarmer(Canvas canvas, bool isFlashing, Color flashColor) {
@@ -1054,36 +1072,25 @@ class EnemyShipComponent extends PositionComponent
       ..close();
 
     // High-contrast dark shadow rim
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.92)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.5,
-    );
+    _shadowRimPaint.strokeWidth = 4.5;
+    canvas.drawPath(path, _shadowRimPaint);
 
     // Twin plasma micro-jets
     final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 35.0);
-    final thrustPaint = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.90)
-      ..strokeWidth = 2.2
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(-radius * 0.3, radius * 0.6), Offset(-radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), thrustPaint);
-    canvas.drawLine(Offset(radius * 0.3, radius * 0.6), Offset(radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), thrustPaint);
+    _sharedStrokePaint.color = const Color(0xFF00E5FF).withValues(alpha: 0.90);
+    _sharedStrokePaint.strokeWidth = 2.2;
+    canvas.drawLine(Offset(-radius * 0.3, radius * 0.6), Offset(-radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), _sharedStrokePaint);
+    canvas.drawLine(Offset(radius * 0.3, radius * 0.6), Offset(radius * 0.3, radius * (0.9 + 0.4 * thrustPulse)), _sharedStrokePaint);
 
-    final bodyPaint = Paint()
-      ..color = isFlashing ? Colors.white : const Color(0xFF280738).withValues(alpha: 0.95)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(path, bodyPaint);
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF280738).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFFE040FB);
     Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.6);
 
     // Pulsing cybernetic sensor eye
-    final eyePaint = Paint()
-      ..color = isFlashing ? flashColor : const Color(0xFFFF007F)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(0, -radius * 0.2), 2.8, eyePaint);
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFFF007F);
+    canvas.drawCircle(Offset(0, -radius * 0.2), 2.8, _sharedFillPaint);
   }
 
   void _renderRaider(Canvas canvas, bool isFlashing, Color flashColor) {
@@ -1097,56 +1104,41 @@ class EnemyShipComponent extends PositionComponent
       ..close();
 
     // High-contrast dark shadow rim
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.90)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.5,
-    );
+    _shadowRimPaint.strokeWidth = 4.5;
+    canvas.drawPath(path, _shadowRimPaint);
 
     // Heavy crimson engine thruster plume
     final thrustPulse = 0.7 + 0.3 * math.sin(DateTime.now().millisecondsSinceEpoch / 45.0);
-    final thrustPaint = Paint()
-      ..color = const Color(0xFFFF5252).withValues(alpha: 0.85)
-      ..strokeWidth = 2.4
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(0, radius * 0.6), Offset(0, radius * (1.0 + 0.5 * thrustPulse)), thrustPaint);
+    _sharedStrokePaint.color = const Color(0xFFFF5252).withValues(alpha: 0.85);
+    _sharedStrokePaint.strokeWidth = 2.4;
+    canvas.drawLine(Offset(0, radius * 0.6), Offset(0, radius * (1.0 + 0.5 * thrustPulse)), _sharedStrokePaint);
 
-    final bodyPaint = Paint()
-      ..color = isFlashing ? Colors.white : const Color(0xFF2B0B0E).withValues(alpha: 0.95)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(path, bodyPaint);
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF2B0B0E).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : const Color(0xFFFF1744);
     Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.5);
 
     // Glowing crimson core
-    final corePaint = Paint()
-      ..color = isFlashing ? flashColor : const Color(0xFFFF5252)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(0, -radius * 0.2), 3.2, corePaint);
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFFF5252);
+    canvas.drawCircle(Offset(0, -radius * 0.2), 3.2, _sharedFillPaint);
 
     // Sprint 39: Telegraphed Dash Trajectory Corridor (Nova Drift / Hades)
     if (raiderState == RaiderState.telegraphing) {
       final pulse = (math.sin(DateTime.now().millisecondsSinceEpoch / 45.0) + 1) / 2;
-      final dashTelegraphPaint = Paint()
-        ..color = const Color(0xFFFF1744).withValues(alpha: 0.35 + pulse * 0.45)
-        ..strokeWidth = 2.2 + pulse * 1.5
-        ..style = PaintingStyle.stroke;
+      _laserTelegraphPaint.color = const Color(0xFFFF1744).withValues(alpha: 0.35 + pulse * 0.45);
+      _laserTelegraphPaint.strokeWidth = 2.2 + pulse * 1.5;
 
       canvas.drawLine(
         Offset(0, -radius * 1.2),
         const Offset(0, -260.0),
-        dashTelegraphPaint,
+        _laserTelegraphPaint,
       );
 
-      final conePaint = Paint()
-        ..color = const Color(0xFFFF1744).withValues(alpha: 0.15 + pulse * 0.20)
-        ..strokeWidth = 1.2
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(-12, -radius * 1.2), const Offset(-22, -260.0), conePaint);
-      canvas.drawLine(Offset(12, -radius * 1.2), const Offset(22, -260.0), conePaint);
+      _sharedStrokePaint.color = const Color(0xFFFF1744).withValues(alpha: 0.15 + pulse * 0.20);
+      _sharedStrokePaint.strokeWidth = 1.2;
+      canvas.drawLine(Offset(-12, -radius * 1.2), const Offset(-22, -260.0), _sharedStrokePaint);
+      canvas.drawLine(Offset(12, -radius * 1.2), const Offset(22, -260.0), _sharedStrokePaint);
     }
   }
 
@@ -1162,59 +1154,44 @@ class EnemyShipComponent extends PositionComponent
       ..close();
 
     // High-contrast dark shadow rim
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.90)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.5,
-    );
+    _shadowRimPaint.strokeWidth = 4.5;
+    canvas.drawPath(path, _shadowRimPaint);
 
-    final bodyPaint = Paint()
-      ..color = isFlashing ? Colors.white : const Color(0xFF100E2B).withValues(alpha: 0.95)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(path, bodyPaint);
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF100E2B).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : (flashColor != Colors.white ? flashColor : const Color(0xFF7C4DFF));
     Glow.strokePath(canvas, path, strokeColor, width: 2.4, intensity: 1.4);
 
     // Twin sniper railgun barrels
-    final gunPaint = Paint()
-      ..color = isFlashing ? flashColor : const Color(0xFFE040FB)
-      ..strokeWidth = 2.2
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(-radius * 0.45, -radius * 0.3), Offset(-radius * 0.45, -radius * 1.3), gunPaint);
-    canvas.drawLine(Offset(radius * 0.45, -radius * 0.3), Offset(radius * 0.45, -radius * 1.3), gunPaint);
+    _sharedStrokePaint.color = isFlashing ? flashColor : const Color(0xFFE040FB);
+    _sharedStrokePaint.strokeWidth = 2.2;
+    canvas.drawLine(Offset(-radius * 0.45, -radius * 0.3), Offset(-radius * 0.45, -radius * 1.3), _sharedStrokePaint);
+    canvas.drawLine(Offset(radius * 0.45, -radius * 0.3), Offset(radius * 0.45, -radius * 1.3), _sharedStrokePaint);
 
     // Glowing core
-    final corePaint = Paint()
-      ..color = isFlashing ? flashColor : const Color(0xFF80D8FF)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset.zero, 3.0, corePaint);
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFF80D8FF);
+    canvas.drawCircle(Offset.zero, 3.0, _sharedFillPaint);
 
     // Sprint 39: Telegraphed Laser Aiming Line (Hades / Nova Drift)
     if (shootCooldown <= 0.70 && shootCooldown > 0) {
       final telegraphProgress = (1.0 - (shootCooldown / 0.70)).clamp(0.0, 1.0);
       final alpha = (0.25 + 0.65 * telegraphProgress).clamp(0.0, 1.0);
-      final laserPaint = Paint()
-        ..color = Color.lerp(const Color(0xFFE040FB), const Color(0xFFFF1744), telegraphProgress)!.withValues(alpha: alpha)
-        ..strokeWidth = 1.0 + telegraphProgress * 1.8
-        ..style = PaintingStyle.stroke;
+      _laserTelegraphPaint.color = Color.lerp(const Color(0xFFE040FB), const Color(0xFFFF1744), telegraphProgress)!.withValues(alpha: alpha);
+      _laserTelegraphPaint.strokeWidth = 1.0 + telegraphProgress * 1.8;
 
       canvas.drawLine(
         Offset(0, -radius * 1.3),
         const Offset(0, -380.0),
-        laserPaint,
+        _laserTelegraphPaint,
       );
 
       // Warning target reticle at tip
+      _laserReticlePaint.color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.8);
       canvas.drawCircle(
         const Offset(0, -380.0),
         3.0 + telegraphProgress * 2.5,
-        Paint()
-          ..color = const Color(0xFFFF1744).withValues(alpha: alpha * 0.8)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
+        _laserReticlePaint,
       );
     }
   }
@@ -1233,27 +1210,18 @@ class EnemyShipComponent extends PositionComponent
       ..close();
 
     // High-contrast dark shadow rim
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.92)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5.2,
-    );
+    _shadowRimPaint.strokeWidth = 5.2;
+    canvas.drawPath(path, _shadowRimPaint);
 
-    final bodyPaint = Paint()
-      ..color = isFlashing ? Colors.white : const Color(0xFF180A28).withValues(alpha: 0.95)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(path, bodyPaint);
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF180A28).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
 
     final strokeColor = isFlashing ? flashColor : (flashColor != Colors.white ? flashColor : const Color(0xFFFFD700));
     Glow.strokePath(canvas, path, strokeColor, width: 2.8, intensity: 1.8);
 
     // Inner imperial insignia & purple energy core
-    final corePaint = Paint()
-      ..color = isFlashing ? flashColor : const Color(0xFFD500F9)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(0, -radius * 0.1), 7.0, corePaint);
+    _sharedFillPaint.color = isFlashing ? flashColor : const Color(0xFFD500F9);
+    canvas.drawCircle(Offset(0, -radius * 0.1), 7.0, _sharedFillPaint);
 
     Glow.drawGlowCircle(
       canvas,
@@ -1274,34 +1242,25 @@ class EnemyShipComponent extends PositionComponent
       ..close();
 
     // High-contrast dark shadow rim
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.90)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.8,
-    );
+    _shadowRimPaint.strokeWidth = 4.8;
+    canvas.drawPath(path, _shadowRimPaint);
 
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = isFlashing ? Colors.white : const Color(0xFF0A1E2E).withValues(alpha: 0.95)
-        ..style = PaintingStyle.fill,
-    );
+    _sharedFillPaint.color = isFlashing ? Colors.white : const Color(0xFF0A1E2E).withValues(alpha: 0.95);
+    canvas.drawPath(path, _sharedFillPaint);
+
     final strokeColor = isFlashing ? flashColor : const Color(0xFF00E5FF);
     Glow.strokePath(canvas, path, strokeColor, width: 2.6, intensity: 1.5);
 
     // Glowing Frontal Directional Energy Shield Arc
     final shieldRect = Rect.fromCircle(center: Offset.zero, radius: radius * 1.22);
+    _sharedStrokePaint.color = const Color(0xFF00E5FF);
+    _sharedStrokePaint.strokeWidth = 4.2;
     canvas.drawArc(
       shieldRect,
       -math.pi * 0.85,
       math.pi * 0.70,
       false,
-      Paint()
-        ..color = const Color(0xFF00E5FF)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4.2,
+      _sharedStrokePaint,
     );
   }
 
@@ -1312,32 +1271,22 @@ class EnemyShipComponent extends PositionComponent
     const barX = -barWidth / 2;
 
     // Background
-    final bgPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth, barHeight), const Radius.circular(3)),
-      bgPaint,
+      _healthBarBgPaint,
     );
 
     // Health Fill (Gold gradient)
     final healthRatio = (hp / maxHp).clamp(0.0, 1.0);
-    final fillPaint = Paint()
-      ..color = const Color(0xFFFFD700)
-      ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth * healthRatio, barHeight), const Radius.circular(3)),
-      fillPaint,
+      _healthBarFillPaint,
     );
 
     // Border
-    final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
     canvas.drawRRect(
       RRect.fromRectAndRadius(Rect.fromLTWH(barX, barY, barWidth, barHeight), const Radius.circular(3)),
-      borderPaint,
+      _healthBarBorderPaint,
     );
   }
 }

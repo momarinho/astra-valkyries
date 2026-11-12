@@ -12,19 +12,19 @@
 ---
 
 ## ⇒ 1.1 High Concept (Conceito Geral)
-*Astra Valkyries: Void Protocol* é um bullet-heaven / space roguelite frenético que funde a física inercial clássica de *Asteroids* com a progressão viciante de *Vampire Survivors*, ambientado em uma guerra cósmica intergaláctica protagonizada por comandantes e pilotos de anime (estética sci-fi ecchi/waifu) com arte 2D deslumbrante, diálogos dinâmicos e sistema de afinidade.
+*Astra Valkyries: Void Protocol* é um bullet-heaven / space roguelite frenético que funde a física inercial clássica de *Asteroids* com a progressão viciante de *Vampire Survivors*, ambientado em uma guerra cósmica intergaláctica protagonizada por comandantes e pilotos de anime (estética Sci-Fi Mecha Anime & Space Opera) com arte 2D estilizada, diálogos dinâmicos e sistema de afinidade tática.
 
 ## ⇒ 1.2 Game Overview (Visão Geral do Jogo)
-O jogador assume o comando da nave capitânia *Astra Horizon*, enfrentando ondas implacáveis de asteroides cósmicos, enxames de drones biomecânicos e frotas alienígenas em setores espaciais gerados proceduralmente. Destruir ameaças gera núcleos de plasma (Stardust/XP) que sobem de nível em tempo real, permitindo a escolha entre cartas de melhoria e sinergias de armas. Fora das partidas (*meta-game*), o jogador utiliza a sucata interestelar para comprar melhorias permanentes na Oficina e destravar pilotos, trajes, ilustrações exclusivas e novas naves na ala das Valkyries.
+O jogador assume o comando da nave capitânia *Astra Horizon*, enfrentando ondas implacáveis de asteroides cósmicos, enxames de drones biomecânicos e frotas alienígenas em setores espaciais gerados proceduralmente. Destruir ameaças gera núcleos de plasma (Stardust/XP) que sobem de nível em tempo real, permitindo a escolha entre cartas de melhoria e sinergias de armas. Fora das partidas (*meta-game*), o jogador utiliza a sucata interestelar para comprar melhorias permanentes na Oficina e destravar pilotos, trajes táticos, dossiês de voo e novas naves na ala das Valkyries.
 
 ## ⇒ 1.3 Título do Jogo
 **Título Principal:** *Astra Valkyries: Void Protocol*  
-*(Alternativa Comercial: Stellar Sirens: Survivors)*
+*(Alternativa Open-Source: Astra Valkyries)*
 
 ## ⇒ 1.4 O que faz dele único?
 1. **Física Espacial Inercial + Bullet Heaven:** Ao contrário dos clones tradicionais de Vampire Survivors em planos 2D estáticos, o controle possui aceleração vetorial, drift cósmico, impulso de reatores e gravidade de corpos celestes.
 2. **Combinação de Shmup Clássico com Deckbuilding:** Armas de tiro omnidirecional, drones de suporte orbitais, canhões laser contínuos e escudos defletores que se fundem em "Super-Armas" (Evoluções).
-3. **Loop Ecchi / Anime Altamente Lucrativo na Steam:** Pilotos com dublagem parcial em japonês/inglês, retratos expressivos que reagem ao perigo (*Battle Damage* estético moderado e desbloqueios de galeria/fan-service no hangar sem interferir na gameplay hardcore).
+3. **Identidade Visual & Narrativa Anime Sci-Fi:** Pilotos com personalidades marcantes, retratos expressivos que reagem ao perigo e desbloqueios de dossiês táticos de voo e lore no hangar integrados à gameplay hardcore.
 
 ## ⇒ 1.5 Principais Gameplay Features (Recursos de Jogabilidade)
 - **Partidas Rápidas e Intensas (Runs de 15 a 20 minutos):** Sobrevivência contra ondas cronometradas com chefes titânicos ao final de cada setor.
@@ -41,8 +41,8 @@ O jogador assume o comando da nave capitânia *Astra Horizon*, enfrentando ondas
 
 ## ⇒ 2.1 Público-alvo
 - **Primário:** Jogadores de PC fãs de Roguelikes e Action Roguelites (*Vampire Survivors*, *Brotato*, *Halls of Torment*, *Nova Drift*).
-- **Secundário:** Comunidade otaku e entusiastas de jogos anime/ecchi da Steam que apreciam arte de alta qualidade, waifus carismáticas e progressão de coleção (*Azur Lane*, *Nikke*, *HuniePop*, *Senran Kagura*).
-- **Faixa Etária:** 18+ (para acomodar arte ecchi/fanservice e opções sem censura).
+- **Secundário:** Fãs de mecha anime e ficção científica (*Gundam*, *Macross*, *Evangelion*, *Star Fox*) que valorizam combate espacial de alta precisão e lore de esquadrões.
+- **Faixa Etária:** Livre / Teens (12+) (foco em ação sci-fi, combate espacial tático e narrativa anime épica).
 
 ## ⇒ 2.2 Plataformas
 - **Lançamento Inicial:** PC (Steam e Itch.io).
@@ -364,10 +364,10 @@ Enquanto desbravam os setores corrompidos para salvar o quadrante e recolher amo
 ## ⇒ 14.1 Defina o estilo de arte e estética do jogo
 - **Arte dos Personagens:** Anime 2D de altíssima fidelidade com traços limpos e coloração rica, com ilustrações dinâmicas de expressões faciais na HUD e retratos completos em formato Visual Novel nos menus.
 - **Ambiente de Gameplay:** Estética Sci-Fi Neon Retrofuturista com fundos cósmicos profundos (nebulosas coloridas, estrelas em paralaxe), sprites nítidos de naves espaciais e partículas luminosas com efeito *bloom* e trilhas de brilho.
-- **Estética Ecchi/Fanservice:** Roupas de piloto futuristas e elegantes com detalhes justos, pequenos cortes e reações de rubor/expressão quando a nave sofre dano crítico, e ilustrações desbloqueáveis de trajes casuais, praia ou banho na galeria de recompensas.
+- **Estética Mecha & Pilot Suits:** Trajes de piloto futuristas elegantes e funcionais (*pilot suits*), exoesqueletos cibernéticos, capacetes modulares com HUD holográfico e ilustrações desbloqueáveis de dossiês táticos de reconhecimento e combate na galeria de recompensas.
 
 ## ⇒ 14.2 Descreva brevemente a arte do jogo usando referências visuais
-- Personagens: Estilo inspirado em ilustrações de *Azur Lane*, *Goddess of Victory: Nikke* e *Honkai Impact 3rd*.
+- Personagens: Estilo inspirado em ilustrações de ficção científica anime e mecha pilots (*Macross*, *Gundam: Witch from Mercury*, *Honkai Impact 3rd*).
 - Gameplay e Naves: Visual vetorizado e nítido inspirado em *Nova Drift*, com paleta de cores vivas e explosões neon lembrando *Geometry Wars* e *Vampire Survivors*.
 
 ## ⇒ 14.3 Desenvolva a direção de arte do jogo
@@ -535,13 +535,10 @@ graph TD
 
 ## ⇒ 19.1 Adicione quaisquer tópicos que tenha necessidade de ser documentado
 
-### Diretrizes de Conteúdo Maduro e Políticas da Steam
-- O jogo base será mantido na classificação de conteúdo moderado/ecchi (trajes reveladores, ângulos estéticos de anime, reações provocantes e diálogos sugestivos), permitindo exibição e venda aberta na loja da Steam sem bloqueios regionais severos na Alemanha ou Austrália.
-- Possibilidade de um patch gratuito opcional fora da loja ("Uncut / Artbook Pack") disponibilizado no Itch.io para entusiastas da arte sem censura, protegendo o posicionamento principal na Steam.
-
-### Estrutura de Metadados e Git
-- Repositório comercial privado e isolado (ex: `gitlab.com/mateus-dev/astra-valkyries-commercial` ou repositório GitHub privado).
-- Sem reaproveitamento de histórico de commits do repositório público de portfólio para preservar o sigilo de identidade profissional e a propriedade intelectual comercial.
+### Distribuição, Open Source & Portfólio de Alta Performance
+- Projeto arquitetado e documentado como portfólio profissional de excelência técnica (60 FPS cravados, arquitetura Zero-GC no loop de renderização, gerenciamento estático de memória e 280+ testes automatizados cobrindo lógica, render e widgets).
+- Disponibilizado como repositório Open Source no GitHub sob licença comunitária, servindo como modelo de referência para a comunidade de Flutter e Flame.
+- Suporte multiplataforma nativo: Linux Desktop (Omarchy / Wayland / OpenGL / Vulkan), Steam Deck / Windows e Android Mobile.
 
 ---
 

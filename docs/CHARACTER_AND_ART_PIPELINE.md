@@ -23,13 +23,12 @@
 
 ---
 
-## 🎯 2. Posicionamento de Mercado: Waifus & Arquétipos
+## 🎯 2. Posicionamento de Design: Pilotos & Arquétipos Sci-Fi
 
-- **Demografia Principal:** Jogadores de roguelites frenéticos e entusiastas da cultura otaku/anime na Steam (*Azur Lane, Nikke, Vampire Survivors, Nova Drift*).
-- **Decisão sobre Femboys:**
-  - O elenco principal de lançamento foca **100% em Waifus** para garantir clareza nas tags da Steam (`Anime`, `Bullet Hell`, `Female Protagonist`, `Action Roguelike`, `Sexual Content / Nudity Mild`).
-  - O nicho de apelo andrógino é capturado pelo arquétipo da **Tomboy / Cavaleira Rebelde** (cabelo curto, postura confiante, atitude ousada).
-  - Personagens *femboy* ou arquétipos experimentais ficam reservados para **desbloqueios secretos de endgame ou DLCs temáticas futuras**, evitando atrito nas avaliações da loja base.
+- **Demografia Principal:** Jogadores de roguelites frenéticos e fãs de ficção científica espacial e anime de ação (*Gundam, Macross, Evangelion, Hades, Nova Drift*).
+- **Diretrizes de Design dos Pilotos:**
+  - O elenco principal foca em **Pilotos de Elite de Caças Espaciais** com forte personalidade, trajes táticos funcionais (*pilot suits / mecha armor*) e sinergia mecânica profunda com suas respectivas naves.
+  - Arquétipos variados: a vanguardista veloz e destemida (Lyra), a estrategista quântica analítica (Selene), a especialista rebelde em armamento pesado (Vesper) e a espadachim taquiônica disciplinada (KBR-01 / Kaede).
 
 ---
 
@@ -40,14 +39,14 @@ graph TD
     A["1. HUD Reativo em Combate"] -->|Retrato animado com reações a dano e combos| Gameplay["Gameplay Frenética (Espaço 2D)"]
     B["2. Rádio Holográfico Visual Novel"] -->|Diálogos com o Comandante no início de ondas| Gameplay
     Gameplay -->|Coleta de Fragmentos Cósmicos| C["3. Hangar & Lounge da Base"]
-    C -->|Sistema de Afinidade, Diálogos e Presentes| D["4. Galeria Secreta de Memórias (+18 / CGs)"]
+    C -->|Sistema de Afinidade, Diálogos e Telemetria| D["4. Galeria de Dossiês Táticos & Arquivos de Missão"]
 ```
 
 ### 3.1. Mini-Avatar Reativo na HUD (Durante a Partida)
 - Localizado no canto superior/inferior da tela ao lado das barras de escudo e casco.
 - Expressões dinâmicas que reagem ao estado de combate:
-  1. **Neutra / Foco:** Pilotagem normal.
-  2. **Dano Crítico / Battle Damage:** Roupas levemente rasgadas/desajustadas, expressão de esforço/dor leve com rubor facial e áudio de alerta.
+  1. **Neutra / Foco:** Pilotagem normal e concentração em alvo.
+  2. **Dano Crítico / Alerta de Casco:** Expressão de alerta máximo, faíscas no visor holográfico e áudio tático de aviso.
   3. **Ataque Supremo / Especial:** Olhar triunfante com animação de corte de tela estilo anime (*Cut-in*).
 
 ### 3.2. Transmissão de Rádio Holográfica (Visual Novel Box)
@@ -56,13 +55,11 @@ graph TD
 
 ### 3.3. Hangar & Lounge das Valkyries (Meta-Game)
 - Tela principal fora das partidas onde o jogador interage com o sprite de corpo inteiro (*full-body*) da piloto selecionada.
-- **Sistema de Afinidade (Bond System):** Presentes encontrados nas fases aumentam o nível de carinho, liberando novas linhas de voz, curiosidades da história e missões pessoais.
+- **Sistema de Afinidade (Bond System):** Missões concluídas e núcleos de memória elevam o nível de sincronia tática, liberando novos diálogos de camaradagem, histórico de serviço e bônus de combate.
 
-### 3.4. Galeria Secreta de Memórias (+18 / Event CGs)
-- **Principal motor de retenção e vendas do jogo:**
-  - Ilustrações completas de tela cheia (1920x1080) desbloqueadas ao cumprir recordes ou elevar o nível de afinidade.
-  - Cenas de descanso no deck de gravidade zero, descontaminação/banho após missões e trajes alternativos provocantes.
-  - **Política Steam:** O jogo base permanece em classificação *Ecchi Moderado / Teens-to-Mature* (sem banimentos regionais), com opção de patch sem censura gratuito no Itch.io.
+### 3.4. Galeria de Dossiês Táticos & Arquivos de Missão
+- Ilustrações completas de tela cheia (1280x720 / 1920x1080) desbloqueadas ao cumprir recordes ou elevar o nível de afinidade.
+- Relatórios detalhados de reconhecimento de setores, especificações de armas pesadas, calibração de propulsores e eventos cósmicos marcantes.
 
 ---
 
@@ -81,36 +78,33 @@ graph TD
 Para cada uma das 3 personagens, os seguintes arquivos deverão ser gerados e organizados na pasta `assets/art/valkyries/`:
 
 ### Por Personagem (Exemplo: `lyra/`):
-- [ ] `hud_neutral.png` (512x512, PNG transparente, busto)
-- [ ] `hud_damaged.png` (512x512, PNG transparente, busto com battle damage e rubor)
-- [ ] `hud_ultimate.png` (512x512, PNG transparente, busto em ângulo triunfante)
-- [ ] `hangar_fullbody.png` (1024x1536, PNG transparente, corpo inteiro com traje de piloto)
-- [ ] `gallery_cg_01.png` (1920x1080, 16:9 Widescreen, ilustração de evento especial)
-- [ ] `ship_topdown.png` (256x256, PNG transparente, nave vista estritamente de cima nas cores da piloto)
+- [x] `hud_neutral.png` (512x512, PNG transparente, busto)
+- [x] `hud_damaged.png` (512x512, PNG transparente, busto com alerta de dano tático)
+- [x] `hud_ultimate.png` (512x512, PNG transparente, busto em ângulo triunfante)
+- [x] `hangar_fullbody.png` (1024x1536, PNG transparente, corpo inteiro com traje de piloto)
+- [x] `tactical_log_1.jpg` (1280x720, 16:9 Widescreen, dossiê tático de setor)
+- [x] `tactical_log_2.jpg` (1280x720, 16:9 Widescreen, dossiê supremo de combate)
 
 ---
 
-## 🛠️ 6. Guia Prático de Geração por Inteligência Artificial
+## 🛠️ 6. Guia Prático de Geração Visual
 
 ### 6.1. Ferramentas Recomendadas
-1. **SeaArt.ai / Leonardo.ai (Web - Rápido):**
-   - Modelos recomendados: *Anime XL*, *Counterfeit XL* ou *Pony Diffusion*.
-   - Excelente aderência a trajes futuristas e expressões faciais.
-2. **Midjourney (Modo `--niji 6`):**
-   - Melhor acabamento de iluminação e consistência artística de anime moderna.
-3. **Stable Diffusion Local (ComfyUI / WebUI Forge):**
-   - Modelos: *Pony Diffusion V6 XL* ou *Illustrious-XL*. Permite usar LoRAs específicas para fixar o rosto da personagem entre diferentes poses.
+1. **SeaArt.ai / Leonardo.ai / Midjourney (Modo `--niji 6`):**
+   - Excelente aderência a trajes futuristas, estética mecha e expressões faciais expressivas.
+2. **Stable Diffusion Local (ComfyUI / WebUI Forge):**
+   - Modelos: *Illustrious-XL* ou checkpoints focados em anime sci-fi e arte conceitual vetorial.
 
 ### 6.2. Estrutura Base de Prompt para Sprites das Valkyries
 
 #### Template de Prompt (Hangar & HUD):
 ```text
-masterpiece, best quality, ultra-detailed, 1girl, [NOME/CABELO], anime style, futuristic sci-fi pilot suit, form-fitting mechanical body suit, neon glowing accents, highly detailed eyes, dynamic lighting, beautiful face, transparent background, studio lighting, upper body portrait
+masterpiece, best quality, ultra-detailed, 1girl, [NOME/CABELO], anime style, futuristic sci-fi pilot suit, mechanical armor plating, neon glowing accents, highly detailed eyes, dynamic lighting, heroic expression, transparent background, upper body portrait
 ```
 
-#### Template para Battle Damage (HUD Dano):
+#### Template para Alerta de Combate (HUD Dano):
 ```text
-masterpiece, best quality, 1girl, [NOME], damaged futuristic pilot suit, torn fabric, slight scratches, heavy breathing, blushing face, sweat drops, embarrassed and defiant expression, upper body, transparent background
+masterpiece, best quality, 1girl, [NOME], scuffed futuristic pilot suit, warning sparks, intense focus, defiant expression, high-threat alert, upper body, transparent background
 ```
 
 #### Template para a Nave Espacial (Top-Down):

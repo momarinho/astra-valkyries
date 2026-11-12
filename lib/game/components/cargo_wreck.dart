@@ -45,6 +45,18 @@ class CargoWreckComponent extends PositionComponent with HasGameReference<Astero
   }
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeCargoWrecks.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeCargoWrecks.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     angle += rotationSpeed * dt;

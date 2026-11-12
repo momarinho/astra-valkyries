@@ -16,11 +16,11 @@ import 'package:asteroids/game/components/xp_orb.dart';
 import 'package:asteroids/game/components/dead_cells_biome.dart';
 import 'package:asteroids/services/localization_service.dart';
 
-/// 1. Piso Industrial Modular (Sprint 30 — Sub-piso metálico indoor com texturas CC0)
+/// 1. Piso Industrial Modular (Sprint 30 & 55 — Sub-piso metálico aeroespacial puramente vetorial)
 class ModularFloorComponent extends PositionComponent
     with HasGameReference<AsteroidsGame> {
-  ui.Image? _floorImage;
   final Color floorAccent;
+  double _animTimer = 0.0;
 
   ModularFloorComponent({
     required Vector2 position,
@@ -34,16 +34,9 @@ class ModularFloorComponent extends PositionComponent
         );
 
   @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-    try {
-      final byteData = await rootBundle.load('assets/art/environment/metalTile.png');
-      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
-      final frame = await codec.getNextFrame();
-      _floorImage = frame.image;
-    } catch (_) {
-      _floorImage = null;
-    }
+  void update(double dt) {
+    super.update(dt);
+    _animTimer += dt;
   }
 
   @override
@@ -51,62 +44,84 @@ class ModularFloorComponent extends PositionComponent
     super.render(canvas);
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
-    // 1. Base escura do piso da estação
-    final basePaint = Paint()..color = const Color(0xFF070B14);
+    // 1. Base fosca da chapa de liga de aço espacial
+    final basePaint = Paint()..color = const Color(0xFF060913);
     canvas.drawRect(rect, basePaint);
 
-    // 2. Tiling do sprite CC0 de metal se disponível
-    if (_floorImage != null) {
-      final imgW = _floorImage!.width.toDouble();
-      final imgH = _floorImage!.height.toDouble();
-      const tileSize = 64.0;
-      final cols = (size.x / tileSize).ceil();
-      final rows = (size.y / tileSize).ceil();
+    // 2. Grade geométrica de placas modulares com micro-costuras a laser
+    const plateSize = 48.0;
+    final seamPaint = Paint()
+      ..color = const Color(0xFF131B2A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
 
-      final tilePaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.28)
-        ..filterQuality = FilterQuality.medium;
+    for (double x = plateSize; x < size.x; x += plateSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.y), seamPaint);
+    }
+    for (double y = plateSize; y < size.y; y += plateSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.x, y), seamPaint);
+    }
 
-      for (var c = 0; c < cols; c++) {
-        for (var r = 0; r < rows; r++) {
-          final x = c * tileSize;
-          final y = r * tileSize;
-          final w = math.min(tileSize, size.x - x);
-          final h = math.min(tileSize, size.y - y);
-          final dst = Rect.fromLTWH(x, y, w, h);
-          final src = Rect.fromLTWH(0, 0, imgW * (w / tileSize), imgH * (h / tileSize));
-          canvas.drawImageRect(_floorImage!, src, dst, tilePaint);
-        }
-      }
-    } else {
-      // Grade geométrica de placas de aço (Fallback vetorial)
-      final gridPaint = Paint()
-        ..color = const Color(0xFF1E293B).withValues(alpha: 0.60)
+    // 3. Faixas de orientação de pouso e atracação (Runway Deck Guidelines)
+    final runwayPaint = Paint()
+      ..color = floorAccent.withValues(alpha: 0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8;
+
+    // Linhas internas de corredor de atracação
+    if (size.x > 120.0 && size.y > 120.0) {
+      final innerMargin = 28.0;
+      final innerRect = Rect.fromLTWH(
+        innerMargin,
+        innerMargin,
+        size.x - innerMargin * 2,
+        size.y - innerMargin * 2,
+      );
+      canvas.drawRect(innerRect, runwayPaint);
+
+      // Chevrons de direção no eixo central
+      final chevronPaint = Paint()
+        ..color = floorAccent.withValues(alpha: 0.35)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0;
-      for (double x = 48.0; x < size.x; x += 48.0) {
-        canvas.drawLine(Offset(x, 0), Offset(x, size.y), gridPaint);
-      }
-      for (double y = 48.0; y < size.y; y += 48.0) {
-        canvas.drawLine(Offset(0, y), Offset(size.x, y), gridPaint);
+        ..strokeWidth = 2.0;
+      final midY = size.y / 2;
+      for (double cx = innerMargin + 30.0; cx < size.x - innerMargin - 30.0; cx += 60.0) {
+        final path = Path()
+          ..moveTo(cx - 8, midY - 10)
+          ..lineTo(cx + 4, midY)
+          ..lineTo(cx - 8, midY + 10);
+        canvas.drawPath(path, chevronPaint);
       }
     }
 
-    // 3. Moldura de perímetro do hangar
-    final borderPaint = Paint()
-      ..color = floorAccent.withValues(alpha: 0.35)
+    // 4. Cantoneiras angulares em L nos 4 vértices
+    final bracketPaint = Paint()
+      ..color = floorAccent.withValues(alpha: 0.75)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-    canvas.drawRect(rect, borderPaint);
+      ..strokeWidth = 2.4;
+    const bLen = 18.0;
+    // Top-Left
+    canvas.drawLine(const Offset(4, 4), const Offset(4 + bLen, 4), bracketPaint);
+    canvas.drawLine(const Offset(4, 4), const Offset(4, 4 + bLen), bracketPaint);
+    // Top-Right
+    canvas.drawLine(Offset(size.x - 4, 4), Offset(size.x - 4 - bLen, 4), bracketPaint);
+    canvas.drawLine(Offset(size.x - 4, 4), Offset(size.x - 4, 4 + bLen), bracketPaint);
+    // Bottom-Left
+    canvas.drawLine(Offset(4, size.y - 4), Offset(4 + bLen, size.y - 4), bracketPaint);
+    canvas.drawLine(Offset(4, size.y - 4), Offset(4, size.y - 4 - bLen), bracketPaint);
+    // Bottom-Right
+    canvas.drawLine(Offset(size.x - 4, size.y - 4), Offset(size.x - 4 - bLen, size.y - 4), bracketPaint);
+    canvas.drawLine(Offset(size.x - 4, size.y - 4), Offset(size.x - 4, size.y - 4 - bLen), bracketPaint);
 
-    // 4. Marcadores de iluminação LED nos 4 cantos
+    // 5. Sinalizadores LED pulsantes nos cantos
+    final pulse = 0.5 + 0.5 * math.sin(_animTimer * 3.5);
     final ledPaint = Paint()
-      ..color = floorAccent.withValues(alpha: 0.85)
+      ..color = floorAccent.withValues(alpha: 0.4 + 0.6 * pulse)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(const Offset(12, 12), 3.0, ledPaint);
-    canvas.drawCircle(Offset(size.x - 12, 12), 3.0, ledPaint);
-    canvas.drawCircle(Offset(12, size.y - 12), 3.0, ledPaint);
-    canvas.drawCircle(Offset(size.x - 12, size.y - 12), 3.0, ledPaint);
+    canvas.drawCircle(const Offset(8, 8), 2.5, ledPaint);
+    canvas.drawCircle(Offset(size.x - 8, 8), 2.5, ledPaint);
+    canvas.drawCircle(Offset(8, size.y - 8), 2.5, ledPaint);
+    canvas.drawCircle(Offset(size.x - 8, size.y - 8), 2.5, ledPaint);
   }
 }
 
@@ -607,7 +622,6 @@ class StationStructureComponent extends PositionComponent
   final String spriteAsset;
   final bool isSolid;
   final Color beaconColor;
-  ui.Image? _spriteImage;
   double _beaconTimer = 0.0;
 
   StationStructureComponent({
@@ -631,24 +645,13 @@ class StationStructureComponent extends PositionComponent
     if (isSolid) {
       add(RectangleHitbox(size: size));
     }
-    try {
-      final path = spriteAsset.startsWith('assets/')
-          ? spriteAsset
-          : 'assets/art/environment/$spriteAsset';
-      final byteData = await rootBundle.load(path);
-      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
-      final frame = await codec.getNextFrame();
-      _spriteImage = frame.image;
-    } catch (_) {
-      _spriteImage = null;
-    }
   }
 
   @override
   void update(double dt) {
     super.update(dt);
     _beaconTimer += dt;
-    if (isSolid && game.state == GameState.playing) {
+    if (isSolid && isMounted && game.state == GameState.playing) {
       _resolvePhysicalCollisions();
     }
   }
@@ -703,32 +706,129 @@ class StationStructureComponent extends PositionComponent
     super.render(canvas);
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
-    if (_spriteImage != null) {
-      final src = Rect.fromLTWH(
-        0,
-        0,
-        _spriteImage!.width.toDouble(),
-        _spriteImage!.height.toDouble(),
-      );
-      final paint = Paint()..filterQuality = FilterQuality.medium;
-      canvas.drawImageRect(_spriteImage!, src, rect, paint);
-    } else {
-      final bgPaint = Paint()..color = const Color(0xFF1E293B);
-      canvas.drawRect(rect, bgPaint);
-      final borderPaint = Paint()
-        ..color = beaconColor.withValues(alpha: 0.5)
+    if (spriteAsset.contains('satellite') || spriteAsset.contains('Dish')) {
+      // 📡 Antena / Relé de Comunicações Espacial Hi-Tech
+      final center = Offset(size.x / 2, size.y / 2);
+      final r = math.min(size.x, size.y) * 0.42;
+
+      // Base do suporte em treliça
+      final pylonPaint = Paint()
+        ..color = const Color(0xFF263238)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4;
+      canvas.drawLine(Offset(center.dx, center.dy + r), Offset(center.dx, size.y), pylonPaint);
+      canvas.drawLine(Offset(center.dx - r * 0.5, size.y), Offset(center.dx + r * 0.5, size.y), pylonPaint);
+
+      // Prato parabólico
+      final dishPaint = Paint()
+        ..color = const Color(0xFF1E293B)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(center, r, dishPaint);
+
+      final rimPaint = Paint()
+        ..color = beaconColor.withValues(alpha: 0.85)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
-      canvas.drawRect(rect, borderPaint);
+      canvas.drawCircle(center, r, rimPaint);
+
+      // Anéis concêntricos do receptor
+      canvas.drawCircle(center, r * 0.55, rimPaint..strokeWidth = 1.2);
+      canvas.drawCircle(center, 3.5, Paint()..color = Colors.white);
+
+      // Pulso de transmissão de ondas de rádio
+      final wavePulse = (_beaconTimer * 2.0) % 1.0;
+      canvas.drawCircle(
+        center,
+        r * (0.6 + 0.6 * wavePulse),
+        Paint()
+          ..color = beaconColor.withValues(alpha: (1.0 - wavePulse) * 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    } else if (spriteAsset.contains('pipe')) {
+      // 🧪 Dutos Industriais / Conduíte de Fluido Refrigerante
+      final isVertical = size.y > size.x;
+      final pipeRRect = RRect.fromRectAndRadius(rect, const Radius.circular(4.0));
+      canvas.drawRRect(pipeRRect, Paint()..color = const Color(0xFF1A2230));
+
+      // Borda e anéis de fixação
+      final clampPaint = Paint()
+        ..color = const Color(0xFF475569)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawRRect(pipeRRect, clampPaint);
+
+      // Duto central brilhante de plasma/gás
+      final coreVein = Paint()
+        ..color = beaconColor.withValues(alpha: 0.65)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      if (isVertical) {
+        canvas.drawLine(Offset(size.x / 2, 4), Offset(size.x / 2, size.y - 4), coreVein);
+      } else {
+        canvas.drawLine(Offset(4, size.y / 2), Offset(size.x - 4, size.y / 2), coreVein);
+      }
+    } else if (spriteAsset.contains('crater')) {
+      // 🕳️ Cratera de Impacto Geológico com Camadas de Profundidade
+      final center = Offset(size.x / 2, size.y / 2);
+      final r = math.min(size.x, size.y) * 0.46;
+
+      canvas.drawCircle(center, r, Paint()..color = const Color(0xFF0F141C));
+      canvas.drawCircle(center, r * 0.72, Paint()..color = const Color(0xFF070A0F));
+      canvas.drawCircle(
+        center,
+        r,
+        Paint()
+          ..color = const Color(0xFF334155)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0,
+      );
+      // Fragmentos de vidro estelar fundido
+      canvas.drawCircle(center, 2.5, Paint()..color = beaconColor.withValues(alpha: 0.7));
+    } else {
+      // 🛰️ Módulo / Casco de Estação Espacial Modular de Blindagem
+      final moduleRRect = RRect.fromRectAndRadius(rect, const Radius.circular(5.0));
+      canvas.drawRRect(moduleRRect, Paint()..color = const Color(0xFF0F172A));
+
+      // Moldura chanfrada de reforço
+      canvas.drawRRect(
+        moduleRRect,
+        Paint()
+          ..color = const Color(0xFF334155)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6,
+      );
+
+      // Células solares / painéis tecnológicos embutidos
+      if (size.x >= 28.0 && size.y >= 28.0) {
+        final panelMargin = 5.0;
+        final panelRect = Rect.fromLTWH(
+          panelMargin,
+          panelMargin,
+          size.x - panelMargin * 2,
+          size.y - panelMargin * 2,
+        );
+        canvas.drawRect(
+          panelRect,
+          Paint()..color = const Color(0xFF070D18),
+        );
+        canvas.drawRect(
+          panelRect,
+          Paint()
+            ..color = const Color(0xFF1E3A8A).withValues(alpha: 0.45)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.0,
+        );
+      }
     }
 
-    // Sinalizadores luminosos LED
+    // Sinalizadores estroboscópicos de segurança LED nas extremidades
     final pulse = 0.5 + 0.5 * math.sin(_beaconTimer * 3.5);
     final beaconPaint = Paint()
-      ..color = beaconColor.withValues(alpha: 0.3 + 0.7 * pulse)
+      ..color = beaconColor.withValues(alpha: 0.35 + 0.65 * pulse)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(const Offset(6, 6), 3.0, beaconPaint);
-    canvas.drawCircle(Offset(size.x - 6, size.y - 6), 3.0, beaconPaint);
+    canvas.drawCircle(const Offset(6, 6), 2.8, beaconPaint);
+    canvas.drawCircle(Offset(size.x - 6, size.y - 6), 2.8, beaconPaint);
   }
 }
 
@@ -737,7 +837,6 @@ class AsteroidReefComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {
   final List<({Offset offset, double radius, double craterScale})> clusters;
   final Color oreGlowColor;
-  ui.Image? _craterImage;
 
   AsteroidReefComponent({
     required Vector2 position,
@@ -755,18 +854,12 @@ class AsteroidReefComponent extends PositionComponent
   Future<void> onLoad() async {
     await super.onLoad();
     add(RectangleHitbox(size: size));
-    try {
-      final byteData = await rootBundle.load('assets/art/environment/crater.png');
-      final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
-      final frame = await codec.getNextFrame();
-      _craterImage = frame.image;
-    } catch (_) {}
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    if (game.state == GameState.playing) {
+    if (isMounted && game.state == GameState.playing) {
       _resolvePhysicalCollisions();
     }
   }
@@ -828,10 +921,10 @@ class AsteroidReefComponent extends PositionComponent
 
     // 2. Rocha maciça densa de asteroide
     final rockPaint = Paint()
-      ..color = const Color(0xFF263238)
+      ..color = const Color(0xFF1E262B)
       ..style = PaintingStyle.fill;
     final edgePaint = Paint()
-      ..color = const Color(0xFF455A64)
+      ..color = const Color(0xFF37474F)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
@@ -840,29 +933,26 @@ class AsteroidReefComponent extends PositionComponent
       canvas.drawCircle(cPos, cluster.radius, rockPaint);
       canvas.drawCircle(cPos, cluster.radius, edgePaint);
 
-      if (_craterImage != null) {
-        final crSize = cluster.radius * cluster.craterScale;
-        final dst = Rect.fromCenter(center: cPos, width: crSize, height: crSize);
-        final src = Rect.fromLTWH(
-          0,
-          0,
-          _craterImage!.width.toDouble(),
-          _craterImage!.height.toDouble(),
-        );
-        canvas.drawImageRect(
-          _craterImage!,
-          src,
-          dst,
-          Paint()..filterQuality = FilterQuality.medium,
+      // Crateras vetoriais profundas em relevo
+      final crR = cluster.radius * cluster.craterScale * 0.45;
+      if (crR >= 3.0) {
+        canvas.drawCircle(cPos, crR, Paint()..color = const Color(0xFF0F1418));
+        canvas.drawCircle(
+          cPos,
+          crR,
+          Paint()
+            ..color = const Color(0xFF546E7A).withValues(alpha: 0.6)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.2,
         );
       }
     }
 
     // 3. Veios de minério luminescentes interligados
     final orePaint = Paint()
-      ..color = oreGlowColor.withValues(alpha: 0.35)
+      ..color = oreGlowColor.withValues(alpha: 0.50)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
+      ..strokeWidth = 2.2;
     for (int i = 0; i < clusters.length - 1; i++) {
       canvas.drawLine(clusters[i].offset, clusters[i + 1].offset, orePaint);
     }

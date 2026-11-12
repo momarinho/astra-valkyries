@@ -123,19 +123,19 @@ flowchart TD
 
 ---
 
-## 💖 SPRINT 5: Galeria de Waifus, Afinidade & Micro-Balanceamento Beta
-- **Status:** 🚀 **EM ANDAMENTO / PARCIALMENTE CONCLUÍDA**
-- **Objetivo:** O motor de engajamento do público de anime, polimento de som/vozes e calibração fina de parâmetros para o lançamento comercial.
+## 🎖️ SPRINT 5: Galeria de Dossiês Táticos, Afinidade & Micro-Balanceamento Beta
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Estabelecer o sistema de progressão de elo com as pilotos, dossiês táticos de voo, calibração de parâmetros e testes rigorosos de regressão.
 
 ### Entregáveis:
 1. **Sistema de Afinidade (Bond System & Dialogues):**
-   - [x] Níveis de Elo (1 a 5) individuais para Lyra, Selene e Vesper com títulos progressivos (*Recruta* $\to$ *Votos Eternos*).
+   - [x] Níveis de Elo (1 a 5) individuais para Lyra, Selene e Vesper com títulos táticos progressivos (*Recruta* $\to$ *Vínculo Supremo*).
    - [x] Drop de *Núcleos de Memória* (`DropType.memoryCore`) em Elites e Chefes Leviathan concedendo +15 a +150 XP de Elo.
-   - [x] Diálogos interativos e reativos no Hangar que mudam de tom conforme o nível de intimidade com a piloto sobe.
+   - [x] Diálogos interativos e reativos no Hangar que expressam confiança, camaradagem militar e sincronia com a piloto.
    - [x] Bônus passivos de combate por Elo (+2% a +8% de Crítico e Velocidade).
-2. **Galeria de Memórias Secretas (CGs / Pinups):**
-   - [x] Terceira aba unificada no Hangar: `GALERIA // MEMÓRIAS`.
-   - [x] Catálogo de 9 ilustrações secretas desbloqueadas nos níveis 1, 3 e 5 de Elo.
+2. **Galeria de Dossiês Táticos (Tactical Archives & Logs):**
+   - [x] Terceira aba unificada no Hangar: `GALERIA // DOSSIÊS`.
+   - [x] Catálogo de ilustrações táticas desbloqueadas nos níveis 1, 3 e 5 de Elo.
    - [x] Lightbox de tela cheia com `InteractiveViewer` (zoom e pan), modo Papel de Parede limpo e dossiê narrativo.
 3. **Micro-Balanceamento da Beta & Produção de Assets Finais:**
    - [ ] Integração das artes finais de alta resolução das memórias de Selene e Vesper.
@@ -258,7 +258,7 @@ flowchart TD
 
 ### Entregáveis Concluídos:
 - [x] **Assets Completos da Vesper & Astraea:** `hangar_fullbody.png`, `hud_neutral.png`, `hud_damaged.png`, `hud_ultimate.png` gerados no estilo canônico anime sci-fi (mantendo Lyra e Selene intactas).
-- [x] **Ilustrações da Galeria de Afinidade:** `pinup_memory_1.jpg` e `pinup_memory_2.jpg` completas para Lyra, Selene e Vesper.
+- [x] **Ilustrações da Galeria de Afinidade:** `tactical_log_1.jpg` e `tactical_log_2.jpg` completas para Lyra, Selene, Vesper e KBR-01.
 - [x] **Eventos de Diálogo Pós-Run (Estilo *Hades*):** Diálogos reativos no Hangar (`getReactivePostRunDialogue`) que comentam nominalmente sobre o último Chefe enfrentado ou derrotado.
 
 ---
@@ -424,3 +424,122 @@ flowchart TD
     - Quando a jogadora possui o *Radar Estelar Aegis*, desenha ponteiros de bússola dourados e cianos nas bordas do radar indicando a direção e distância em metros (`420m ↗`) até a Relíquia ou Cápsula secreta daquele mapa.
   - [x] **Persistência Total via SharedPreferences:**
     - Salva e recarrega instantaneamente `unlockedSectors`, `unlockedRelics`, `rescuedSectorSecrets`, `unlockedWeaponPool` e `completedSectorsPerValkyrie`.
+
+
+---
+
+# 🚀 FASE 11: REFORMULAÇÃO VISUAL DE ELITE, GAME FEEL VISCERAL & PADRÃO COMERCIAL STEAM (SPRINTS 55 A 60)
+
+> **Diretriz Estratégica (Nível Steam / Steam Deck Verified / Nintendo Switch):**
+> 1. Erradicar o "Frankenstein de assets baixados" (PNGs de 64x64px do Kenney e JPEGs esticados de 768p com scrim sujo), migrando todo o cenário e adereços para **Vetor Procedural Hi-Tech de Alta Precisão**, coerente com as naves, armas e lasers.
+> 2. Implementar a tríade invisível de **Game Feel de Elite** (*Input Buffering* de 120ms, *Hit-Stop* dinâmico por peso do golpe e inércia vetorial tátil com *Space Dust* reativo).
+> 3. Elevar a inteligência e o ritmo das hordas com **Formações Táticas em Esquadrilha** e **Telegraphs Universais**.
+> 4. Expandir o pool de progressão roguelite com **Trade-offs Radicais de Build estilo *Brotato***.
+> 5. Certificar ergonomia absoluta para **Steam Deck** com navegação nativa de controle nas UIs, isolamento de performance do HUD e paisagem sonora viva por bioma.
+
+---
+
+## 🎨 SPRINT 55: Purificação Visual & Megaestruturas Vetoriais Hi-Tech (*O Fim dos Assets Baixados*)
+- **Status:** ✅ **CONCLUÍDA**
+- **Objetivo:** Desativar completamente a dependência dos sprites raster de 8px a 64px e do JPG esticado, substituindo-os por arte vetorial matemática desenhada em tempo real com resolução nativa infinita.
+- **Entregáveis Concluídos:**
+  - [x] **Desativação de Texturas Raster Baixadas:**
+    - Removido carregamento de `metalStructure.png`, `metalTile.png`, `pipeCorner.png`, `barrelLarge.png` e `crater.png` em `MegastructureWallComponent`, `ModularFloorComponent`, `StationStructureComponent` e `BreakablePropComponent`.
+    - Eliminado o scrim preto lavado de 52% e o esticamento do JPG em `BiomeBackdropComponent`.
+  - [x] **Megaestruturas de Blindagem Aeroespacial (`MegastructureWallComponent`):**
+    - Desenhadas como chapas industriais com cantos chanfrados de 45° a laser, conduítes internos de energia neon pulsante (ciano/âmbar), costuras laser modulares e faixas de perigo zebradas vetorizadas nas quinas.
+  - [x] **Docas de Ancoragem Estruturadas (Posto do Mercador & Cofres):**
+    - Substituídos blocos soltos por piso modular com micro-seams de chapa de aço escura, cantoneiras em L nos 4 vértices, pistas de pouso iluminadas por balizas e chevrons de direção.
+  - [x] **Props Destrutíveis Vetoriais de Alta Precisão (`BreakablePropComponent`):**
+    - *Barris de Fusão:* Cilindros poligonais com anéis de contenção magnética, faixas de perigo reflexivas e núcleo de plasma luminoso pulsante.
+    - *Veios de Minério:* Formações rochosas facetadas com veios de cristal ciano, reflexos ametista e gemas de ouro estelar.
+    - *Contêineres Táticos:* Caixas reforçadas de liga aeroespacial, moldura protetora dourada, reforço estrutural em X e LED de status operacional.
+    - *Células EMP:* Núcleos esféricos de energia em suspensão eletromagnética com anel de contenção e faíscas.
+  - [x] **Testes de Regressão & Fidelidade Visual:**
+    - Criada a suíte `test/sprint55_visual_purification_test.dart` com 8 novos testes garantindo renderização e colisões 100% funcionais sem arquivos de imagem raster. Todos os 273 testes do projeto continuam passando (100% Green).
+
+---
+
+## 🌌 SPRINT 56: Atmosfera Cósmica Profunda & Iluminação Estelar Direcional
+- **Status:** 📋 **PLANEJADA**
+- **Objetivo:** Trazer profundidade tridimensional, relevo nas rochas espaciais e sensação cinematográfica de voo através de iluminação solar e poeira cinética.
+- **Entregáveis Planejados:**
+  - [ ] **Nebulosas Orgânicas Vetoriais Volumétricas (`ProceduralCosmicNebulaComponent`):**
+    - Substituir o círculo simples de `RadialGradient` por aglomerados de 5 a 8 elipses orgânicas entrelaçadas em `BlendMode.plus`, com rotação lenta diferencial e filamentos translúcidos com a paleta exata de cada bioma.
+  - [ ] **Parallax de Megaestruturas Titânicas ao Fundo:**
+    - Desenhar silhuetas de naves capitais destruídas e estações colossais no plano focal mais distante (movendo a 12% da velocidade da câmera), com balizas de emergência vermelhas piscando a cada 2.5s.
+  - [ ] **Iluminação Estelar Direcional nos Asteroides (*Sunlight Normal Shading*):**
+    - Implementar produto escalar $\hat{N} \cdot \vec{L}_{\text{sun}}$ para calcular a luz estelar em cada aresta do asteroide, desenhando traços brancos brilhantes na face voltada para a estrela do bioma e sombras profundas no lado oposto.
+  - [ ] **Campo Cinético de Micro-Poeira Estelar (*Space Dust Turbulence*):**
+    - 250 motes cósmicos que se esticam em traços direcionais $\vec{L} = -\vec{V}_{\text{player}} \cdot 0.045$, transmitindo sensação palpável de velocidade inercial de caça estelar.
+  - [ ] **Deformação de Grade Gravitacional (*Space-Time Warp Grid*):**
+    - Linhas de coordenadas cósmicas sob asteroides massivos, buracos negros e chefes titânicos que se curvam simulando atração de gravidade.
+
+---
+
+## 🕹️ SPRINT 57: Game Feel Visceral, Input Buffering & Hit-Stop Dinâmico (*Hades Standard*)
+- **Status:** 📋 **PLANEJADA**
+- **Objetivo:** Eliminar perda de comandos por recuperação de animações, escalonar congelamentos de impacto por severidade e aprimorar a física tátil dos caças.
+- **Entregáveis Planejados:**
+  - [ ] **Fila Universal de Input Buffering (120ms):**
+    - Adicionar `InputBuffer` em `PlayerComponent` para registrar Dash e Especial/Ultimate caso o jogador aperte o botão durante o final de recargas, executando no primeiro frame válido.
+  - [ ] **Hit-Stop Escalonado por Severidade de Dano:**
+    - Desacoplar o congelamento global cego; aplicar `localFreezeTimer` na entidade e projétil:
+      - *Tiro comum:* 0ms (fluidez mantida).
+      - *Dano moderado (>= 45):* 35ms.
+      - *Acerto crítico / Katana:* 70ms com micro-jiggle do sprite.
+      - *Abate de Elite / Golpe Finalizador:* 140ms com vibração direcional.
+  - [ ] **Inércia Vetorial e Pluma Dinâmica de Propulsão:**
+    - Calcular a taxa de emissão e velocidade das partículas de motor a partir do vetor de aceleração real ($\vec{a} = \frac{\Delta \vec{v}}{\Delta t}$), diferenciando o peso do caça pesado (Astraea) do caça ágil (Lyra e Vesper).
+  - [ ] **Testes de Automação:**
+    - Criar `test/commercial_game_feel_and_buffering_test.dart` comprovando execução com sucesso de comandos bufferizados a 40ms do término do cooldown.
+
+---
+
+## 👾 SPRINT 58: Coreografia Tática de Esquadrões & Telegraphs Universais (*Nova Drift & Galaga*)
+- **Status:** 📋 **PLANEJADA**
+- **Objetivo:** Substituir a geração radial aleatória de inimigos por formações táticas coordenadas e avisos telegrafados de disparos pesados.
+- **Entregáveis Planejados:**
+  - [ ] **Formações Coreografadas de Esquadrilhas:**
+    - *Cunha Tática (Wedge Formation):* 1 Líder Raider e 4 Scouts em formação V mantendo vetor de aproximação unificado.
+    - *Pinça Dupla Flanqueadora (Pincer Maneuver):* Dois esquadrões partindo de quadrantes opostos para interceptar o vetor de fuga do jogador.
+    - *Comboio de Suprimentos:* 1 Cargueiro de Elite escoltado por 2 cruisers com escudos frontais (*Aegis Bulwarks*).
+  - [ ] **Telegraphs Universais de Laser (700ms):**
+    - Snipers, CryoBombers e ataques colossais de chefes projetam feixe fino de aviso com trava de mira nos últimos 200ms, permitindo esquiva por reflexo.
+  - [ ] **Algoritmo de Separação de Enxames (*Boids Repulsion*):**
+    - Força suave de repulsão entre Scouts e Void Swarmers para erradicar o bug de sobreposição de sprites em hordas densas.
+  - [ ] **Perigos Ambientais Bi-Direcionais:**
+    - Minas de proximidade agora se armam e detonam se inimigos cruzarem seu perímetro; empurrar asteroides com Dash contra naves causa dano de impacto esmagador.
+
+---
+
+## ⚖️ SPRINT 59: Expansão Roguelite, Trade-offs Radicais & Fila de Level-Up (*Brotato & Vampire Survivors*)
+- **Status:** 📋 **PLANEJADA**
+- **Objetivo:** Transformar o pool de Level-Up de 5 passivas genéricas em um sistema rico de especialização com atributos visíveis e decisões de alto risco/recompensa.
+- **Entregáveis Planejados:**
+  - [ ] **Expansão de 5 para 15+ Passivas de Arsenal:**
+    - Criação de módulos para *Armor Plating*, *Critical Strike Multiplier*, *Lifesteal Matrix*, *Area of Effect Radius*, *Projectile Piercing* e *Luck Drop Rate*.
+  - [ ] **Passivas com Trade-offs Radicais (*Brotato Model*):**
+    - *Glass Cannon Reactor:* +45% Dano Global, -25% HP Máximo.
+    - *Juggernaut Plating:* +60 HP Máximo e blindagem a impacto, -15% Velocidade Máxima.
+    - *Unstable Payloads:* +40% Área de Explosão, -20% Cadência de Disparo.
+  - [ ] **Fila Ordenada de Level-Up (`pendingLevelUps`):**
+    - Tratar overflow de XP maciço (ex: derrotar chefe ou abrir cápsula de estase no nível 1) para enfileirar as seleções sem descartar cartas.
+  - [ ] **Tela de Estatísticas Matemáticas Transparentes:**
+    - Visualização no menu de pausa de todos os modificadores consolidados da run (DPS, Crit %, Armor %, Speed %, Magnet Range).
+
+---
+
+## 🎮 SPRINT 60: Suporte Integral ao Steam Deck, HUD Isolado & Paisagem Sonora Adaptativa
+- **Status:** 📋 **PLANEJADA**
+- **Objetivo:** Obter conformidade total para o selo **Steam Deck Verified**, erradicar gargalos de renderização do HUD e criar uma identidade sonora viva.
+- **Entregáveis Planejados:**
+  - [ ] **Navegação 100% via Gamepad nos Menus & Level-Up:**
+    - Suporte a D-Pad / Analógico para navegar entre cartas de Level-Up, Botão A para confirmar escolha, Botão X para Reroll e Botão Y para Banish.
+    - Suporte completo a gamepad na Oficina, Seleção de Valquírias e Menus de Configurações.
+  - [ ] **Desacoplamento de Performance do HUD Overlay:**
+    - Eliminar o `setState` a 30 FPS na raiz do HUD de 2.700 linhas; encapsular medidores de vida, radar tático e cronômetro em `ValueNotifier` e `RepaintBoundary` isolados.
+  - [ ] **Painel Profissional de Acessibilidade:**
+    - Sliders no menu de opções para: Intensidade de Screen Shake (0% a 100%), Redução de Flashes Estroboscópicos e Escala de Textos de Dano.
+  - [ ] **Trilhas Sonoras Adaptativas por Bioma:**
+    - Trilha musical exclusiva para cada um dos 5 setores principais, com crossfade suave de 1.2s para stems de combate intenso ao invocar o Titã do Setor.

@@ -53,6 +53,18 @@ class SpaceStationComponent extends PositionComponent with HasGameReference<Aste
   SpaceStationComponent({required Vector2 position}) : super(position: position, size: Vector2.all(80.0));
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeStations.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeStations.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     _rotationAngle += dt * 0.15;

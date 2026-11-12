@@ -38,6 +38,18 @@ class ChestComponent extends PositionComponent
   }
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeChests.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeChests.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     if (game.state != GameState.playing) {

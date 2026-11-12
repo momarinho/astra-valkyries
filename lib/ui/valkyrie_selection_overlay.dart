@@ -304,7 +304,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           ? 'SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'
                           : (_selectedTab == 1
                               ? 'PERMANENT FLEET UPGRADES & WORKSHOP'
-                              : 'SECRET MEMORIES, PINUPS & VALKYRIE BOND ARCHIVES'),
+                              : 'TACTICAL DOSSIERS, MISSION LOGS & ARCHIVES'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -452,7 +452,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       ? 'Pressione TAB ou Q/E para alternar abas'
                       : (_selectedTab == 1
                           ? 'Melhorias permanentes de Sucata Cósmica'
-                          : 'Memórias Secretas e Ilustrações de Elo'),
+                          : 'Dossiês Táticos e Registros de Missão'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,

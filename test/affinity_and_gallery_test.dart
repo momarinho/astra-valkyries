@@ -180,7 +180,7 @@ void main() {
 
       expect(find.text('SORTIE // DECOLAR'), findsOneWidget);
       expect(find.text('OFICINA // UPGRADES'), findsOneWidget);
-      expect(find.text('GALERIA // MEMÓRIAS'), findsOneWidget);
+      expect(find.text('GALERIA // DOSSIÊS'), findsOneWidget);
 
       // Verify Affinity Badge is visible in SORTIE mode
       expect(find.textContaining('ELO LV.'), findsOneWidget);
@@ -199,8 +199,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap on GALERIA // MEMÓRIAS tab pill
-      await tester.tap(find.text('GALERIA // MEMÓRIAS'));
+      // Tap on GALERIA // DOSSIÊS tab pill
+      await tester.tap(find.text('GALERIA // DOSSIÊS'));
       await tester.pumpAndSettle();
 
       // Verify gallery filters
@@ -229,7 +229,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Switch to GALERIA
-      await tester.tap(find.text('GALERIA // MEMÓRIAS'));
+      await tester.tap(find.text('GALERIA // DOSSIÊS'));
       await tester.pumpAndSettle();
 
       // Tap on the first unlocked card (Voo Solo no Hangar, required level 1)

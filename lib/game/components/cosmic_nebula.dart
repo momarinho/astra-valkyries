@@ -60,6 +60,18 @@ class CosmicNebulaComponent extends PositionComponent with HasGameReference<Aste
   }
 
   @override
+  void onMount() {
+    super.onMount();
+    game.activeNebulae.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeNebulae.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     _pulseTimer += dt * 0.8;

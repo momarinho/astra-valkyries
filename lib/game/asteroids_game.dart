@@ -40,6 +40,9 @@ import 'components/dead_cells_biome.dart';
 import 'components/living_biomes.dart';
 import 'components/speech_bubble.dart';
 import 'components/katana_slash.dart';
+import 'components/space_station.dart';
+import 'components/cargo_wreck.dart';
+import 'components/cosmic_nebula.dart';
 import 'map/sector_map_data.dart';
 import 'map/sector_map_generator.dart';
 import 'weapons.dart';
@@ -112,10 +115,21 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
   late final GameJoystick joystick;
   final FastParticlePoolComponent particlePool = FastParticlePoolComponent();
 
+  // Entity Registry (O(1) Spatial & Query System - Zero-GC)
+  final Set<EnemyShipComponent> activeEnemies = <EnemyShipComponent>{};
+  final Set<AsteroidComponent> activeAsteroids = <AsteroidComponent>{};
+  final Set<DropComponent> activeDrops = <DropComponent>{};
+  final Set<SectorBoss> activeBosses = <SectorBoss>{};
+  final Set<SpaceStationComponent> activeStations = <SpaceStationComponent>{};
+  final Set<ChestComponent> activeChests = <ChestComponent>{};
+  final Set<CargoWreckComponent> activeCargoWrecks = <CargoWreckComponent>{};
+  final Set<CosmicNebulaComponent> activeNebulae = <CosmicNebulaComponent>{};
+
   // Real-time Engine FPS & Diagnostics
   double currentFps = 60.0;
   double currentFrameTimeMs = 16.6;
   bool showDiagnostics = false;
+  bool showFpsOverlay = false;
 
   // Vampire Survivors Climax: The Void Reaper
   bool voidReaperSpawned = false;
@@ -1159,6 +1173,7 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
       maxUnlockedVoidCells = prefs.getInt('max_unlocked_void_cells') ?? 1;
       selectedMovementPresetIndex = prefs.getInt('movement_preset_index') ?? 1;
       useDirectionalControls = prefs.getBool('use_directional_controls') ?? false;
+      showFpsOverlay = prefs.getBool('show_fps_overlay') ?? false;
       final savedFoundBp = prefs.getStringList('found_blueprints');
       if (savedFoundBp != null) foundBlueprints.addAll(savedFoundBp);
       final savedForgedBp = prefs.getStringList('forged_blueprints');
@@ -1201,6 +1216,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('hyper_mode_unlocked', hyperModeUnlocked);
+    } catch (_) {}
+  }
+
+  Future<void> toggleFpsOverlay(bool value) async {
+    showFpsOverlay = value;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('show_fps_overlay', value);
     } catch (_) {}
   }
 
@@ -1631,6 +1654,14 @@ class AsteroidsGame extends FlameGame with HasCollisionDetection, KeyboardEvents
     activeBoss = null;
     voidReaperSpawned = false;
     particlePool.clear();
+    activeEnemies.clear();
+    activeAsteroids.clear();
+    activeDrops.clear();
+    activeBosses.clear();
+    activeStations.clear();
+    activeChests.clear();
+    activeCargoWrecks.clear();
+    activeNebulae.clear();
   }
 
   void _initSectorPois() {

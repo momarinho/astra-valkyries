@@ -208,6 +208,9 @@ class I18n {
     'settings.bgm': 'Música de Fundo (BGM)',
     'settings.sfx': 'Efeitos Sonoros (SFX)',
     'settings.test_sfx': 'TESTAR EFEITO SONORO',
+    'settings.performance_header': 'DESEMPENHO & TELEMETRIA // PERFORMANCE',
+    'settings.show_fps': 'CONTADOR DE FPS & TELEMETRIA',
+    'settings.show_fps_desc': 'Exibe a taxa de quadros (FPS), tempo de renderização (ms) e entidades ativas no HUD durante a partida.',
     'settings.close': 'VOLTAR',
 
     // Game Over & Commendations
@@ -248,7 +251,7 @@ class I18n {
     'hangar.title': 'CENTRO DE COMANDO & HANGAR',
     'hangar.tab_sortie': 'SORTIE // DECOLAR',
     'hangar.tab_workshop': 'OFICINA // UPGRADES',
-    'hangar.tab_gallery': 'GALERIA // MEMÓRIAS',
+    'hangar.tab_gallery': 'GALERIA // DOSSIÊS',
     'hangar.tab_codex': 'CODEX // ARSENAL',
     'hangar.launch_btn': '► INICIAR INCURSÃO',
     'hangar.launch_sub': 'Confirmar decolagem no vácuo estelar',
@@ -397,6 +400,9 @@ class I18n {
     'settings.bgm': 'Background Music (BGM)',
     'settings.sfx': 'Sound Effects (SFX)',
     'settings.test_sfx': 'TEST SOUND EFFECT',
+    'settings.performance_header': 'PERFORMANCE & TELEMETRY // DISPLAY',
+    'settings.show_fps': 'FPS & ENGINE TELEMETRY',
+    'settings.show_fps_desc': 'Displays real-time frame rate (FPS), frame time (ms), and active entities in the HUD.',
     'settings.close': 'BACK',
 
     // Game Over & Commendations
@@ -437,7 +443,7 @@ class I18n {
     'hangar.title': 'COMMAND DECK & HANGAR',
     'hangar.tab_sortie': 'SORTIE // LAUNCH',
     'hangar.tab_workshop': 'WORKSHOP // UPGRADES',
-    'hangar.tab_gallery': 'GALLERY // MEMORIES',
+    'hangar.tab_gallery': 'GALLERY // DOSSIERS',
     'hangar.tab_codex': 'CODEX // ARMORY',
     'hangar.launch_btn': '► LAUNCH SORTIE',
     'hangar.launch_sub': 'Confirm combat departure into the void',

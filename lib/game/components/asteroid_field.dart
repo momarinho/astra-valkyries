@@ -109,8 +109,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
     if (spawnTimer > asteroidInterval) {
       spawnTimer = 0.0;
-      final activeAsteroids = game.world.children.whereType<AsteroidComponent>().length;
-      if (activeAsteroids < 24) {
+      final activeCount = game.activeAsteroids.isNotEmpty
+          ? game.activeAsteroids.length
+          : game.world.children.whereType<AsteroidComponent>().length;
+      if (activeCount < 24) {
         _spawnAsteroid();
       }
     }
@@ -202,16 +204,19 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
   /// Horde Director (Sprint 20): Respeita o teto de 35-45 naves ativas.
   /// Se o teto for atingido, promove uma nave existente para Elite com Aura em vez de inflar entidades.
   void spawnOrPromoteEnemy(EnemyShipComponent candidate) {
-    final activeEnemies = game.world.children.whereType<EnemyShipComponent>().toList();
-    if (activeEnemies.length >= maxActiveEnemiesCap) {
-      final nonPromoted = activeEnemies.where((e) => !e.isPromotedElite && e.hp > 0).toList();
+    final enemies = game.activeEnemies.isNotEmpty
+        ? game.activeEnemies
+        : game.world.children.whereType<EnemyShipComponent>();
+    if (enemies.length >= maxActiveEnemiesCap) {
+      final nonPromoted = enemies.where((e) => !e.isPromotedElite && e.hp > 0).toList();
       if (nonPromoted.isNotEmpty) {
         nonPromoted.first.promoteToEliteWithAura();
-      } else if (activeEnemies.isNotEmpty) {
-        activeEnemies.first.promoteToEliteWithAura();
+      } else if (enemies.isNotEmpty) {
+        enemies.first.promoteToEliteWithAura();
       }
       return;
     }
+    game.activeEnemies.add(candidate);
     game.world.add(candidate);
   }
 
@@ -456,7 +461,10 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
 
   void _spawnAsteroid() {
     if (game.state != GameState.playing) return;
-    if (game.world.children.whereType<AsteroidComponent>().length >= 24) return;
+    final activeCount = game.activeAsteroids.isNotEmpty
+        ? game.activeAsteroids.length
+        : game.world.children.whereType<AsteroidComponent>().length;
+    if (activeCount >= 24) return;
 
     final random = math.Random();
     Vector2 playerPos;
@@ -516,6 +524,7 @@ class AsteroidField extends Component with HasGameReference<AsteroidsGame> {
       velocity: velocity,
       variant: variant,
     );
+    game.activeAsteroids.add(asteroid);
     game.world.add(asteroid);
   }
 
