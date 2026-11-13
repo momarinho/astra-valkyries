@@ -23,7 +23,8 @@ import 'package:asteroids/services/secret_grimoire_service.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();
-  game.player = PlayerComponent(position: Vector2(2400, 2400))..customGame = game;
+  game.player = PlayerComponent(position: Vector2(2400, 2400))
+    ..customGame = game;
   game.joystick = GameJoystick();
   game.state = GameState.playing;
   return game;
@@ -34,88 +35,111 @@ void main() {
 
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
-    const MethodChannel('xyz.luan/audioplayers.global'),
-    (call) async => null,
-  );
+        const MethodChannel('xyz.luan/audioplayers.global'),
+        (call) async => null,
+      );
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
-    const MethodChannel('xyz.luan/audioplayers'),
-    (call) async => null,
-  );
+        const MethodChannel('xyz.luan/audioplayers'),
+        (call) async => null,
+      );
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
   group('Masterpiece Expansion (Sprints 8 to 12)', () {
-    test('Sprint 8: Sector 3 Graveyard generates Proximity Mines, Derelict Turrets & awakens Scrap Goliath', () async {
-      final game = _createTestGame();
-      game.currentSector = Sector.findById(SectorId.graveyard);
-      SectorMapGenerator.generateAndSpawn(game, customSeed: 42);
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'Sprint 8: Sector 3 Graveyard generates Proximity Mines, Derelict Turrets & awakens Scrap Goliath',
+      () async {
+        final game = _createTestGame();
+        game.currentSector = Sector.findById(SectorId.graveyard);
+        SectorMapGenerator.generateAndSpawn(game, customSeed: 42);
+        await Future<void>.delayed(Duration.zero);
 
-      final mines = game.world.children.whereType<ProximityMineComponent>().toList();
-      final turrets = game.world.children.whereType<DerelictTurretComponent>().toList();
-      expect(mines.length, greaterThanOrEqualTo(4));
-      expect(turrets.length, greaterThanOrEqualTo(2));
+        final mines = game.world.children
+            .whereType<ProximityMineComponent>()
+            .toList();
+        final turrets = game.world.children
+            .whereType<DerelictTurretComponent>()
+            .toList();
+        expect(mines.length, greaterThanOrEqualTo(4));
+        expect(turrets.length, greaterThanOrEqualTo(2));
 
-      // Trigger boss encounter in Sector 3 -> Scrap Goliath
-      game.triggerBossEncounter();
-      await Future<void>.delayed(Duration.zero);
+        // Trigger boss encounter in Sector 3 -> Scrap Goliath
+        game.triggerBossEncounter();
+        await Future<void>.delayed(Duration.zero);
 
-      expect(game.activeBoss, isA<ScrapGoliathComponent>());
-      final goliath = game.activeBoss as ScrapGoliathComponent;
-      expect(goliath.maxHp, 4500.0);
+        expect(game.activeBoss, isA<ScrapGoliathComponent>());
+        final goliath = game.activeBoss as ScrapGoliathComponent;
+        expect(goliath.maxHp, 4500.0);
 
-      // Deal lethal damage to Scrap Goliath
-      final killed = goliath.takeDamage(5000.0, goliath.position);
-      expect(killed, isTrue);
-      expect(goliath.isDefeated, isTrue);
-      await Future<void>.delayed(Duration.zero);
+        // Deal lethal damage to Scrap Goliath
+        final killed = goliath.takeDamage(5000.0, goliath.position);
+        expect(killed, isTrue);
+        expect(goliath.isDefeated, isTrue);
+        await Future<void>.delayed(Duration.zero);
 
-      expect(game.world.children.whereType<ChestComponent>().isNotEmpty, isTrue);
-      expect(game.world.children.whereType<HyperspaceGateComponent>().isNotEmpty, isTrue);
-    });
+        expect(
+          game.world.children.whereType<ChestComponent>().isNotEmpty,
+          isTrue,
+        );
+        expect(
+          game.world.children.whereType<HyperspaceGateComponent>().isNotEmpty,
+          isTrue,
+        );
+      },
+    );
 
-    test('Sprint 8: Sector 4 Event Horizon awakens Void Singularity Core and unlocks Campaign Victory', () async {
-      final game = _createTestGame();
-      game.currentSector = Sector.findById(SectorId.eventHorizon);
+    test(
+      'Sprint 8: Sector 4 Event Horizon awakens Void Singularity Core and unlocks Campaign Victory',
+      () async {
+        final game = _createTestGame();
+        game.currentSector = Sector.findById(SectorId.eventHorizon);
 
-      game.triggerBossEncounter();
-      await Future<void>.delayed(Duration.zero);
+        game.triggerBossEncounter();
+        await Future<void>.delayed(Duration.zero);
 
-      expect(game.activeBoss, isA<VoidSingularityCoreComponent>());
-      final core = game.activeBoss as VoidSingularityCoreComponent;
-      expect(core.maxHp, 6000.0);
+        expect(game.activeBoss, isA<VoidSingularityCoreComponent>());
+        final core = game.activeBoss as VoidSingularityCoreComponent;
+        expect(core.maxHp, 6000.0);
 
-      // Defeat Void Singularity Core
-      final killed = core.takeDamage(6500.0, core.position);
-      expect(killed, isTrue);
-      expect(game.campaignCompleted, isTrue);
-      expect(game.hyperModeUnlocked, isTrue);
+        // Defeat Void Singularity Core
+        final killed = core.takeDamage(6500.0, core.position);
+        expect(killed, isTrue);
+        expect(game.campaignCompleted, isTrue);
+        expect(game.hyperModeUnlocked, isTrue);
 
-      // Jumping into the final Hyperspace Gate completes the campaign with survival victory
-      game.jumpToNextSector();
-      expect(game.missionSurvived, isTrue);
-      expect(game.state, GameState.gameOver);
-    });
+        // Jumping into the final Hyperspace Gate completes the campaign with survival victory
+        game.jumpToNextSector();
+        expect(game.missionSurvived, isTrue);
+        expect(game.state, GameState.gameOver);
+      },
+    );
 
-    test('Sprint 9: Maxed Weapon + Passive Synergy triggers Superweapon Evolution in Cosmic Chest', () {
-      final game = _createTestGame();
+    test(
+      'Sprint 9: Maxed Weapon + Passive Synergy triggers Superweapon Evolution in Cosmic Chest',
+      () {
+        final game = _createTestGame();
 
-      // Upgrade starting weapon (blaster) to MK 3 and equip passive_overdrive
-      final blaster = game.player.activeWeapons.first;
-      blaster.upgrade(); // MK 2
-      blaster.upgrade(); // MK 3
-      expect(blaster.level, blaster.maxLevel);
-      game.activePassives.add('passive_overdrive');
+        // Upgrade starting weapon (blaster) to MK 5 and equip passive_overdrive
+        final blaster = game.player.activeWeapons.first;
+        while (blaster.level < blaster.maxLevel) {
+          blaster.upgrade();
+        }
+        expect(blaster.level, blaster.maxLevel);
+        game.activePassives.add('passive_overdrive');
 
-      game.onChestCollected(ChestTier.cosmic);
-      expect(game.currentChestRewards.first.title, contains('Supernova Annihilator'));
+        game.onChestCollected(ChestTier.cosmic);
+        expect(
+          game.currentChestRewards.first.title,
+          contains('Supernova Annihilator'),
+        );
 
-      game.claimChestRewards();
-      expect(blaster.isEvolved, isTrue);
-    });
+        game.claimChestRewards();
+        expect(blaster.isEvolved, isTrue);
+      },
+    );
 
     test('Sprint 10: Virtual Joystick applies 0.12 radial deadzone', () async {
       final game = _createTestGame();
@@ -156,153 +180,183 @@ void main() {
       expect(game.runXp - initialXp, 15);
     });
 
-    test('Sprint 11: Boss Rush Mode sequences all 4 Sovereign Titans to Victory', () async {
-      final game = _createTestGame();
-      game.isBossRushMode = true;
-      game.startGame();
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'Sprint 11: Boss Rush Mode sequences all 4 Sovereign Titans to Victory',
+      () async {
+        final game = _createTestGame();
+        game.isBossRushMode = true;
+        game.startGame();
+        await Future<void>.delayed(Duration.zero);
 
-      // Stage 0: Dreadnought Leviathan
-      expect(game.bossRushStage, 0);
-      expect(game.activeBoss?.bossName, contains('DREADNOUGHT'));
+        // Stage 0: Dreadnought Leviathan
+        expect(game.bossRushStage, 0);
+        expect(game.activeBoss?.bossName, contains('DREADNOUGHT'));
 
-      // Advance through all 4 stages
-      game.onBossRushBossDefeated(game.player.position);
-      await Future<void>.delayed(Duration.zero);
-      expect(game.bossRushStage, 1);
-      expect(game.activeBoss?.bossName, contains('IGNIS WYRM'));
+        // Advance through all 4 stages
+        game.onBossRushBossDefeated(game.player.position);
+        await Future<void>.delayed(Duration.zero);
+        expect(game.bossRushStage, 1);
+        expect(game.activeBoss?.bossName, contains('IGNIS WYRM'));
 
-      game.onBossRushBossDefeated(game.player.position);
-      await Future<void>.delayed(Duration.zero);
-      expect(game.bossRushStage, 2);
-      expect(game.activeBoss?.bossName, contains('SCRAP GOLIATH'));
+        game.onBossRushBossDefeated(game.player.position);
+        await Future<void>.delayed(Duration.zero);
+        expect(game.bossRushStage, 2);
+        expect(game.activeBoss?.bossName, contains('SCRAP GOLIATH'));
 
-      game.onBossRushBossDefeated(game.player.position);
-      await Future<void>.delayed(Duration.zero);
-      expect(game.bossRushStage, 3);
-      expect(game.activeBoss?.bossName, contains('VOID SINGULARITY'));
+        game.onBossRushBossDefeated(game.player.position);
+        await Future<void>.delayed(Duration.zero);
+        expect(game.bossRushStage, 3);
+        expect(game.activeBoss?.bossName, contains('VOID SINGULARITY'));
 
-      game.onBossRushBossDefeated(game.player.position);
-      expect(game.campaignCompleted, isTrue);
-      expect(game.missionSurvived, isTrue);
-    });
+        game.onBossRushBossDefeated(game.player.position);
+        expect(game.campaignCompleted, isTrue);
+        expect(game.missionSurvived, isTrue);
+      },
+    );
 
-    testWidgets('Sprint 9 & 12: PauseOverlay Cosmic Grimoire and GameOverOverlay Victory Banner render cleanly', (tester) async {
-      tester.view.physicalSize = const Size(1280, 720);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Sprint 9 & 12: PauseOverlay Cosmic Grimoire and GameOverOverlay Victory Banner render cleanly',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 720);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      final game = _createTestGame();
-      SecretGrimoireService.discoverAllForTest();
+        final game = _createTestGame();
+        SecretGrimoireService.discoverAllForTest();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: PauseOverlay(game: game),
-        ),
-      );
-      await tester.pump();
+        await tester.pumpWidget(MaterialApp(home: PauseOverlay(game: game)));
+        await tester.pump();
 
-      expect(find.text('✨ GRIMÓRIO CÓSMICO'), findsOneWidget);
-      await tester.tap(find.text('✨ GRIMÓRIO CÓSMICO'));
-      await tester.pumpAndSettle();
+        expect(find.text('✨ GRIMÓRIO CÓSMICO'), findsOneWidget);
+        await tester.tap(find.text('✨ GRIMÓRIO CÓSMICO'));
+        await tester.pumpAndSettle();
 
-      final grimoireScrollable = find.byType(Scrollable).last;
-      await tester.scrollUntilVisible(find.textContaining('SUPERNOVA ANNIHILATOR'), 50.0, scrollable: grimoireScrollable);
-      expect(find.textContaining('SUPERNOVA ANNIHILATOR'), findsOneWidget);
+        final grimoireScrollable = find.byType(Scrollable).last;
+        await tester.scrollUntilVisible(
+          find.textContaining('SUPERNOVA ANNIHILATOR'),
+          50.0,
+          scrollable: grimoireScrollable,
+        );
+        expect(find.textContaining('SUPERNOVA ANNIHILATOR'), findsOneWidget);
 
-      await tester.scrollUntilVisible(find.textContaining('SINGULARITY RIFT TORPEDO'), 50.0, scrollable: grimoireScrollable);
-      expect(find.textContaining('SINGULARITY RIFT TORPEDO'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.textContaining('SINGULARITY RIFT TORPEDO'),
+          50.0,
+          scrollable: grimoireScrollable,
+        );
+        expect(find.textContaining('SINGULARITY RIFT TORPEDO'), findsOneWidget);
 
-      // Verify Victory Screen in GameOverOverlay
-      game.campaignCompleted = true;
-      game.missionSurvived = true;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: GameOverOverlay(game: game),
-        ),
-      );
-      await tester.pump();
+        // Verify Victory Screen in GameOverOverlay
+        game.campaignCompleted = true;
+        game.missionSurvived = true;
+        await tester.pumpWidget(MaterialApp(home: GameOverOverlay(game: game)));
+        await tester.pump();
 
-      expect(find.textContaining(I18n.select(pt: 'SINGULARIDADE DO VAZIO CONQUISTADA', en: 'VOID SINGULARITY CONQUERED')), findsOneWidget);
-    });
+        expect(
+          find.textContaining(
+            I18n.select(
+              pt: 'SINGULARIDADE DO VAZIO CONQUISTADA',
+              en: 'VOID SINGULARITY CONQUERED',
+            ),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('Sprint 12: TitleScreenOverlay runs Bootloader Loading Sequence and transitions to Main Menu', (tester) async {
-      tester.view.physicalSize = const Size(1280, 720);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Sprint 12: TitleScreenOverlay runs Bootloader Loading Sequence and transitions to Main Menu',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 720);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      final game = _createTestGame();
-      game.state = GameState.menu;
+        final game = _createTestGame();
+        game.state = GameState.menu;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: TitleScreenOverlay(game: game),
-        ),
-      );
-      await tester.pump();
+        await tester.pumpWidget(
+          MaterialApp(home: TitleScreenOverlay(game: game)),
+        );
+        await tester.pump();
 
-      // Initially in Bootloader Loading Screen
-      expect(find.textContaining('VOID PROTOCOL BOOTLOADER'), findsOneWidget);
+        // Initially in Bootloader Loading Screen
+        expect(find.textContaining('VOID PROTOCOL BOOTLOADER'), findsOneWidget);
 
-      // Advance boot sequence or tap to skip into Main Title Menu
-      await tester.tap(find.byType(TitleScreenOverlay));
-      await tester.pump(const Duration(milliseconds: 500));
+        // Advance boot sequence or tap to skip into Main Title Menu
+        await tester.tap(find.byType(TitleScreenOverlay));
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('ASTRA VALKYRIES'), findsOneWidget);
-      expect(find.textContaining('INICIAR OPERAÇÃO // HANGAR'), findsOneWidget);
-      expect(find.textContaining('LOJA & OFICINA // UPGRADES'), findsOneWidget);
-      expect(find.textContaining('HALL DA FAMA // LEADERBOARD'), findsNothing);
+        expect(find.text('ASTRA VALKYRIES'), findsOneWidget);
+        expect(
+          find.textContaining('INICIAR OPERAÇÃO // HANGAR'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('LOJA & OFICINA // UPGRADES'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('HALL DA FAMA // LEADERBOARD'),
+          findsNothing,
+        );
 
-      // Tap LOJA & OFICINA // UPGRADES -> opens Hangar directly on Workshop tab (1)
-      await tester.tap(find.textContaining('LOJA & OFICINA // UPGRADES'));
-      await tester.pump();
-      expect(game.state, GameState.valkyrieSelection);
-      expect(game.initialHangarTab, 1);
-    });
+        // Tap LOJA & OFICINA // UPGRADES -> opens Hangar directly on Workshop tab (1)
+        await tester.tap(find.textContaining('LOJA & OFICINA // UPGRADES'));
+        await tester.pump();
+        expect(game.state, GameState.valkyrieSelection);
+        expect(game.initialHangarTab, 1);
+      },
+    );
 
-    test('Hybrid Boss Altar (Vampire Survivors + Risk of Rain): Altar stays sealed until 2 Signal Beacons are charged', () async {
-      final game = _createTestGame();
-      SectorMapGenerator.generateAndSpawn(game, customSeed: 77);
-      await Future<void>.delayed(Duration.zero);
+    test(
+      'Hybrid Boss Altar (Vampire Survivors + Risk of Rain): Altar stays sealed until 2 Signal Beacons are charged',
+      () async {
+        final game = _createTestGame();
+        SectorMapGenerator.generateAndSpawn(game, customSeed: 77);
+        await Future<void>.delayed(Duration.zero);
 
-      final lair = game.world.children.whereType<BossLairComponent>().first;
-      expect(lair.requiresBeaconCharge, isTrue);
-      expect(game.beaconsCharged, 0);
-      expect(game.isBossAltarUnlocked, isFalse);
+        final lair = game.world.children.whereType<BossLairComponent>().first;
+        expect(lair.requiresBeaconCharge, isTrue);
+        expect(game.beaconsCharged, 0);
+        expect(game.isBossAltarUnlocked, isFalse);
 
-      // Fly inside Altar while beacons are 0/2 -> Altar remains sealed, boss does NOT awaken
-      game.player.position = lair.position.clone();
-      lair.update(1.0);
-      expect(lair.isAwakened, isFalse);
-      expect(game.activeBoss, isNull);
+        // Fly inside Altar while beacons are 0/2 -> Altar remains sealed, boss does NOT awaken
+        game.player.position = lair.position.clone();
+        lair.update(1.0);
+        expect(lair.isAwakened, isFalse);
+        expect(game.activeBoss, isNull);
 
-      // Charge 2 Beacons (e.g. from Sub-Bosses / POIs)
-      game.chargeBossBeacon('SUB-CHEFE ABATIDO');
-      expect(game.isBossAltarUnlocked, isFalse);
-      game.chargeBossBeacon('ESTAÇÃO DE PESQUISA');
-      expect(game.isBossAltarUnlocked, isTrue);
+        // Charge 2 Beacons (e.g. from Sub-Bosses / POIs)
+        game.chargeBossBeacon('SUB-CHEFE ABATIDO');
+        expect(game.isBossAltarUnlocked, isFalse);
+        game.chargeBossBeacon('ESTAÇÃO DE PESQUISA');
+        expect(game.isBossAltarUnlocked, isTrue);
 
-      // Stay inside unlocked Altar to synchronize Teleporter Ritual (2.0s)
-      lair.update(2.0);
-      expect(lair.isAwakened, isTrue);
-      expect(game.activeBoss, isNotNull);
-    });
+        // Stay inside unlocked Altar to synchronize Teleporter Ritual (2.0s)
+        lair.update(2.0);
+        expect(lair.isAwakened, isTrue);
+        expect(game.activeBoss, isNotNull);
+      },
+    );
 
-    test('Mobile Hybrid Control: Virtual Joystick moves 360° and locks nose angle when Aim Lock is active', () {
-      final game = _createTestGame();
-      final joy = game.joystick;
+    test(
+      'Mobile Hybrid Control: Virtual Joystick moves 360° and locks nose angle when Aim Lock is active',
+      () {
+        final game = _createTestGame();
+        final joy = game.joystick;
 
-      // Player starts aiming North (angle = 0.0)
-      game.player.angle = 0.0;
-      game.isAimLocked = true;
+        // Player starts aiming North (angle = 0.0)
+        game.player.angle = 0.0;
+        game.isAimLocked = true;
 
-      // Drag joystick South (y = +1.0) while Aim Lock is active -> ship flies South (backward) while nose stays North (0.0)!
-      joy.isDragging = true;
-      joy.stickInput.setValues(0.0, 1.0);
-      game.player.update(0.1);
+        // Drag joystick South (y = +1.0) while Aim Lock is active -> ship flies South (backward) while nose stays North (0.0)!
+        joy.isDragging = true;
+        joy.stickInput.setValues(0.0, 1.0);
+        game.player.update(0.1);
 
-      expect(game.player.angle, closeTo(0.0, 0.001));
-      expect(game.player.velocity.y, greaterThan(0.0));
-    });
+        expect(game.player.angle, closeTo(0.0, 0.001));
+        expect(game.player.velocity.y, greaterThan(0.0));
+      },
+    );
   });
 }

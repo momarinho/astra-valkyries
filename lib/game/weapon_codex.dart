@@ -23,9 +23,9 @@ class WeaponCodexEntry {
   final IconData icon;
   final Color themeColor;
   final int difficultyRating; // 1 to 5
-  final int rangeRating;      // 1 to 5
-  final int damageRating;     // 1 to 5
-  final int fireRateRating;   // 1 to 5
+  final int rangeRating; // 1 to 5
+  final int damageRating; // 1 to 5
+  final int fireRateRating; // 1 to 5
 
   String get loreDescription =>
       I18n.isPt ? loreDescriptionPt : (loreDescriptionEn ?? loreDescriptionPt);
@@ -33,8 +33,9 @@ class WeaponCodexEntry {
       I18n.isPt ? technicalSpecsPt : (technicalSpecsEn ?? technicalSpecsPt);
   String get pilotQuote =>
       I18n.isPt ? pilotQuotePt : (pilotQuoteEn ?? pilotQuotePt);
-  String get evolutionDescription =>
-      I18n.isPt ? evolutionDescriptionPt : (evolutionDescriptionEn ?? evolutionDescriptionPt);
+  String get evolutionDescription => I18n.isPt
+      ? evolutionDescriptionPt
+      : (evolutionDescriptionEn ?? evolutionDescriptionPt);
 
   const WeaponCodexEntry({
     required this.id,
@@ -64,10 +65,11 @@ class WeaponCodexEntry {
     required this.rangeRating,
     required this.damageRating,
     required this.fireRateRating,
-  })  : loreDescriptionPt = loreDescriptionPt ?? loreDescription ?? '',
-        technicalSpecsPt = technicalSpecsPt ?? technicalSpecs ?? '',
-        pilotQuotePt = pilotQuotePt ?? pilotQuote ?? '',
-        evolutionDescriptionPt = evolutionDescriptionPt ?? evolutionDescription ?? '';
+  }) : loreDescriptionPt = loreDescriptionPt ?? loreDescription ?? '',
+       technicalSpecsPt = technicalSpecsPt ?? technicalSpecs ?? '',
+       pilotQuotePt = pilotQuotePt ?? pilotQuote ?? '',
+       evolutionDescriptionPt =
+           evolutionDescriptionPt ?? evolutionDescription ?? '';
 
   static const List<WeaponCodexEntry> allEntries = [
     // 1. Tachyon Katana (Arma da Protagonista KBR-01 // Codename Kimberly)
@@ -96,7 +98,7 @@ class WeaponCodexEntry {
           'Atinge a ressonância do Trono do Vazio, disparando lâminas dimensionais triplas contínuas que atravessam a tela de ponta a ponta com penetração infinita.',
       evolutionDescriptionEn:
           'Attains Void Throne resonance, releasing continuous triple dimensional blades across the screen with infinite penetration.',
-      synergyPassiveTitle: 'Void Catalyst (Acelerador de Sobrecarga)',
+      synergyPassiveTitle: 'Precision Crit Optics (Dano Crítico)',
       icon: Icons.flash_on_rounded,
       themeColor: Color(0xFF00F0FF),
       difficultyRating: 4,
@@ -271,7 +273,7 @@ class WeaponCodexEntry {
           'Dobra o número de lâminas para 6 serras precursoras douradas em rotação supersônica que anulam projéteis inimigos.',
       evolutionDescriptionEn:
           'Doubles blades to 6 golden precursor buzzsaws orbiting at supersonic speed, shredding enemy fire.',
-      synergyPassiveTitle: 'Aegis Capacitor (Blindagem Regenerativa)',
+      synergyPassiveTitle: 'Armor Plating (Blindagem de Casco)',
       icon: Icons.rotate_right_rounded,
       themeColor: Color(0xFF00E5FF),
       difficultyRating: 2,
@@ -306,7 +308,7 @@ class WeaponCodexEntry {
           'Aumenta os saltos de cadeia para 8 alvos com relâmpagos azuis estocásticos de dano duplicado.',
       evolutionDescriptionEn:
           'Increases chain jumps to 8 targets with stochastic blue lightning bolts dealing double damage.',
-      synergyPassiveTitle: 'Overclocked Emitters (Cadência de Tiro)',
+      synergyPassiveTitle: 'Quantum Luck Array (Sorte Quântica)',
       icon: Icons.electric_bolt_rounded,
       themeColor: Color(0xFF80D8FF),
       difficultyRating: 2,
@@ -321,7 +323,8 @@ class WeaponCodexEntry {
       name: 'Quantum Chakram',
       evolvedName: 'Chronos Eclipse Glaive',
       manufacturer: 'Ordem de Caelum (Artífices de Relíquias)',
-      damageType: 'Ressonância Gravitacional Crio-Temporal // Cryo-Temporal Glaive',
+      damageType:
+          'Ressonância Gravitacional Crio-Temporal // Cryo-Temporal Glaive',
       classification: 'Lâmina Bumerangue Quântica',
       loreDescriptionPt:
           'Arma cerimonial milenar dos guardiões de Caelum. Forjada a partir de meteoritos hiperdensos dopados com cronotrons.',
@@ -341,7 +344,7 @@ class WeaponCodexEntry {
           'Dispara 3 glaives simultâneos que congelam os inimigos atingidos e orbitam no ponto de retorno.',
       evolutionDescriptionEn:
           'Fires 3 simultaneous chronos glaives freezing hit enemies and orbiting at the apex.',
-      synergyPassiveTitle: 'Quantum Thrusters (Propulsão Quântica)',
+      synergyPassiveTitle: 'Relativistic Damper (Acelerador de Dash)',
       icon: Icons.all_out_rounded,
       themeColor: Color(0xFF00E676),
       difficultyRating: 3,
@@ -356,7 +359,8 @@ class WeaponCodexEntry {
       name: 'Repulsor Gravity Aura',
       evolvedName: 'Event Horizon Nova Pulse',
       manufacturer: 'Laboratórios de Propulsão Gravitacional de Encélado',
-      damageType: 'Onda Gravitacional de Pulso Escalar // Gravitational Shockwave',
+      damageType:
+          'Onda Gravitacional de Pulso Escalar // Gravitational Shockwave',
       classification: 'Emissor de Campo de Repulsão Perimétrica',
       loreDescriptionPt:
           'Projetado como sistema de contenção de asteroides desgovernados em minas orbitais profundas.',
@@ -376,7 +380,7 @@ class WeaponCodexEntry {
           'Converte o pulso em onda de choque de horizonte de eventos, aplicando Ruptura do Vazio que desintegra inimigos repelidos.',
       evolutionDescriptionEn:
           'Converts pulse into event horizon shockwave, inflicting Void Rupture that disintegrates knocked-back foes.',
-      synergyPassiveTitle: 'Magnetic Harvester (Raio Magnético)',
+      synergyPassiveTitle: 'Thermobaric Warheads (Amplificador AoE)',
       icon: Icons.radar_rounded,
       themeColor: Color(0xFFE040FB),
       difficultyRating: 2,
@@ -411,7 +415,7 @@ class WeaponCodexEntry {
           'Amplia a largura da lança solar em 250%, derretendo asteroides e blindagens pesadas instantaneamente.',
       evolutionDescriptionEn:
           'Expands solar lance width by 250%, melting heavy armor and asteroids on contact.',
-      synergyPassiveTitle: 'Void Catalyst (Acelerador de Sobrecarga)',
+      synergyPassiveTitle: 'Tungsten Sabot Cores (Perfuração Balística)',
       icon: Icons.wb_sunny_rounded,
       themeColor: Color(0xFFFF5722),
       difficultyRating: 3,
@@ -446,7 +450,7 @@ class WeaponCodexEntry {
           'Expande o cone para 5 labaredas massivas de fogo de dragão com penetração e queima acelerada.',
       evolutionDescriptionEn:
           'Expands cone into 5 dragonfire flame plumes with deep penetration and accelerated burn.',
-      synergyPassiveTitle: 'Void Catalyst (Acelerador de Sobrecarga)',
+      synergyPassiveTitle: 'Unstable Payloads (Cargas Instáveis)',
       icon: Icons.local_fire_department_rounded,
       themeColor: Color(0xFFFF9100),
       difficultyRating: 2,
@@ -481,7 +485,7 @@ class WeaponCodexEntry {
           'Mobiliza 4 caças Seraphim dourados de interceptação de alta manobrabilidade com canhões gêmeos ionizados.',
       evolutionDescriptionEn:
           'Deploys 4 golden Seraphim interceptors with high agility and twin ionized pulse guns.',
-      synergyPassiveTitle: 'Overclocked Emitters (Cadência de Tiro)',
+      synergyPassiveTitle: 'Lifesteal Matrix (Sifão Vital)',
       icon: Icons.flight_class_rounded,
       themeColor: Color(0xFFFFD54F),
       difficultyRating: 1,

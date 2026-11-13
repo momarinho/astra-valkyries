@@ -9,6 +9,7 @@ import 'package:asteroids/game/sector.dart';
 import 'package:asteroids/game/roguelite_systems.dart';
 import 'package:asteroids/game/weapon_codex.dart';
 import 'package:asteroids/services/localization_service.dart';
+import 'package:asteroids/services/secret_grimoire_service.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -16,19 +17,23 @@ class ValkyrieSelectionOverlay extends StatefulWidget {
   const ValkyrieSelectionOverlay({super.key, required this.game});
 
   @override
-  State<ValkyrieSelectionOverlay> createState() => _ValkyrieSelectionOverlayState();
+  State<ValkyrieSelectionOverlay> createState() =>
+      _ValkyrieSelectionOverlayState();
 }
 
 class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
-  int _selectedTab = 0; // 0 = Sortie / Hangar, 1 = Oficina / Workshop, 2 = Galeria / Memórias
-  int _workshopSubTab = 0; // 0 = Upgrades, 1 = Forja de Diagramas (Sprint 16), 2 = Conquistas (Sprint 17)
+  int _selectedTab =
+      0; // 0 = Sortie / Hangar, 1 = Oficina / Workshop, 2 = Galeria / Memórias
+  int _workshopSubTab =
+      0; // 0 = Upgrades, 1 = Forja de Diagramas (Sprint 16), 2 = Conquistas (Sprint 17)
   int _selectedIndex = 0;
   int _selectedSectorIndex = 0;
   bool _unlockedSecretValkyrie = false;
   final List<LogicalKeyboardKey> _keySequence = [];
   late final FocusNode _focusNode;
 
-  List<Valkyrie> get _valkyries => _unlockedSecretValkyrie ? Valkyrie.allValkyries : Valkyrie.roster;
+  List<Valkyrie> get _valkyries =>
+      _unlockedSecretValkyrie ? Valkyrie.allValkyries : Valkyrie.roster;
 
   static const List<LogicalKeyboardKey> _konamiSequence = [
     LogicalKeyboardKey.arrowUp,
@@ -43,9 +48,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     LogicalKeyboardKey.keyA,
   ];
   String? _currentDialogueText;
-  String _selectedGalleryFilter = 'all'; // 'all', 'kaede', 'lyra', 'selene', 'vesper'
+  String _selectedGalleryFilter =
+      'all'; // 'all', 'kaede', 'lyra', 'selene', 'vesper'
   int _gallerySubTab = 0; // 0 = Memórias das Pilotas, 1 = Códice do Arsenal
-  String _selectedWeaponCodexCategory = 'all'; // 'all', 'blade', 'plasma', 'kinetic', 'gravity'
+  String _selectedWeaponCodexCategory =
+      'all'; // 'all', 'blade', 'plasma', 'kinetic', 'gravity'
   WeaponCodexEntry? _openedWeaponCodex;
   SecretMemory? _openedMemory;
   bool _cleanMode = false;
@@ -87,7 +94,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           _unlockedSecretValkyrie = true;
           _selectedIndex = _valkyries.indexWhere((v) => v.id == 'astraea');
           if (_selectedIndex < 0) _selectedIndex = 0;
-          _currentDialogueText = '★ PROTOCOLO ANCESTRAL DESBLOQUEADO: ASTRAEA ATIVADA! (+9.999 SUCATA) ★';
+          _currentDialogueText =
+              '★ PROTOCOLO ANCESTRAL DESBLOQUEADO: ASTRAEA ATIVADA! (+9.999 SUCATA) ★';
         });
         widget.game.addScrap(9999);
         widget.game.playSfx('powerup.wav');
@@ -135,7 +143,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
           event.logicalKey == LogicalKeyboardKey.keyA) {
         setState(() {
-          _selectedIndex = (_selectedIndex - 1 + _valkyries.length) % _valkyries.length;
+          _selectedIndex =
+              (_selectedIndex - 1 + _valkyries.length) % _valkyries.length;
           _currentDialogueText = null;
         });
         widget.game.playSfx('menu_select.wav');
@@ -148,12 +157,17 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
         setState(() {
-          _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectorsWithBranches.length) % Sector.allSectorsWithBranches.length;
+          _selectedSectorIndex =
+              (_selectedSectorIndex -
+                  1 +
+                  Sector.allSectorsWithBranches.length) %
+              Sector.allSectorsWithBranches.length;
         });
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.bracketRight) {
         setState(() {
-          _selectedSectorIndex = (_selectedSectorIndex + 1) % Sector.allSectorsWithBranches.length;
+          _selectedSectorIndex =
+              (_selectedSectorIndex + 1) % Sector.allSectorsWithBranches.length;
         });
         widget.game.playSfx('menu_select.wav');
       } else if (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -168,7 +182,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   void _deployValkyrie(Valkyrie valkyrie) {
-    final sector = Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(0, Sector.allSectorsWithBranches.length - 1)];
+    final sector =
+        Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(
+          0,
+          Sector.allSectorsWithBranches.length - 1,
+        )];
     if (!widget.game.isSectorUnlocked(sector.id)) {
       widget.game.playSfx('game_over.wav');
       return;
@@ -195,15 +213,16 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
-                child: Container(
-                  color: Colors.black.withOpacity(0.78),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.78)),
               ),
             ),
 
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -222,8 +241,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       child: _selectedTab == 0
                           ? _buildSortieView(current)
                           : (_selectedTab == 1
-                              ? _buildWorkshopView()
-                              : _buildGalleryView(current)),
+                                ? _buildWorkshopView()
+                                : _buildGalleryView(current)),
                     ),
                   ],
                 ),
@@ -232,9 +251,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
             // Full-Screen Memory Lightbox Modal
             if (_openedMemory != null)
-              Positioned.fill(
-                child: _buildMemoryLightbox(_openedMemory!),
-              ),
+              Positioned.fill(child: _buildMemoryLightbox(_openedMemory!)),
 
             // Full-Screen Weapon Dossier Lightbox Modal
             if (_openedWeaponCodex != null)
@@ -258,26 +275,33 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (_selectedTab == 0
-                          ? current.primaryColor
-                          : (_selectedTab == 1 ? const Color(0xFFFFB300) : const Color(0xFFFF4081)))
-                      .withOpacity(0.18),
+                  color:
+                      (_selectedTab == 0
+                              ? current.primaryColor
+                              : (_selectedTab == 1
+                                    ? const Color(0xFFFFB300)
+                                    : const Color(0xFFFF4081)))
+                          .withOpacity(0.18),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: _selectedTab == 0
                         ? current.primaryColor
-                        : (_selectedTab == 1 ? const Color(0xFFFFB300) : const Color(0xFFFF4081)),
+                        : (_selectedTab == 1
+                              ? const Color(0xFFFFB300)
+                              : const Color(0xFFFF4081)),
                   ),
                 ),
                 child: Icon(
                   _selectedTab == 0
                       ? Icons.rocket_launch
                       : (_selectedTab == 1
-                          ? Icons.precision_manufacturing_rounded
-                          : Icons.auto_awesome_motion_rounded),
+                            ? Icons.precision_manufacturing_rounded
+                            : Icons.auto_awesome_motion_rounded),
                   color: _selectedTab == 0
                       ? current.primaryColor
-                      : (_selectedTab == 1 ? const Color(0xFFFFB300) : const Color(0xFFFF4081)),
+                      : (_selectedTab == 1
+                            ? const Color(0xFFFFB300)
+                            : const Color(0xFFFF4081)),
                   size: 20,
                 ),
               ),
@@ -303,8 +327,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       _selectedTab == 0
                           ? 'SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'
                           : (_selectedTab == 1
-                              ? 'PERMANENT FLEET UPGRADES & WORKSHOP'
-                              : 'TACTICAL DOSSIERS, MISSION LOGS & ARCHIVES'),
+                                ? 'PERMANENT FLEET UPGRADES & WORKSHOP'
+                                : 'TACTICAL DOSSIERS, MISSION LOGS & ARCHIVES'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -344,7 +368,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.build_circle_rounded, color: Color(0xFFFFB300), size: 16),
+                  const Icon(
+                    Icons.build_circle_rounded,
+                    color: Color(0xFFFFB300),
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     '${widget.game.totalCredits} c',
@@ -378,7 +406,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 widget.game.playSfx('menu_select.wav');
                 widget.game.changeState(GameState.menu);
               },
-              icon: const Icon(Icons.arrow_back_rounded, size: 15, color: Colors.white),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                size: 15,
+                color: Colors.white,
+              ),
               label: Text(
                 I18n.t('hangar.back_menu'),
                 style: const TextStyle(
@@ -392,7 +424,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.white30),
                 backgroundColor: Colors.white.withValues(alpha: 0.06),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -423,21 +458,27 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 children: [
                   _buildTabPill(
                     index: 0,
-                    label: isCompact ? I18n.select(pt: 'SORTIE', en: 'SORTIE') : I18n.t('hangar.tab_sortie'),
+                    label: isCompact
+                        ? I18n.select(pt: 'SORTIE', en: 'SORTIE')
+                        : I18n.t('hangar.tab_sortie'),
                     icon: Icons.rocket_launch_rounded,
                     activeColor: current.primaryColor,
                   ),
                   const SizedBox(width: 4),
                   _buildTabPill(
                     index: 1,
-                    label: isCompact ? I18n.select(pt: 'OFICINA', en: 'WORKSHOP') : I18n.t('hangar.tab_workshop'),
+                    label: isCompact
+                        ? I18n.select(pt: 'OFICINA', en: 'WORKSHOP')
+                        : I18n.t('hangar.tab_workshop'),
                     icon: Icons.precision_manufacturing_rounded,
                     activeColor: const Color(0xFFFFB300),
                   ),
                   const SizedBox(width: 4),
                   _buildTabPill(
                     index: 2,
-                    label: isCompact ? I18n.select(pt: 'GALERIA', en: 'GALLERY') : I18n.t('hangar.tab_gallery'),
+                    label: isCompact
+                        ? I18n.select(pt: 'GALERIA', en: 'GALLERY')
+                        : I18n.t('hangar.tab_gallery'),
                     icon: Icons.auto_awesome_motion_rounded,
                     activeColor: const Color(0xFFFF4081),
                   ),
@@ -451,8 +492,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   _selectedTab == 0
                       ? 'Pressione TAB ou Q/E para alternar abas'
                       : (_selectedTab == 1
-                          ? 'Melhorias permanentes de Sucata Cósmica'
-                          : 'Dossiês Táticos e Registros de Missão'),
+                            ? 'Melhorias permanentes de Sucata Cósmica'
+                            : 'Dossiês Táticos e Registros de Missão'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
@@ -489,7 +530,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withOpacity(0.22) : Colors.transparent,
+          color: isSelected
+              ? activeColor.withOpacity(0.22)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? activeColor : Colors.transparent,
@@ -500,14 +543,18 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   BoxShadow(
                     color: activeColor.withOpacity(0.35),
                     blurRadius: 10,
-                  )
+                  ),
                 ]
               : [],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: isSelected ? activeColor : Colors.white60),
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? activeColor : Colors.white60,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
@@ -547,7 +594,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? v.primaryColor.withOpacity(0.2)
@@ -562,7 +612,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                               BoxShadow(
                                 color: v.primaryColor.withOpacity(0.35),
                                 blurRadius: 16,
-                              )
+                              ),
                             ]
                           : [],
                     ),
@@ -574,7 +624,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isSelected ? v.primaryColor : Colors.white24,
+                              color: isSelected
+                                  ? v.primaryColor
+                                  : Colors.white24,
                               width: 1.5,
                             ),
                           ),
@@ -583,11 +635,15 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                               v.hudNeutralAsset,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) => Container(
-                                color: isSelected ? v.primaryColor : Colors.grey[800],
+                                color: isSelected
+                                    ? v.primaryColor
+                                    : Colors.grey[800],
                                 child: Icon(
                                   Icons.person,
                                   size: 16,
-                                  color: isSelected ? Colors.black : Colors.white54,
+                                  color: isSelected
+                                      ? Colors.black
+                                      : Colors.white54,
                                 ),
                               ),
                             ),
@@ -605,7 +661,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.5,
-                                  color: isSelected ? Colors.white : Colors.white70,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white70,
                                 ),
                               ),
                               Text(
@@ -613,7 +671,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                 style: TextStyle(
                                   fontFamily: 'Rajdhani',
                                   fontSize: 11,
-                                  color: isSelected ? v.accentColor : Colors.grey,
+                                  color: isSelected
+                                      ? v.accentColor
+                                      : Colors.grey,
                                 ),
                               ),
                             ],
@@ -644,7 +704,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 } else if (details.primaryVelocity! > 150) {
                   // Swipe Right -> Previous
                   setState(() {
-                    _selectedIndex = (_selectedIndex - 1 + _valkyries.length) % _valkyries.length;
+                    _selectedIndex =
+                        (_selectedIndex - 1 + _valkyries.length) %
+                        _valkyries.length;
                   });
                   widget.game.playSfx('menu_select.wav');
                 }
@@ -655,7 +717,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               decoration: BoxDecoration(
                 color: const Color(0xFF0C1017).withOpacity(0.92),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: current.primaryColor.withOpacity(0.4), width: 1.5),
+                border: Border.all(
+                  color: current.primaryColor.withOpacity(0.4),
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: current.primaryColor.withOpacity(0.12),
@@ -668,18 +733,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Left Column: Pilot Visual Preview Slot
-                  Expanded(
-                    flex: 4,
-                    child: _buildPilotVisualCard(current),
-                  ),
+                  Expanded(flex: 4, child: _buildPilotVisualCard(current)),
 
                   const SizedBox(width: 24),
 
                   // Right Column: Tactical Specs, Weaponry & Lore
-                  Expanded(
-                    flex: 6,
-                    child: _buildTacticalSpecs(current),
-                  ),
+                  Expanded(flex: 6, child: _buildTacticalSpecs(current)),
                 ],
               ),
             ),
@@ -691,9 +750,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         // Launch Action Bar
         Row(
           children: [
-            Expanded(
-              child: _buildSectorSelector(current),
-            ),
+            Expanded(child: _buildSectorSelector(current)),
             const SizedBox(width: 8),
             // Void Cells Difficulty Selector (Sprint 16: 0 to 5 Cells)
             GestureDetector(
@@ -701,13 +758,17 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               onTap: () {
                 setState(() {
                   final maxVc = widget.game.maxUnlockedVoidCells.clamp(1, 5);
-                  widget.game.voidCellsLevel = (widget.game.voidCellsLevel + 1) % (maxVc + 1);
+                  widget.game.voidCellsLevel =
+                      (widget.game.voidCellsLevel + 1) % (maxVc + 1);
                 });
                 widget.game.savePersistentCredits();
                 widget.game.playSfx('menu_select.wav');
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: widget.game.voidCellsLevel > 0
                       ? const Color(0xFFE040FB).withValues(alpha: 0.22)
@@ -726,7 +787,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     Icon(
                       Icons.science_rounded,
                       size: 15,
-                      color: widget.game.voidCellsLevel > 0 ? const Color(0xFFE040FB) : Colors.white54,
+                      color: widget.game.voidCellsLevel > 0
+                          ? const Color(0xFFE040FB)
+                          : Colors.white54,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -735,7 +798,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         fontFamily: 'Orbitron',
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
-                        color: widget.game.voidCellsLevel > 0 ? const Color(0xFFE040FB) : Colors.white54,
+                        color: widget.game.voidCellsLevel > 0
+                            ? const Color(0xFFE040FB)
+                            : Colors.white54,
                       ),
                     ),
                   ],
@@ -752,7 +817,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 widget.game.playSfx('menu_select.wav');
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: widget.game.isHyperMode
                       ? const Color(0xFFFFD700).withValues(alpha: 0.22)
@@ -771,7 +839,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     Icon(
                       Icons.bolt_rounded,
                       size: 15,
-                      color: widget.game.isHyperMode ? const Color(0xFFFFD700) : Colors.white54,
+                      color: widget.game.isHyperMode
+                          ? const Color(0xFFFFD700)
+                          : Colors.white54,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -780,7 +850,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         fontFamily: 'Orbitron',
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
-                        color: widget.game.isHyperMode ? const Color(0xFFFFD700) : Colors.white54,
+                        color: widget.game.isHyperMode
+                            ? const Color(0xFFFFD700)
+                            : Colors.white54,
                       ),
                     ),
                   ],
@@ -797,7 +869,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 widget.game.playSfx('menu_select.wav');
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: widget.game.isBossRushMode
                       ? const Color(0xFFFF1744).withValues(alpha: 0.22)
@@ -816,7 +891,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     Icon(
                       Icons.whatshot_rounded,
                       size: 15,
-                      color: widget.game.isBossRushMode ? const Color(0xFFFF1744) : Colors.white54,
+                      color: widget.game.isBossRushMode
+                          ? const Color(0xFFFF1744)
+                          : Colors.white54,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -825,7 +902,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         fontFamily: 'Orbitron',
                         fontSize: 10.5,
                         fontWeight: FontWeight.bold,
-                        color: widget.game.isBossRushMode ? const Color(0xFFFF1744) : Colors.white54,
+                        color: widget.game.isBossRushMode
+                            ? const Color(0xFFFF1744)
+                            : Colors.white54,
                       ),
                     ),
                   ],
@@ -835,15 +914,29 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             const SizedBox(width: 10),
             Builder(
               builder: (context) {
-                final selectedSector = Sector.allSectorsWithBranches[
-                    _selectedSectorIndex.clamp(0, Sector.allSectorsWithBranches.length - 1)];
-                final isSectorUnlocked = widget.game.isSectorUnlocked(selectedSector.id);
+                final selectedSector =
+                    Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(
+                      0,
+                      Sector.allSectorsWithBranches.length - 1,
+                    )];
+                final isSectorUnlocked = widget.game.isSectorUnlocked(
+                  selectedSector.id,
+                );
                 return ElevatedButton(
-                  onPressed: isSectorUnlocked ? () => _deployValkyrie(current) : null,
+                  onPressed: isSectorUnlocked
+                      ? () => _deployValkyrie(current)
+                      : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSectorUnlocked ? current.primaryColor : const Color(0xFF2A2E3D),
-                    foregroundColor: isSectorUnlocked ? Colors.black : Colors.white38,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    backgroundColor: isSectorUnlocked
+                        ? current.primaryColor
+                        : const Color(0xFF2A2E3D),
+                    foregroundColor: isSectorUnlocked
+                        ? Colors.black
+                        : Colors.white38,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -854,7 +947,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isSectorUnlocked ? Icons.rocket_launch_rounded : Icons.lock_outline_rounded,
+                        isSectorUnlocked
+                            ? Icons.rocket_launch_rounded
+                            : Icons.lock_outline_rounded,
                         size: 18,
                         color: isSectorUnlocked ? Colors.black : Colors.white38,
                       ),
@@ -866,7 +961,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
-                          color: isSectorUnlocked ? Colors.black : Colors.white38,
+                          color: isSectorUnlocked
+                              ? Colors.black
+                              : Colors.white38,
                         ),
                       ),
                     ],
@@ -881,12 +978,20 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildSectorSelector(Valkyrie current) {
-    final sector = Sector.allSectorsWithBranches[
-        _selectedSectorIndex.clamp(0, Sector.allSectorsWithBranches.length - 1)];
+    final sector =
+        Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(
+          0,
+          Sector.allSectorsWithBranches.length - 1,
+        )];
     final isUnlocked = widget.game.isSectorUnlocked(sector.id);
     final isRelicClaimed = widget.game.unlockedRelics.contains(sector.relicId);
-    final isSecretRescued = widget.game.rescuedSectorSecrets.contains(sector.id);
-    final isCompletedWithCurrent = widget.game.isSectorCompletedWith(sector.id, current.id);
+    final isSecretRescued = widget.game.rescuedSectorSecrets.contains(
+      sector.id,
+    );
+    final isCompletedWithCurrent = widget.game.isSectorCompletedWith(
+      sector.id,
+      current.id,
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -907,10 +1012,16 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: 'Setor Anterior [Tecla [ ]',
-            icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white70),
+            icon: const Icon(
+              Icons.arrow_back_ios_rounded,
+              color: Colors.white70,
+            ),
             onPressed: () {
               setState(() {
-                _selectedSectorIndex = (_selectedSectorIndex - 1 + Sector.allSectorsWithBranches.length) %
+                _selectedSectorIndex =
+                    (_selectedSectorIndex -
+                        1 +
+                        Sector.allSectorsWithBranches.length) %
                     Sector.allSectorsWithBranches.length;
               });
               widget.game.playSfx('menu_select.wav');
@@ -932,14 +1043,22 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => Container(
                       color: sector.primaryColor.withOpacity(0.2),
-                      child: Icon(sector.icon, color: sector.primaryColor, size: 24),
+                      child: Icon(
+                        sector.icon,
+                        color: sector.primaryColor,
+                        size: 24,
+                      ),
                     ),
                   ),
                   if (!isUnlocked)
                     Container(
                       color: Colors.black.withOpacity(0.7),
                       child: const Center(
-                        child: Icon(Icons.lock_rounded, color: Colors.amberAccent, size: 22),
+                        child: Icon(
+                          Icons.lock_rounded,
+                          color: Colors.amberAccent,
+                          size: 22,
+                        ),
                       ),
                     ),
                 ],
@@ -965,18 +1084,25 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           fontFamily: 'Orbitron',
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isUnlocked ? sector.primaryColor : Colors.white60,
+                          color: isUnlocked
+                              ? sector.primaryColor
+                              : Colors.white60,
                           letterSpacing: 0.5,
                         ),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: sector.primaryColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: sector.primaryColor.withOpacity(0.6)),
+                        border: Border.all(
+                          color: sector.primaryColor.withOpacity(0.6),
+                        ),
                       ),
                       child: Text(
                         sector.difficultyLabel,
@@ -1039,11 +1165,15 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: 'Próximo Setor [Tecla ] ]',
-            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70),
+            icon: const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white70,
+            ),
             onPressed: () {
               setState(() {
                 _selectedSectorIndex =
-                    (_selectedSectorIndex + 1) % Sector.allSectorsWithBranches.length;
+                    (_selectedSectorIndex + 1) %
+                    Sector.allSectorsWithBranches.length;
               });
               widget.game.playSfx('menu_select.wav');
             },
@@ -1053,14 +1183,21 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     );
   }
 
-  Widget _buildChecklistBadge(String label, bool completed, Color color, String tooltip) {
+  Widget _buildChecklistBadge(
+    String label,
+    bool completed,
+    Color color,
+    String tooltip,
+  ) {
     return Tooltip(
       message: tooltip,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            completed
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
             size: 11,
             color: completed ? color : Colors.white30,
           ),
@@ -1091,7 +1228,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       decoration: BoxDecoration(
         color: const Color(0xFF0C1017).withOpacity(0.92),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFB300).withOpacity(0.4), width: 1.5),
+        border: Border.all(
+          color: const Color(0xFFFFB300).withOpacity(0.4),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFFB300).withOpacity(0.10),
@@ -1144,7 +1284,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   widget.game.refundMetaUpgrades();
                   setState(() {});
                 },
-                icon: const Icon(Icons.restart_alt_rounded, size: 16, color: Color(0xFFFFB300)),
+                icon: const Icon(
+                  Icons.restart_alt_rounded,
+                  size: 16,
+                  color: Color(0xFFFFB300),
+                ),
                 label: const Text(
                   'REEMBOLSAR TUDO (100%)',
                   style: TextStyle(
@@ -1157,8 +1301,13 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFFFB300), width: 1.2),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   backgroundColor: const Color(0xFFFFB300).withOpacity(0.08),
                 ),
               ),
@@ -1172,12 +1321,42 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             spacing: 8,
             runSpacing: 6,
             children: [
-              _buildWorkshopSubTabButton(0, 'MELHORIAS DE FROTA', Icons.tune_rounded, const Color(0xFFFFB300)),
-              _buildWorkshopSubTabButton(1, 'FORJA DE DIAGRAMAS', Icons.architecture_rounded, const Color(0xFF00E5FF)),
-              _buildWorkshopSubTabButton(2, 'CONQUISTAS', Icons.emoji_events_rounded, const Color(0xFFFFD700)),
-              _buildWorkshopSubTabButton(3, 'CÓDICE DE FACÇÕES', Icons.auto_stories_rounded, const Color(0xFFFF4081)),
-              _buildWorkshopSubTabButton(4, 'CAIXAS PRETAS & LORE', Icons.settings_input_antenna_rounded, const Color(0xFFE040FB)),
-              _buildWorkshopSubTabButton(5, 'RELÍQUIAS PERMANENTES', Icons.diamond_outlined, const Color(0xFFFFD700)),
+              _buildWorkshopSubTabButton(
+                0,
+                'MELHORIAS DE FROTA',
+                Icons.tune_rounded,
+                const Color(0xFFFFB300),
+              ),
+              _buildWorkshopSubTabButton(
+                1,
+                'FORJA DE DIAGRAMAS',
+                Icons.architecture_rounded,
+                const Color(0xFF00E5FF),
+              ),
+              _buildWorkshopSubTabButton(
+                2,
+                'CONQUISTAS',
+                Icons.emoji_events_rounded,
+                const Color(0xFFFFD700),
+              ),
+              _buildWorkshopSubTabButton(
+                3,
+                'CÓDICE DE FACÇÕES',
+                Icons.auto_stories_rounded,
+                const Color(0xFFFF4081),
+              ),
+              _buildWorkshopSubTabButton(
+                4,
+                'CAIXAS PRETAS & LORE',
+                Icons.settings_input_antenna_rounded,
+                const Color(0xFFE040FB),
+              ),
+              _buildWorkshopSubTabButton(
+                5,
+                'RELÍQUIAS PERMANENTES',
+                Icons.diamond_outlined,
+                const Color(0xFFFFD700),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -1191,12 +1370,13 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
                       if (useTwoColumns) {
                         return GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 2.3,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 14,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 2.3,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 14,
+                              ),
                           itemCount: upgrades.length,
                           itemBuilder: (context, index) {
                             return _buildMetaUpgradeCard(upgrades[index], meta);
@@ -1205,7 +1385,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       } else {
                         return ListView.separated(
                           itemCount: upgrades.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 12),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             return _buildMetaUpgradeCard(upgrades[index], meta);
                           },
@@ -1214,21 +1395,26 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     },
                   )
                 : (_workshopSubTab == 1
-                    ? _buildBlueprintForgeList()
-                    : (_workshopSubTab == 2
-                        ? _buildMilestonesList()
-                        : (_workshopSubTab == 3
-                            ? _buildFactionCodexList()
-                            : (_workshopSubTab == 4
-                                ? _buildFlightRecordersList()
-                                : _buildPermanentRelicsList())))),
+                      ? _buildBlueprintForgeList()
+                      : (_workshopSubTab == 2
+                            ? _buildMilestonesList()
+                            : (_workshopSubTab == 3
+                                  ? _buildFactionCodexList()
+                                  : (_workshopSubTab == 4
+                                        ? _buildFlightRecordersList()
+                                        : _buildPermanentRelicsList())))),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWorkshopSubTabButton(int subIndex, String label, IconData icon, Color color) {
+  Widget _buildWorkshopSubTabButton(
+    int subIndex,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     final isSelected = _workshopSubTab == subIndex;
     return GestureDetector(
       onTap: () {
@@ -1238,7 +1424,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.04),
+          color: isSelected
+              ? color.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: isSelected ? color : Colors.white12),
         ),
@@ -1271,7 +1459,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         final bp = blueprints[index];
         final isFound = widget.game.foundBlueprints.contains(bp.weaponId);
         final isForged = widget.game.forgedBlueprints.contains(bp.weaponId);
-        final canForge = isFound && !isForged && widget.game.totalCredits >= bp.forgeCost;
+        final canForge =
+            isFound && !isForged && widget.game.totalCredits >= bp.forgeCost;
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1279,19 +1468,27 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             color: const Color(0xFF111724),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isForged ? const Color(0xFF00E676) : (isFound ? bp.color : Colors.white12),
+              color: isForged
+                  ? const Color(0xFF00E676)
+                  : (isFound ? bp.color : Colors.white12),
             ),
           ),
           child: Row(
             children: [
-              Icon(bp.icon, color: isFound ? bp.color : Colors.white24, size: 26),
+              Icon(
+                bp.icon,
+                color: isFound ? bp.color : Colors.white24,
+                size: 26,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isFound ? bp.name.toUpperCase() : 'DIAGRAMA CRIPTOGRAFADO // ???',
+                      isFound
+                          ? bp.name.toUpperCase()
+                          : 'DIAGRAMA CRIPTOGRAFADO // ???',
                       style: TextStyle(
                         fontFamily: 'Orbitron',
                         fontSize: 13,
@@ -1381,7 +1578,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           ),
           child: Row(
             children: [
-              Icon(m.icon, color: isUnlocked ? m.color : Colors.white24, size: 24),
+              Icon(
+                m.icon,
+                color: isUnlocked ? m.color : Colors.white24,
+                size: 24,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -1393,7 +1594,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         fontFamily: 'Orbitron',
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: isUnlocked ? const Color(0xFFFFD700) : Colors.white70,
+                        color: isUnlocked
+                            ? const Color(0xFFFFD700)
+                            : Colors.white70,
                       ),
                     ),
                     Text(
@@ -1408,12 +1611,16 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 ),
               ),
               Text(
-                isUnlocked ? 'CONCLUÍDA (+${m.scrapReward}c)' : 'RECOMPENSA: +${m.scrapReward}c',
+                isUnlocked
+                    ? 'CONCLUÍDA (+${m.scrapReward}c)'
+                    : 'RECOMPENSA: +${m.scrapReward}c',
                 style: TextStyle(
                   fontFamily: 'Orbitron',
                   fontSize: 10.5,
                   fontWeight: FontWeight.bold,
-                  color: isUnlocked ? const Color(0xFF00E676) : const Color(0xFFFFB300),
+                  color: isUnlocked
+                      ? const Color(0xFF00E676)
+                      : const Color(0xFFFFB300),
                 ),
               ),
             ],
@@ -1435,7 +1642,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           decoration: BoxDecoration(
             color: const Color(0xFF111724),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: f.color.withValues(alpha: 0.7), width: 1.4),
+            border: Border.all(
+              color: f.color.withValues(alpha: 0.7),
+              width: 1.4,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1530,7 +1740,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 children: [
                   Icon(
                     Icons.graphic_eq_rounded,
-                    color: isUnlocked ? const Color(0xFFE040FB) : Colors.white24,
+                    color: isUnlocked
+                        ? const Color(0xFFE040FB)
+                        : Colors.white24,
                     size: 20,
                   ),
                   const SizedBox(width: 10),
@@ -1605,9 +1817,15 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 decoration: BoxDecoration(
                   color: relic.color.withOpacity(isUnlocked ? 0.25 : 0.08),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: relic.color.withOpacity(isUnlocked ? 0.8 : 0.3)),
+                  border: Border.all(
+                    color: relic.color.withOpacity(isUnlocked ? 0.8 : 0.3),
+                  ),
                 ),
-                child: Icon(relic.icon, color: isUnlocked ? relic.color : Colors.white38, size: 28),
+                child: Icon(
+                  relic.icon,
+                  color: isUnlocked ? relic.color : Colors.white38,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1629,14 +1847,22 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: (isUnlocked ? relic.color : Colors.white24).withOpacity(0.2),
+                            color: (isUnlocked ? relic.color : Colors.white24)
+                                .withOpacity(0.2),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: isUnlocked ? relic.color : Colors.white38),
+                            border: Border.all(
+                              color: isUnlocked ? relic.color : Colors.white38,
+                            ),
                           ),
                           child: Text(
-                            isUnlocked ? '✓ ATIVA PERMANENTEMENTE' : '🔒 NÃO DESCOBERTA',
+                            isUnlocked
+                                ? '✓ ATIVA PERMANENTEMENTE'
+                                : '🔒 NÃO DESCOBERTA',
                             style: TextStyle(
                               fontFamily: 'Orbitron',
                               fontSize: 10,
@@ -1704,10 +1930,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           width: 1.2,
         ),
         boxShadow: [
-          BoxShadow(
-            color: def.color.withOpacity(0.08),
-            blurRadius: 14,
-          ),
+          BoxShadow(color: def.color.withOpacity(0.08), blurRadius: 14),
         ],
       ),
       child: Column(
@@ -1760,7 +1983,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: (isMaxed ? const Color(0xFFFFD700) : def.color).withOpacity(0.18),
+                  color: (isMaxed ? const Color(0xFFFFD700) : def.color)
+                      .withOpacity(0.18),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: isMaxed ? const Color(0xFFFFD700) : def.color,
@@ -1796,7 +2020,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                             BoxShadow(
                               color: def.color.withOpacity(0.6),
                               blurRadius: 4,
-                            )
+                            ),
                           ]
                         : [],
                   ),
@@ -1826,7 +2050,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   ),
                 ),
                 if (!isMaxed) ...[
-                  const Icon(Icons.arrow_forward, size: 12, color: Colors.white38),
+                  const Icon(
+                    Icons.arrow_forward,
+                    size: 12,
+                    color: Colors.white38,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -1853,12 +2081,18 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFFD700).withOpacity(0.12),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.6)),
+                border: Border.all(
+                  color: const Color(0xFFFFD700).withOpacity(0.6),
+                ),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: Color(0xFFFFD700), size: 14),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFFFFD700),
+                    size: 14,
+                  ),
                   SizedBox(width: 6),
                   Text(
                     'NÍVEL MÁXIMO ATINGIDO',
@@ -1886,7 +2120,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 foregroundColor: Colors.black,
                 disabledBackgroundColor: Colors.white10,
                 disabledForegroundColor: Colors.white30,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1934,9 +2171,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           Positioned.fill(
             child: Opacity(
               opacity: 0.08,
-              child: CustomPaint(
-                painter: _GridPatternPainter(v.primaryColor),
-              ),
+              child: CustomPaint(painter: _GridPatternPainter(v.primaryColor)),
             ),
           ),
 
@@ -1988,11 +2223,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           ),
 
           // Top Left Pilot Affinity Badge
-          Positioned(
-            top: 14,
-            left: 14,
-            child: _buildPilotAffinityBadge(v),
-          ),
+          Positioned(top: 14, left: 14, child: _buildPilotAffinityBadge(v)),
 
           // Pilot Details (Name, Title, Interactive Dialogue Speech Box)
           Padding(
@@ -2101,11 +2332,25 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         // Stat Rating Gauges (Speed, Defense, Firepower)
         Row(
           children: [
-            Expanded(child: _buildRatingGauge('SPEED', v.speedRating, v.primaryColor)),
+            Expanded(
+              child: _buildRatingGauge('SPEED', v.speedRating, v.primaryColor),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _buildRatingGauge('DEFENSE', v.defenseRating, v.primaryColor)),
+            Expanded(
+              child: _buildRatingGauge(
+                'DEFENSE',
+                v.defenseRating,
+                v.primaryColor,
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _buildRatingGauge('FIREPOWER', v.firepowerRating, v.primaryColor)),
+            Expanded(
+              child: _buildRatingGauge(
+                'FIREPOWER',
+                v.firepowerRating,
+                v.primaryColor,
+              ),
+            ),
           ],
         ),
       ],
@@ -2219,7 +2464,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           BoxShadow(
                             color: color.withOpacity(0.5),
                             blurRadius: 6,
-                          )
+                          ),
                         ]
                       : [],
                 ),
@@ -2239,7 +2484,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       decoration: BoxDecoration(
         color: const Color(0xFF101622).withOpacity(0.88),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFF4081).withOpacity(0.6), width: 1.2),
+        border: Border.all(
+          color: const Color(0xFFFF4081).withOpacity(0.6),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFF4081).withOpacity(0.2),
@@ -2288,13 +2536,17 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 value: affinity.progressPercent,
                 minHeight: 4,
                 backgroundColor: Colors.white12,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4081)),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFFFF4081),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 2),
           Text(
-            affinity.bondLevel >= 5 ? 'ELO MÁXIMO' : '${affinity.currentXp} / ${affinity.xpForNext} XP',
+            affinity.bondLevel >= 5
+                ? 'ELO MÁXIMO'
+                : '${affinity.currentXp} / ${affinity.xpForNext} XP',
             style: const TextStyle(
               fontFamily: 'Rajdhani',
               fontSize: 9.5,
@@ -2307,7 +2559,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildDialogueBubble(Valkyrie v) {
-    final text = _currentDialogueText ??
+    final text =
+        _currentDialogueText ??
         widget.game.affinityManager.getReactivePostRunDialogue(
           v.id,
           lastBoss: widget.game.lastBossEncountered,
@@ -2318,7 +2571,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       onTap: () {
         widget.game.playSfx('menu_select.wav');
         setState(() {
-          _currentDialogueText = widget.game.affinityManager.getRandomDialogue(v.id);
+          _currentDialogueText = widget.game.affinityManager.getRandomDialogue(
+            v.id,
+          );
         });
       },
       child: Container(
@@ -2327,7 +2582,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         decoration: BoxDecoration(
           color: const Color(0xFF101622).withOpacity(0.85),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: v.primaryColor.withOpacity(0.4), width: 1.0),
+          border: Border.all(
+            color: v.primaryColor.withOpacity(0.4),
+            width: 1.0,
+          ),
         ),
         child: Column(
           children: [
@@ -2347,7 +2605,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.touch_app_rounded, size: 10, color: v.primaryColor.withOpacity(0.7)),
+                Icon(
+                  Icons.touch_app_rounded,
+                  size: 10,
+                  color: v.primaryColor.withOpacity(0.7),
+                ),
                 const SizedBox(width: 3),
                 Flexible(
                   child: Text(
@@ -2416,7 +2678,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     );
   }
 
-  Widget _buildGalleryModeButton(int index, String label, IconData icon, Color activeColor) {
+  Widget _buildGalleryModeButton(
+    int index,
+    String label,
+    IconData icon,
+    Color activeColor,
+  ) {
     final isSelected = _gallerySubTab == index;
     return GestureDetector(
       onTap: () {
@@ -2437,7 +2704,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: isSelected ? activeColor : Colors.white60),
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? activeColor : Colors.white60,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
@@ -2459,7 +2730,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     final allMemories = AffinityManager.allMemories;
     final filteredMemories = _selectedGalleryFilter == 'all'
         ? allMemories
-        : allMemories.where((m) => m.valkyrieId == _selectedGalleryFilter).toList();
+        : allMemories
+              .where((m) => m.valkyrieId == _selectedGalleryFilter)
+              .toList();
 
     int totalUnlocked = 0;
     for (final m in allMemories) {
@@ -2504,15 +2777,24 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
               // Unlocked Counter Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF4081).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFFF4081).withOpacity(0.5)),
+                  border: Border.all(
+                    color: const Color(0xFFFF4081).withOpacity(0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.favorite, size: 14, color: Color(0xFFFF4081)),
+                    const Icon(
+                      Icons.favorite,
+                      size: 14,
+                      color: Color(0xFFFF4081),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'DESBLOQUEADAS: $totalUnlocked / ${allMemories.length}',
@@ -2537,7 +2819,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 550 ? 2 : 1);
+              final crossAxisCount = constraints.maxWidth > 900
+                  ? 3
+                  : (constraints.maxWidth > 550 ? 2 : 1);
               return GridView.builder(
                 padding: const EdgeInsets.only(bottom: 16),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -2569,7 +2853,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFF4081).withOpacity(0.25) : Colors.transparent,
+          color: isSelected
+              ? const Color(0xFFFF4081).withOpacity(0.25)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isSelected ? const Color(0xFFFF4081) : Colors.white12,
@@ -2614,7 +2900,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           color: const Color(0xFF131A26),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isUnlocked ? memory.themeColor.withOpacity(0.7) : Colors.white12,
+            color: isUnlocked
+                ? memory.themeColor.withOpacity(0.7)
+                : Colors.white12,
             width: isUnlocked ? 1.8 : 1.0,
           ),
           boxShadow: isUnlocked
@@ -2622,7 +2910,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   BoxShadow(
                     color: memory.themeColor.withOpacity(0.25),
                     blurRadius: 10,
-                  )
+                  ),
                 ]
               : [],
         ),
@@ -2638,7 +2926,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 color: const Color(0xFF1A2232),
                 child: Center(
                   child: Icon(
-                    isUnlocked ? Icons.image_rounded : Icons.lock_outline_rounded,
+                    isUnlocked
+                        ? Icons.image_rounded
+                        : Icons.lock_outline_rounded,
                     size: 44,
                     color: isUnlocked ? memory.themeColor : Colors.white24,
                   ),
@@ -2661,7 +2951,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           color: Colors.white.withOpacity(0.08),
                           border: Border.all(color: Colors.white24),
                         ),
-                        child: const Icon(Icons.lock_rounded, size: 26, color: Colors.white54),
+                        child: const Icon(
+                          Icons.lock_rounded,
+                          size: 26,
+                          color: Colors.white54,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -2740,15 +3034,25 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: memory.themeColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: memory.themeColor.withOpacity(0.6), width: 0.8),
+                            border: Border.all(
+                              color: memory.themeColor.withOpacity(0.6),
+                              width: 0.8,
+                            ),
                           ),
                           child: Row(
                             children: const [
-                              Icon(Icons.zoom_in, size: 12, color: Colors.white),
+                              Icon(
+                                Icons.zoom_in,
+                                size: 12,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 2),
                               Text(
                                 'AMPLIAR',
@@ -2811,206 +3115,228 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           fit: StackFit.expand,
           children: [
             // Black Blur Backdrop
-            Container(
-              color: Colors.black.withOpacity(0.96),
-            ),
+            Container(color: Colors.black.withOpacity(0.96)),
 
-          // High Resolution Image with Interactive Viewer (Zoom & Pan)
-          Center(
-            child: InteractiveViewer(
-              minScale: 0.8,
-              maxScale: 3.5,
-              child: Image.asset(
-                memory.imageAsset,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.image_rounded, size: 80, color: memory.themeColor),
-                      const SizedBox(height: 12),
-                      Text(
-                        memory.title,
-                        style: const TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Header Controls (when not in clean mode)
-          if (!_cleanMode)
-            Positioned(
-              top: 24,
-              left: 24,
-              right: 24,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Pilot & Memory Title
-                  Expanded(
-                    child: Row(
+            // High Resolution Image with Interactive Viewer (Zoom & Pan)
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 3.5,
+                child: Image.asset(
+                  memory.imageAsset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: memory.themeColor.withOpacity(0.2),
-                            border: Border.all(color: memory.themeColor),
-                          ),
-                          child: const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
+                        Icon(
+                          Icons.image_rounded,
+                          size: 80,
+                          color: memory.themeColor,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '${pilot.name.toUpperCase()} // ${memory.title.toUpperCase()}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'Orbitron',
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2.0,
-                              color: Colors.white,
-                            ),
+                        const SizedBox(height: 12),
+                        Text(
+                          memory.title,
+                          style: const TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 18,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-
-                  // Actions: Clean mode toggle & Close
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.12),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        ),
-                        icon: const Icon(Icons.visibility_off, size: 16),
-                        label: const Text(
-                          'MODO PAPEL DE PAREDE',
-                          style: TextStyle(fontFamily: 'Orbitron', fontSize: 10),
-                        ),
-                        onPressed: () => setState(() => _cleanMode = true),
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton(
-                        key: const Key('lightbox_close_button'),
-                        tooltip: 'Fechar Memória',
-                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
-                        onPressed: () => setState(() => _openedMemory = null),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
 
-          // Bottom Lore Card (when not in clean mode)
-          if (!_cleanMode)
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 24,
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 820),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101622).withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: memory.themeColor.withOpacity(0.5), width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.7),
-                        blurRadius: 20,
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Header Controls (when not in clean mode)
+            if (!_cleanMode)
+              Positioned(
+                top: 24,
+                left: 24,
+                right: 24,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Pilot & Memory Title
+                    Expanded(
+                      child: Row(
                         children: [
-                          Text(
-                            memory.title,
-                            style: TextStyle(
-                              fontFamily: 'Orbitron',
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                              color: memory.themeColor,
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: memory.themeColor.withOpacity(0.2),
+                              border: Border.all(color: memory.themeColor),
+                            ),
+                            child: const Icon(
+                              Icons.auto_awesome,
+                              size: 16,
+                              color: Colors.white,
                             ),
                           ),
-                          Text(
-                            'ELO NÍVEL ${memory.requiredBondLevel} DESBLOQUEADO',
-                            style: TextStyle(
-                              fontFamily: 'Rajdhani',
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                              color: Colors.white.withOpacity(0.6),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${pilot.name.toUpperCase()} // ${memory.title.toUpperCase()}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2.0,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        memory.description,
-                        style: TextStyle(
-                          fontFamily: 'Rajdhani',
-                          fontSize: 13.5,
-                          height: 1.35,
-                          color: Colors.white.withOpacity(0.88),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Actions: Clean mode toggle & Close
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.12),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                          ),
+                          icon: const Icon(Icons.visibility_off, size: 16),
+                          label: const Text(
+                            'MODO PAPEL DE PAREDE',
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontSize: 10,
+                            ),
+                          ),
+                          onPressed: () => setState(() => _cleanMode = true),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 12),
+                        IconButton(
+                          key: const Key('lightbox_close_button'),
+                          tooltip: 'Fechar Memória',
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                          onPressed: () => setState(() => _openedMemory = null),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
 
-          // Hint in clean mode
-          if (_cleanMode)
-            Positioned(
-              bottom: 20,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: const Text(
-                    'Toque na tela para restaurar a interface',
-                    style: TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 12,
-                      letterSpacing: 1.2,
-                      color: Colors.white70,
+            // Bottom Lore Card (when not in clean mode)
+            if (!_cleanMode)
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 24,
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 820),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF101622).withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: memory.themeColor.withOpacity(0.5),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.7),
+                          blurRadius: 20,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              memory.title,
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                                color: memory.themeColor,
+                              ),
+                            ),
+                            Text(
+                              'ELO NÍVEL ${memory.requiredBondLevel} DESBLOQUEADO',
+                              style: TextStyle(
+                                fontFamily: 'Rajdhani',
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                                color: Colors.white.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          memory.description,
+                          style: TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: 13.5,
+                            height: 1.35,
+                            color: Colors.white.withOpacity(0.88),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+
+            // Hint in clean mode
+            if (_cleanMode)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Text(
+                      'Toque na tela para restaurar a interface',
+                      style: TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12,
+                        letterSpacing: 1.2,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildWeaponCodexView() {
@@ -3042,13 +3368,19 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildWeaponCodexFilterChip('all', 'TODAS (${allEntries.length})'),
+                      _buildWeaponCodexFilterChip(
+                        'all',
+                        'TODAS (${allEntries.length})',
+                      ),
                       const SizedBox(width: 8),
                       _buildWeaponCodexFilterChip('blade', 'LÂMINAS / CORTE'),
                       const SizedBox(width: 8),
                       _buildWeaponCodexFilterChip('plasma', 'PLASMA / ENERGIA'),
                       const SizedBox(width: 8),
-                      _buildWeaponCodexFilterChip('kinetic', 'CINÉTICA / EXPLOSIVOS'),
+                      _buildWeaponCodexFilterChip(
+                        'kinetic',
+                        'CINÉTICA / EXPLOSIVOS',
+                      ),
                     ],
                   ),
                 ),
@@ -3057,15 +3389,24 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
               // Unlocked Counter Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF00E5FF).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF00E5FF).withOpacity(0.5)),
+                  border: Border.all(
+                    color: const Color(0xFF00E5FF).withOpacity(0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF00E5FF)),
+                    const Icon(
+                      Icons.shield_outlined,
+                      size: 14,
+                      color: Color(0xFF00E5FF),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'ARSENAL: $totalUnlocked / ${allEntries.length}',
@@ -3090,7 +3431,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 950 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+              final crossAxisCount = constraints.maxWidth > 950
+                  ? 3
+                  : (constraints.maxWidth > 600 ? 2 : 1);
               return GridView.builder(
                 padding: const EdgeInsets.only(bottom: 16),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -3114,11 +3457,27 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   bool _filterWeaponCodexByCat(WeaponCodexEntry entry) {
     switch (_selectedWeaponCodexCategory) {
       case 'blade':
-        return ['tachyon_katana', 'quantum_chakram', 'aegis_sawblades'].contains(entry.id);
+        return [
+          'tachyon_katana',
+          'quantum_chakram',
+          'aegis_sawblades',
+        ].contains(entry.id);
       case 'plasma':
-        return ['blaster', 'rapid_fire', 'solar_lance', 'inferno_cone', 'tesla_arc'].contains(entry.id);
+        return [
+          'blaster',
+          'rapid_fire',
+          'solar_lance',
+          'inferno_cone',
+          'tesla_arc',
+        ].contains(entry.id);
       case 'kinetic':
-        return ['spread_shot', 'bomb_launcher', 'valkyrie_wingmen', 'void_mines', 'repulsor_aura'].contains(entry.id);
+        return [
+          'spread_shot',
+          'bomb_launcher',
+          'valkyrie_wingmen',
+          'void_mines',
+          'repulsor_aura',
+        ].contains(entry.id);
       default:
         return true;
     }
@@ -3135,7 +3494,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00E5FF).withOpacity(0.25) : Colors.transparent,
+          color: isSelected
+              ? const Color(0xFF00E5FF).withOpacity(0.25)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isSelected ? const Color(0xFF00E5FF) : Colors.white12,
@@ -3170,7 +3531,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           color: const Color(0xFF111824).withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isUnlocked ? entry.themeColor.withOpacity(0.65) : Colors.white12,
+            color: isUnlocked
+                ? entry.themeColor.withOpacity(0.65)
+                : Colors.white12,
             width: isUnlocked ? 1.5 : 1.0,
           ),
           boxShadow: isUnlocked
@@ -3178,7 +3541,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   BoxShadow(
                     color: entry.themeColor.withOpacity(0.18),
                     blurRadius: 10,
-                  )
+                  ),
                 ]
               : [],
         ),
@@ -3194,7 +3557,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   decoration: BoxDecoration(
                     color: entry.themeColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: entry.themeColor.withOpacity(0.6)),
+                    border: Border.all(
+                      color: entry.themeColor.withOpacity(0.6),
+                    ),
                   ),
                   child: Center(
                     child: Icon(entry.icon, color: entry.themeColor, size: 24),
@@ -3233,7 +3598,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 ),
                 if (!isUnlocked)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(4),
@@ -3292,7 +3660,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(Icons.auto_awesome, size: 12, color: Color(0xFFFFD700)),
+                      const Icon(
+                        Icons.auto_awesome,
+                        size: 12,
+                        color: Color(0xFFFFD700),
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -3311,16 +3683,25 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: entry.themeColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: entry.themeColor.withOpacity(0.5)),
+                    border: Border.all(
+                      color: entry.themeColor.withOpacity(0.5),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.menu_book_rounded, size: 11, color: entry.themeColor),
+                      Icon(
+                        Icons.menu_book_rounded,
+                        size: 11,
+                        color: entry.themeColor,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'DOSSIÊ',
@@ -3361,7 +3742,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               decoration: BoxDecoration(
                 color: const Color(0xFF0C121C),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: entry.themeColor.withOpacity(0.85), width: 2.0),
+                border: Border.all(
+                  color: entry.themeColor.withOpacity(0.85),
+                  width: 2.0,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: entry.themeColor.withOpacity(0.35),
@@ -3375,11 +3759,20 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 children: [
                   // Modal Header
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF141D2B),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                      border: Border(bottom: BorderSide(color: entry.themeColor.withOpacity(0.4))),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14),
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: entry.themeColor.withOpacity(0.4),
+                        ),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -3389,7 +3782,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                             color: entry.themeColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(entry.icon, color: entry.themeColor, size: 20),
+                          child: Icon(
+                            entry.icon,
+                            color: entry.themeColor,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -3410,11 +3807,18 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                   ),
                                   const SizedBox(width: 10),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: entry.themeColor.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: entry.themeColor.withOpacity(0.5)),
+                                      border: Border.all(
+                                        color: entry.themeColor.withOpacity(
+                                          0.5,
+                                        ),
+                                      ),
                                     ),
                                     child: Text(
                                       entry.classification.toUpperCase(),
@@ -3472,7 +3876,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF080D14),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: entry.themeColor.withOpacity(0.4)),
+                                    border: Border.all(
+                                      color: entry.themeColor.withOpacity(0.4),
+                                    ),
                                     gradient: RadialGradient(
                                       colors: [
                                         entry.themeColor.withOpacity(0.25),
@@ -3485,7 +3891,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                     children: [
                                       CustomPaint(
                                         size: const Size(320, 160),
-                                        painter: _GridPatternPainter(entry.themeColor.withOpacity(0.1)),
+                                        painter: _GridPatternPainter(
+                                          entry.themeColor.withOpacity(0.1),
+                                        ),
                                       ),
                                       Icon(
                                         entry.icon,
@@ -3495,11 +3903,21 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                       Positioned(
                                         bottom: 8,
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 3,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.75),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: entry.themeColor.withOpacity(0.5)),
+                                            color: Colors.black.withOpacity(
+                                              0.75,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: entry.themeColor
+                                                  .withOpacity(0.5),
+                                            ),
                                           ),
                                           child: Text(
                                             entry.damageType.toUpperCase(),
@@ -3528,7 +3946,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                     border: Border.all(color: Colors.white12),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'AVALIAÇÃO TÁTICA DE COMBATE',
@@ -3541,10 +3960,26 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      _buildRatingRow('DANO BRUTO', entry.damageRating, entry.themeColor),
-                                      _buildRatingRow('CADÊNCIA', entry.fireRateRating, entry.themeColor),
-                                      _buildRatingRow('ALCANCE', entry.rangeRating, entry.themeColor),
-                                      _buildRatingRow('COMPLEXIDADE', entry.difficultyRating, Colors.amber),
+                                      _buildRatingRow(
+                                        'DANO BRUTO',
+                                        entry.damageRating,
+                                        entry.themeColor,
+                                      ),
+                                      _buildRatingRow(
+                                        'CADÊNCIA',
+                                        entry.fireRateRating,
+                                        entry.themeColor,
+                                      ),
+                                      _buildRatingRow(
+                                        'ALCANCE',
+                                        entry.rangeRating,
+                                        entry.themeColor,
+                                      ),
+                                      _buildRatingRow(
+                                        'COMPLEXIDADE',
+                                        entry.difficultyRating,
+                                        Colors.amber,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -3560,7 +3995,8 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                     border: Border.all(color: Colors.white12),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'ESPECIFICAÇÕES DE ENGENHARIA',
@@ -3605,11 +4041,16 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                     border: Border.all(color: Colors.white12),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: const [
-                                          Icon(Icons.history_edu_rounded, size: 16, color: Color(0xFF00E5FF)),
+                                          Icon(
+                                            Icons.history_edu_rounded,
+                                            size: 16,
+                                            color: Color(0xFF00E5FF),
+                                          ),
                                           SizedBox(width: 8),
                                           Text(
                                             'HISTÓRICO MILITAR & LORE DIEGÉTICA',
@@ -3645,10 +4086,13 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                   decoration: BoxDecoration(
                                     color: entry.themeColor.withOpacity(0.08),
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: entry.themeColor.withOpacity(0.35)),
+                                    border: Border.all(
+                                      color: entry.themeColor.withOpacity(0.35),
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         entry.pilotQuote,
@@ -3685,24 +4129,37 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        const Color(0xFFFFD700).withOpacity(0.18),
+                                        const Color(
+                                          0xFFFFD700,
+                                        ).withOpacity(0.18),
                                         const Color(0xFF131A26),
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.6), width: 1.5),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFFFFD700,
+                                      ).withOpacity(0.6),
+                                      width: 1.5,
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Row(
                                             children: const [
-                                              Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 18),
+                                              Icon(
+                                                Icons.auto_awesome,
+                                                color: Color(0xFFFFD700),
+                                                size: 18,
+                                              ),
                                               SizedBox(width: 8),
                                               Text(
                                                 'SUPER-EVOLUÇÃO LENDÁRIA',
@@ -3717,11 +4174,19 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                             ],
                                           ),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFFD700).withOpacity(0.25),
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(color: const Color(0xFFFFD700)),
+                                              color: const Color(
+                                                0xFFFFD700,
+                                              ).withOpacity(0.25),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: const Color(0xFFFFD700),
+                                              ),
                                             ),
                                             child: const Text(
                                               'MK MAX + SINERGIA',
@@ -3736,45 +4201,77 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                         ],
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        entry.evolvedName,
-                                        style: const TextStyle(
-                                          fontFamily: 'Orbitron',
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.2,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.link, size: 14, color: Color(0xFFFF80AB)),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Text(
-                                              'PASSIVA NECESSÁRIA: ${entry.synergyPassiveTitle}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontFamily: 'Rajdhani',
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFFFF80AB),
+                                      Builder(
+                                        builder: (context) {
+                                          final isEvoDiscovered =
+                                              SecretGrimoireService.isDiscovered(
+                                                entry.id,
+                                              );
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                isEvoDiscovered
+                                                    ? entry.evolvedName
+                                                    : '??? [SUPER-EVOLUÇÃO SECRETA]',
+                                                style: TextStyle(
+                                                  fontFamily: 'Orbitron',
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 1.2,
+                                                  color: isEvoDiscovered
+                                                      ? Colors.white
+                                                      : Colors.white38,
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        entry.evolutionDescription,
-                                        style: TextStyle(
-                                          fontFamily: 'Rajdhani',
-                                          fontSize: 13,
-                                          height: 1.35,
-                                          color: Colors.white.withOpacity(0.9),
-                                        ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.link,
+                                                    size: 14,
+                                                    color: Color(0xFFFF80AB),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      isEvoDiscovered
+                                                          ? 'PASSIVA NECESSÁRIA: ${entry.synergyPassiveTitle}'
+                                                          : 'PASSIVA NECESSÁRIA: ??? (Descubra evoluindo em combate)',
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontFamily: 'Rajdhani',
+                                                        fontSize: 12.5,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Color(
+                                                          0xFFFF80AB,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                isEvoDiscovered
+                                                    ? entry.evolutionDescription
+                                                    : 'Evolua esta arma até o nível máximo (MK 5) combinada com seu módulo passivo secreto e abra um Baú ou Suba de Nível para registrar a receita no Grimório.',
+                                                style: TextStyle(
+                                                  fontFamily: 'Rajdhani',
+                                                  fontSize: 13,
+                                                  height: 1.35,
+                                                  color: isEvoDiscovered
+                                                      ? Colors.white70
+                                                      : Colors.white38,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),
@@ -3813,7 +4310,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           Row(
             children: List.generate(5, (index) {
               return Icon(
-                index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                index < rating
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
                 size: 13,
                 color: index < rating ? color : Colors.white24,
               );

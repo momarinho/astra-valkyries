@@ -6,6 +6,7 @@ import 'package:asteroids/services/localization_service.dart';
 import 'package:asteroids/services/achievement_service.dart';
 import 'package:asteroids/services/secret_grimoire_service.dart';
 import 'package:asteroids/game/rogue_perks.dart';
+import 'package:asteroids/game/weapons.dart';
 
 class PauseOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -764,39 +765,22 @@ class _PauseOverlayState extends State<PauseOverlay> {
     final total = SecretGrimoireService.totalCount;
     final pct = (SecretGrimoireService.progressFraction * 100).toInt();
 
-    // 1. Super-Unions
-    final superUnions = [
-      (
-        key: 'union_void_singularity',
-        name: 'Void Singularity Nova',
-        req1: 'Pulse Blaster (MK 3)',
-        req2: 'Void Cluster Mines (MK 3)',
-        hasReq1: game.player.unlockedWeapons['blaster']?.level == 3,
-        hasReq2: game.player.unlockedWeapons['void_mines']?.level == 3,
-        isEquipped: game.player.unlockedWeapons.containsKey(
-          'union_void_singularity',
-        ),
-        desc: I18n.select(
-          pt: 'Fusão de Blaster e Minas do Vazio. Libera 1 slot de arma e dispara feixes quânticos.',
-          en: 'Fuses Blaster and Void Mines. Frees 1 arsenal slot and fires quantum singularity beams.',
-        ),
-      ),
-      (
-        key: 'union_thunderstorm',
-        name: 'Thunderstorm Core Melter',
-        req1: 'Solar Thermal Lance (MK 3)',
-        req2: 'Tesla Arc Cannon (MK 3)',
-        hasReq1: game.player.unlockedWeapons['solar_lance']?.level == 3,
-        hasReq2: game.player.unlockedWeapons['tesla_arc']?.level == 3,
-        isEquipped: game.player.unlockedWeapons.containsKey(
-          'union_thunderstorm',
-        ),
-        desc: I18n.select(
-          pt: 'Fusão de Lance Solar e Canhão Tesla. Libera 1 slot e emite raios solares bifurcados.',
-          en: 'Fuses Solar Lance and Tesla Arc. Frees 1 slot and emits branched solar lightning.',
-        ),
-      ),
-    ];
+    // 1. Super-Unions (derivado de WeaponUnionRecipe.allUnions)
+    const maxMk = Weapon.defaultMaxLevel;
+    final superUnions = WeaponUnionRecipe.allUnions
+        .map(
+          (u) => (
+            key: u.unionId,
+            name: u.title,
+            req1: '${u.weaponATitle} (MK $maxMk)',
+            req2: '${u.weaponBTitle} (MK $maxMk)',
+            hasReq1: u.hasWeaponAMaxed(game.player),
+            hasReq2: u.hasWeaponBMaxed(game.player),
+            isEquipped: game.player.unlockedWeapons.containsKey(u.unionId),
+            desc: u.description,
+          ),
+        )
+        .toList();
 
     return Container(
       constraints: const BoxConstraints(maxHeight: 285),
@@ -1059,9 +1043,9 @@ class _PauseOverlayState extends State<PauseOverlay> {
                         const SizedBox(height: 3),
                         Text(
                           isDiscovered
-                              ? '${hasWeapon ? "✅" : "⬜"} ${s.weaponId.toUpperCase()} (MK 3)  +  ${hasPassive ? "✅" : "⬜"} ${s.passiveTitle}'
+                              ? '${hasWeapon ? "✅" : "⬜"} ${s.weaponId.toUpperCase()} (MK $maxMk)  +  ${hasPassive ? "✅" : "⬜"} ${s.passiveTitle}'
                               : (hasWeapon
-                                    ? '✅ ${s.weaponId.toUpperCase()} (MK 3)  +  ⬜ ??? [Módulo Desconhecido]'
+                                    ? '✅ ${s.weaponId.toUpperCase()} (MK $maxMk)  +  ⬜ ??? [Módulo Desconhecido]'
                                     : '⬜ ??? + ⬜ ??? [Descubra fundindo em combate]'),
                           style: TextStyle(
                             fontFamily: 'Rajdhani',
