@@ -6,12 +6,17 @@ import 'package:asteroids/services/api_service.dart';
 void main() {
   group('Database & Backend Integration Verification', () {
     test('Backend is accessible and returns healthy status', () async {
-      final isOnline = await Socket.connect('localhost', 8080, timeout: const Duration(milliseconds: 300))
-          .then((s) {
-            s.destroy();
-            return true;
-          })
-          .catchError((_) => false);
+      final isOnline =
+          await Socket.connect(
+                'localhost',
+                8080,
+                timeout: const Duration(milliseconds: 300),
+              )
+              .then((s) {
+                s.destroy();
+                return true;
+              })
+              .catchError((_) => false);
 
       if (!isOnline) {
         // Gracefully skip when run in standalone test environment without backend daemon
@@ -26,12 +31,17 @@ void main() {
     test('ApiService saves and queries dual-persistence leaderboard', () async {
       SharedPreferences.setMockInitialValues({});
 
-      final isOnline = await Socket.connect('localhost', 8080, timeout: const Duration(milliseconds: 300))
-          .then((s) {
-            s.destroy();
-            return true;
-          })
-          .catchError((_) => false);
+      final isOnline =
+          await Socket.connect(
+                'localhost',
+                8080,
+                timeout: const Duration(milliseconds: 300),
+              )
+              .then((s) {
+                s.destroy();
+                return true;
+              })
+              .catchError((_) => false);
 
       if (!isOnline) {
         return;
@@ -45,7 +55,44 @@ void main() {
       );
 
       final fairScores = await ApiService.getFairLeaderboard(period: 'all');
-      expect(fairScores.any((s) => s['username'] == 'PILOTO_TESTE' && s['score'] == 7770), isTrue);
+      expect(
+        fairScores.any(
+          (s) => s['username'] == 'PILOTO_TESTE' && s['score'] == 7770,
+        ),
+        isTrue,
+      );
     });
+
+    test(
+      'Offline fallback persists and deduplicates local leaderboard without backend',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+
+        expect(ApiService.baseUrl, isNotEmpty);
+        expect(ApiService.isRemoteEnabled, isTrue);
+
+        await ApiService.saveFairScore(
+          playerName: 'NOVA',
+          scientistName: 'Ada Lovelace',
+          score: 4200,
+        );
+        await ApiService.saveFairScore(
+          playerName: 'NOVA',
+          scientistName: 'Ada Lovelace',
+          score: 4200,
+        );
+        await ApiService.saveFairScore(
+          playerName: 'VALKYRIE',
+          scientistName: 'Katherine Johnson',
+          score: 9800,
+        );
+
+        final scores = await ApiService.getFairLeaderboard(period: 'all');
+        expect(scores.length, equals(2));
+        expect(scores.first['username'], equals('VALKYRIE'));
+        expect(scores.first['score'], equals(9800));
+        expect(scores.last['username'], equals('NOVA'));
+      },
+    );
   });
 }

@@ -25,8 +25,12 @@ linux/flutter/ephemeral/
 windows/flutter/
 macos/Flutter/ephemeral/
 
-# Go backend binary & logs
+# Go backend binaries, local databases & logs
 go-backend/go-backend
+go-backend/server
+go-backend/server.exe
+go-backend/*.db
+go-backend/*.db-journal
 go-backend.db
 go-backend.db-journal
 go-backend.log

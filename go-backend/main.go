@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,32 +19,35 @@ import (
 	"gorm.io/gorm"
 )
 
-// Shared secret key for anti-cheat verification
-const SecretKey = "asteroids-secret-token-key-2026"
-
 var db *gorm.DB
 
-func main() {
-	var err error
-	// Initialize database using pure-go SQLite driver
-	db, err = gorm.Open(sqlite.Open("asteroids.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect database: %v", err)
+func getEnv(key, fallback string) string {
+	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+		return v
 	}
+	return fallback
+}
 
-	// Auto-migrate models
-	err = db.AutoMigrate(&Player{}, &Score{})
+func getSecretKey() string {
+	return getEnv("API_SECRET_KEY", "asteroids-secret-token-key-2026")
+}
+
+func initDatabase(dsn string) (*gorm.DB, error) {
+	database, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to auto-migrate: %v", err)
+		return nil, err
 	}
+	if err := database.AutoMigrate(&Player{}, &Score{}); err != nil {
+		return nil, err
+	}
+	return database, nil
+}
 
-	// Initialize Gin router
-	r := gin.Default()
+func setupRouter(webDir string) *gin.Engine {
+	r := gin.New()
+	r.Use(gin.Logger(), gin.Recovery(), CORSMiddleware())
 
-	// CORS Middleware
-	r.Use(CORSMiddleware())
-
-	// Routes
+	// API routes
 	r.GET("/health", handleHealth)
 	r.POST("/players", handleRegisterPlayer)
 	r.POST("/scores", handleSubmitScore)
@@ -50,14 +55,7 @@ func main() {
 	r.GET("/live", handleLiveLeaderboard)
 	r.GET("/ranking", handleLiveLeaderboard)
 
-	// Serve Flutter Web if build/web exists
-	webDir := ""
-	if _, err := os.Stat("../build/web/index.html"); err == nil {
-		webDir = "../build/web"
-	} else if _, err := os.Stat("build/web/index.html"); err == nil {
-		webDir = "build/web"
-	}
-
+	// Optional static Flutter Web serving (useful for self-contained bundles)
 	if webDir != "" {
 		r.Static("/assets", webDir+"/assets")
 		r.Static("/canvaskit", webDir+"/canvaskit")
@@ -72,21 +70,49 @@ func main() {
 		r.StaticFile("/", webDir+"/index.html")
 	}
 
-	fmt.Println("Asteroids backend listening on port 8080...")
-	if err := r.Run(":8080"); err != nil {
+	return r
+}
+
+func main() {
+	dbPath := getEnv("DB_PATH", "asteroids.db")
+	var err error
+	db, err = initDatabase(dbPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize database (%s): %v", dbPath, err)
+	}
+
+	if getEnv("GIN_MODE", "release") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	webDir := ""
+	if _, err := os.Stat("../build/web/index.html"); err == nil {
+		webDir = "../build/web"
+	} else if _, err := os.Stat("build/web/index.html"); err == nil {
+		webDir = "build/web"
+	}
+
+	r := setupRouter(webDir)
+
+	port := getEnv("PORT", "8080")
+	log.Printf("Astra Valkyries backend listening on :%s (db=%s)", port, dbPath)
+	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
 
 func CORSMiddleware() gin.HandlerFunc {
+	allowedOrigin := getEnv("ALLOWED_ORIGINS", "*")
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		if allowedOrigin != "*" {
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Signature")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET")
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(244)
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
@@ -95,7 +121,10 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func handleHealth(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "healthy",
+		"service": "astra-valkyries-api",
+	})
 }
 
 type RegisterRequest struct {
@@ -105,14 +134,18 @@ type RegisterRequest struct {
 func handleRegisterPlayer(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request parameters (username must be 2-20 characters)"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid callsign (must be 2-20 characters)"})
 		return
 	}
 
-	// Create new player with UUID
 	player := Player{
 		ID:       uuid.New().String(),
-		Username: req.Username,
+		Username: strings.TrimSpace(req.Username),
+	}
+
+	if len(player.Username) < 2 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid callsign (must be at least 2 non-space characters)"})
+		return
 	}
 
 	if err := db.Create(&player).Error; err != nil {
@@ -132,6 +165,13 @@ type SubmitScoreRequest struct {
 	Signature string `json:"signature" binding:"required"`
 }
 
+func computeScoreSignature(playerID string, score, level int, mode, secret string) string {
+	payload := fmt.Sprintf("%s:%d:%d:%s", playerID, score, level, mode)
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(payload))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 func handleSubmitScore(c *gin.Context) {
 	var req SubmitScoreRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -139,36 +179,33 @@ func handleSubmitScore(c *gin.Context) {
 		return
 	}
 
-	// 1. Verify player exists
+	if req.Score < 0 || req.Level < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid score or level"})
+		return
+	}
+
 	var player Player
 	if err := db.First(&player, "id = ?", req.PlayerID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Player profile not found"})
 		return
 	}
 
-	// 2. Anti-cheat signature validation
-	// HMAC-SHA256 signature of: "player_id:score:level:mode"
-	payload := fmt.Sprintf("%s:%d:%d:%s", req.PlayerID, req.Score, req.Level, req.Mode)
-	h := hmac.New(sha256.New, []byte(SecretKey))
-	h.Write([]byte(payload))
-	expectedSignature := hex.EncodeToString(h.Sum(nil))
-
-	if req.Signature != expectedSignature {
+	expectedSignature := computeScoreSignature(req.PlayerID, req.Score, req.Level, req.Mode, getSecretKey())
+	if !hmac.Equal([]byte(req.Signature), []byte(expectedSignature)) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Score submission rejected: integrity signature mismatch (anti-cheat)"})
 		return
 	}
 
-	// 3. Save score to database
 	scoreRecord := Score{
 		PlayerID:  req.PlayerID,
-		Scientist: req.Scientist,
+		Scientist: strings.TrimSpace(req.Scientist),
 		Score:     req.Score,
 		Level:     req.Level,
-		Mode:      req.Mode,
+		Mode:      strings.TrimSpace(req.Mode),
 	}
 
 	if err := db.Create(&scoreRecord).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save score records"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save score record"})
 		return
 	}
 
@@ -180,7 +217,7 @@ func handleSubmitScore(c *gin.Context) {
 
 func handleGetScores(c *gin.Context) {
 	mode := c.DefaultQuery("mode", "arcade")
-	period := c.DefaultQuery("period", "all") // "today" or "all"
+	period := c.DefaultQuery("period", "all")
 	limitStr := c.DefaultQuery("limit", "10")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 || limit > 100 {
@@ -190,19 +227,16 @@ func handleGetScores(c *gin.Context) {
 	var scores []Score
 	query := db.Preload("Player").Where("mode = ?", mode)
 	if period == "today" {
-		now := time.Now()
-		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		now := time.Now().UTC()
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 		query = query.Where("created_at >= ?", startOfDay)
 	}
 
-	err = query.Order("score desc").Limit(limit).Find(&scores).Error
-
-	if err != nil {
+	if err := query.Order("score desc").Limit(limit).Find(&scores).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve highscores"})
 		return
 	}
 
-	// Format results for client consumption
 	type LeaderboardEntry struct {
 		Username  string `json:"username"`
 		Scientist string `json:"scientist"`
@@ -213,13 +247,13 @@ func handleGetScores(c *gin.Context) {
 
 	results := make([]LeaderboardEntry, len(scores))
 	for i, s := range scores {
-		scientist := s.Scientist
-		if scientist == "" {
-			scientist = "Pioneira"
+		pilot := s.Scientist
+		if pilot == "" {
+			pilot = "Valkyrie"
 		}
 		results[i] = LeaderboardEntry{
 			Username:  s.Player.Username,
-			Scientist: scientist,
+			Scientist: pilot,
 			Score:     s.Score,
 			Level:     s.Level,
 			CreatedAt: s.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -237,57 +271,58 @@ func handleLiveLeaderboard(c *gin.Context) {
 		Limit(15).
 		Find(&scores)
 
-	html := `<!DOCTYPE html>
-<html lang="pt-BR">
+	var sb strings.Builder
+	sb.WriteString(`<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="3">
-<title>Ranking ao Vivo • Mulheres na Ciência</title>
+<meta http-equiv="refresh" content="5">
+<title>Astra Valkyries // Live Global Leaderboard</title>
 <style>
-  body { background: #0a0e17; color: #fff; font-family: 'Courier New', monospace; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; }
-  h1 { color: #00e5ff; letter-spacing: 3px; margin-bottom: 4px; text-shadow: 0 0 12px #00e5ff88; }
-  p.subtitle { color: #8892b0; margin-top: 0; font-size: 14px; letter-spacing: 1.5px; }
-  table { width: 90%; max-width: 800px; border-collapse: collapse; margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,229,255,0.3); border-radius: 12px; overflow: hidden; }
-  th { background: rgba(0,229,255,0.15); color: #00e5ff; padding: 14px; text-align: left; font-size: 14px; letter-spacing: 1.5px; }
-  td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 15px; }
-  tr:nth-child(1) td { color: #ffd700; font-weight: bold; font-size: 17px; }
-  tr:nth-child(2) td { color: #cfd8dc; font-weight: bold; }
-  tr:nth-child(3) td { color: #bcaaa4; font-weight: bold; }
-  .badge { background: rgba(0,230,118,0.2); color: #00e676; padding: 4px 8px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(0,230,118,0.4); }
-  .refresh-hint { margin-top: 16px; color: #556; font-size: 12px; }
+  body { background: #070b14; color: #f1f5f9; font-family: 'Courier New', monospace; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+  h1 { color: #00e5ff; letter-spacing: 3px; margin-bottom: 4px; text-shadow: 0 0 12px #00e5ff88; text-align: center; }
+  p.subtitle { color: #94a3b8; margin-top: 0; font-size: 13px; letter-spacing: 1.5px; text-align: center; }
+  table { width: 92%; max-width: 820px; border-collapse: collapse; margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,229,255,0.3); border-radius: 12px; overflow: hidden; }
+  th { background: rgba(0,229,255,0.14); color: #00e5ff; padding: 14px; text-align: left; font-size: 13px; letter-spacing: 1.4px; }
+  td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
+  tr:nth-child(1) td { color: #ffd700; font-weight: bold; font-size: 16px; }
+  tr:nth-child(2) td { color: #e2e8f0; font-weight: bold; }
+  tr:nth-child(3) td { color: #fdba74; font-weight: bold; }
+  .badge { background: rgba(0,229,255,0.15); color: #67e8f9; padding: 3px 8px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(0,229,255,0.35); }
+  .refresh-hint { margin-top: 16px; color: #64748b; font-size: 12px; }
 </style>
 </head>
 <body>
-  <h1>RANKING DA FEIRA DE CIÊNCIAS</h1>
-  <p class="subtitle">MULHERES NA CIÊNCIA • TOP PILOTOS ESPACIAIS</p>
+  <h1>ASTRA VALKYRIES</h1>
+  <p class="subtitle">LIVE GLOBAL LEADERBOARD • TOP SORTIE PILOTS</p>
   <table>
     <thead>
-      <tr><th>POS</th><th>PILOTO</th><th>CIENTISTA</th><th style="text-align:right">PONTOS</th></tr>
+      <tr><th>RANK</th><th>CALLSIGN</th><th>VALKYRIE</th><th style="text-align:right">SCORE</th></tr>
     </thead>
-    <tbody>`
+    <tbody>`)
 
 	if len(scores) == 0 {
-		html += `<tr><td colspan="4" style="text-align:center; padding: 24px; color: #667;">Nenhum recorde registrado ainda. Seja a primeira a jogar!</td></tr>`
+		sb.WriteString(`<tr><td colspan="4" style="text-align:center; padding: 24px; color: #64748b;">No cloud sorties recorded yet.</td></tr>`)
 	} else {
 		for i, s := range scores {
-			pos := fmt.Sprintf("#%d", i+1)
-			scientist := s.Scientist
-			if scientist == "" {
-				scientist = "Pioneira"
+			pilot := s.Scientist
+			if pilot == "" {
+				pilot = "Valkyrie"
 			}
-			html += fmt.Sprintf(`<tr>
-				<td>%s</td>
-				<td><strong>%s</strong></td>
-				<td><span class="badge">%s</span></td>
-				<td style="text-align:right; font-weight:bold;">%d</td>
-			</tr>`, pos, s.Player.Username, scientist, s.Score)
+			sb.WriteString(fmt.Sprintf(
+				`<tr><td>#%d</td><td><strong>%s</strong></td><td><span class="badge">%s</span></td><td style="text-align:right; font-weight:bold;">%d</td></tr>`,
+				i+1,
+				html.EscapeString(s.Player.Username),
+				html.EscapeString(pilot),
+				s.Score,
+			))
 		}
 	}
 
-	html += `</tbody></table>
-  <p class="refresh-hint">Atualização automática em tempo real a cada 3 segundos • Asteroids</p>
+	sb.WriteString(`</tbody></table>
+  <p class="refresh-hint">Auto-refreshes every 5s • Astra Valkyries Telemetry API</p>
 </body>
-</html>`
+</html>`)
 
-	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(sb.String()))
 }
