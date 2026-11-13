@@ -30,7 +30,8 @@ class BlueprintDef {
     BlueprintDef(
       weaponId: 'aegis_sawblades',
       title: 'AEGIS SAWBLADES',
-      subtitle: 'Lâminas orbitais contínuas que destroem projéteis e aplicam Ruptura.',
+      subtitle:
+          'Lâminas orbitais contínuas que destroem projéteis e aplicam Ruptura.',
       elementLabel: '🟣 VOID RUPTURE',
       forgeCost: 150,
       icon: Icons.rotate_right_rounded,
@@ -66,7 +67,8 @@ class BlueprintDef {
     BlueprintDef(
       weaponId: 'repulsor_aura',
       title: 'REPULSOR GRAVITY AURA',
-      subtitle: 'Pulso 360° ao redor da nave que repele enxames e aplica Ruptura.',
+      subtitle:
+          'Pulso 360° ao redor da nave que repele enxames e aplica Ruptura.',
       elementLabel: '🟣 VOID RUPTURE',
       forgeCost: 220,
       icon: Icons.radar_rounded,
@@ -90,7 +92,8 @@ class BlueprintDef {
     BlueprintDef(
       weaponId: 'inferno_cone',
       title: 'INFERNO PLASMA CONE',
-      subtitle: 'Lança-chamas espacial de curta distância que incinera esquadrões.',
+      subtitle:
+          'Lança-chamas espacial de curta distância que incinera esquadrões.',
       elementLabel: '🔥 SOLAR BURN',
       forgeCost: 160,
       icon: Icons.local_fire_department_rounded,
@@ -102,7 +105,8 @@ class BlueprintDef {
     BlueprintDef(
       weaponId: 'valkyrie_wingmen',
       title: 'VALKYRIE WINGMEN',
-      subtitle: 'Drones caçadores aliados que escoltam a nave e atiram autonomamente.',
+      subtitle:
+          'Drones caçadores aliados que escoltam a nave e atiram autonomamente.',
       elementLabel: '⚡ TACTICAL DRONES',
       forgeCost: 300,
       icon: Icons.flight_class_rounded,
@@ -114,7 +118,8 @@ class BlueprintDef {
     BlueprintDef(
       weaponId: 'void_mines',
       title: 'VOID CLUSTER MINES',
-      subtitle: 'Minas magnéticas traseiras ideais para recuar atirando (Kiting).',
+      subtitle:
+          'Minas magnéticas traseiras ideais para recuar atirando (Kiting).',
       elementLabel: '🟣 VOID RUPTURE',
       forgeCost: 190,
       icon: Icons.brightness_low_rounded,
@@ -179,7 +184,8 @@ class PilotMutation {
     PilotMutation(
       id: 'mut_vampiric_close',
       title: 'ADRENALINA VAMPÍRICA',
-      description: 'Abater inimigos ou asteroides restaura +4 HP de integridade do casco.',
+      description:
+          'Abater inimigos ou asteroides restaura +4 HP de integridade do casco.',
       icon: Icons.favorite_rounded,
       color: Color(0xFFFF1744),
       loreLog:
@@ -189,7 +195,8 @@ class PilotMutation {
     PilotMutation(
       id: 'mut_mirror_dash',
       title: 'CONTRAMEDIDA ESPELHADA',
-      description: 'Usar o Dash vaporiza projéteis inimigos próximos e causa +30% de velocidade de recarga.',
+      description:
+          'Usar o Dash vaporiza projéteis inimigos próximos e causa +30% de velocidade de recarga.',
       icon: Icons.shield_moon_rounded,
       color: Color(0xFF00E5FF),
       loreLog:
@@ -199,7 +206,8 @@ class PilotMutation {
     PilotMutation(
       id: 'mut_lone_wolf',
       title: 'SOBRECARGA DE ARSENAL',
-      description: 'Concede +35% de Dano Global e +15% de Chance Crítica para todas as armas.',
+      description:
+          'Concede +35% de Dano Global e +15% de Chance Crítica para todas as armas.',
       icon: Icons.bolt_rounded,
       color: Color(0xFFFFD700),
       loreLog:
@@ -209,7 +217,8 @@ class PilotMutation {
     PilotMutation(
       id: 'mut_cryo_shatter',
       title: 'CATALISADOR ELEMENTAL',
-      description: 'Aumenta em +50% o dano de todas as Reações Elementais (Burn, Freeze, Shock, Rupture).',
+      description:
+          'Aumenta em +50% o dano de todas as Reações Elementais (Burn, Freeze, Shock, Rupture).',
       icon: Icons.ac_unit_rounded,
       color: Color(0xFF80D8FF),
       loreLog:
@@ -219,7 +228,8 @@ class PilotMutation {
     PilotMutation(
       id: 'mut_scrap_alchemist',
       title: 'ALQUIMIA DE SUCATA',
-      description: 'Aumenta em +40% toda a Sucata Cósmica e Stardust XP coletados no setor.',
+      description:
+          'Aumenta em +40% toda a Sucata Cósmica e Stardust XP coletados no setor.',
       icon: Icons.precision_manufacturing_rounded,
       color: Color(0xFFFFB300),
       loreLog:
@@ -376,7 +386,8 @@ class FactionCodexEntry {
       id: 'faction_architects',
       title: 'ARQUITETOS ANCESTRAIS DO PROTOCOLO',
       subtitle: 'Guardiões Primordiais do Horizonte de Eventos',
-      threatClassification: 'AMEAÇA NÍVEL TRANSCENDENTE // GRAVIDADE & ENTROPIA',
+      threatClassification:
+          'AMEAÇA NÍVEL TRANSCENDENTE // GRAVIDADE & ENTROPIA',
       loreHistory:
           'Entidades multidimensionais que regem a singularidade do Setor 4 e o Trono Secreto do Setor 5. '
           'Foram eles que ergueram o loop temporal do Protocolo Void para conter a morte térmica do universo '
@@ -419,7 +430,8 @@ class MilestoneAchievement {
     MilestoneAchievement(
       id: 'ach_speed_vault',
       title: 'VELOCISTA DO VÁCUO',
-      description: 'Alcance e abra o Cofre Cronometrado (< 02:00) antes que se tranque.',
+      description:
+          'Alcance e abra o Cofre Cronometrado (< 02:00) antes que se tranque.',
       scrapReward: 250,
       icon: Icons.timer_rounded,
       color: Color(0xFFFFD700),
@@ -427,7 +439,8 @@ class MilestoneAchievement {
     MilestoneAchievement(
       id: 'ach_flawless_titan',
       title: 'INTOCÁVEL',
-      description: 'Derrote um Chefe Soberano sem sofrer dano e abra sua Câmara Intocável.',
+      description:
+          'Derrote um Chefe Soberano sem sofrer dano e abra sua Câmara Intocável.',
       scrapReward: 350,
       icon: Icons.workspace_premium_rounded,
       color: Color(0xFF00E5FF),
@@ -435,7 +448,8 @@ class MilestoneAchievement {
     MilestoneAchievement(
       id: 'ach_superweapon',
       title: 'FORJADORA DE ESTRELAS',
-      description: 'Evolua qualquer arma MK 3 para sua forma de Superarma Lendária.',
+      description:
+          'Evolua qualquer arma MK 5 para sua forma de Superarma Lendária.',
       scrapReward: 300,
       icon: Icons.auto_awesome_rounded,
       color: Color(0xFFFFD700),
@@ -451,7 +465,8 @@ class MilestoneAchievement {
     MilestoneAchievement(
       id: 'ach_void_cell',
       title: 'PORTADORA DA CÉLULA',
-      description: 'Vença um Setor ou Campanha com pelo menos 1 Void Cell ativa.',
+      description:
+          'Vença um Setor ou Campanha com pelo menos 1 Void Cell ativa.',
       scrapReward: 400,
       icon: Icons.cyclone_rounded,
       color: Color(0xFFE040FB),

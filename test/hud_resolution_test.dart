@@ -22,58 +22,62 @@ void main() {
   ];
 
   for (final res in resolutions) {
-    testWidgets('HudOverlay renders without error on ${res.width}x${res.height}', (tester) async {
-      await tester.binding.setSurfaceSize(res);
+    testWidgets(
+      'HudOverlay renders without error on ${res.width}x${res.height}',
+      (tester) async {
+        await tester.binding.setSurfaceSize(res);
+        final game = AsteroidsGame();
+        game.selectedValkyrie = Valkyrie.findById('selene');
+        game.player = PlayerComponent(position: Vector2(100, 100))
+          ..customGame = game;
+        game.player.valkyrie = game.selectedValkyrie;
+        game.score = 610;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: HudOverlay(game: game)),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        final err = tester.takeException();
+        if (err is FlutterError) {
+          // ignore: avoid_print
+          print('DIAGNOSTICS for ${res.width}x${res.height}:');
+          for (final d in err.diagnostics) {
+            // ignore: avoid_print
+            print('  ${d.name}: ${d.value}');
+          }
+        }
+        expect(err, isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'HudOverlay displays ★EVO badge on weapons ready for super-evolution',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 720));
       final game = AsteroidsGame();
-      game.selectedValkyrie = Valkyrie.findById('selene');
-      game.player = PlayerComponent(position: Vector2(100, 100))..customGame = game;
+      game.selectedValkyrie = Valkyrie.findById('kaede');
+      game.player = PlayerComponent(position: Vector2(100, 100))
+        ..customGame = game;
       game.player.valkyrie = game.selectedValkyrie;
-      game.score = 610;
+
+      final katana = TachyonKatana();
+      katana.level = katana.maxLevel; // Ready for evolution
+      game.player.setWeapon(katana);
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: HudOverlay(game: game),
-          ),
+          home: Scaffold(body: HudOverlay(game: game)),
         ),
       );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      final err = tester.takeException();
-      if (err is FlutterError) {
-        // ignore: avoid_print
-        print('DIAGNOSTICS for ${res.width}x${res.height}:');
-        for (final d in err.diagnostics) {
-          // ignore: avoid_print
-          print('  ${d.name}: ${d.value}');
-        }
-      }
-      expect(err, isNull);
-    });
-  }
-
-  testWidgets('HudOverlay displays ★EVO badge on weapons ready for super-evolution', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(1280, 720));
-    final game = AsteroidsGame();
-    game.selectedValkyrie = Valkyrie.findById('kaede');
-    game.player = PlayerComponent(position: Vector2(100, 100))..customGame = game;
-    game.player.valkyrie = game.selectedValkyrie;
-
-    final katana = TachyonKatana();
-    katana.level = 3; // Ready for evolution
-    game.player.setWeapon(katana);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: HudOverlay(game: game),
-        ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('★EVO'), findsOneWidget);
-  });
+      expect(find.text('★EVO'), findsOneWidget);
+    },
+  );
 }

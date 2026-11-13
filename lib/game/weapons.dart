@@ -19,9 +19,11 @@ abstract class Weapon {
   double cooldown;
   double recoil;
   double muzzleFlashSize;
+  static const int defaultMaxLevel = 5;
+
   double damage;
   int level = 1;
-  final int maxLevel = 3;
+  final int maxLevel = defaultMaxLevel;
   double currentCooldown = 0.0;
 
   bool isEvolved = false;
@@ -158,6 +160,16 @@ abstract class Weapon {
         return VoidClusterMines();
       case 'tachyon_katana':
         return TachyonKatana();
+      case 'union_void_singularity':
+        return VoidSingularityNova();
+      case 'union_thunderstorm':
+        return ThunderstormCoreMelter();
+      case 'union_eclipse_tempest':
+        return EclipseOrbitalTempest();
+      case 'union_cataclysm_inferno':
+        return CataclysmicVoidInferno();
+      case 'union_seraphim_requiem':
+        return SeraphimVoidRequiem();
       default:
         return Blaster();
     }
@@ -240,16 +252,30 @@ class Blaster extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.52;
-      recoil = 8.0;
-      damage = 42.0;
-      muzzleFlashSize = 10.0;
-    } else if (level >= 3) {
-      cooldown = 0.42;
-      recoil = 5.0;
-      damage = 60.0;
-      muzzleFlashSize = 12.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.60;
+        recoil = 10.0;
+        damage = 34.0;
+        muzzleFlashSize = 9.0;
+        break;
+      case 3:
+        cooldown = 0.52;
+        recoil = 8.0;
+        damage = 44.0;
+        muzzleFlashSize = 10.5;
+        break;
+      case 4:
+        cooldown = 0.45;
+        recoil = 6.5;
+        damage = 54.0;
+        muzzleFlashSize = 11.5;
+        break;
+      default:
+        cooldown = 0.38;
+        recoil = 5.0;
+        damage = 66.0;
+        muzzleFlashSize = 12.5;
     }
   }
 
@@ -338,16 +364,30 @@ class SpreadShot extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.75;
-      recoil = 10.0;
-      damage = 22.0;
-      muzzleFlashSize = 13.0;
-    } else if (level >= 3) {
-      cooldown = 0.62;
-      recoil = 6.0;
-      damage = 32.0;
-      muzzleFlashSize = 15.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.85;
+        recoil = 12.0;
+        damage = 18.0;
+        muzzleFlashSize = 12.0;
+        break;
+      case 3:
+        cooldown = 0.75;
+        recoil = 10.0;
+        damage = 23.0;
+        muzzleFlashSize = 13.0;
+        break;
+      case 4:
+        cooldown = 0.67;
+        recoil = 8.0;
+        damage = 28.0;
+        muzzleFlashSize = 14.0;
+        break;
+      default:
+        cooldown = 0.58;
+        recoil = 6.0;
+        damage = 34.0;
+        muzzleFlashSize = 15.0;
     }
   }
 
@@ -411,16 +451,30 @@ class RapidFire extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.22;
-      recoil = 2.5;
-      damage = 16.0;
-      muzzleFlashSize = 8.0;
-    } else if (level >= 3) {
-      cooldown = 0.18;
-      recoil = 1.8;
-      damage = 22.0;
-      muzzleFlashSize = 9.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.27;
+        recoil = 3.2;
+        damage = 13.0;
+        muzzleFlashSize = 7.0;
+        break;
+      case 3:
+        cooldown = 0.23;
+        recoil = 2.6;
+        damage = 16.0;
+        muzzleFlashSize = 8.0;
+        break;
+      case 4:
+        cooldown = 0.20;
+        recoil = 2.1;
+        damage = 19.0;
+        muzzleFlashSize = 8.5;
+        break;
+      default:
+        cooldown = 0.16;
+        recoil = 1.6;
+        damage = 23.0;
+        muzzleFlashSize = 9.5;
     }
   }
 
@@ -502,16 +556,30 @@ class BombLauncher extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 1.45;
-      recoil = 16.0;
-      damage = 130.0;
-      muzzleFlashSize = 22.0;
-    } else if (level >= 3) {
-      cooldown = 1.20;
-      recoil = 12.0;
-      damage = 190.0;
-      muzzleFlashSize = 25.0;
+    switch (level) {
+      case 2:
+        cooldown = 1.62;
+        recoil = 19.0;
+        damage = 105.0;
+        muzzleFlashSize = 20.0;
+        break;
+      case 3:
+        cooldown = 1.45;
+        recoil = 16.0;
+        damage = 135.0;
+        muzzleFlashSize = 22.0;
+        break;
+      case 4:
+        cooldown = 1.30;
+        recoil = 14.0;
+        damage = 165.0;
+        muzzleFlashSize = 24.0;
+        break;
+      default:
+        cooldown = 1.15;
+        recoil = 12.0;
+        damage = 200.0;
+        muzzleFlashSize = 26.0;
     }
   }
 
@@ -541,7 +609,9 @@ class AegisSawblades extends Weapon {
   bool fire(PlayerComponent player) {
     final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
     final effectiveDamage = damage * player.damageMultiplier * surgeMult;
-    final bladeCount = isEvolved ? 6 : (level + 1); // 2, 3, 4 -> 6 blades
+    final bladeCount = isEvolved
+        ? 6
+        : math.min(4, level + 1); // 2..4 -> 6 blades
     final orbitRadius = isEvolved ? 115.0 : 88.0;
 
     // Remove lâminas anteriores para renovar o anel orbital
@@ -569,12 +639,22 @@ class AegisSawblades extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 3.2;
-      damage = 24.0;
-    } else if (level >= 3) {
-      cooldown = 2.8;
-      damage = 35.0;
+    switch (level) {
+      case 2:
+        cooldown = 3.5;
+        damage = 20.0;
+        break;
+      case 3:
+        cooldown = 3.2;
+        damage = 25.0;
+        break;
+      case 4:
+        cooldown = 2.95;
+        damage = 31.0;
+        break;
+      default:
+        cooldown = 2.7;
+        damage = 38.0;
     }
   }
 
@@ -686,12 +766,22 @@ class TeslaArcCannon extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.75;
-      damage = 30.0;
-    } else if (level >= 3) {
-      cooldown = 0.62;
-      damage = 42.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.82;
+        damage = 25.0;
+        break;
+      case 3:
+        cooldown = 0.74;
+        damage = 31.0;
+        break;
+      case 4:
+        cooldown = 0.67;
+        damage = 38.0;
+        break;
+      default:
+        cooldown = 0.60;
+        damage = 45.0;
     }
   }
 
@@ -740,12 +830,22 @@ class QuantumChakram extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 1.05;
-      damage = 34.0;
-    } else if (level >= 3) {
-      cooldown = 0.95;
-      damage = 28.0;
+    switch (level) {
+      case 2:
+        cooldown = 1.08;
+        damage = 32.0;
+        break;
+      case 3:
+        cooldown = 1.02;
+        damage = 26.0;
+        break;
+      case 4:
+        cooldown = 0.96;
+        damage = 30.0;
+        break;
+      default:
+        cooldown = 0.90;
+        damage = 34.0;
     }
   }
 
@@ -790,12 +890,22 @@ class RepulsorGravityAura extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 1.20;
-      damage = 26.0;
-    } else if (level >= 3) {
-      cooldown = 1.05;
-      damage = 36.0;
+    switch (level) {
+      case 2:
+        cooldown = 1.26;
+        damage = 22.0;
+        break;
+      case 3:
+        cooldown = 1.18;
+        damage = 27.0;
+        break;
+      case 4:
+        cooldown = 1.10;
+        damage = 33.0;
+        break;
+      default:
+        cooldown = 1.02;
+        damage = 40.0;
     }
   }
 
@@ -878,12 +988,22 @@ class SolarThermalLance extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.58;
-      damage = 44.0;
-    } else if (level >= 3) {
-      cooldown = 0.46;
-      damage = 62.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.60;
+        damage = 36.0;
+        break;
+      case 3:
+        cooldown = 0.55;
+        damage = 45.0;
+        break;
+      case 4:
+        cooldown = 0.50;
+        damage = 55.0;
+        break;
+      default:
+        cooldown = 0.44;
+        damage = 66.0;
     }
   }
 
@@ -935,12 +1055,22 @@ class InfernoPlasmaCone extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.24;
-      damage = 13.0;
-    } else if (level >= 3) {
-      cooldown = 0.20;
-      damage = 17.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.25;
+        damage = 11.0;
+        break;
+      case 3:
+        cooldown = 0.23;
+        damage = 13.5;
+        break;
+      case 4:
+        cooldown = 0.21;
+        damage = 16.0;
+        break;
+      default:
+        cooldown = 0.19;
+        damage = 19.0;
     }
   }
 
@@ -991,12 +1121,22 @@ class ValkyrieWingmen extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 4.0;
-      damage = 18.0;
-    } else if (level >= 3) {
-      cooldown = 3.6;
-      damage = 25.0;
+    switch (level) {
+      case 2:
+        cooldown = 4.2;
+        damage = 15.0;
+        break;
+      case 3:
+        cooldown = 3.9;
+        damage = 19.0;
+        break;
+      case 4:
+        cooldown = 3.7;
+        damage = 23.0;
+        break;
+      default:
+        cooldown = 3.4;
+        damage = 28.0;
     }
   }
 
@@ -1049,12 +1189,22 @@ class VoidClusterMines extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 1.20;
-      damage = 70.0;
-    } else if (level >= 3) {
-      cooldown = 1.05;
-      damage = 65.0;
+    switch (level) {
+      case 2:
+        cooldown = 1.28;
+        damage = 62.0;
+        break;
+      case 3:
+        cooldown = 1.18;
+        damage = 55.0;
+        break;
+      case 4:
+        cooldown = 1.10;
+        damage = 65.0;
+        break;
+      default:
+        cooldown = 1.00;
+        damage = 76.0;
     }
   }
 
@@ -1192,16 +1342,30 @@ class TachyonKatana extends Weapon {
 
   @override
   void applyUpgradeStats() {
-    if (level == 2) {
-      cooldown = 0.50;
-      recoil = 1.8;
-      damage = 20.0;
-      muzzleFlashSize = 7.0;
-    } else if (level >= 3) {
-      cooldown = 0.42;
-      recoil = 1.2;
-      damage = 28.0;
-      muzzleFlashSize = 9.0;
+    switch (level) {
+      case 2:
+        cooldown = 0.54;
+        recoil = 1.8;
+        damage = 17.5;
+        muzzleFlashSize = 7.0;
+        break;
+      case 3:
+        cooldown = 0.48;
+        recoil = 1.5;
+        damage = 22.0;
+        muzzleFlashSize = 8.0;
+        break;
+      case 4:
+        cooldown = 0.44;
+        recoil = 1.3;
+        damage = 26.5;
+        muzzleFlashSize = 9.0;
+        break;
+      default:
+        cooldown = 0.40;
+        recoil = 1.1;
+        damage = 31.0;
+        muzzleFlashSize = 10.0;
     }
   }
 
@@ -1329,6 +1493,196 @@ class ThunderstormCoreMelter extends Weapon {
     }
 
     player.game.playSfx('shoot.wav');
+    return true;
+  }
+
+  @override
+  void applyUpgradeStats() {}
+
+  @override
+  void applyEvolution() {}
+}
+
+class EclipseOrbitalTempest extends Weapon {
+  EclipseOrbitalTempest()
+    : super(
+        id: 'union_eclipse_tempest',
+        name: 'Eclipse Orbital Tempest',
+        evolvedName: 'Eclipse Orbital Tempest ★',
+        cooldown: 1.65,
+        recoil: 2.0,
+        muzzleFlashSize: 12.0,
+        damage: 56.0,
+      ) {
+    isEvolved = true;
+  }
+
+  @override
+  bool fire(PlayerComponent player) {
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
+
+    final existing = player.game.world.children
+        .whereType<OrbitalSawbladeComponent>()
+        .toList();
+    for (final blade in existing) {
+      blade.removeFromParent();
+    }
+
+    const int bladeCount = 6;
+    for (var i = 0; i < bladeCount; i++) {
+      player.game.world.add(
+        OrbitalSawbladeComponent(
+          bladeIndex: i,
+          totalBlades: bladeCount,
+          orbitRadius: 122.0 * player.game.rogueAreaMultiplier,
+          damagePerHit: effectiveDamage,
+          isEvolved: true,
+          lifeTimer: 2.4,
+        ),
+      );
+    }
+
+    for (var i = 0; i < 3; i++) {
+      final spreadAngle = (i - 1) * 0.34;
+      final a = player.angle + spreadAngle - math.pi / 2;
+      final dir = Vector2(math.cos(a), math.sin(a));
+      player.game.world.add(
+        ChakramProjectileComponent(
+          position: player.position + dir * player.radius,
+          velocity: dir * 560.0,
+          baseDamage: effectiveDamage * 0.9,
+          isEvolved: true,
+        ),
+      );
+    }
+    return true;
+  }
+
+  @override
+  void applyUpgradeStats() {}
+
+  @override
+  void applyEvolution() {}
+}
+
+class CataclysmicVoidInferno extends Weapon {
+  CataclysmicVoidInferno()
+    : super(
+        id: 'union_cataclysm_inferno',
+        name: 'Cataclysmic Void Inferno',
+        evolvedName: 'Cataclysmic Void Inferno ★',
+        cooldown: 0.52,
+        recoil: 6.0,
+        muzzleFlashSize: 18.0,
+        damage: 95.0,
+      ) {
+    isEvolved = true;
+  }
+
+  @override
+  bool fire(PlayerComponent player) {
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
+
+    for (var i = 0; i < 5; i++) {
+      final offsetAngle = (i - 2) * 0.20;
+      final a = player.angle + offsetAngle - math.pi / 2;
+      final dir = Vector2(math.cos(a), math.sin(a));
+      player.game.world.add(
+        BulletComponent(
+          position: player.position + dir * player.radius,
+          radius: 7.5,
+          velocity: dir * 440.0,
+          lifeTimer: 0.60,
+          damage: effectiveDamage * 0.34,
+          color: const Color(0xFFFF6D00),
+          piercesLeft: 5,
+          elementalStatus: ElementalStatus.solarBurn,
+        ),
+      );
+    }
+
+    player.game.world.add(
+      BombComponent(
+        position: player.position + player.forward * player.radius,
+        velocity: player.forward * 360.0,
+        damage: effectiveDamage * 2.5,
+        explosionRadius: 155.0 * player.game.rogueAreaMultiplier,
+        isSingularity: true,
+      ),
+    );
+    return true;
+  }
+
+  @override
+  void applyUpgradeStats() {}
+
+  @override
+  void applyEvolution() {}
+}
+
+class SeraphimVoidRequiem extends Weapon {
+  SeraphimVoidRequiem()
+    : super(
+        id: 'union_seraphim_requiem',
+        name: 'Seraphim Void Requiem',
+        evolvedName: 'Seraphim Void Requiem ★',
+        cooldown: 0.34,
+        recoil: 1.5,
+        muzzleFlashSize: 12.0,
+        damage: 52.0,
+      ) {
+    isEvolved = true;
+  }
+
+  @override
+  bool fire(PlayerComponent player) {
+    final surgeMult = player.bloodOverdriveTimer > 0 ? 2.0 : 1.0;
+    final effectiveDamage = damage * player.damageMultiplier * surgeMult;
+
+    final existing = player.game.world.children
+        .whereType<WingmanDroneComponent>()
+        .toList();
+    if (existing.length < 4) {
+      for (final d in existing) {
+        d.removeFromParent();
+      }
+      for (var i = 0; i < 4; i++) {
+        player.game.world.add(
+          WingmanDroneComponent(
+            droneIndex: i,
+            damage: effectiveDamage * 0.85,
+            isEvolved: true,
+          ),
+        );
+      }
+    }
+
+    for (final angleDeg in [-15.0, 0.0, 15.0]) {
+      final angleRad = angleDeg * math.pi / 180.0;
+      final shootAngle = player.angle + angleRad;
+      final dir = Vector2(
+        math.cos(shootAngle - math.pi / 2),
+        math.sin(shootAngle - math.pi / 2),
+      );
+      player.game.world.add(
+        KatanaSlashComponent(
+          position: player.position + dir * (player.radius + 10.0),
+          angle: shootAngle,
+          velocity: dir * 480.0,
+          lifeTimer: 0.48,
+          damage: effectiveDamage * 1.35,
+          slashWidth: 56.0,
+          slashHeight: 16.0,
+          slashColor: const Color(0xFFFFD54F),
+          coreColor: const Color(0xFFE040FB),
+          piercesLeft: 7,
+          isVoidMuramasa: true,
+          weaponSource: this,
+        ),
+      );
+    }
     return true;
   }
 

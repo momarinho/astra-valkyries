@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Inspirado no sistema de segredos e desbloqueio de receitas de Vampire Survivors.
 class SecretGrimoireService {
   static final Set<String> _discoveredRecipes = {};
-  static final ValueNotifier<String?> latestDiscoveredNotifier = ValueNotifier<String?>(null);
+  static final ValueNotifier<String?> latestDiscoveredNotifier =
+      ValueNotifier<String?>(null);
 
   static const List<String> allRecipeKeys = [
     'blaster',
@@ -23,11 +24,15 @@ class SecretGrimoireService {
     'tachyon_katana',
     'union_void_singularity',
     'union_thunderstorm',
+    'union_eclipse_tempest',
+    'union_cataclysm_inferno',
+    'union_seraphim_requiem',
   ];
 
   static int get discoveredCount => _discoveredRecipes.length;
   static int get totalCount => allRecipeKeys.length;
-  static double get progressFraction => totalCount > 0 ? (discoveredCount / totalCount).clamp(0.0, 1.0) : 0.0;
+  static double get progressFraction =>
+      totalCount > 0 ? (discoveredCount / totalCount).clamp(0.0, 1.0) : 0.0;
 
   static bool isDiscovered(String key) => _discoveredRecipes.contains(key);
 
@@ -51,7 +56,10 @@ class SecretGrimoireService {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('secret_grimoire_discovered_recipes', _discoveredRecipes.toList());
+      await prefs.setStringList(
+        'secret_grimoire_discovered_recipes',
+        _discoveredRecipes.toList(),
+      );
     } catch (_) {}
 
     return true;

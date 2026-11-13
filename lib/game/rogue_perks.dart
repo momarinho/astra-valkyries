@@ -82,8 +82,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'aegis_sawblades',
-      passiveId: 'passive_shield_recharge',
-      passiveTitle: 'Aegis Capacitor',
+      passiveId: 'passive_armor_plating',
+      passiveTitle: 'Armor Plating',
       evolvedName: 'Celestial Buzzsaw Ring',
       evolutionDescriptionPt:
           '6 serras precursoras douradas orbitando em velocidade supersônica, triturando tiros e inimigos.',
@@ -93,8 +93,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'tesla_arc',
-      passiveId: 'passive_fire_rate',
-      passiveTitle: 'Overclocked Emitters',
+      passiveId: 'passive_luck_salvage',
+      passiveTitle: 'Quantum Luck Array',
       evolvedName: 'Mjolnir Storm Conduit',
       evolutionDescriptionPt:
           'Raios elétricos de alta voltagem saltando entre até 8 alvos e aplicando Choque Iônico.',
@@ -104,8 +104,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'quantum_chakram',
-      passiveId: 'passive_thrust',
-      passiveTitle: 'Quantum Thrusters',
+      passiveId: 'passive_capacitor_surge',
+      passiveTitle: 'Relativistic Damper',
       evolvedName: 'Chronos Eclipse Glaive',
       evolutionDescriptionPt:
           'Lâminas bumerangue triplas que congelam inimigos e causam 165% de dano no retorno.',
@@ -115,8 +115,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'repulsor_aura',
-      passiveId: 'passive_magnet',
-      passiveTitle: 'Magnetic Harvester',
+      passiveId: 'passive_aoe_amplifier',
+      passiveTitle: 'Thermobaric Warheads',
       evolvedName: 'Event Horizon Nova Pulse',
       evolutionDescriptionPt:
           'Onda de choque gravitacional maciça de 360° aplicando Ruptura do Vazio e Congelamento.',
@@ -126,8 +126,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'solar_lance',
-      passiveId: 'passive_overdrive',
-      passiveTitle: 'Void Catalyst',
+      passiveId: 'passive_piercing_sabots',
+      passiveTitle: 'Tungsten Sabot Cores',
       evolvedName: 'Helios Core Melter',
       evolutionDescriptionPt:
           'Feixe estelar contínuo colossal que derrete blindagens e inflige Queimadura Solar.',
@@ -137,8 +137,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'inferno_cone',
-      passiveId: 'passive_overdrive',
-      passiveTitle: 'Void Catalyst',
+      passiveId: 'passive_unstable_payloads',
+      passiveTitle: 'Unstable Payloads',
       evolvedName: 'Phoenix Dragon Breath',
       evolutionDescriptionPt:
           'Cone de plasma de fogo de dragão com 5 feixes incinerando esquadrões hostis inteiros.',
@@ -148,8 +148,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'valkyrie_wingmen',
-      passiveId: 'passive_fire_rate',
-      passiveTitle: 'Overclocked Emitters',
+      passiveId: 'passive_lifesteal_matrix',
+      passiveTitle: 'Lifesteal Matrix',
       evolvedName: 'Seraphim Drone Squadron',
       evolutionDescriptionPt:
           '4 drones de combate Seraphim autônomos disparando salvas ionizadas de alta cadência.',
@@ -170,8 +170,8 @@ class WeaponSynergy {
     ),
     WeaponSynergy(
       weaponId: 'tachyon_katana',
-      passiveId: 'passive_overdrive',
-      passiveTitle: 'Void Catalyst',
+      passiveId: 'passive_crit_optics',
+      passiveTitle: 'Precision Crit Optics',
       evolvedName: 'Void Muramasa',
       evolutionDescriptionPt:
           'Cortes triplos dimensionais de plasma que rasgam a realidade com perfuração linear irrestrita.',
@@ -187,6 +187,134 @@ class WeaponSynergy {
     }
     return null;
   }
+}
+
+/// Receita compartilhada de Super-União entre duas armas em nível máximo (MK 5),
+/// liberando 1 slot do arsenal ao fundir ambas em uma superarma lendária.
+class WeaponUnionRecipe {
+  final String unionId;
+  final String title;
+  final String weaponAId;
+  final String weaponATitle;
+  final String weaponBId;
+  final String weaponBTitle;
+  final String descriptionPt;
+  final String descriptionEn;
+  final IconData icon;
+  final Color accentColor;
+
+  const WeaponUnionRecipe({
+    required this.unionId,
+    required this.title,
+    required this.weaponAId,
+    required this.weaponATitle,
+    required this.weaponBId,
+    required this.weaponBTitle,
+    required this.descriptionPt,
+    required this.descriptionEn,
+    required this.icon,
+    required this.accentColor,
+  });
+
+  String get description => I18n.isPt ? descriptionPt : descriptionEn;
+
+  bool hasWeaponAMaxed(PlayerComponent player) {
+    final w = player.unlockedWeapons[weaponAId];
+    return w != null && w.level >= w.maxLevel;
+  }
+
+  bool hasWeaponBMaxed(PlayerComponent player) {
+    final w = player.unlockedWeapons[weaponBId];
+    return w != null && w.level >= w.maxLevel;
+  }
+
+  bool isEligible(PlayerComponent player) =>
+      hasWeaponAMaxed(player) &&
+      hasWeaponBMaxed(player) &&
+      !player.unlockedWeapons.containsKey(unionId);
+
+  void applyFusion(AsteroidsGame game) {
+    game.player.removeWeapon(weaponAId);
+    game.player.removeWeapon(weaponBId);
+    game.player.addWeapon(Weapon.createById(unionId));
+    SecretGrimoireService.discover(unionId);
+    game.unlockMilestone('ach_superweapon');
+    game.playSfx('boss_spawn.wav');
+    game.triggerScreenShake(duration: 0.8, intensity: 16.0);
+  }
+
+  static const List<WeaponUnionRecipe> allUnions = [
+    WeaponUnionRecipe(
+      unionId: 'union_void_singularity',
+      title: 'Void Singularity Nova',
+      weaponAId: 'blaster',
+      weaponATitle: 'Pulse Blaster',
+      weaponBId: 'void_mines',
+      weaponBTitle: 'Void Cluster Mines',
+      descriptionPt:
+          'Funde Pulse Blaster e Void Mines em uma super-arma estelar que dispara feixes e minas de singularidade, LIBERANDO 1 SLOT DE ARMA!',
+      descriptionEn:
+          'Fuses Pulse Blaster and Void Mines into a stellar super-weapon, FREEING 1 ARSENAL SLOT!',
+      icon: Icons.all_inclusive_rounded,
+      accentColor: Color(0xFFE040FB),
+    ),
+    WeaponUnionRecipe(
+      unionId: 'union_thunderstorm',
+      title: 'Thunderstorm Core Melter',
+      weaponAId: 'solar_lance',
+      weaponATitle: 'Solar Thermal Lance',
+      weaponBId: 'tesla_arc',
+      weaponBTitle: 'Tesla Arc Cannon',
+      descriptionPt:
+          'Funde Solar Lance e Tesla Arc Cannon em um feixe colossal de plasma solar bifurcado em relâmpagos, LIBERANDO 1 SLOT DE ARMA!',
+      descriptionEn:
+          'Fuses Solar Lance and Tesla Arc into a colossal sunbeam branched in lightning, FREEING 1 ARSENAL SLOT!',
+      icon: Icons.electric_bolt_rounded,
+      accentColor: Color(0xFFFFD700),
+    ),
+    WeaponUnionRecipe(
+      unionId: 'union_eclipse_tempest',
+      title: 'Eclipse Orbital Tempest',
+      weaponAId: 'aegis_sawblades',
+      weaponATitle: 'Aegis Sawblades',
+      weaponBId: 'quantum_chakram',
+      weaponBTitle: 'Quantum Chakram',
+      descriptionPt:
+          'Funde Aegis Sawblades e Quantum Chakram em um furacão orbital de 6 lâminas e 3 discos criogênicos, LIBERANDO 1 SLOT DE ARMA!',
+      descriptionEn:
+          'Fuses Aegis Sawblades and Quantum Chakram into a 6-blade orbital storm + 3 cryo glaives, FREEING 1 ARSENAL SLOT!',
+      icon: Icons.cyclone_rounded,
+      accentColor: Color(0xFF00E5FF),
+    ),
+    WeaponUnionRecipe(
+      unionId: 'union_cataclysm_inferno',
+      title: 'Cataclysmic Void Inferno',
+      weaponAId: 'inferno_cone',
+      weaponATitle: 'Inferno Plasma Cone',
+      weaponBId: 'bomb_launcher',
+      weaponBTitle: 'Antimatter Torpedo',
+      descriptionPt:
+          'Funde Inferno Cone e Antimatter Torpedo em torrentes dracônicas e ogivas de buraco negro, LIBERANDO 1 SLOT DE ARMA!',
+      descriptionEn:
+          'Fuses Inferno Cone and Antimatter Torpedo into dragonfire streams & singularity warheads, FREEING 1 ARSENAL SLOT!',
+      icon: Icons.local_fire_department_rounded,
+      accentColor: Color(0xFFFF6D00),
+    ),
+    WeaponUnionRecipe(
+      unionId: 'union_seraphim_requiem',
+      title: 'Seraphim Void Requiem',
+      weaponAId: 'tachyon_katana',
+      weaponATitle: 'Tachyon Katana',
+      weaponBId: 'valkyrie_wingmen',
+      weaponBTitle: 'Valkyrie Wingmen',
+      descriptionPt:
+          'Funde Tachyon Katana e Valkyrie Wingmen em cortes dourados transcendentais e 4 drones Seraphim, LIBERANDO 1 SLOT DE ARMA!',
+      descriptionEn:
+          'Fuses Tachyon Katana and Valkyrie Wingmen into golden slashes & 4 Seraphim interceptors, FREEING 1 ARSENAL SLOT!',
+      icon: Icons.auto_awesome,
+      accentColor: Color(0xFFFFD54F),
+    ),
+  ];
 }
 
 class RoguePerk {
@@ -259,6 +387,30 @@ class RoguePerk {
 }
 
 class RoguePerkGenerator {
+  static String _synergyHint(String weaponId, {required bool isPt}) {
+    final synergy = WeaponSynergy.findByWeaponId(weaponId);
+    if (synergy == null) return '';
+    if (SecretGrimoireService.isDiscovered(weaponId)) {
+      return isPt
+          ? ' [Sinergia: ${synergy.passiveTitle}]'
+          : ' [Synergy: ${synergy.passiveTitle}]';
+    }
+    return isPt
+        ? ' [Sinergia: ??? (Combinação Secreta)]'
+        : ' [Synergy: ??? (Secret Recipe)]';
+  }
+
+  static String _passiveSynergyHint(
+    String weaponId,
+    String weaponTitle, {
+    required bool isPt,
+  }) {
+    if (SecretGrimoireService.isDiscovered(weaponId)) {
+      return isPt ? ' [Sinergia: $weaponTitle]' : ' [Synergy: $weaponTitle]';
+    }
+    return '';
+  }
+
   static List<RoguePerk> generateChoices(AsteroidsGame game, {int count = 3}) {
     final player = game.player;
     final List<RoguePerk> priorityPool = [];
@@ -284,6 +436,7 @@ class RoguePerkGenerator {
               accentColor: const Color(0xFFFFD700),
               onSelect: (g) {
                 weapon.evolve();
+                g.unlockMilestone('ach_superweapon');
                 g.playSfx('boss_spawn.wav');
                 g.triggerScreenShake(duration: 0.6, intensity: 12.0);
               },
@@ -294,73 +447,36 @@ class RoguePerkGenerator {
     }
 
     // 0B. Super-Uniões de Armas Duplas (Vampire Survivors Style Unions)
-    // União 1: Void Singularity Nova (Blaster MK 3 + Void Mines MK 3)
-    if (player.unlockedWeapons['blaster']?.level == 3 &&
-        player.unlockedWeapons['void_mines']?.level == 3 &&
-        !player.unlockedWeapons.containsKey('union_void_singularity')) {
-      priorityPool.add(
-        RoguePerk(
-          id: 'union_void_singularity',
-          title: '🌌 SUPER-UNIÃO: VOID SINGULARITY NOVA',
-          descriptionPt:
-              'Funde Pulse Blaster e Void Mines em uma super-arma estelar que dispara feixes e minas de singularidade, LIBERANDO 1 SLOT DE ARMA!',
-          descriptionEn:
-              'Fuses Pulse Blaster and Void Mines into a stellar super-weapon, FREEING 1 ARSENAL SLOT!',
-          type: PerkType.evolution,
-          rarity: PerkRarity.legendary,
-          icon: Icons.all_inclusive_rounded,
-          accentColor: const Color(0xFFE040FB),
-          onSelect: (g) {
-            g.player.removeWeapon('blaster');
-            g.player.removeWeapon('void_mines');
-            g.player.addWeapon(VoidSingularityNova());
-            SecretGrimoireService.discover('union_void_singularity');
-            g.playSfx('boss_spawn.wav');
-            g.triggerScreenShake(duration: 0.8, intensity: 16.0);
-          },
-        ),
-      );
-    }
-
-    // União 2: Thunderstorm Core Melter (Solar Lance MK 3 + Tesla Arc MK 3)
-    if (player.unlockedWeapons['solar_lance']?.level == 3 &&
-        player.unlockedWeapons['tesla_arc']?.level == 3 &&
-        !player.unlockedWeapons.containsKey('union_thunderstorm')) {
-      priorityPool.add(
-        RoguePerk(
-          id: 'union_thunderstorm',
-          title: '⚡ SUPER-UNIÃO: THUNDERSTORM CORE MELTER',
-          descriptionPt:
-              'Funde Solar Lance e Tesla Arc Cannon em um feixe colossal de plasma solar bifurcado em relâmpagos, LIBERANDO 1 SLOT DE ARMA!',
-          descriptionEn:
-              'Fuses Solar Lance and Tesla Arc into a colossal sunbeam branched in lightning, FREEING 1 ARSENAL SLOT!',
-          type: PerkType.evolution,
-          rarity: PerkRarity.legendary,
-          icon: Icons.electric_bolt_rounded,
-          accentColor: const Color(0xFFFFD700),
-          onSelect: (g) {
-            g.player.removeWeapon('solar_lance');
-            g.player.removeWeapon('tesla_arc');
-            g.player.addWeapon(ThunderstormCoreMelter());
-            SecretGrimoireService.discover('union_thunderstorm');
-            g.playSfx('boss_spawn.wav');
-            g.triggerScreenShake(duration: 0.8, intensity: 16.0);
-          },
-        ),
-      );
+    for (final union in WeaponUnionRecipe.allUnions) {
+      if (union.isEligible(player)) {
+        priorityPool.add(
+          RoguePerk(
+            id: union.unionId,
+            title: '★ SUPER-UNIÃO: ${union.title.toUpperCase()}',
+            descriptionPt: union.descriptionPt,
+            descriptionEn: union.descriptionEn,
+            type: PerkType.evolution,
+            rarity: PerkRarity.legendary,
+            icon: union.icon,
+            accentColor: union.accentColor,
+            onSelect: union.applyFusion,
+          ),
+        );
+      }
     }
 
     // 1. New Arsenal Weapons (if not yet unlocked and inventory has free slots - Vampire Survivors 5 slots max)
     if (player.activeWeapons.length < PlayerComponent.maxArsenalSlots) {
-      if (!player.unlockedWeapons.containsKey('blaster')) {
+      if (!player.unlockedWeapons.containsKey('blaster') &&
+          game.isWeaponUnlockedInPool('blaster')) {
         standardPool.add(
           RoguePerk(
             id: 'new_blaster',
             title: 'Pulse Blaster',
             descriptionPt:
-                'Canhão duplo de plasma de precisão com alta velocidade de projétil e poder equilibrado. [Sinergia: Void Catalyst]',
+                'Canhão duplo de plasma de precisão com alta velocidade de projétil e poder equilibrado.${_synergyHint('blaster', isPt: true)}',
             descriptionEn:
-                'Precision twin-bolt plasma cannon with high projectile speed and balanced power. [Synergy: Void Catalyst]',
+                'Precision twin-bolt plasma cannon with high projectile speed and balanced power.${_synergyHint('blaster', isPt: false)}',
             type: PerkType.newWeapon,
             rarity: PerkRarity.common,
             icon: Icons.flash_on,
@@ -372,15 +488,16 @@ class RoguePerkGenerator {
         );
       }
 
-      if (!player.unlockedWeapons.containsKey('spread_shot')) {
+      if (!player.unlockedWeapons.containsKey('spread_shot') &&
+          game.isWeaponUnlockedInPool('spread_shot')) {
         standardPool.add(
           RoguePerk(
             id: 'new_spread_shot',
             title: 'Spread Cannon',
             descriptionPt:
-                'Dispara salva em leque cobrindo amplo arco frontal com dispersão de plasma. [Sinergia: Aegis Capacitor]',
+                'Dispara salva em leque cobrindo amplo arco frontal com dispersão de plasma.${_synergyHint('spread_shot', isPt: true)}',
             descriptionEn:
-                'Fires a 3-way fan of plasma projectiles covering a wide frontal arc. [Synergy: Aegis Capacitor]',
+                'Fires a 3-way fan of plasma projectiles covering a wide frontal arc.${_synergyHint('spread_shot', isPt: false)}',
             type: PerkType.newWeapon,
             rarity: PerkRarity.rare,
             icon: Icons.grain,
@@ -392,15 +509,16 @@ class RoguePerkGenerator {
         );
       }
 
-      if (!player.unlockedWeapons.containsKey('rapid_fire')) {
+      if (!player.unlockedWeapons.containsKey('rapid_fire') &&
+          game.isWeaponUnlockedInPool('rapid_fire')) {
         standardPool.add(
           RoguePerk(
             id: 'new_rapid_fire',
             title: 'Phase Laser',
             descriptionPt:
-                'Feixe fotônico de alta frequência com cadência avassaladora e perfuração linear. [Sinergia: Overclocked Emitters]',
+                'Feixe fotônico de alta frequência com cadência avassaladora e perfuração linear.${_synergyHint('rapid_fire', isPt: true)}',
             descriptionEn:
-                'High-frequency photon beam with blazing fire rate and line piercing. [Synergy: Overclocked Emitters]',
+                'High-frequency photon beam with blazing fire rate and line piercing.${_synergyHint('rapid_fire', isPt: false)}',
             type: PerkType.newWeapon,
             rarity: PerkRarity.rare,
             icon: Icons.fast_forward,
@@ -412,15 +530,16 @@ class RoguePerkGenerator {
         );
       }
 
-      if (!player.unlockedWeapons.containsKey('bomb_launcher')) {
+      if (!player.unlockedWeapons.containsKey('bomb_launcher') &&
+          game.isWeaponUnlockedInPool('bomb_launcher')) {
         standardPool.add(
           RoguePerk(
             id: 'new_bomb_launcher',
             title: 'Antimatter Torpedo',
             descriptionPt:
-                'Ogivas explosivas pesadas que detonam em uma onda de choque destrutiva em área. [Sinergia: Magnetic Harvester]',
+                'Ogivas explosivas pesadas que detonam em uma onda de choque destrutiva em área.${_synergyHint('bomb_launcher', isPt: true)}',
             descriptionEn:
-                'Heavy explosive warheads detonating in a massive destructive shockwave. [Synergy: Magnetic Harvester]',
+                'Heavy explosive warheads detonating in a massive destructive shockwave.${_synergyHint('bomb_launcher', isPt: false)}',
             type: PerkType.newWeapon,
             rarity: PerkRarity.epic,
             icon: Icons.gps_fixed,
@@ -432,7 +551,7 @@ class RoguePerkGenerator {
         );
       }
 
-      // 1B. Phase 2 Expanded Arsenal (8 New Elemental & Orbital Weapons)
+      // 1B. Phase 2 Expanded Arsenal (8 New Elemental & Orbital Weapons + Tachyon Katana)
       final expandedWeapons =
           <
             (
@@ -448,8 +567,8 @@ class RoguePerkGenerator {
             (
               'aegis_sawblades',
               'Aegis Sawblades',
-              'Lâminas orbitais que giram ao redor da nave bloqueando tiros e serrando enxames. [Sinergia: Aegis Capacitor]',
-              'Orbital sawblades that spin around the ship blocking projectiles and shredding swarms. [Synergy: Aegis Capacitor]',
+              'Lâminas orbitais que giram ao redor da nave bloqueando tiros e serrando enxames.${_synergyHint('aegis_sawblades', isPt: true)}',
+              'Orbital sawblades that spin around the ship blocking projectiles and shredding swarms.${_synergyHint('aegis_sawblades', isPt: false)}',
               PerkRarity.rare,
               Icons.rotate_right_rounded,
               const Color(0xFF00E5FF),
@@ -457,8 +576,8 @@ class RoguePerkGenerator {
             (
               'tesla_arc',
               'Tesla Arc Cannon',
-              'Corrente elétrica que salta entre múltiplos inimigos aplicando Choque Iônico. [Sinergia: Overclocked Emitters]',
-              'Electric arc leaping between multiple hostiles inflicting Ion Shock. [Synergy: Overclocked Emitters]',
+              'Corrente elétrica que salta entre múltiplos inimigos aplicando Choque Iônico.${_synergyHint('tesla_arc', isPt: true)}',
+              'Electric arc leaping between multiple hostiles inflicting Ion Shock.${_synergyHint('tesla_arc', isPt: false)}',
               PerkRarity.rare,
               Icons.electric_bolt_rounded,
               const Color(0xFF80D8FF),
@@ -466,8 +585,8 @@ class RoguePerkGenerator {
             (
               'quantum_chakram',
               'Quantum Chakram',
-              'Disco bumerangue que atravessa inimigos na ida e volta com 165% de dano. [Sinergia: Quantum Thrusters]',
-              'Boomerang disc cutting through hostiles outbound and returning with 165% damage. [Synergy: Quantum Thrusters]',
+              'Disco bumerangue que atravessa inimigos na ida e volta com 165% de dano.${_synergyHint('quantum_chakram', isPt: true)}',
+              'Boomerang disc cutting through hostiles outbound and returning with 165% damage.${_synergyHint('quantum_chakram', isPt: false)}',
               PerkRarity.rare,
               Icons.all_out_rounded,
               const Color(0xFF00E676),
@@ -475,8 +594,8 @@ class RoguePerkGenerator {
             (
               'repulsor_aura',
               'Repulsor Gravity Aura',
-              'Pulso gravitacional 360° que aplica Ruptura do Vazio e repele enxames. [Sinergia: Magnetic Harvester]',
-              '360° gravitational pulse inflicting Void Rupture and repelling hostile swarms. [Synergy: Magnetic Harvester]',
+              'Pulso gravitacional 360° que aplica Ruptura do Vazio e repele enxames.${_synergyHint('repulsor_aura', isPt: true)}',
+              '360° gravitational pulse inflicting Void Rupture and repelling hostile swarms.${_synergyHint('repulsor_aura', isPt: false)}',
               PerkRarity.rare,
               Icons.radar_rounded,
               const Color(0xFFE040FB),
@@ -484,8 +603,8 @@ class RoguePerkGenerator {
             (
               'solar_lance',
               'Solar Thermal Lance',
-              'Feixe laser contínuo de fusão que perfura alvos aplicando Queimadura Solar. [Sinergia: Void Catalyst]',
-              'Continuous fusion laser beam piercing hostiles and inflicting Solar Burn. [Synergy: Void Catalyst]',
+              'Feixe laser contínuo de fusão que perfura alvos aplicando Queimadura Solar.${_synergyHint('solar_lance', isPt: true)}',
+              'Continuous fusion laser beam piercing hostiles and inflicting Solar Burn.${_synergyHint('solar_lance', isPt: false)}',
               PerkRarity.epic,
               Icons.wb_sunny_rounded,
               const Color(0xFFFF5722),
@@ -493,8 +612,8 @@ class RoguePerkGenerator {
             (
               'inferno_cone',
               'Inferno Plasma Cone',
-              'Lança-chamas espacial em cone que incinera hordas com Queimadura Solar. [Sinergia: Void Catalyst]',
-              'Cone plasma flamethrower incinerating swarms with Solar Burn. [Synergy: Void Catalyst]',
+              'Lança-chamas espacial em cone que incinera hordas com Queimadura Solar.${_synergyHint('inferno_cone', isPt: true)}',
+              'Cone plasma flamethrower incinerating swarms with Solar Burn.${_synergyHint('inferno_cone', isPt: false)}',
               PerkRarity.common,
               Icons.local_fire_department_rounded,
               const Color(0xFFFF9100),
@@ -502,8 +621,8 @@ class RoguePerkGenerator {
             (
               'valkyrie_wingmen',
               'Valkyrie Wingmen',
-              'Drones aliados autônomos que escoltam a nave e caçam inimigos próximos. [Sinergia: Overclocked Emitters]',
-              'Autonomous ally escort drones protecting the ship and hunting nearby enemies. [Synergy: Overclocked Emitters]',
+              'Drones aliados autônomos que escoltam a nave e caçam inimigos próximos.${_synergyHint('valkyrie_wingmen', isPt: true)}',
+              'Autonomous ally escort drones protecting the ship and hunting nearby enemies.${_synergyHint('valkyrie_wingmen', isPt: false)}',
               PerkRarity.epic,
               Icons.flight_class_rounded,
               const Color(0xFF00B0FF),
@@ -511,11 +630,20 @@ class RoguePerkGenerator {
             (
               'void_mines',
               'Void Cluster Mines',
-              'Minas traseiras de matéria escura ideais para Kiting na ré (Ruptura do Vazio). [Sinergia: Quantum Thrusters]',
-              'Rear dark-matter cluster mines ideal for reverse kiting (Void Rupture). [Synergy: Quantum Thrusters]',
+              'Minas traseiras de matéria escura ideais para Kiting na ré (Ruptura do Vazio).${_synergyHint('void_mines', isPt: true)}',
+              'Rear dark-matter cluster mines ideal for reverse kiting (Void Rupture).${_synergyHint('void_mines', isPt: false)}',
               PerkRarity.rare,
               Icons.brightness_low_rounded,
               const Color(0xFFAA00FF),
+            ),
+            (
+              'tachyon_katana',
+              'Tachyon Katana',
+              'Lâmina de plasma taquiônica que apara projéteis hostis e fatia enxames em arco.${_synergyHint('tachyon_katana', isPt: true)}',
+              'Tachyon plasma blade that parries incoming fire and slashes swarms in an arc.${_synergyHint('tachyon_katana', isPt: false)}',
+              PerkRarity.epic,
+              Icons.flash_on_rounded,
+              const Color(0xFF00E5FF),
             ),
           ];
 
@@ -547,28 +675,24 @@ class RoguePerkGenerator {
       final weapon = entry.value;
       if (weapon.level < weapon.maxLevel) {
         final nextLvl = weapon.level + 1;
-        final synergy = WeaponSynergy.findByWeaponId(key);
-        final synergyHintPt = synergy != null
-            ? ' [Sinergia: ${synergy.passiveTitle}]'
-            : '';
-        final synergyHintEn = synergy != null
-            ? ' [Synergy: ${synergy.passiveTitle}]'
-            : '';
+        final isMaxNext = nextLvl == weapon.maxLevel;
+        final synergyHintPt = _synergyHint(key, isPt: true);
+        final synergyHintEn = _synergyHint(key, isPt: false);
 
         standardPool.add(
           RoguePerk(
             id: 'upgrade_${key}_$nextLvl',
             title: '${weapon.name.toUpperCase()} MK $nextLvl',
-            descriptionPt: nextLvl == 3
+            descriptionPt: isMaxNext
                 ? 'Potência Máxima! Amplifica dano e cadência.$synergyHintPt'
                 : 'Aprimora velocidade de disparo e dano.$synergyHintPt',
-            descriptionEn: nextLvl == 3
+            descriptionEn: isMaxNext
                 ? 'Maximum Power! Amplifies damage and fire rate.$synergyHintEn'
                 : 'Improves firing speed and damage.$synergyHintEn',
             type: PerkType.upgradeWeapon,
-            rarity: nextLvl == 3 ? PerkRarity.epic : PerkRarity.rare,
+            rarity: isMaxNext ? PerkRarity.epic : PerkRarity.rare,
             icon: Icons.keyboard_double_arrow_up,
-            accentColor: nextLvl == 3
+            accentColor: isMaxNext
                 ? const Color(0xFFFFD700)
                 : const Color(0xFF00E5FF),
             onSelect: (g) {
@@ -606,9 +730,9 @@ class RoguePerkGenerator {
         id: 'passive_magnet',
         title: 'Magnetic Harvester',
         descriptionPt:
-            'Expande o raio de atração de Poeira Estelar em +40%. [Sinergia: Torpedo Antimatter]',
+            'Expande o raio de atração de Poeira Estelar em +40%.${_passiveSynergyHint('bomb_launcher', 'Torpedo Antimatter', isPt: true)}',
         descriptionEn:
-            'Expands Stardust attraction radius by +40%. [Synergy: Antimatter Torpedo]',
+            'Expands Stardust attraction radius by +40%.${_passiveSynergyHint('bomb_launcher', 'Antimatter Torpedo', isPt: false)}',
         type: PerkType.passive,
         rarity: PerkRarity.common,
         icon: Icons.all_inclusive,
@@ -639,9 +763,9 @@ class RoguePerkGenerator {
         id: 'passive_shield_recharge',
         title: 'Aegis Capacitor',
         descriptionPt:
-            'Restaura +1 Vida e concede invulnerabilidade temporária. [Sinergia: Spread Cannon]',
+            'Restaura +1 Vida e concede invulnerabilidade temporária.${_passiveSynergyHint('spread_shot', 'Spread Cannon', isPt: true)}',
         descriptionEn:
-            'Restores +1 Life and grants temporary invulnerability. [Synergy: Spread Cannon]',
+            'Restores +1 Life and grants temporary invulnerability.${_passiveSynergyHint('spread_shot', 'Spread Cannon', isPt: false)}',
         type: PerkType.passive,
         rarity: PerkRarity.rare,
         icon: Icons.shield,
@@ -656,8 +780,9 @@ class RoguePerkGenerator {
         id: 'passive_fire_rate',
         title: 'Overclocked Emitters',
         descriptionPt:
-            'Reduz recarga de todas as armas em 15%. [Sinergia: Phase Laser]',
-        descriptionEn: 'Reduces weapon cooldown by 15%. [Synergy: Phase Laser]',
+            'Reduz recarga de todas as armas em 15%.${_passiveSynergyHint('rapid_fire', 'Phase Laser', isPt: true)}',
+        descriptionEn:
+            'Reduces weapon cooldown by 15%.${_passiveSynergyHint('rapid_fire', 'Phase Laser', isPt: false)}',
         type: PerkType.passive,
         rarity: PerkRarity.rare,
         icon: Icons.bolt,
@@ -671,9 +796,9 @@ class RoguePerkGenerator {
         id: 'passive_overdrive',
         title: 'Void Catalyst',
         descriptionPt:
-            'Gera Poeira Estelar passiva e concede +25% de dano a todas as armas. [Sinergia: Pulse Blaster]',
+            'Gera Poeira Estelar passiva e concede +25% de dano a todas as armas.${_passiveSynergyHint('blaster', 'Pulse Blaster', isPt: true)}',
         descriptionEn:
-            'Generates passive Stardust and grants +25% damage to all weapons. [Synergy: Pulse Blaster]',
+            'Generates passive Stardust and grants +25% damage to all weapons.${_passiveSynergyHint('blaster', 'Pulse Blaster', isPt: false)}',
         type: PerkType.passive,
         rarity: PerkRarity.epic,
         icon: Icons.auto_awesome,

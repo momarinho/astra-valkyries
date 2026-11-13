@@ -210,11 +210,7 @@ class AsteroidsGame extends FlameGame
     'tesla_arc',
     'inferno_cone',
   };
-  final Set<String> forgedBlueprints = {
-    'aegis_sawblades',
-    'tesla_arc',
-    'inferno_cone',
-  };
+  final Set<String> forgedBlueprints = {};
   final List<String> activeMutations = [];
   final Set<String> unlockedMilestones = {};
   bool flawlessBossKill = true;
@@ -234,11 +230,9 @@ class AsteroidsGame extends FlameGame
   final Set<String> unlockedRelics = {};
   final Set<SectorId> rescuedSectorSecrets = {};
   final Set<String> unlockedWeaponPool = {
-    'tachyon_katana',
     'blaster',
     'spread_shot',
     'rapid_fire',
-    'bomb_launcher',
   };
   final Map<String, Set<String>> completedSectorsPerValkyrie = {};
 
@@ -472,8 +466,8 @@ class AsteroidsGame extends FlameGame
 
   void notifyAsteroidDestroyedForUnlocks() {
     runAsteroidsDestroyed++;
-    if (runAsteroidsDestroyed >= 20) {
-      unlockWeaponWithToast('graviton_lance');
+    if (runAsteroidsDestroyed >= 25) {
+      unlockWeaponWithToast('bomb_launcher');
     }
     if (runAsteroidsDestroyed >= 80) {
       unlockWeaponWithToast('aegis_sawblades');
@@ -483,7 +477,7 @@ class AsteroidsGame extends FlameGame
   void notifyDashExecutedForUnlocks() {
     runDashesExecuted++;
     if (runDashesExecuted >= 15) {
-      unlockWeaponWithToast('quantum_teleport');
+      unlockWeaponWithToast('inferno_cone');
     }
     if (runDashesExecuted >= 20) {
       unlockWeaponWithToast('quantum_chakram');
@@ -498,14 +492,14 @@ class AsteroidsGame extends FlameGame
         unlockSector(SectorId.xenoHive);
       }
       if (runVoidSwarmerKills >= 20) {
-        unlockWeaponWithToast('singularity_cannon');
+        unlockWeaponWithToast('tachyon_katana');
       }
     }
     if (runEnemiesKilled >= 25) {
       unlockSector(SectorId.graveyard);
     }
     if (runEnemiesKilled >= 30) {
-      unlockWeaponWithToast('resonance_shield');
+      unlockWeaponWithToast('repulsor_aura');
     }
     if (runEnemiesKilled >= 80 &&
         player.unlockedWeapons.containsKey('rapid_fire')) {
@@ -925,6 +919,9 @@ class AsteroidsGame extends FlameGame
     if (runLevel >= 10 && selectedValkyrie.id == 'selene') {
       unlockSector(SectorId.cryoAbyss);
     }
+    if (runLevel >= 12) {
+      unlockWeaponWithToast('valkyrie_wingmen');
+    }
 
     playSfx('powerup.wav');
     triggerScreenShake(duration: 0.35, intensity: 7.0);
@@ -1046,20 +1043,31 @@ class AsteroidsGame extends FlameGame
     final List<ChestReward> list = [];
     final random = math.Random();
 
-    // 1. TOP PRIORITY: SUPER-EVOLUTION of MK MAX Weapons (Vampire Survivors Super-Weapon Loop)
-    for (final w in player.activeWeapons) {
-      if (w.canEvolve) {
-        for (final syn in WeaponSynergy.allSynergies) {
-          if (syn.weaponId == w.id) {
-            w.evolvedName ??= syn.evolvedName;
-          }
-        }
+    // 0. TOP PRIORITY: SUPER-UNIÕES DE ARMAS DUPLAS MK MAX (Vampire Survivors Unions)
+    for (final union in WeaponUnionRecipe.allUnions) {
+      if (list.length >= count) break;
+      if (union.isEligible(player)) {
+        list.add(
+          ChestReward(
+            title: 'SUPER-UNIÃO // ${union.title.toUpperCase()}',
+            subtitle: union.description,
+            icon: union.icon,
+            color: union.accentColor,
+            apply: () {
+              union.applyFusion(this);
+              triggerSpeechBubble(SpeechTrigger.superWeapon);
+            },
+          ),
+        );
       }
     }
-    final evolvableWeapons = player.activeWeapons
-        .where((w) => w.canEvolve)
-        .toList();
-    for (final w in evolvableWeapons) {
+
+    // 1. SUPER-EVOLUTION of MK MAX Weapons (exige passiva correspondente equipada!)
+    for (final w in player.activeWeapons) {
+      if (!w.canEvolve) continue;
+      final syn = WeaponSynergy.findByWeaponId(w.id);
+      if (syn == null || !activePassives.contains(syn.passiveId)) continue;
+      w.evolvedName ??= syn.evolvedName;
       if (list.length >= count) break;
       final targetW = w;
       final evoName = targetW.evolvedName ?? '${targetW.name} OVERDRIVE';
@@ -1078,7 +1086,7 @@ class AsteroidsGame extends FlameGame
       );
     }
 
-    // 2. Regular Weapon Upgrades (MK 1 -> MK 2 -> MK 3)
+    // 2. Regular Weapon Upgrades (MK 1 -> MK 5)
     final upgradableWeapons = player.activeWeapons
         .where((w) => w.level < w.maxLevel)
         .toList();
