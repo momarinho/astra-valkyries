@@ -1,12 +1,12 @@
 {
-    "name": "asteroids",
-    "short_name": "asteroids",
+    "name": "Astra Valkyries",
+    "short_name": "Astra Valkyries",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#05070E",
+    "theme_color": "#05070E",
+    "description": "Space Action Roguelite built with Flutter & Flame.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {
