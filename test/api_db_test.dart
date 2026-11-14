@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/services/api_service.dart';
+import 'package:void_protocol/services/api_service.dart';
 
 void main() {
   group('Database & Backend Integration Verification', () {

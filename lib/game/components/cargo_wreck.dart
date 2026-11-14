@@ -2,10 +2,10 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/roguelite_systems.dart';
-import 'package:asteroids/game/components/drop.dart';
-import 'package:asteroids/game/components/xp_orb.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/roguelite_systems.dart';
+import 'package:void_protocol/game/components/drop.dart';
+import 'package:void_protocol/game/components/xp_orb.dart';
 
 /// Destructible Derelict Cargo Container floating in the sector.
 /// Can be breached by weapon fire to release emergency repair nanites,

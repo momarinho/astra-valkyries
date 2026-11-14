@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/services/achievement_service.dart';
-import 'package:asteroids/services/secret_grimoire_service.dart';
-import 'package:asteroids/game/rogue_perks.dart';
-import 'package:asteroids/game/weapons.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/services/achievement_service.dart';
+import 'package:void_protocol/services/secret_grimoire_service.dart';
+import 'package:void_protocol/game/rogue_perks.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class PauseOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -85,6 +86,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
     final game = widget.game;
     final valkyrie = game.selectedValkyrie;
     final score = game.score;
+    final layout = ResponsiveLayout.of(context);
 
     return Focus(
       focusNode: _focusNode,
@@ -92,17 +94,19 @@ class _PauseOverlayState extends State<PauseOverlay> {
       onKeyEvent: _handleKeyEvent,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: SingleChildScrollView(
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-                child: Container(
-                  width: 470,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 24.0,
-                    horizontal: 26.0,
-                  ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(layout.isCompact ? 10.0 : 20.0),
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                  child: Container(
+                    width: layout.clampWidth(470),
+                    padding: EdgeInsets.symmetric(
+                      vertical: layout.isCompact ? 16.0 : 24.0,
+                      horizontal: layout.isCompact ? 14.0 : 26.0,
+                    ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.90),
                     borderRadius: BorderRadius.circular(20),
@@ -127,17 +131,21 @@ class _PauseOverlayState extends State<PauseOverlay> {
                           Icon(
                             Icons.pause_circle_filled,
                             color: valkyrie.primaryColor,
-                            size: 28,
+                            size: layout.isCompact ? 22 : 28,
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            I18n.t('pause.title'),
-                            style: const TextStyle(
-                              fontFamily: 'Orbitron',
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2.5,
-                              color: Colors.white,
+                          Flexible(
+                            child: Text(
+                              I18n.t('pause.title'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: layout.isCompact ? 16 : 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2.0,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -735,14 +743,18 @@ class _PauseOverlayState extends State<PauseOverlay> {
                                 color: Color(0xFF64FFDA),
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                '${I18n.t('pause.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
-                                style: const TextStyle(
-                                  fontFamily: 'Rajdhani',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF64FFDA),
-                                  letterSpacing: 0.8,
+                              Flexible(
+                                child: Text(
+                                  '${I18n.t('pause.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'Rajdhani',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF64FFDA),
+                                    letterSpacing: 0.8,
+                                  ),
                                 ),
                               ),
                             ],
@@ -755,6 +767,7 @@ class _PauseOverlayState extends State<PauseOverlay> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );

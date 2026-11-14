@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/rogue_perks.dart';
-import 'package:asteroids/game/weapon_codex.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/rogue_perks.dart';
+import 'package:void_protocol/game/weapon_codex.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

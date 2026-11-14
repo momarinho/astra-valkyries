@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/bullet.dart';
-import 'package:asteroids/game/components/bomb.dart';
-import 'package:asteroids/game/components/singularity_rift.dart';
-import 'package:asteroids/game/components/chest.dart';
-import 'package:asteroids/game/weapons.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/bullet.dart';
+import 'package:void_protocol/game/components/bomb.dart';
+import 'package:void_protocol/game/components/singularity_rift.dart';
+import 'package:void_protocol/game/components/chest.dart';
+import 'package:void_protocol/game/weapons.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

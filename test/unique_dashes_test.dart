@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/solar_fire_trail.dart';
-import 'package:asteroids/game/components/singularity_vortex.dart';
-import 'package:asteroids/game/components/phantom_shuriken.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/solar_fire_trail.dart';
+import 'package:void_protocol/game/components/singularity_vortex.dart';
+import 'package:void_protocol/game/components/phantom_shuriken.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

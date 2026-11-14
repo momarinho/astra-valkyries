@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/breakable_prop.dart';
-import 'package:asteroids/game/components/dead_cells_biome.dart';
-import 'package:asteroids/game/components/indoor_environment.dart';
-import 'package:asteroids/game/components/phase4_biome_elements.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/components/enemy_bullet.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/components/breakable_prop.dart';
+import 'package:void_protocol/game/components/dead_cells_biome.dart';
+import 'package:void_protocol/game/components/indoor_environment.dart';
+import 'package:void_protocol/game/components/phase4_biome_elements.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/components/enemy_bullet.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

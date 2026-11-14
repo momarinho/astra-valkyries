@@ -2,16 +2,16 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
 import 'asteroid.dart';
 import 'cargo_wreck.dart';
 import 'breakable_prop.dart';
 import 'enemy_ship.dart';
 import 'sector_boss.dart';
 import 'advanced_weapons.dart';
-import 'package:asteroids/game/weapons.dart';
+import 'package:void_protocol/game/weapons.dart';
 
 class BulletComponent extends PositionComponent
     with HasGameReference<AsteroidsGame>, CollisionCallbacks {

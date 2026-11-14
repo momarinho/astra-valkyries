@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 /// Pintor procedural de raios solares rotativos (Arcade Sunburst / Slot Machine Fanfare)
 class SunburstPainter extends CustomPainter {
@@ -227,81 +227,98 @@ class _ChestOverlayState extends State<ChestOverlay> with TickerProviderStateMix
                     }
 
                     // Phase 2 & 3: Revealed Rewards Box with Cards
-                    return ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 840),
-                        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        padding: const EdgeInsets.all(22),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF070B14).withValues(alpha: 0.96),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: titleColor, width: 2.4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: titleColor.withValues(alpha: 0.45),
-                              blurRadius: 28,
-                              spreadRadius: 3,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Header Fanfare
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isJackpot ? Icons.auto_awesome : Icons.card_giftcard,
-                                  color: titleColor,
-                                  size: 28,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  title,
-                                  style: TextStyle(
-                                    fontFamily: 'Orbitron',
-                                    fontSize: isJackpot ? 19 : 16.5,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 2.0,
-                                    color: titleColor,
-                                  ),
+                    return SafeArea(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Container(
+                            constraints: const BoxConstraints(maxWidth: 840),
+                            margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                            padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 14 : 22),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF070B14).withValues(alpha: 0.96),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: titleColor, width: 2.4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: titleColor.withValues(alpha: 0.45),
+                                  blurRadius: 28,
+                                  spreadRadius: 3,
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              I18n.t('chest.secured'),
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                                color: Colors.white.withValues(alpha: 0.70),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Header Fanfare
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      isJackpot ? Icons.auto_awesome : Icons.card_giftcard,
+                                      color: titleColor,
+                                      size: 26,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        title,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: MediaQuery.of(context).size.width < 600
+                                              ? 14
+                                              : (isJackpot ? 19 : 16.5),
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.6,
+                                          color: titleColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  I18n.t('chest.secured'),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Rajdhani',
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                    color: Colors.white.withValues(alpha: 0.70),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
 
-                            // Reward Cards
-                            AnimatedBuilder(
-                              animation: _cardRevealAnimation,
-                              builder: (context, child) {
-                                return Wrap(
-                                  alignment: WrapAlignment.center,
-                                  spacing: 12,
-                                  runSpacing: 12,
-                                  children: List.generate(rewards.length, (index) {
-                                    final r = rewards[index];
-                                    final cardOpacity = ((_cardRevealAnimation.value * rewards.length) - index)
-                                        .clamp(0.0, 1.0);
-                                    final isSuperWeapon = r.title.contains('SUPER-EVOLUTION') || r.title.contains('OVERDRIVE');
+                                // Reward Cards
+                                LayoutBuilder(
+                                  builder: (context, cardConstraints) {
+                                    final maxW = cardConstraints.maxWidth;
+                                    final cardWidth = maxW < 420
+                                        ? ((maxW - 12) / 2).clamp(130.0, 185.0)
+                                        : (rewards.length > 3 ? 142.0 : 185.0);
+                                    return AnimatedBuilder(
+                                      animation: _cardRevealAnimation,
+                                      builder: (context, child) {
+                                        return Wrap(
+                                          alignment: WrapAlignment.center,
+                                          spacing: 10,
+                                          runSpacing: 10,
+                                          children: List.generate(rewards.length, (index) {
+                                            final r = rewards[index];
+                                            final cardOpacity = ((_cardRevealAnimation.value * rewards.length) - index)
+                                                .clamp(0.0, 1.0);
+                                            final isSuperWeapon = r.title.contains('SUPER-EVOLUTION') || r.title.contains('OVERDRIVE');
 
-                                    return Opacity(
-                                      opacity: cardOpacity,
-                                      child: Container(
-                                        width: rewards.length > 3 ? 142 : 185,
-                                        padding: const EdgeInsets.all(12),
+                                            return Opacity(
+                                              opacity: cardOpacity,
+                                              child: Container(
+                                                width: cardWidth,
+                                                padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
                                           color: isSuperWeapon
                                               ? const Color(0xFF16152B).withValues(alpha: 0.95)
@@ -379,14 +396,16 @@ class _ChestOverlayState extends State<ChestOverlay> with TickerProviderStateMix
                                   }),
                                 );
                               },
-                            ),
-                            const SizedBox(height: 22),
+                            );
+                                  },
+                                ),
+                            const SizedBox(height: 18),
 
                             // Claim Button
                             GestureDetector(
                               onTap: _claimAll,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 11),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [titleColor, valkyrie.primaryColor],
@@ -404,14 +423,17 @@ class _ChestOverlayState extends State<ChestOverlay> with TickerProviderStateMix
                                   children: [
                                     const Icon(Icons.check_circle_outline, color: Colors.black, size: 20),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      I18n.select(pt: 'RESGATAR E CONTINUAR', en: 'CLAIM & RESUME SORTIE'),
-                                      style: const TextStyle(
-                                        fontFamily: 'Orbitron',
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.5,
-                                        color: Colors.black,
+                                    Flexible(
+                                      child: Text(
+                                        I18n.select(pt: 'RESGATAR E CONTINUAR', en: 'CLAIM & RESUME SORTIE'),
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'Orbitron',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.2,
+                                          color: Colors.black,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -421,6 +443,8 @@ class _ChestOverlayState extends State<ChestOverlay> with TickerProviderStateMix
                           ],
                         ),
                       ),
+                    ),
+                    ),
                     );
                   },
                 ),

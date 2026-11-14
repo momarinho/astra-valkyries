@@ -180,10 +180,10 @@ class I18n {
     'game_over.new_record': '★ NOVO RECORDE PESSOAL! ★',
 
     // Title Screen / Main Menu
-    'title.game_title': 'ASTRA VALKYRIES',
-    'title.game_subtitle': 'VOID PROTOCOL // PROTOCOLO DO VAZIO',
+    'title.game_title': 'VOID PROTOCOL',
+    'title.game_subtitle': 'TACTICAL SPACE ROGUELITE // PROTOCOLO DO VAZIO',
     'title.play': 'INICIAR OPERAÇÃO // HANGAR',
-    'title.play_sub': 'Selecionar Valquíria, Setor e Modo de Combate',
+    'title.play_sub': 'Selecionar Piloto, Setor e Modo de Combate',
     'title.workshop': 'LOJA & OFICINA // UPGRADES',
     'title.workshop_sub': 'Comprar melhorias permanentes de frota ({credits}c disponíveis)',
     'title.gallery': 'GALERIA & AFINIDADE // MEMÓRIAS',
@@ -247,7 +247,7 @@ class I18n {
     'rarity.epic': 'ÉPICO',
     'rarity.legendary': 'LENDÁRIO',
 
-    // Hangar & Valkyrie Selection
+    // Hangar & Pilot Selection
     'hangar.title': 'CENTRO DE COMANDO & HANGAR',
     'hangar.tab_sortie': 'SORTIE // DECOLAR',
     'hangar.tab_workshop': 'OFICINA // UPGRADES',
@@ -259,7 +259,7 @@ class I18n {
     'hangar.vessel': 'NAVE DE COMBATE',
     'hangar.special_ability': 'HABILIDADE ESPECIAL',
     'hangar.starting_weapon': 'ARMA INICIAL',
-    'hangar.stats_header': 'ESPECIFICAÇÕES DA VALQUÍRIA',
+    'hangar.stats_header': 'ESPECIFICAÇÕES DO PILOTO',
     'hangar.stat_speed': 'VELOCIDADE',
     'hangar.stat_defense': 'DEFESA / CASCO',
     'hangar.stat_firepower': 'PODER DE FOGO',
@@ -372,10 +372,10 @@ class I18n {
     'game_over.new_record': '★ NEW PERSONAL RECORD! ★',
 
     // Title Screen / Main Menu
-    'title.game_title': 'ASTRA VALKYRIES',
-    'title.game_subtitle': 'VOID PROTOCOL // DEEP SPACE ROGUELITE',
+    'title.game_title': 'VOID PROTOCOL',
+    'title.game_subtitle': 'TACTICAL SPACE ROGUELITE // DEEP SPACE SURVIVOR',
     'title.play': 'START SORTIE // HANGAR',
-    'title.play_sub': 'Select Valkyrie, Sector and Combat Mode',
+    'title.play_sub': 'Select Pilot, Sector and Combat Mode',
     'title.workshop': 'WORKSHOP & UPGRADES',
     'title.workshop_sub': 'Purchase permanent fleet upgrades ({credits}c available)',
     'title.gallery': 'GALLERY & BOND // MEMORIES',
@@ -439,7 +439,7 @@ class I18n {
     'rarity.epic': 'EPIC',
     'rarity.legendary': 'LEGENDARY',
 
-    // Hangar & Valkyrie Selection
+    // Hangar & Pilot Selection
     'hangar.title': 'COMMAND DECK & HANGAR',
     'hangar.tab_sortie': 'SORTIE // LAUNCH',
     'hangar.tab_workshop': 'WORKSHOP // UPGRADES',
@@ -451,7 +451,7 @@ class I18n {
     'hangar.vessel': 'COMBAT VESSEL',
     'hangar.special_ability': 'SPECIAL ABILITY',
     'hangar.starting_weapon': 'STARTING WEAPON',
-    'hangar.stats_header': 'VALKYRIE SPECIFICATIONS',
+    'hangar.stats_header': 'PILOT SPECIFICATIONS',
     'hangar.stat_speed': 'SPEED',
     'hangar.stat_defense': 'DEFENSE / HULL',
     'hangar.stat_firepower': 'FIREPOWER',

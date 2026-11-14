@@ -2,7 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 class GameJoystick extends PositionComponent with HasGameReference<AsteroidsGame>, DragCallbacks {
   final double backgroundRadius = 60.0;

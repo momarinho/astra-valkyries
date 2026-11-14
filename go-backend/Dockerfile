@@ -1,4 +1,4 @@
-# Multi-stage minimal build for Astra Valkyries telemetry & leaderboard backend
+# Multi-stage minimal build for Void Protocol telemetry & leaderboard backend
 FROM golang:1.27-alpine AS builder
 
 WORKDIR /app

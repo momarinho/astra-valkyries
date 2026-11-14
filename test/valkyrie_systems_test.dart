@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/weapons.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/ui/valkyrie_selection_overlay.dart';
-import 'package:asteroids/ui/hud_overlay.dart';
-import 'package:asteroids/ui/pause_overlay.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/ui/valkyrie_selection_overlay.dart';
+import 'package:void_protocol/ui/hud_overlay.dart';
+import 'package:void_protocol/ui/pause_overlay.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -77,7 +77,7 @@ void main() {
       await tester.pump();
 
       // Header should display Hangar Bay in English
-      expect(find.text('ASTRA VALKYRIES // HANGAR BAY'), findsOneWidget);
+      expect(find.text('VOID PROTOCOL // HANGAR BAY'), findsOneWidget);
       expect(find.text('SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'), findsOneWidget);
 
       // Initially Lyra should be displayed

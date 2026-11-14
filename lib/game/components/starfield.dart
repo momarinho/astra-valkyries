@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
-import 'package:asteroids/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
+import 'package:void_protocol/constants.dart';
 import 'phase4_biome_elements.dart';
 
 class Star {
@@ -166,6 +166,10 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
 
     final width = GameConstants.screenWidth;
     final height = GameConstants.screenHeight;
+    final viewW = game.visibleWorldWidth;
+    final viewH = game.visibleWorldHeight;
+    final scaleX = viewW / width;
+    final scaleY = viewH / height;
 
     Vector2 camPos;
     try {
@@ -175,12 +179,15 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
     }
 
     canvas.save();
-    canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
+    canvas.translate(camPos.x - viewW / 2, camPos.y - viewH / 2);
 
     // 1. Gradiente base: desenhado apenas se nenhum BiomeBackdropComponent estiver ativo
     final hasBiome = game.world.children.any((c) => c is BiomeBackdropComponent);
     if (!hasBiome) {
+      canvas.save();
+      canvas.scale(scaleX, scaleY);
       canvas.drawRect(Rect.fromLTWH(0, 0, width, height), _baseBgPaint);
+      canvas.restore();
     }
 
     // 2. Nebulosa em 3 manchas suaves que respiram devagar
@@ -190,22 +197,31 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
 
     _drawBlob(
       canvas,
-      Offset(width * 0.22 + math.sin(_time * 0.05) * 60, height * 0.30 + math.cos(_time * 0.04) * 40),
-      520,
+      Offset(
+        (width * 0.22 + math.sin(_time * 0.05) * 60) * scaleX,
+        (height * 0.30 + math.cos(_time * 0.04) * 40) * scaleY,
+      ),
+      520 * math.max(scaleX, scaleY),
       palette.a,
       0.30 * stormPulse,
     );
     _drawBlob(
       canvas,
-      Offset(width * 0.80 + math.cos(_time * 0.045) * 70, height * 0.72 + math.sin(_time * 0.06) * 50),
-      480,
+      Offset(
+        (width * 0.80 + math.cos(_time * 0.045) * 70) * scaleX,
+        (height * 0.72 + math.sin(_time * 0.06) * 50) * scaleY,
+      ),
+      480 * math.max(scaleX, scaleY),
       palette.b,
       0.26 * stormPulse,
     );
     _drawBlob(
       canvas,
-      Offset(width * 0.55 + math.sin(_time * 0.03) * 90, height * 0.48),
-      720,
+      Offset(
+        (width * 0.55 + math.sin(_time * 0.03) * 90) * scaleX,
+        (height * 0.48) * scaleY,
+      ),
+      720 * math.max(scaleX, scaleY),
       Color.lerp(palette.a, palette.b, 0.5)!,
       0.10 * stormPulse,
     );
@@ -233,7 +249,7 @@ class StarfieldComponent extends Component with HasGameReference<AsteroidsGame> 
       }
 
       final alpha = baseAlpha * twinkle;
-      final center = Offset(star.position.x, star.position.y);
+      final center = Offset(star.position.x * scaleX, star.position.y * scaleY);
 
       // Estrelas próximas ganham um halo aditivo discreto
       if (star.layer == 3 && Glow.enabled) {

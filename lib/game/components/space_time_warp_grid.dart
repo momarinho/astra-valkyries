@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/sector_boss.dart';
-import 'package:asteroids/game/components/singularity_vortex.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/sector_boss.dart';
+import 'package:void_protocol/game/components/singularity_vortex.dart';
 
 /// Ponto de coordenadas da grade espacial com suporte a distorção gravitacional
 class WarpGridPoint {
@@ -27,7 +27,7 @@ class SpaceTimeWarpGridComponent extends Component
     with HasGameReference<AsteroidsGame> {
   static const double gridCellSize = 140.0;
   static const int cols = 18; // Cobre 18 * 140 = 2520px de largura
-  static const int rows = 12; // Cobre 12 * 140 = 1680px de altura
+  static const int rows = 12; // Cobre 12 * 140 = 1680px de altura (inclui Portrait mobile)
 
   // Matriz pré-alocada de nós de coordenadas
   late final List<List<WarpGridPoint>> _gridNodes;
@@ -67,8 +67,8 @@ class SpaceTimeWarpGridComponent extends Component
       );
     }
 
-    final width = GameConstants.screenWidth;
-    final height = GameConstants.screenHeight;
+    final width = game.visibleWorldWidth;
+    final height = game.visibleWorldHeight;
 
     final viewLeft = camPos.x - width / 2;
     final viewTop = camPos.y - height / 2;

@@ -1,10 +1,10 @@
-# 🚀 Astra Valkyries: Void Protocol
+# 🚀 Void Protocol
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.50.0_Stable-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.14.0-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Flame Engine](https://img.shields.io/badge/Flame_Engine-1.37.0-FF4081?logo=gamepad&logoColor=white)](https://flame-engine.org)
-[![Tests](https://img.shields.io/badge/Tests-280_Passing_(100%25)-00E676?logo=checkmarx&logoColor=white)](https://github.com/momarinho/astra-valkyries)
-[![Performance](https://img.shields.io/badge/Architecture-Zero--GC_60_FPS-00E5FF)](https://github.com/momarinho/astra-valkyries)
+[![Tests](https://img.shields.io/badge/Tests-311_Passing_(100%25)-00E676?logo=checkmarx&logoColor=white)](https://github.com/momarinho/void-protocol)
+[![Performance](https://img.shields.io/badge/Architecture-Zero--GC_60_FPS-00E5FF)](https://github.com/momarinho/void-protocol)
 [![Backend](https://img.shields.io/badge/Backend-Go_1.27_%2B_SQLite-00ADD8?logo=go&logoColor=white)](https://golang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -87,7 +87,7 @@ flowchart TD
 
 In fast-paced 2D bullet heavens, naive Flutter implementations suffer from periodic micro-stutters (*jank*) caused by Dart's generational Garbage Collector collecting short-lived objects allocated inside the 60 Hz game loop.
 
-| Metric | Naive Implementation | Astra Valkyries (Zero-GC Architecture) |
+| Metric | Naive Implementation | Void Protocol (Zero-GC Architecture) |
 | :--- | :--- | :--- |
 | **`Paint()` allocations in `render()`** | 200–300 allocations / frame | **0 allocations** (Static reusable cached paints) |
 | **Entity radar lookup** | $O(N)$ `children.whereType<T>()` | **$O(1)$** Indexed sets (`activeEnemies`, `activeDrops`) |
@@ -107,8 +107,8 @@ In fast-paced 2D bullet heavens, naive Flutter implementations suffer from perio
 
 ```bash
 # Clone the repository
-git clone https://github.com/momarinho/astra-valkyries.git
-cd astra-valkyries
+git clone https://github.com/momarinho/void-protocol.git
+cd void-protocol
 
 # Fetch dependencies
 flutter pub get

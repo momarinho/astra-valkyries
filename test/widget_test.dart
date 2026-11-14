@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/scientist.dart';
-import 'package:asteroids/ui/science_intro_overlay.dart';
-import 'package:asteroids/ui/game_over_overlay.dart';
-import 'package:asteroids/ui/leaderboard_overlay.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/scientist.dart';
+import 'package:void_protocol/ui/science_intro_overlay.dart';
+import 'package:void_protocol/ui/game_over_overlay.dart';
+import 'package:void_protocol/ui/leaderboard_overlay.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
-import 'package:asteroids/services/api_service.dart';
+import 'package:void_protocol/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

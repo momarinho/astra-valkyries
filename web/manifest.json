@@ -1,11 +1,11 @@
 {
-    "name": "Astra Valkyries",
-    "short_name": "Astra Valkyries",
+    "name": "Void Protocol",
+    "short_name": "Void Protocol",
     "start_url": ".",
-    "display": "standalone",
+    "display": "fullscreen",
     "background_color": "#05070E",
-    "theme_color": "#05070E",
-    "description": "Space Action Roguelite built with Flutter & Flame.",
+    "theme_color": "#00E5FF",
+    "description": "Void Protocol — 60 FPS Space Action-Roguelite & Bullet Heaven.",
     "orientation": "any",
     "prefer_related_applications": false,
     "icons": [

@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/services/api_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/services/api_service.dart';
 
 class LeaderboardOverlay extends StatefulWidget {
   final AsteroidsGame game;

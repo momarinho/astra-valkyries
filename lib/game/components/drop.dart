@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 import 'player.dart';
 
 enum DropType {
@@ -241,7 +241,7 @@ class DropComponent extends PositionComponent with HasGameReference<AsteroidsGam
       final camPos = game.camera.viewfinder.position;
       final dx = (position.x - camPos.x).abs();
       final dy = (position.y - camPos.y).abs();
-      if (dx > 720 + radius || dy > 440 + radius) return;
+      if (dx > game.visibleHalfWidth + radius || dy > game.visibleHalfHeight + radius) return;
     } catch (_) {}
 
     // Blinking effect in the last 2.5 seconds of lifespan

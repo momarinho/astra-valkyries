@@ -2,9 +2,9 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
 import 'player.dart';
 
 enum ChestTier {

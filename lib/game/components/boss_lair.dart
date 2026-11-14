@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/glow.dart';
 import 'sector_boss.dart';
 import 'dreadnought_leviathan.dart';
 import 'ignis_wyrm.dart';

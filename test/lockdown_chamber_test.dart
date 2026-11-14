@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/bullet.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/chest.dart';
-import 'package:asteroids/game/components/indoor_environment.dart';
-import 'package:asteroids/game/components/dead_cells_biome.dart';
-import 'package:asteroids/game/map/sector_map_generator.dart';
-import 'package:asteroids/game/map/sector_map_data.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/bullet.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/chest.dart';
+import 'package:void_protocol/game/components/indoor_environment.dart';
+import 'package:void_protocol/game/components/dead_cells_biome.dart';
+import 'package:void_protocol/game/map/sector_map_generator.dart';
+import 'package:void_protocol/game/map/sector_map_data.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

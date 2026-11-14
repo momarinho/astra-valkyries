@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/rogue_perks.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/rogue_perks.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class LevelUpOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -131,17 +132,19 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                       curve: Curves.easeOutBack,
                     ),
                   ),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width > 980
-                        ? 960
-                        : MediaQuery.of(context).size.width * 0.94,
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.90,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0,
-                      vertical: 20.0,
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      final layout = ResponsiveLayout.of(context);
+                      return SafeArea(
+                        child: Container(
+                          width: layout.clampWidth(960),
+                          constraints: BoxConstraints(
+                            maxHeight: layout.height * 0.92,
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: layout.isCompact ? 12.0 : 24.0,
+                            vertical: layout.isCompact ? 12.0 : 20.0,
+                          ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D1117).withOpacity(0.92),
                       borderRadius: BorderRadius.circular(22),
@@ -192,22 +195,26 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.bolt,
                                     color: Colors.black,
-                                    size: 20,
+                                    size: layout.isCompact ? 16 : 20,
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    I18n.t('level_up.badge', {
-                                      'level': '$level',
-                                    }),
-                                    style: const TextStyle(
-                                      fontFamily: 'Orbitron',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 2.0,
-                                      color: Colors.black,
+                                  Flexible(
+                                    child: Text(
+                                      I18n.t('level_up.badge', {
+                                        'level': '$level',
+                                      }),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: layout.isCompact ? 12.5 : 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: layout.isCompact ? 1.2 : 2.0,
+                                        color: Colors.black,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -266,7 +273,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                         Flexible(
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              final isRow = constraints.maxWidth > 650;
+                              final isRow = constraints.maxWidth > 650 && !layout.isCompactLandscape;
                               return isRow
                                   ? Row(
                                       crossAxisAlignment:
@@ -288,28 +295,26 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                                       shrinkWrap: true,
                                       itemCount: choices.length,
                                       separatorBuilder: (_, _) =>
-                                          const SizedBox(height: 10),
-                                      itemBuilder: (_, i) => SizedBox(
-                                        height: 120,
-                                        child: _buildCard(choices[i], i),
-                                      ),
+                                          const SizedBox(height: 8),
+                                      itemBuilder: (_, i) =>
+                                          _buildCompactMobileCard(choices[i], i),
                                     );
                             },
                           ),
                         ),
 
-                        const SizedBox(height: 18),
+                        SizedBox(height: layout.isCompact ? 10 : 18),
 
                         // Sprint 54: Barra de Ações Táticas de Agência (Reroll, Banish, Skip)
                         _buildTacticalActionBar(),
 
-                        const SizedBox(height: 14),
+                        SizedBox(height: layout.isCompact ? 8 : 14),
 
                         // Mobile / Touch Interaction Prompt
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 7,
+                            horizontal: 12,
+                            vertical: 6,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.04),
@@ -325,14 +330,18 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                                 size: 16,
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                'TOQUE EM UMA CARTA PARA INSTALAR NO SEU CAÇA',
-                                style: TextStyle(
-                                  fontFamily: 'Rajdhani',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white.withOpacity(0.8),
-                                  letterSpacing: 1.2,
+                              Flexible(
+                                child: Text(
+                                  'TOQUE EM UMA CARTA PARA INSTALAR NO SEU CAÇA',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'Rajdhani',
+                                    fontSize: layout.isCompact ? 10.5 : 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white.withOpacity(0.8),
+                                    letterSpacing: 0.8,
+                                  ),
                                 ),
                               ),
                             ],
@@ -340,9 +349,115 @@ class _LevelUpOverlayState extends State<LevelUpOverlay>
                         ),
                       ],
                     ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactMobileCard(RoguePerk perk, int index) {
+    final isSelected = index == _selectedIndex;
+    return GestureDetector(
+      onTap: () => _selectPerk(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? perk.accentColor.withOpacity(0.18)
+              : const Color(0xFF161B22).withOpacity(0.88),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? perk.accentColor
+                : perk.rarityColor.withOpacity(0.45),
+            width: isSelected ? 2.0 : 1.2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: perk.accentColor.withOpacity(0.14),
+                border: Border.all(
+                  color: perk.accentColor.withOpacity(0.6),
+                  width: 1.4,
+                ),
+              ),
+              child: Icon(perk.icon, color: perk.accentColor, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        perk.rarityLabel,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: perk.rarityColor,
+                        ),
+                      ),
+                      Text(
+                        '• ${perk.typeLabel}',
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: perk.accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    perk.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    perk.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 11.5,
+                      color: Colors.white.withOpacity(0.85),
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isSelected ? perk.accentColor : Colors.white38,
+              size: 22,
             ),
           ],
         ),

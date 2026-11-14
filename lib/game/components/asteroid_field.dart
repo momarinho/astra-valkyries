@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
 import 'asteroid.dart';
 import 'enemy_ship.dart';
 import 'cryo_pod.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 /// Sprint 58: Formações coreografadas de esquadrilhas táticas (*Nova Drift / Galaga*).
 enum TacticalFormationType {

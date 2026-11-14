@@ -1,10 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/ending_manager.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/game/weapons.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/ending_manager.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class GameOverOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -90,6 +91,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
     final game = widget.game;
     final valkyrie = game.selectedValkyrie;
     final score = game.score;
+    final layout = ResponsiveLayout.of(context);
 
     return Focus(
       focusNode: _focusNode,
@@ -98,15 +100,22 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
         onTap: () => _focusNode.requestFocus(),
         child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-                child: Container(
-                  width: 580,
-                  padding: const EdgeInsets.symmetric(vertical: 26.0, horizontal: 26.0),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                vertical: layout.isCompact ? 12 : 24,
+                horizontal: layout.isCompact ? 10 : 16,
+              ),
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                  child: Container(
+                    width: layout.clampWidth(580),
+                    padding: EdgeInsets.symmetric(
+                      vertical: layout.isCompact ? 18.0 : 26.0,
+                      horizontal: layout.isCompact ? 16.0 : 26.0,
+                    ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.90),
                     borderRadius: BorderRadius.circular(24),
@@ -652,7 +661,97 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
                       const SizedBox(height: 20),
 
                       // Action Buttons
-                      Row(
+                      layout.width < 500
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ElevatedButton.icon(
+                                  focusNode: FocusNode(canRequestFocus: false),
+                                  onPressed: () => game.startGame(),
+                                  icon: const Icon(Icons.refresh, size: 18),
+                                  label: Text(
+                                    I18n.t('game_over.retry'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: 'Orbitron',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: valkyrie.primaryColor,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(vertical: 13),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 6,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        focusNode: FocusNode(canRequestFocus: false),
+                                        onPressed: () {
+                                          game.initialHangarTab = 1;
+                                          game.changeState(GameState.valkyrieSelection);
+                                        },
+                                        icon: const Icon(Icons.precision_manufacturing_rounded, size: 16, color: Color(0xFFFFB300)),
+                                        label: Text(
+                                          I18n.t('game_over.shop_hangar'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontFamily: 'Orbitron',
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFFFFB300),
+                                          ),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: const Color(0xFFFFB300),
+                                          side: const BorderSide(color: Color(0xFFFFB300)),
+                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        focusNode: FocusNode(canRequestFocus: false),
+                                        onPressed: () => game.changeState(GameState.menu),
+                                        icon: const Icon(Icons.home_rounded, size: 16),
+                                        label: Text(
+                                          I18n.t('game_over.menu'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontFamily: 'Orbitron',
+                                            fontSize: 10.5,
+                                          ),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white70,
+                                          side: const BorderSide(color: Colors.white24),
+                                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : Row(
                         children: [
                           // Retry Button
                           Expanded(
@@ -754,6 +853,7 @@ class _GameOverOverlayState extends State<GameOverOverlay> {
               ),
             ),
           ),
+        ),
         ),
       ),
     ),

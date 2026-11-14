@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/game.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/void_reaper.dart';
-import 'package:asteroids/game/components/ignis_wyrm.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/valkyrie.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/components/void_reaper.dart';
+import 'package:void_protocol/game/components/ignis_wyrm.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/valkyrie.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
