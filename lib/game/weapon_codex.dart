@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 /// Representação no Códice do Arsenal de cada arma de Astra Valkyries
 class WeaponCodexEntry {

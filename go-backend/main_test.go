@@ -115,8 +115,8 @@ func TestPlayerRegisterScoreHMACAndLiveLeaderboard(t *testing.T) {
 		t.Fatalf("expected 200 on /live, got %d", liveW.Code)
 	}
 	body := liveW.Body.String()
-	if !bytes.Contains([]byte(body), []byte("ASTRA VALKYRIES")) {
-		t.Fatalf("expected ASTRA VALKYRIES branding on /live")
+	if !bytes.Contains([]byte(body), []byte("VOID PROTOCOL")) {
+		t.Fatalf("expected VOID PROTOCOL branding on /live")
 	}
 	if bytes.Contains([]byte(body), []byte("FEIRA DE")) {
 		t.Fatalf("legacy science fair text should not appear on /live")

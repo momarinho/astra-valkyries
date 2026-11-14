@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/weapons.dart';
-import 'package:asteroids/game/weapon_codex.dart';
-import 'package:asteroids/services/secret_grimoire_service.dart';
-import 'package:asteroids/ui/valkyrie_selection_overlay.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/game/weapon_codex.dart';
+import 'package:void_protocol/services/secret_grimoire_service.dart';
+import 'package:void_protocol/ui/valkyrie_selection_overlay.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

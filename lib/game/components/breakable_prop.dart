@@ -2,12 +2,12 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/drop.dart';
-import 'package:asteroids/game/components/xp_orb.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/asteroid.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/drop.dart';
+import 'package:void_protocol/game/components/xp_orb.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/enemy_bullet.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
 
 /// Tipos de objetos quebráveis no cenário (Sprint 29 — Estilo Vampire Survivors)
 enum BreakablePropType {

@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/joystick.dart';
-import 'package:asteroids/game/components/scrap_goliath.dart';
-import 'package:asteroids/game/components/void_singularity_core.dart';
-import 'package:asteroids/game/components/proximity_mine.dart';
-import 'package:asteroids/game/components/derelict_turret.dart';
-import 'package:asteroids/game/components/hyperspace_gate.dart';
-import 'package:asteroids/game/components/chest.dart';
-import 'package:asteroids/game/components/boss_lair.dart';
-import 'package:asteroids/game/map/sector_map_generator.dart';
-import 'package:asteroids/ui/pause_overlay.dart';
-import 'package:asteroids/ui/game_over_overlay.dart';
-import 'package:asteroids/ui/title_screen_overlay.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/services/secret_grimoire_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/joystick.dart';
+import 'package:void_protocol/game/components/scrap_goliath.dart';
+import 'package:void_protocol/game/components/void_singularity_core.dart';
+import 'package:void_protocol/game/components/proximity_mine.dart';
+import 'package:void_protocol/game/components/derelict_turret.dart';
+import 'package:void_protocol/game/components/hyperspace_gate.dart';
+import 'package:void_protocol/game/components/chest.dart';
+import 'package:void_protocol/game/components/boss_lair.dart';
+import 'package:void_protocol/game/map/sector_map_generator.dart';
+import 'package:void_protocol/ui/pause_overlay.dart';
+import 'package:void_protocol/ui/game_over_overlay.dart';
+import 'package:void_protocol/ui/title_screen_overlay.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/services/secret_grimoire_service.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();
@@ -286,7 +286,7 @@ void main() {
         await tester.tap(find.byType(TitleScreenOverlay));
         await tester.pump(const Duration(milliseconds: 500));
 
-        expect(find.text('ASTRA VALKYRIES'), findsOneWidget);
+        expect(find.text('VOID PROTOCOL'), findsOneWidget);
         expect(
           find.textContaining('INICIAR OPERAÇÃO // HANGAR'),
           findsOneWidget,

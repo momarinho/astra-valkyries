@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
 
 enum XpOrbType {
   small,    // 2 XP (Cyan)
@@ -161,7 +161,7 @@ class XpOrbComponent extends PositionComponent with HasGameReference<AsteroidsGa
       final camPos = game.camera.viewfinder.position;
       final dx = (position.x - camPos.x).abs();
       final dy = (position.y - camPos.y).abs();
-      if (dx > 720 || dy > 440) return;
+      if (dx > game.visibleHalfWidth || dy > game.visibleHalfHeight) return;
     } catch (_) {}
 
     canvas.translate(radius, radius);

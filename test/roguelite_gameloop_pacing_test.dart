@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/extensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/asteroid_field.dart';
-import 'package:asteroids/game/components/hyperspace_gate.dart';
-import 'package:asteroids/game/components/phase4_biome_elements.dart';
-import 'package:asteroids/game/components/starfield.dart';
-import 'package:asteroids/game/components/drop.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/asteroid_field.dart';
+import 'package:void_protocol/game/components/hyperspace_gate.dart';
+import 'package:void_protocol/game/components/phase4_biome_elements.dart';
+import 'package:void_protocol/game/components/starfield.dart';
+import 'package:void_protocol/game/components/drop.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();

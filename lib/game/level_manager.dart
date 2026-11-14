@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 import 'components/asteroid.dart';
 import 'components/bullet.dart';
 import 'components/bomb.dart';

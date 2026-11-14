@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/components/comet.dart';
-import 'package:asteroids/game/components/drop.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/comet.dart';
+import 'package:void_protocol/game/components/drop.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 void main() {
   group('Celestial Event - Comet Halley Tests', () {

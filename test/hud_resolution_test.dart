@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/weapons.dart';
-import 'package:asteroids/ui/hud_overlay.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/ui/hud_overlay.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,15 +1,16 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/meta_progression.dart';
-import 'package:asteroids/game/affinity_system.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/roguelite_systems.dart';
-import 'package:asteroids/game/weapon_codex.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/services/secret_grimoire_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/meta_progression.dart';
+import 'package:void_protocol/game/affinity_system.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/roguelite_systems.dart';
+import 'package:void_protocol/game/weapon_codex.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/services/secret_grimoire_service.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class ValkyrieSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -201,6 +202,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   Widget build(BuildContext context) {
     final current = _valkyries[_selectedIndex];
 
+    final layout = ResponsiveLayout.of(context);
+    final isCompact = layout.isPhone || layout.isCompactLandscape;
+
     return KeyboardListener(
       focusNode: _focusNode,
       autofocus: true,
@@ -219,9 +223,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 16.0,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isCompact ? 10.0 : 24.0,
+                  vertical: isCompact ? 6.0 : 16.0,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -229,12 +233,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                     // Top Bar Header
                     _buildTopHeader(current),
 
-                    const SizedBox(height: 10),
+                    SizedBox(height: isCompact ? 6 : 10),
 
                     // Tab Selector Bar
                     _buildTabBar(current),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: isCompact ? 8 : 12),
 
                     // Main Content Area (Sortie vs Oficina vs Galeria)
                     Expanded(
@@ -265,6 +269,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   }
 
   Widget _buildTopHeader(Valkyrie current) {
+    final layout = ResponsiveLayout.of(context);
+    final isNarrow = layout.width < 600;
+    final isCompact = layout.isPhone || layout.isCompactLandscape;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -273,7 +281,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(isCompact ? 6 : 8),
                 decoration: BoxDecoration(
                   color:
                       (_selectedTab == 0
@@ -302,42 +310,43 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       : (_selectedTab == 1
                             ? const Color(0xFFFFB300)
                             : const Color(0xFFFF4081)),
-                  size: 20,
+                  size: isCompact ? 16 : 20,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isCompact ? 8 : 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'ASTRA VALKYRIES // HANGAR BAY',
+                    Text(
+                      'VOID PROTOCOL // HANGAR BAY',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: 'Orbitron',
-                        fontSize: 18,
+                        fontSize: isCompact ? 12.5 : 18,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 2.5,
+                        letterSpacing: isCompact ? 1.2 : 2.5,
                         color: Colors.white,
                       ),
                     ),
-                    Text(
-                      _selectedTab == 0
-                          ? 'SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'
-                          : (_selectedTab == 1
-                                ? 'PERMANENT FLEET UPGRADES & WORKSHOP'
-                                : 'TACTICAL DOSSIERS, MISSION LOGS & ARCHIVES'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Rajdhani',
-                        fontSize: 12,
-                        letterSpacing: 1.5,
-                        color: Colors.white.withOpacity(0.6),
+                    if (!layout.isCompactLandscape)
+                      Text(
+                        _selectedTab == 0
+                            ? 'SELECT PILOT & VESSEL FOR VOID DEPLOYMENT'
+                            : (_selectedTab == 1
+                                  ? 'PERMANENT FLEET UPGRADES & WORKSHOP'
+                                  : 'TACTICAL DOSSIERS, MISSION LOGS & ARCHIVES'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: isCompact ? 10 : 12,
+                          letterSpacing: isCompact ? 0.8 : 1.5,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -347,10 +356,14 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
         // Scrap Balance & Quick Actions
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Cosmic Scrap Bank Indicator
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              padding: EdgeInsets.symmetric(
+                horizontal: isCompact ? 8 : 14,
+                vertical: isCompact ? 5 : 7,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFB300).withOpacity(0.16),
                 borderRadius: BorderRadius.circular(8),
@@ -368,26 +381,26 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.build_circle_rounded,
-                    color: Color(0xFFFFB300),
-                    size: 16,
+                    color: const Color(0xFFFFB300),
+                    size: isCompact ? 13 : 16,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Text(
                     '${widget.game.totalCredits} c',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Orbitron',
-                      fontSize: 14,
+                      fontSize: isCompact ? 11.5 : 14,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                      color: Color(0xFFFFB300),
+                      letterSpacing: 0.8,
+                      color: const Color(0xFFFFB300),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: isCompact ? 2 : 8),
 
             // Settings
             IconButton(
@@ -395,44 +408,57 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                 widget.game.playSfx('menu_select.wav');
                 widget.game.changeState(GameState.settings);
               },
-              icon: const Icon(Icons.settings, color: Colors.cyanAccent),
+              padding: isCompact ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
+              constraints: isCompact ? const BoxConstraints() : null,
+              icon: Icon(Icons.settings, color: Colors.cyanAccent, size: isCompact ? 20 : 24),
               tooltip: 'Controles & Configurações',
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: isCompact ? 2 : 6),
 
             // Return to Main Menu
-            OutlinedButton.icon(
-              onPressed: () {
-                widget.game.playSfx('menu_select.wav');
-                widget.game.changeState(GameState.menu);
-              },
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                size: 15,
-                color: Colors.white,
-              ),
-              label: Text(
-                I18n.t('hangar.back_menu'),
-                style: const TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                  color: Colors.white,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white30),
-                backgroundColor: Colors.white.withValues(alpha: 0.06),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+            isNarrow
+                ? IconButton(
+                    onPressed: () {
+                      widget.game.playSfx('menu_select.wav');
+                      widget.game.changeState(GameState.menu);
+                    },
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                    tooltip: I18n.t('hangar.back_menu'),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () {
+                      widget.game.playSfx('menu_select.wav');
+                      widget.game.changeState(GameState.menu);
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      size: 15,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      I18n.t('hangar.back_menu'),
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white30),
+                      backgroundColor: Colors.white.withValues(alpha: 0.06),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
           ],
         ),
       ],
@@ -443,66 +469,77 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 850;
+        final isPhoneWidth = constraints.maxWidth < 460;
+        final showKeyboardHint = constraints.maxWidth > 1060;
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: const Color(0xFF101622).withOpacity(0.95),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildTabPill(
-                    index: 0,
-                    label: isCompact
-                        ? I18n.select(pt: 'SORTIE', en: 'SORTIE')
-                        : I18n.t('hangar.tab_sortie'),
-                    icon: Icons.rocket_launch_rounded,
-                    activeColor: current.primaryColor,
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF101622).withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTabPill(
+                          index: 0,
+                          label: isCompact
+                              ? I18n.select(pt: 'SORTIE', en: 'SORTIE')
+                              : I18n.t('hangar.tab_sortie'),
+                          icon: Icons.rocket_launch_rounded,
+                          activeColor: current.primaryColor,
+                          compact: isPhoneWidth,
+                        ),
+                        const SizedBox(width: 4),
+                        _buildTabPill(
+                          index: 1,
+                          label: isCompact
+                              ? I18n.select(pt: 'OFICINA', en: 'WORKSHOP')
+                              : I18n.t('hangar.tab_workshop'),
+                          icon: Icons.precision_manufacturing_rounded,
+                          activeColor: const Color(0xFFFFB300),
+                          compact: isPhoneWidth,
+                        ),
+                        const SizedBox(width: 4),
+                        _buildTabPill(
+                          index: 2,
+                          label: isCompact
+                              ? I18n.select(pt: 'GALERIA', en: 'GALLERY')
+                              : I18n.t('hangar.tab_gallery'),
+                          icon: Icons.auto_awesome_motion_rounded,
+                          activeColor: const Color(0xFFFF4081),
+                          compact: isPhoneWidth,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  _buildTabPill(
-                    index: 1,
-                    label: isCompact
-                        ? I18n.select(pt: 'OFICINA', en: 'WORKSHOP')
-                        : I18n.t('hangar.tab_workshop'),
-                    icon: Icons.precision_manufacturing_rounded,
-                    activeColor: const Color(0xFFFFB300),
-                  ),
-                  const SizedBox(width: 4),
-                  _buildTabPill(
-                    index: 2,
-                    label: isCompact
-                        ? I18n.select(pt: 'GALERIA', en: 'GALLERY')
-                        : I18n.t('hangar.tab_gallery'),
-                    icon: Icons.auto_awesome_motion_rounded,
-                    activeColor: const Color(0xFFFF4081),
-                  ),
-                ],
+                ),
               ),
             ),
-            if (!isCompact) ...[
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _selectedTab == 0
-                      ? 'Pressione TAB ou Q/E para alternar abas'
-                      : (_selectedTab == 1
-                            ? 'Melhorias permanentes de Sucata Cósmica'
-                            : 'Dossiês Táticos e Registros de Missão'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontFamily: 'Rajdhani',
-                    fontSize: 12,
-                    letterSpacing: 1.5,
-                    color: Colors.white.withOpacity(0.4),
-                  ),
+            if (showKeyboardHint) ...[
+              const SizedBox(width: 12),
+              Text(
+                _selectedTab == 0
+                    ? 'TAB / Q-E: Alternar abas'
+                    : (_selectedTab == 1
+                          ? 'Melhorias de Sucata Cósmica'
+                          : 'Dossiês e Registros'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 11.5,
+                  letterSpacing: 0.6,
+                  color: Colors.white.withOpacity(0.4),
                 ),
               ),
             ],
@@ -517,6 +554,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     required String label,
     required IconData icon,
     required Color activeColor,
+    bool compact = false,
   }) {
     final isSelected = _selectedTab == index;
     return GestureDetector(
@@ -528,7 +566,10 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 14,
+          vertical: compact ? 5 : 7,
+        ),
         decoration: BoxDecoration(
           color: isSelected
               ? activeColor.withOpacity(0.22)
@@ -552,17 +593,17 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           children: [
             Icon(
               icon,
-              size: 15,
+              size: compact ? 13 : 15,
               color: isSelected ? activeColor : Colors.white60,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: compact ? 4 : 6),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Orbitron',
-                fontSize: 11,
+                fontSize: compact ? 9.5 : 11,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.4,
+                letterSpacing: compact ? 0.8 : 1.4,
                 color: isSelected ? Colors.white : Colors.white60,
               ),
             ),
@@ -576,119 +617,383 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
   // VIEW 0: SORTIE // PILOT SELECTION & DEPLOYMENT
   // ---------------------------------------------------------
   Widget _buildSortieView(Valkyrie current) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Pilot Selection Tabs (Horizontal Roster)
-        Row(
-          children: List.generate(_valkyries.length, (i) {
-            final v = _valkyries[i];
-            final isSelected = i == _selectedIndex;
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedIndex = i);
-                    widget.game.playSfx('menu_select.wav');
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 16,
+    final layout = ResponsiveLayout.of(context);
+    final isPhone = layout.isPhone;
+    final isNarrow = layout.width < 680;
+    final isCompactAction = layout.width < 940;
+
+    Widget buildPilotTab(int i) {
+      final v = _valkyries[i];
+      final isSelected = i == _selectedIndex;
+      return GestureDetector(
+        onTap: () {
+          setState(() => _selectedIndex = i);
+          widget.game.playSfx('menu_select.wav');
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            vertical: isPhone ? 7 : 12,
+            horizontal: isPhone ? 10 : 16,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? v.primaryColor.withOpacity(0.2)
+                : const Color(0xFF131A26).withOpacity(0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? v.primaryColor : Colors.white12,
+              width: isSelected ? 2.0 : 1.0,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: v.primaryColor.withOpacity(0.35),
+                      blurRadius: 16,
                     ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? v.primaryColor.withOpacity(0.2)
-                          : const Color(0xFF131A26).withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? v.primaryColor : Colors.white12,
-                        width: isSelected ? 2.0 : 1.0,
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisSize: isNarrow ? MainAxisSize.min : MainAxisSize.max,
+            children: [
+              Container(
+                width: isPhone ? 22 : 26,
+                height: isPhone ? 22 : 26,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? v.primaryColor : Colors.white24,
+                    width: 1.5,
+                  ),
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    v.hudNeutralAsset,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      color: isSelected ? v.primaryColor : Colors.grey[800],
+                      child: Icon(
+                        Icons.person,
+                        size: isPhone ? 13 : 16,
+                        color: isSelected ? Colors.black : Colors.white54,
                       ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: v.primaryColor.withOpacity(0.35),
-                                blurRadius: 16,
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected
-                                  ? v.primaryColor
-                                  : Colors.white24,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              v.hudNeutralAsset,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
-                                color: isSelected
-                                    ? v.primaryColor
-                                    : Colors.grey[800],
-                                child: Icon(
-                                  Icons.person,
-                                  size: 16,
-                                  color: isSelected
-                                      ? Colors.black
-                                      : Colors.white54,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                v.name.toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: 'Orbitron',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.white70,
-                                ),
-                              ),
-                              Text(
-                                v.callsign.toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: 'Rajdhani',
-                                  fontSize: 11,
-                                  color: isSelected
-                                      ? v.accentColor
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
               ),
-            );
-          }),
+              SizedBox(width: isPhone ? 7 : 10),
+              if (isNarrow)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      v.name.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: isSelected ? Colors.white : Colors.white70,
+                      ),
+                    ),
+                    Text(
+                      v.callsign.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 9.5,
+                        color: isSelected ? v.accentColor : Colors.grey,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        v.name.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: isSelected ? Colors.white : Colors.white70,
+                        ),
+                      ),
+                      Text(
+                        v.callsign.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 11,
+                          color: isSelected ? v.accentColor : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
+      );
+    }
 
-        const SizedBox(height: 14),
+    Widget buildVoidCellsChip() => GestureDetector(
+      key: const Key('void_cells_selector_button'),
+      onTap: () {
+        setState(() {
+          final maxVc = widget.game.maxUnlockedVoidCells.clamp(1, 5);
+          widget.game.voidCellsLevel =
+              (widget.game.voidCellsLevel + 1) % (maxVc + 1);
+        });
+        widget.game.savePersistentCredits();
+        widget.game.playSfx('menu_select.wav');
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isPhone ? 8 : 10,
+          vertical: isPhone ? 7 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: widget.game.voidCellsLevel > 0
+              ? const Color(0xFFE040FB).withValues(alpha: 0.22)
+              : const Color(0xFF0C1017).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: widget.game.voidCellsLevel > 0
+                ? const Color(0xFFE040FB)
+                : Colors.white24,
+            width: widget.game.voidCellsLevel > 0 ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.science_rounded,
+              size: isPhone ? 13 : 15,
+              color: widget.game.voidCellsLevel > 0
+                  ? const Color(0xFFE040FB)
+                  : Colors.white54,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'VOID CELLS: ${widget.game.voidCellsLevel}',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: isPhone ? 9.5 : 10.5,
+                fontWeight: FontWeight.bold,
+                color: widget.game.voidCellsLevel > 0
+                    ? const Color(0xFFE040FB)
+                    : Colors.white54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Widget buildHyperChip() => GestureDetector(
+      onTap: () {
+        setState(() {
+          widget.game.isHyperMode = !widget.game.isHyperMode;
+        });
+        widget.game.playSfx('menu_select.wav');
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isPhone ? 8 : 10,
+          vertical: isPhone ? 7 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: widget.game.isHyperMode
+              ? const Color(0xFFFFD700).withValues(alpha: 0.22)
+              : const Color(0xFF0C1017).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: widget.game.isHyperMode
+                ? const Color(0xFFFFD700)
+                : Colors.white24,
+            width: widget.game.isHyperMode ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.bolt_rounded,
+              size: isPhone ? 13 : 15,
+              color: widget.game.isHyperMode
+                  ? const Color(0xFFFFD700)
+                  : Colors.white54,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'HYPER',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: isPhone ? 9.5 : 10.5,
+                fontWeight: FontWeight.bold,
+                color: widget.game.isHyperMode
+                    ? const Color(0xFFFFD700)
+                    : Colors.white54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Widget buildBossRushChip() => GestureDetector(
+      onTap: () {
+        setState(() {
+          widget.game.isBossRushMode = !widget.game.isBossRushMode;
+        });
+        widget.game.playSfx('menu_select.wav');
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isPhone ? 8 : 10,
+          vertical: isPhone ? 7 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: widget.game.isBossRushMode
+              ? const Color(0xFFFF1744).withValues(alpha: 0.22)
+              : const Color(0xFF0C1017).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: widget.game.isBossRushMode
+                ? const Color(0xFFFF1744)
+                : Colors.white24,
+            width: widget.game.isBossRushMode ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.whatshot_rounded,
+              size: isPhone ? 13 : 15,
+              color: widget.game.isBossRushMode
+                  ? const Color(0xFFFF1744)
+                  : Colors.white54,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'BOSS RUSH',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: isPhone ? 9.5 : 10.5,
+                fontWeight: FontWeight.bold,
+                color: widget.game.isBossRushMode
+                    ? const Color(0xFFFF1744)
+                    : Colors.white54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Widget buildDeployButton({bool fullWidth = false}) => Builder(
+      builder: (context) {
+        final selectedSector =
+            Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(
+              0,
+              Sector.allSectorsWithBranches.length - 1,
+            )];
+        final isSectorUnlocked = widget.game.isSectorUnlocked(
+          selectedSector.id,
+        );
+        return SizedBox(
+          width: fullWidth ? double.infinity : null,
+          child: ElevatedButton(
+            onPressed: isSectorUnlocked
+                ? () => _deployValkyrie(current)
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isSectorUnlocked
+                  ? current.primaryColor
+                  : const Color(0xFF2A2E3D),
+              foregroundColor: isSectorUnlocked
+                  ? Colors.black
+                  : Colors.white38,
+              padding: EdgeInsets.symmetric(
+                horizontal: isPhone ? 16 : 24,
+                vertical: isPhone ? 11 : 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: isSectorUnlocked ? 12 : 0,
+              shadowColor: current.primaryColor.withOpacity(0.6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isSectorUnlocked
+                      ? Icons.rocket_launch_rounded
+                      : Icons.lock_outline_rounded,
+                  size: isPhone ? 16 : 18,
+                  color: isSectorUnlocked ? Colors.black : Colors.white38,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isSectorUnlocked ? 'DEPLOY // DECOLAR' : 'BLOQUEADO',
+                  style: TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: isPhone ? 12 : 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.4,
+                    color: isSectorUnlocked ? Colors.black : Colors.white38,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Pilot Selection Tabs (Horizontal Roster)
+        if (isNarrow)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(
+                _valkyries.length,
+                (i) => Padding(
+                  padding: const EdgeInsets.only(right: 6.0),
+                  child: buildPilotTab(i),
+                ),
+              ),
+            ),
+          )
+        else
+          Row(
+            children: List.generate(
+              _valkyries.length,
+              (i) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                  child: buildPilotTab(i),
+                ),
+              ),
+            ),
+          ),
+
+        SizedBox(height: isPhone ? 8 : 14),
 
         // Main Dossier Area (Pilot Hologram & Combat Specs)
         Expanded(
@@ -696,13 +1001,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             onHorizontalDragEnd: (details) {
               if (details.primaryVelocity != null) {
                 if (details.primaryVelocity! < -150) {
-                  // Swipe Left -> Next
                   setState(() {
                     _selectedIndex = (_selectedIndex + 1) % _valkyries.length;
                   });
                   widget.game.playSfx('menu_select.wav');
                 } else if (details.primaryVelocity! > 150) {
-                  // Swipe Right -> Previous
                   setState(() {
                     _selectedIndex =
                         (_selectedIndex - 1 + _valkyries.length) %
@@ -713,7 +1016,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
               }
             },
             child: Container(
-              padding: const EdgeInsets.all(20.0),
+              padding: EdgeInsets.all(isPhone ? 12.0 : 20.0),
               decoration: BoxDecoration(
                 color: const Color(0xFF0C1017).withOpacity(0.92),
                 borderRadius: BorderRadius.circular(18),
@@ -729,250 +1032,95 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   ),
                 ],
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Left Column: Pilot Visual Preview Slot
-                  Expanded(flex: 4, child: _buildPilotVisualCard(current)),
-
-                  const SizedBox(width: 24),
-
-                  // Right Column: Tactical Specs, Weaponry & Lore
-                  Expanded(flex: 6, child: _buildTacticalSpecs(current)),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final stackVertically = constraints.maxWidth < 640;
+                  final compactHeight = constraints.maxHeight < 340;
+                  if (stackVertically) {
+                    return SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            height: 220,
+                            child: _buildPilotVisualCard(current),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTacticalSpecs(current, compactScroll: true),
+                        ],
+                      ),
+                    );
+                  }
+                  if (compactHeight) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(flex: 4, child: _buildPilotVisualCard(current)),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          flex: 6,
+                          child: SingleChildScrollView(
+                            child: _buildTacticalSpecs(current, compactScroll: true),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(flex: 4, child: _buildPilotVisualCard(current)),
+                      const SizedBox(width: 24),
+                      Expanded(flex: 6, child: _buildTacticalSpecs(current)),
+                    ],
+                  );
+                },
               ),
             ),
           ),
         ),
 
-        const SizedBox(height: 14),
+        SizedBox(height: isPhone ? 8 : 14),
 
         // Launch Action Bar
-        Row(
-          children: [
-            Expanded(child: _buildSectorSelector(current)),
-            const SizedBox(width: 8),
-            // Void Cells Difficulty Selector (Sprint 16: 0 to 5 Cells)
-            GestureDetector(
-              key: const Key('void_cells_selector_button'),
-              onTap: () {
-                setState(() {
-                  final maxVc = widget.game.maxUnlockedVoidCells.clamp(1, 5);
-                  widget.game.voidCellsLevel =
-                      (widget.game.voidCellsLevel + 1) % (maxVc + 1);
-                });
-                widget.game.savePersistentCredits();
-                widget.game.playSfx('menu_select.wav');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: widget.game.voidCellsLevel > 0
-                      ? const Color(0xFFE040FB).withValues(alpha: 0.22)
-                      : const Color(0xFF0C1017).withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: widget.game.voidCellsLevel > 0
-                        ? const Color(0xFFE040FB)
-                        : Colors.white24,
-                    width: widget.game.voidCellsLevel > 0 ? 1.6 : 1.0,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.science_rounded,
-                      size: 15,
-                      color: widget.game.voidCellsLevel > 0
-                          ? const Color(0xFFE040FB)
-                          : Colors.white54,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'VOID CELLS: ${widget.game.voidCellsLevel}',
-                      style: TextStyle(
-                        fontFamily: 'Orbitron',
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: widget.game.voidCellsLevel > 0
-                            ? const Color(0xFFE040FB)
-                            : Colors.white54,
-                      ),
-                    ),
-                  ],
-                ),
+        if (isCompactAction)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSectorSelector(current),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  buildVoidCellsChip(),
+                  buildHyperChip(),
+                  buildBossRushChip(),
+                  if (!layout.isPortrait) buildDeployButton(),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            // Hyper Mode Toggle Chip (+25% Speed, +50% XP/Scrap)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  widget.game.isHyperMode = !widget.game.isHyperMode;
-                });
-                widget.game.playSfx('menu_select.wav');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: widget.game.isHyperMode
-                      ? const Color(0xFFFFD700).withValues(alpha: 0.22)
-                      : const Color(0xFF0C1017).withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: widget.game.isHyperMode
-                        ? const Color(0xFFFFD700)
-                        : Colors.white24,
-                    width: widget.game.isHyperMode ? 1.6 : 1.0,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.bolt_rounded,
-                      size: 15,
-                      color: widget.game.isHyperMode
-                          ? const Color(0xFFFFD700)
-                          : Colors.white54,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'HYPER',
-                      style: TextStyle(
-                        fontFamily: 'Orbitron',
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: widget.game.isHyperMode
-                            ? const Color(0xFFFFD700)
-                            : Colors.white54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Boss Rush Toggle Chip (Sequential 4-Titan Gauntlet)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  widget.game.isBossRushMode = !widget.game.isBossRushMode;
-                });
-                widget.game.playSfx('menu_select.wav');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: widget.game.isBossRushMode
-                      ? const Color(0xFFFF1744).withValues(alpha: 0.22)
-                      : const Color(0xFF0C1017).withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: widget.game.isBossRushMode
-                        ? const Color(0xFFFF1744)
-                        : Colors.white24,
-                    width: widget.game.isBossRushMode ? 1.6 : 1.0,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.whatshot_rounded,
-                      size: 15,
-                      color: widget.game.isBossRushMode
-                          ? const Color(0xFFFF1744)
-                          : Colors.white54,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'BOSS RUSH',
-                      style: TextStyle(
-                        fontFamily: 'Orbitron',
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        color: widget.game.isBossRushMode
-                            ? const Color(0xFFFF1744)
-                            : Colors.white54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Builder(
-              builder: (context) {
-                final selectedSector =
-                    Sector.allSectorsWithBranches[_selectedSectorIndex.clamp(
-                      0,
-                      Sector.allSectorsWithBranches.length - 1,
-                    )];
-                final isSectorUnlocked = widget.game.isSectorUnlocked(
-                  selectedSector.id,
-                );
-                return ElevatedButton(
-                  onPressed: isSectorUnlocked
-                      ? () => _deployValkyrie(current)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isSectorUnlocked
-                        ? current.primaryColor
-                        : const Color(0xFF2A2E3D),
-                    foregroundColor: isSectorUnlocked
-                        ? Colors.black
-                        : Colors.white38,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: isSectorUnlocked ? 12 : 0,
-                    shadowColor: current.primaryColor.withOpacity(0.6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isSectorUnlocked
-                            ? Icons.rocket_launch_rounded
-                            : Icons.lock_outline_rounded,
-                        size: 18,
-                        color: isSectorUnlocked ? Colors.black : Colors.white38,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isSectorUnlocked ? 'DEPLOY // DECOLAR' : 'BLOQUEADO',
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                          color: isSectorUnlocked
-                              ? Colors.black
-                              : Colors.white38,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+              if (layout.isPortrait) ...[
+                const SizedBox(height: 6),
+                buildDeployButton(fullWidth: true),
+              ],
+            ],
+          )
+        else
+          Row(
+            children: [
+              Expanded(child: _buildSectorSelector(current)),
+              const SizedBox(width: 8),
+              buildVoidCellsChip(),
+              const SizedBox(width: 8),
+              buildHyperChip(),
+              const SizedBox(width: 8),
+              buildBossRushChip(),
+              const SizedBox(width: 10),
+              buildDeployButton(),
+            ],
+          ),
       ],
     );
   }
@@ -1131,7 +1279,9 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   )
                 else
                   // Checklist de Descobertas (Sprint 28)
-                  Row(
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
                       _buildChecklistBadge(
                         'Relíquia',
@@ -1139,14 +1289,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                         const Color(0xFFFFD700),
                         sector.relicName,
                       ),
-                      const SizedBox(width: 6),
                       _buildChecklistBadge(
                         'Segredo',
                         isSecretRescued,
                         const Color(0xFF00E5FF),
                         sector.secretTitle,
                       ),
-                      const SizedBox(width: 6),
                       _buildChecklistBadge(
                         current.name,
                         isCompletedWithCurrent,
@@ -2227,33 +2375,44 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
 
           // Pilot Details (Name, Title, Interactive Dialogue Speech Box)
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  v.name,
-                  style: const TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2.0,
-                    color: Colors.white,
-                  ),
+            padding: const EdgeInsets.all(12.0),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                width: 340,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      v.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 21,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      v.title.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Rajdhani',
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.4,
+                        color: v.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _buildDialogueBubble(v),
+                  ],
                 ),
-                Text(
-                  v.title.toUpperCase(),
-                  style: TextStyle(
-                    fontFamily: 'Rajdhani',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                    color: v.primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                _buildDialogueBubble(v),
-              ],
+              ),
             ),
           ),
         ],
@@ -2261,7 +2420,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
     );
   }
 
-  Widget _buildTacticalSpecs(Valkyrie v) {
+  Widget _buildTacticalSpecs(Valkyrie v, {bool compactScroll = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2327,7 +2486,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
           color: Colors.amberAccent,
         ),
 
-        const Spacer(),
+        if (compactScroll) const SizedBox(height: 12) else const Spacer(),
 
         // Stat Rating Gauges (Speed, Defense, Firepower)
         Row(
@@ -2427,16 +2586,21 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Rajdhani',
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                color: Colors.white.withOpacity(0.6),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  color: Colors.white.withOpacity(0.6),
+                ),
               ),
             ),
+            const SizedBox(width: 6),
             Text(
               '$rating / 5',
               style: TextStyle(
@@ -2701,30 +2865,34 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             width: 1.2,
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? activeColor : Colors.white60,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Orbitron',
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-                color: isSelected ? Colors.white : Colors.white60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: isSelected ? activeColor : Colors.white60,
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.9,
+                    color: isSelected ? Colors.white : Colors.white60,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
   Widget _buildPilotMemoriesView() {
     final allMemories = AffinityManager.allMemories;
@@ -3238,56 +3406,61 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
             // Bottom Lore Card (when not in clean mode)
             if (!_cleanMode)
               Positioned(
-                left: 24,
-                right: 24,
-                bottom: 24,
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 820),
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF101622).withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: memory.themeColor.withOpacity(0.5),
-                        width: 1.2,
+                left: 16,
+                right: 16,
+                bottom: 16,
+                child: SafeArea(
+                  top: false,
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 820),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF101622).withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: memory.themeColor.withOpacity(0.5),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.7),
+                            blurRadius: 20,
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.7),
-                          blurRadius: 20,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              memory.title,
-                              style: TextStyle(
-                                fontFamily: 'Orbitron',
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                                color: memory.themeColor,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                memory.title,
+                                style: TextStyle(
+                                  fontFamily: 'Orbitron',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.3,
+                                  color: memory.themeColor,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'ELO NÍVEL ${memory.requiredBondLevel} DESBLOQUEADO',
-                              style: TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                                color: Colors.white.withOpacity(0.6),
+                              Text(
+                                'ELO NÍVEL ${memory.requiredBondLevel} DESBLOQUEADO',
+                                style: TextStyle(
+                                  fontFamily: 'Rajdhani',
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                  color: Colors.white.withOpacity(0.6),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                         const SizedBox(height: 6),
                         Text(
                           memory.description,
@@ -3301,6 +3474,7 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                       ],
                     ),
                   ),
+                ),
                 ),
               ),
 
@@ -3860,13 +4034,12 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                   // Modal Body
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Left Column: Schematics & Ratings (~320px)
-                          SizedBox(
-                            width: 320,
+                      padding: const EdgeInsets.all(16),
+                      child: LayoutBuilder(
+                        builder: (context, bodyConstraints) {
+                          final isMobileBody = bodyConstraints.maxWidth < 680;
+                          final leftColumn = SizedBox(
+                            width: isMobileBody ? double.infinity : 300,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -4023,15 +4196,11 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                 ),
                               ],
                             ),
-                          ),
+                          );
 
-                          const SizedBox(width: 18),
-
-                          // Right Column: Lore & Evolution
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
+                          final rightColumnContent = Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
                                 // Lore Section
                                 Container(
                                   padding: const EdgeInsets.all(14),
@@ -4277,9 +4446,27 @@ class _ValkyrieSelectionOverlayState extends State<ValkyrieSelectionOverlay> {
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                        ],
+                            );
+
+                          if (isMobileBody) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                leftColumn,
+                                const SizedBox(height: 14),
+                                rightColumnContent,
+                              ],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              leftColumn,
+                              const SizedBox(width: 18),
+                              Expanded(child: rightColumnContent),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),

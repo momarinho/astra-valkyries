@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/chest.dart';
-import 'package:asteroids/game/components/xp_orb.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/enemy_bullet.dart';
+import 'package:void_protocol/game/components/chest.dart';
+import 'package:void_protocol/game/components/xp_orb.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

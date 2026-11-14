@@ -2,15 +2,15 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/bullet.dart';
-import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/chest.dart';
-import 'package:asteroids/game/components/xp_orb.dart';
-import 'package:asteroids/game/components/dead_cells_biome.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/bullet.dart';
+import 'package:void_protocol/game/components/enemy_bullet.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/chest.dart';
+import 'package:void_protocol/game/components/xp_orb.dart';
+import 'package:void_protocol/game/components/dead_cells_biome.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 /// 1. Piso Industrial Modular (Sprint 30 & 55 — Sub-piso metálico aeroespacial puramente vetorial)
 class ModularFloorComponent extends PositionComponent

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/game.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/xp_orb.dart';
-import 'package:asteroids/game/components/particle_system.dart';
-import 'package:asteroids/game/components/katana_slash.dart';
-import 'package:asteroids/game/components/bomb.dart';
-import 'package:asteroids/game/components/bullet.dart';
-import 'package:asteroids/game/weapons.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/enemy_bullet.dart';
+import 'package:void_protocol/game/components/xp_orb.dart';
+import 'package:void_protocol/game/components/particle_system.dart';
+import 'package:void_protocol/game/components/katana_slash.dart';
+import 'package:void_protocol/game/components/bomb.dart';
+import 'package:void_protocol/game/components/bullet.dart';
+import 'package:void_protocol/game/weapons.dart';
 
 AsteroidsGame _createTestGame([Valkyrie? valkyrie]) {
   final game = AsteroidsGame();

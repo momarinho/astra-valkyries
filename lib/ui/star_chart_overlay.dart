@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/roguelite_systems.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/roguelite_systems.dart';
 
 /// Overlay do Mapa Estelar de Rotas Ramificadas (Branching Star Chart) e Seleção de Mutação (Sprints 13 & 16)
 class StarChartOverlay extends StatefulWidget {
@@ -108,15 +108,16 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  padding: const EdgeInsets.all(24),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 10 : 20),
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 14 : 24),
                   decoration: BoxDecoration(
                     color: const Color(0xFF070C18).withValues(alpha: 0.94),
                     borderRadius: BorderRadius.circular(22),
@@ -157,7 +158,7 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Selecione o próximo Bioma/Setor e adapte 1 Mutação Tática para a sua Valquíria',
+                        'Selecione o próximo Bioma/Setor e adapte 1 Mutação Tática para a sua Nave',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Rajdhani',
@@ -179,15 +180,19 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: List.generate(_branchChoices.length, (i) {
-                          final sec = _branchChoices[i];
-                          final isSelected = _selectedSectorIdx == i;
-                          return Expanded(
-                            child: GestureDetector(
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final stackBranches = constraints.maxWidth < 520;
+                          final cards = List.generate(_branchChoices.length, (i) {
+                            final sec = _branchChoices[i];
+                            final isSelected = _selectedSectorIdx == i;
+                            final card = GestureDetector(
                               onTap: () => setState(() => _selectedSectorIdx = i),
                               child: Container(
-                                margin: EdgeInsets.only(right: i < _branchChoices.length - 1 ? 12 : 0),
+                                margin: EdgeInsets.only(
+                                  right: !stackBranches && i < _branchChoices.length - 1 ? 12 : 0,
+                                  bottom: stackBranches && i < _branchChoices.length - 1 ? 10 : 0,
+                                ),
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: isSelected
@@ -241,9 +246,19 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
                                   ],
                                 ),
                               ),
-                            ),
-                          );
-                        }),
+                            );
+                            return stackBranches ? card : Expanded(child: card);
+                          });
+                          return stackBranches
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: cards,
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: cards,
+                                );
+                        },
                       ),
 
                       // 2. Pilot Mutation Selection (up to 3 per run)
@@ -472,6 +487,7 @@ class _StarChartOverlayState extends State<StarChartOverlay> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );

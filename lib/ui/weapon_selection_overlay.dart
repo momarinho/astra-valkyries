@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class WeaponSelectionOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -55,82 +56,91 @@ class _WeaponSelectionOverlayState extends State<WeaponSelectionOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final layout = ResponsiveLayout.of(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Center(
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-            child: Container(
-              width: MediaQuery.of(context).size.width > 750 ? 750 : MediaQuery.of(context).size.width * 0.92,
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.cyan.withOpacity(0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.cyan.withOpacity(0.1),
-                    blurRadius: 30.0,
-                    spreadRadius: 2.0,
+      body: SafeArea(
+        child: Center(
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+              child: Container(
+                width: layout.clampWidth(750),
+                constraints: BoxConstraints(maxHeight: layout.height * 0.92),
+                padding: EdgeInsets.all(layout.isCompact ? 14.0 : 20.0),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.cyan.withOpacity(0.3),
+                    width: 1.5,
                   ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                  // Title
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.cyan.withOpacity(0.1),
+                      blurRadius: 30.0,
+                      spreadRadius: 2.0,
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.rocket_launch, color: Colors.cyanAccent, size: 28),
-                      const SizedBox(width: 12),
-                      Text(
-                        'SELECT STARTING WEAPON',
-                        style: TextStyle(
-                          fontFamily: 'Rajdhani',
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 3,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.cyanAccent.withOpacity(0.5),
-                              blurRadius: 10,
+                    // Title
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.rocket_launch, color: Colors.cyanAccent, size: 24),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            'SELECT STARTING WEAPON',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Rajdhani',
+                              fontSize: layout.isCompact ? 18 : 22,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2.2,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.cyanAccent.withOpacity(0.5),
+                                  blurRadius: 10,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Center(
+                      child: Text(
+                        'Mission: ${widget.game.activeMode.toUpperCase()} MODE',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          letterSpacing: 2,
+                          fontSize: 14,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  Center(
-                    child: Text(
-                      'Mission: ${widget.game.activeMode.toUpperCase()} MODE',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        letterSpacing: 2,
-                        fontSize: 14,
-                      ),
                     ),
-                  ),
-                  const Divider(color: Colors.white24, height: 35),
+                    const Divider(color: Colors.white24, height: 28),
 
-                  // Cards Layout
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      childAspectRatio: 1.85,
-                    ),
+                    // Cards Layout
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final cols = constraints.maxWidth < 540 ? 1 : 2;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: cols,
+                            crossAxisSpacing: 14,
+                            mainAxisSpacing: 14,
+                            childAspectRatio: cols == 1 ? 2.2 : 1.85,
+                          ),
                     itemCount: _weapons.length,
                     itemBuilder: (context, index) {
                       final weapon = _weapons[index];
@@ -228,9 +238,11 @@ class _WeaponSelectionOverlayState extends State<WeaponSelectionOverlay> {
                         ),
                       );
                     },
-                  ),
+                  );
+                      },
+                    ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 24),
 
                   // Launch & Back Buttons
                   Row(
@@ -301,6 +313,7 @@ class _WeaponSelectionOverlayState extends State<WeaponSelectionOverlay> {
           ),
         ),
       ),
+    ),
     ),
   );
 }

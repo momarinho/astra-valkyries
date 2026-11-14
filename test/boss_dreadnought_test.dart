@@ -2,13 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/dreadnought_leviathan.dart';
-import 'package:asteroids/game/components/enemy_bullet.dart';
-import 'package:asteroids/game/components/chest.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/ui/hud_overlay.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/dreadnought_leviathan.dart';
+import 'package:void_protocol/game/components/enemy_bullet.dart';
+import 'package:void_protocol/game/components/chest.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/ui/hud_overlay.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

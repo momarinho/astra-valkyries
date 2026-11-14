@@ -1,16 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/extensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/game/roguelite_systems.dart';
-import 'package:asteroids/game/map/sector_map_data.dart';
-import 'package:asteroids/game/map/sector_map_generator.dart';
-import 'package:asteroids/game/components/phase4_biome_elements.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/asteroid_field.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/game/roguelite_systems.dart';
+import 'package:void_protocol/game/map/sector_map_data.dart';
+import 'package:void_protocol/game/map/sector_map_generator.dart';
+import 'package:void_protocol/game/components/phase4_biome_elements.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/asteroid_field.dart';
 
 AsteroidsGame _createTestGame() {
   final game = AsteroidsGame();

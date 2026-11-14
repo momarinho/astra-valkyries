@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/services/sound_engine.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/services/sound_engine.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

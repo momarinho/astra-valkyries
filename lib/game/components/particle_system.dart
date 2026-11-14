@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/game/glow.dart';
 
 /// Estrutura leve de partícula em pool prealocado para eliminar alocações
 /// de memória por frame (Zero-GC) e sustentar 60 FPS com centenas de fagulhas.

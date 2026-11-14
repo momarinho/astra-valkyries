@@ -2,9 +2,9 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
 import 'drop.dart';
 import 'xp_orb.dart';
 import 'magma_hazard.dart';
@@ -299,10 +299,14 @@ class AsteroidComponent extends PositionComponent
   void render(Canvas canvas) {
     // Fast viewport culling: discard rendering if completely off the screen
     try {
-      final camPos = (testGame ?? game).camera.viewfinder.position;
+      final activeGame = testGame ?? game;
+      final camPos = activeGame.camera.viewfinder.position;
       final dx = (position.x - camPos.x).abs();
       final dy = (position.y - camPos.y).abs();
-      if (dx > 760 + radius || dy > 460 + radius) return;
+      if (dx > activeGame.visibleHalfWidth + radius ||
+          dy > activeGame.visibleHalfHeight + radius) {
+        return;
+      }
     } catch (_) {}
 
     canvas.translate(radius, radius);

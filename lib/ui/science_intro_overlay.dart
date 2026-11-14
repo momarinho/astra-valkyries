@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 class ScienceIntroOverlay extends StatefulWidget {
   final AsteroidsGame game;

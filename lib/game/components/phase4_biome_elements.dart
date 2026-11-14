@@ -2,10 +2,10 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/roguelite_systems.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/roguelite_systems.dart';
 import 'bullet.dart';
 
 /// ============================================================================
@@ -103,6 +103,8 @@ class BiomeBackdropComponent extends PositionComponent
   void render(Canvas canvas) {
     final width = GameConstants.screenWidth;
     final height = GameConstants.screenHeight;
+    final viewW = game.visibleWorldWidth;
+    final viewH = game.visibleWorldHeight;
 
     Vector2 camPos;
     try {
@@ -113,7 +115,8 @@ class BiomeBackdropComponent extends PositionComponent
 
     // 1. Renderiza o Fundo Espacial Procedural Profundo com Parallax e Cores Vivas do Bioma
     canvas.save();
-    canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
+    canvas.translate(camPos.x - viewW / 2, camPos.y - viewH / 2);
+    canvas.scale(viewW / width, viewH / height);
 
     final sector = Sector.findById(sectorId);
     final normX = (camPos.x / GameConstants.sectorWidth).clamp(0.0, 1.0);

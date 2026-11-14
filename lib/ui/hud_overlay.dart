@@ -3,18 +3,19 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/components/comet.dart';
-import 'package:asteroids/game/components/space_station.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/phase4_biome_elements.dart';
-import 'package:asteroids/game/map/sector_map_data.dart';
-import 'package:asteroids/services/achievement_service.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/components/comet.dart';
+import 'package:void_protocol/game/components/space_station.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/phase4_biome_elements.dart';
+import 'package:void_protocol/game/map/sector_map_data.dart';
+import 'package:void_protocol/services/achievement_service.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class HudOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -151,9 +152,20 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       statusExpression = I18n.t('hud.optimal');
     }
 
-    return Container(
-      padding: const EdgeInsets.all(18.0),
-      child: Stack(
+    final layout = ResponsiveLayout.of(context);
+    final isCompactHud = layout.isPhone || layout.isCompactLandscape;
+    final isNarrow = layout.width < 680;
+    final avatarSize = isCompactHud ? 38.0 : 56.0;
+    final hpBarWidth = layout.width < 430 ? 128.0 : (isCompactHud ? 152.0 : 175.0);
+    final weaponIconSize = isCompactHud ? 28.0 : 38.0;
+    final xpTopOffset = isNarrow ? (isCompactHud ? 68.0 : 78.0) : 4.0;
+    final xpMaxWidth = isNarrow ? (layout.width * 0.62).clamp(160.0, 300.0) : (isCompactHud ? 260.0 : 420.0);
+    final touchActionScale = isCompactHud ? 0.78 : 1.0;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.all(layout.hudPadding),
+        child: Stack(
         children: [
           // Low Hull Dramatic Red Pulsing Vignette (< 25% HP) OR Void Reaper Incursion
           if (hpRatio <= 0.25 || game.voidReaperSpawned)
@@ -187,97 +199,32 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
             ),
 
           // Top Center: Roguelike XP / Stardust Level-Up Bar
-          Positioned(
-            top: 4,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.bolt, color: valkyrie.accentColor, size: 14),
-                              const SizedBox(width: 4),
-                              Text(
-                                I18n.t('hud.level', {'level': '${game.runLevel}'}),
-                                style: TextStyle(
-                                  fontFamily: 'Orbitron',
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                  color: valkyrie.accentColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                I18n.t('hud.stardust', {
-                                  'cur': '${game.runXp}',
-                                  'max': '${game.runXpNextLevel}',
-                                }),
-                                style: TextStyle(
-                                  fontFamily: 'Rajdhani',
-                                  fontSize: 11.0,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  const SizedBox(height: 4),
-                  Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: valkyrie.primaryColor.withOpacity(0.4), width: 0.8),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(
-                          widthFactor: (game.runXp / math.max(1, game.runXpNextLevel)).clamp(0.0, 1.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [valkyrie.primaryColor, valkyrie.accentColor],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: valkyrie.primaryColor.withOpacity(0.7),
-                                  blurRadius: 6,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+          if (isNarrow)
+            Positioned(
+              top: xpTopOffset,
+              left: 0,
+              child: IgnorePointer(
+                child: SizedBox(
+                  width: xpMaxWidth,
+                  child: _buildXpProgressColumn(game, valkyrie, compact: isCompactHud),
+                ),
+              ),
+            )
+          else
+            Positioned(
+              top: 4,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: xpMaxWidth),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildXpProgressColumn(game, valkyrie, compact: isCompactHud),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
 
           // Boss Health Bar (Dreadnought Leviathan Climax)
           if (game.activeBoss != null && !game.activeBoss!.isDefeated)
@@ -381,10 +328,13 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompactHud ? 7 : 10,
+                      vertical: isCompactHud ? 5 : 7,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF060A13).withOpacity(0.88),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(isCompactHud ? 9 : 12),
                       border: Border.all(
                         color: avatarGlowColor.withOpacity(0.6),
                         width: 1.4,
@@ -401,10 +351,10 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Pilot Mini-Avatar Box (56x56)
+                        // Pilot Mini-Avatar Box
                         Container(
-                          width: 56,
-                          height: 56,
+                          width: avatarSize,
+                          height: avatarSize,
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.8),
                             borderRadius: BorderRadius.circular(10),
@@ -470,7 +420,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: isCompactHud ? 7 : 10),
 
                         // Pilot Telemetry Details
                         Column(
@@ -485,30 +435,32 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                   valkyrie.name.toUpperCase(),
                                   style: TextStyle(
                                     fontFamily: 'Orbitron',
-                                    fontSize: 12.0,
+                                    fontSize: isCompactHud ? 10.0 : 12.0,
                                     fontWeight: FontWeight.bold,
                                     color: valkyrie.accentColor,
-                                    letterSpacing: 1.2,
+                                    letterSpacing: 1.0,
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '// ${valkyrie.callsign.toUpperCase()}',
-                                  style: TextStyle(
-                                    fontFamily: 'Rajdhani',
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white.withOpacity(0.7),
-                                    letterSpacing: 0.8,
+                                if (layout.width >= 520) ...[
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '// ${valkyrie.callsign.toUpperCase()}',
+                                    style: TextStyle(
+                                      fontFamily: 'Rajdhani',
+                                      fontSize: isCompactHud ? 9.5 : 10.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white.withOpacity(0.7),
+                                      letterSpacing: 0.8,
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 2),
 
                             // Hull Integrity HP Bar
-                            _buildHullHpBar(player, valkyrie),
-                            const SizedBox(height: 3),
+                            _buildHullHpBar(player, valkyrie, barWidth: hpBarWidth, compact: isCompactHud),
+                            const SizedBox(height: 2),
 
                             // Score & Shield Status
                             Row(
@@ -519,13 +471,13 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                   I18n.t('hud.score'),
                                   style: TextStyle(
                                     fontFamily: 'Rajdhani',
-                                    fontSize: 11.0,
+                                    fontSize: isCompactHud ? 9.5 : 11.0,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
+                                    letterSpacing: 1.2,
                                     color: Colors.white.withOpacity(0.65),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 5),
                                 Transform.scale(
                                   scale: 1.0 + 0.10 * _scorePulse,
                                   alignment: Alignment.centerLeft,
@@ -534,7 +486,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                     style: TextStyle(
                                       fontFamily: 'Orbitron',
                                       fontWeight: FontWeight.w800,
-                                      fontSize: 14.0,
+                                      fontSize: isCompactHud ? 11.0 : 14.0,
                                       color: Color.lerp(Colors.white, valkyrie.accentColor, _scorePulse * 0.8),
                                     ),
                                   ),
@@ -568,11 +520,12 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                     ),
                   ),
 
-                  const SizedBox(height: 6),
+                  SizedBox(height: isNarrow ? 30 : 6),
 
                   // Compact Active Arsenal Icons (Vampire Survivors / Hades style)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
                     children: player.activeWeapons.map((w) {
                       final isReady = w.currentCooldown <= 0;
                       final maxCd = math.max(0.01, w.cooldown * game.rogueFireRateMultiplier);
@@ -581,9 +534,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       final isCanEvolve = w.canEvolve;
 
                       return Container(
-                        margin: const EdgeInsets.only(right: 5),
-                        width: 38,
-                        height: 38,
+                        width: weaponIconSize,
+                        height: weaponIconSize,
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(7),
@@ -681,12 +633,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Sector Mission Countdown Timer
-                    _buildSectorTimerBadge(),
-                    const SizedBox(width: 8),
+                    _buildSectorTimerBadge(compact: isCompactHud),
+                    SizedBox(width: isCompactHud ? 4 : 8),
 
                     // Stardust Credits Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isCompactHud ? 6 : 8,
+                        vertical: isCompactHud ? 4 : 5,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.85),
                         borderRadius: BorderRadius.circular(8),
@@ -698,26 +653,26 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.stars_rounded, color: Color(0xFFFFB300), size: 14),
-                          const SizedBox(width: 4),
+                          Icon(Icons.stars_rounded, color: const Color(0xFFFFB300), size: isCompactHud ? 12 : 14),
+                          const SizedBox(width: 3),
                           Text(
                             '${game.runCredits}c',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Orbitron',
-                              fontSize: 11.0,
+                              fontSize: isCompactHud ? 9.5 : 11.0,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFFFB300),
+                              color: const Color(0xFFFFB300),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isCompactHud ? 4 : 8),
 
                     // FPS & Engine Telemetry Badge (Configurable in Settings)
                     if (game.showFpsOverlay) ...[
                       _buildFpsDiagnosticBadge(),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isCompactHud ? 4 : 8),
                     ],
 
                     // Pause Button
@@ -726,7 +681,10 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                         game.togglePause();
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompactHud ? 7 : 10,
+                          vertical: isCompactHud ? 4 : 5,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(8),
@@ -735,18 +693,20 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.pause, color: Colors.white70, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              I18n.t('hud.pause'),
-                              style: const TextStyle(
-                                fontFamily: 'Rajdhani',
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white70,
-                                letterSpacing: 1.0,
+                            Icon(Icons.pause, color: Colors.white70, size: isCompactHud ? 13 : 14),
+                            if (layout.width >= 480) ...[
+                              const SizedBox(width: 4),
+                              Text(
+                                I18n.t('hud.pause'),
+                                style: const TextStyle(
+                                  fontFamily: 'Rajdhani',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white70,
+                                  letterSpacing: 1.0,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),
@@ -807,18 +767,20 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildTacticalRadar(player, valkyrie),
-                      const SizedBox(height: 3),
-                      Text(
-                        I18n.t('hud.tactical_map_btn'),
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontSize: 7.5,
-                          fontWeight: FontWeight.bold,
-                          color: valkyrie.primaryColor.withOpacity(0.85),
-                          letterSpacing: 0.6,
+                      _buildTacticalRadar(player, valkyrie, compact: isCompactHud),
+                      if (!isCompactHud) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          I18n.t('hud.tactical_map_btn'),
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.bold,
+                            color: valkyrie.primaryColor.withOpacity(0.85),
+                            letterSpacing: 0.6,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -1018,8 +980,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
           // Touch Controls Toggle (bottom-left)
           Positioned(
-            bottom: _showTouchControls ? 136 : 8,
-            left: 8,
+            bottom: _showTouchControls ? (isCompactHud ? 98 : 136) : 8,
+            left: isCompactHud ? 4 : 8,
             child: GestureDetector(
               onTap: () {
                 setState(() {
@@ -1060,20 +1022,23 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
           // Bottom Left: Interactive Virtual Joystick (Visible when touch controls active)
           if (_showTouchControls)
             Positioned(
-              bottom: 12,
-              left: 12,
-              child: _buildVirtualJoystick(game, valkyrie),
+              bottom: isCompactHud ? 6 : 12,
+              left: isCompactHud ? 6 : 12,
+              child: _buildVirtualJoystick(game, valkyrie, compact: isCompactHud),
             ),
 
           // Bottom Right: Mobile Action Buttons (Visible when touch controls active)
           if (_showTouchControls)
             Positioned(
-              bottom: 12,
-              right: 12,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+              bottom: isCompactHud ? 6 : 12,
+              right: isCompactHud ? 6 : 12,
+              child: Transform.scale(
+                scale: touchActionScale,
+                alignment: Alignment.bottomRight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                   // 1. Thruster Dash Button
                   GestureDetector(
                     onTap: () {
@@ -1296,20 +1261,24 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                   ),
                 ],
               ),
+              ),
             ),
 
           // Layer 2: Comms Radio Holographic Dialogue Transmission Box at Sortie Launch
           if (game.showLaunchTransmission)
             Positioned(
-              bottom: 145,
-              left: 20,
-              right: 20,
+              bottom: isCompactHud ? 105 : 145,
+              left: isCompactHud ? 10 : 20,
+              right: isCompactHud ? 10 : 20,
               child: Center(
                 child: GestureDetector(
                   onTap: () => game.dismissLaunchTransmission(),
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 720),
-                    padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 14.0),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompactHud ? 12.0 : 18.0,
+                      vertical: isCompactHud ? 10.0 : 14.0,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xF00A0F1D), // Deep cosmic glass
                       borderRadius: BorderRadius.circular(16),
@@ -1334,8 +1303,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                       children: [
                         // Radio Portrait Container
                         Container(
-                          width: 68,
-                          height: 68,
+                          width: isCompactHud ? 46 : 68,
+                          height: isCompactHud ? 46 : 68,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: valkyrie.accentColor, width: 2.0),
@@ -1356,14 +1325,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                   child: Icon(
                                     Icons.sensors,
                                     color: valkyrie.accentColor,
-                                    size: 34,
+                                    size: isCompactHud ? 24 : 34,
                                   ),
                                 );
                               },
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: isCompactHud ? 10 : 16),
 
                         // Radio dialogue & channel info
                         Expanded(
@@ -1382,14 +1351,18 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    'COMMS FREQUENCY • ${valkyrie.name.toUpperCase()} // ${valkyrie.callsign.toUpperCase()}',
-                                    style: TextStyle(
-                                      fontFamily: 'Orbitron',
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: valkyrie.accentColor,
-                                      letterSpacing: 1.2,
+                                  Expanded(
+                                    child: Text(
+                                      'COMMS • ${valkyrie.name.toUpperCase()} // ${valkyrie.callsign.toUpperCase()}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Orbitron',
+                                        fontSize: isCompactHud ? 9.5 : 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: valkyrie.accentColor,
+                                        letterSpacing: 1.0,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1399,13 +1372,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                               // Pilot Launch Transmission
                               Text(
                                 valkyrie.quote,
-                                style: const TextStyle(
+                                maxLines: isCompactHud ? 2 : 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
                                   fontFamily: 'Rajdhani',
-                                  fontSize: 14.0,
+                                  fontSize: isCompactHud ? 12.0 : 14.0,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
-                                  height: 1.3,
-                                  letterSpacing: 0.8,
+                                  height: 1.25,
+                                  letterSpacing: 0.6,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -1416,27 +1391,29 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      '🎮 WASD/ARROWS: Steer | AUTO-FIRE ARSENAL | SHIFT: Dash | E: Special',
+                                      isCompactHud
+                                          ? '🕹️ JOYSTICK: Mover | AUTO-FIRE | DASH / SPECIAL'
+                                          : '🎮 WASD/ARROWS: Steer | AUTO-FIRE ARSENAL | SHIFT: Dash | E: Special',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontFamily: 'Rajdhani',
-                                        fontSize: 10.5,
+                                        fontSize: isCompactHud ? 9.5 : 10.5,
                                         fontWeight: FontWeight.bold,
                                         color: valkyrie.primaryColor,
-                                        letterSpacing: 0.8,
+                                        letterSpacing: 0.6,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Click or press any key ▶',
+                                    isCompactHud ? 'Toque ▶' : 'Click or press any key ▶',
                                     style: TextStyle(
                                       fontFamily: 'Rajdhani',
                                       fontSize: 10.0,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white.withOpacity(0.65),
-                                      letterSpacing: 1.0,
+                                      letterSpacing: 0.8,
                                     ),
                                   ),
                                 ],
@@ -1456,9 +1433,10 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
 
           // Sprint 41: Notificação Pop-up de Conquistas (Toast)
           _buildAchievementToast(),
-        ],
-      ),
-    );
+            ],
+          ),
+        ),
+      );
   }
 
   Widget _buildBossCinematicBanner() {
@@ -1686,10 +1664,91 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildVirtualJoystick(AsteroidsGame game, Valkyrie valkyrie) {
-    const double baseSize = 116.0;
-    const double maxRadius = 46.0;
-    const double knobSize = 42.0;
+  Widget _buildXpProgressColumn(AsteroidsGame game, Valkyrie valkyrie, {bool compact = false}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.bolt, color: valkyrie.accentColor, size: compact ? 12 : 14),
+                const SizedBox(width: 3),
+                Text(
+                  I18n.t('hud.level', {'level': '${game.runLevel}'}),
+                  style: TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: compact ? 9.5 : 11.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: compact ? 1.0 : 1.5,
+                    color: valkyrie.accentColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  I18n.t('hud.stardust', {
+                    'cur': '${game.runXp}',
+                    'max': '${game.runXpNextLevel}',
+                  }),
+                  style: TextStyle(
+                    fontFamily: 'Rajdhani',
+                    fontSize: compact ? 9.5 : 11.0,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Container(
+          height: compact ? 5 : 6,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(color: valkyrie.primaryColor.withOpacity(0.4), width: 0.8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: (game.runXp / math.max(1, game.runXpNextLevel)).clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [valkyrie.primaryColor, valkyrie.accentColor],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: valkyrie.primaryColor.withOpacity(0.7),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVirtualJoystick(AsteroidsGame game, Valkyrie valkyrie, {bool compact = false}) {
+    final double baseSize = compact ? 86.0 : 116.0;
+    final double maxRadius = compact ? 34.0 : 46.0;
+    final double knobSize = compact ? 32.0 : 42.0;
 
     double knobX = 0.0;
     double knobY = 0.0;
@@ -1706,7 +1765,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     void updateFromLocal(Offset localPos) {
       try {
         final joy = game.joystick;
-        final center = const Offset(baseSize / 2, baseSize / 2);
+        final center = Offset(baseSize / 2, baseSize / 2);
         final delta = localPos - center;
         final dist = delta.distance;
         final clamped = dist <= maxRadius ? delta : Offset.fromDirection(delta.direction, maxRadius);
@@ -1834,14 +1893,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildSectorTimerBadge() {
+  Widget _buildSectorTimerBadge({bool compact = false}) {
     final remaining = widget.game.timeRemaining.clamp(0.0, 9999.0);
     final minutes = (remaining / 60).floor().toString().padLeft(2, '0');
     final seconds = (remaining % 60).floor().toString().padLeft(2, '0');
     final isUrgent = remaining <= 30.0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 8, vertical: compact ? 4 : 5),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.85),
         borderRadius: BorderRadius.circular(8),
@@ -1864,14 +1923,14 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
           Icon(
             isUrgent ? Icons.warning_amber_rounded : Icons.timer_outlined,
             color: isUrgent ? const Color(0xFFFF1744) : widget.game.currentSector.primaryColor,
-            size: 13,
+            size: compact ? 11 : 13,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           Text(
             '$minutes:$seconds',
             style: TextStyle(
               fontFamily: 'Orbitron',
-              fontSize: 11.0,
+              fontSize: compact ? 9.5 : 11.0,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.8,
               color: isUrgent ? const Color(0xFFFF5252) : Colors.white,
@@ -1996,7 +2055,12 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildHullHpBar(PlayerComponent player, Valkyrie valkyrie) {
+  Widget _buildHullHpBar(
+    PlayerComponent player,
+    Valkyrie valkyrie, {
+    double barWidth = 175,
+    bool compact = false,
+  }) {
     final hp = player.hp;
     final maxHp = player.maxHp;
     final hpRatio = (hp / math.max(1.0, maxHp)).clamp(0.0, 1.0);
@@ -2011,8 +2075,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     }
 
     return Container(
-      width: 175,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      width: barWidth,
+      padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 6, vertical: compact ? 2 : 3),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.75),
         borderRadius: BorderRadius.circular(6),
@@ -2028,23 +2092,30 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.shield_outlined, size: 11, color: hpColor),
-                  const SizedBox(width: 3),
-                  Text(
-                    I18n.t('hud.hull'),
-                    style: TextStyle(
-                      fontFamily: 'Rajdhani',
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                      color: Colors.white.withOpacity(0.8),
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined, size: 11, color: hpColor),
+                    const SizedBox(width: 3),
+                    Flexible(
+                      child: Text(
+                        I18n.t('hud.hull'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Rajdhani',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 4),
               Text(
                 '${hp.toInt()}/${maxHp.toInt()} HP',
                 style: TextStyle(
@@ -2092,7 +2163,7 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildTacticalRadar(PlayerComponent player, Valkyrie valkyrie) {
+  Widget _buildTacticalRadar(PlayerComponent player, Valkyrie valkyrie, {bool compact = false}) {
     final playerPos = player.position;
     final asteroidBlips = <Offset>[];
     final titaniumBlips = <Offset>[];
@@ -2240,12 +2311,15 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
       } catch (_) {}
     }
 
+    final radarBoxWidth = compact ? 68.0 : 104.0;
+    final radarScopeSize = compact ? 54.0 : 86.0;
+
     return Container(
-      width: 104,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      width: radarBoxWidth,
+      padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 6, vertical: compact ? 4 : 6),
       decoration: BoxDecoration(
         color: const Color(0xFF070B14).withOpacity(0.88),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(compact ? 10 : 12),
         border: Border.all(
           color: player.isNearBoundary ? Colors.redAccent : Colors.cyanAccent.withOpacity(0.4),
           width: player.isNearBoundary ? 1.8 : 1.0,
@@ -2262,8 +2336,8 @@ class _HudOverlayState extends State<HudOverlay> with SingleTickerProviderStateM
         children: [
           // Radar Scope Canvas
           SizedBox(
-            width: 86,
-            height: 86,
+            width: radarScopeSize,
+            height: radarScopeSize,
             child: CustomPaint(
               painter: _RadarScopePainter(
                 playerAngle: player.angle,

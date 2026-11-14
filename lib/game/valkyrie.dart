@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/services/localization_service.dart';
 import 'weapons.dart';
 
 enum ValkyrieShipDesign {
@@ -295,12 +295,12 @@ class Valkyrie {
     id: 'astraea',
     name: 'Astraea',
     callsign: 'Origin Matriarch',
-    titlePt: 'Valquíria Ancestral Precursora',
-    titleEn: 'Ancient Precursor Valkyrie',
+    titlePt: 'Ace Precursora Ancestral',
+    titleEn: 'Ancient Precursor Ace',
     bioPt:
-        'A lendária matriarca Valquíria despertada de um estase milenar. Irradia energia celestial soberana, canalizando tecnologia hiperavançada de eras esquecidas.',
+        'A lendária comandante precursora despertada de um estase milenar. Irradia energia estelar soberana, canalizando tecnologia hiperavançada de eras esquecidas.',
     bioEn:
-        'The legendary progenitor Valkyrie awakened from millennial stasis. Radiates sovereign celestial energy, channeling ancient hyper-advanced alien tech.',
+        'The legendary progenitor ace awakened from millennial stasis. Radiates sovereign celestial energy, channeling ancient hyper-advanced alien tech.',
     quotePt:
         '"As estrelas chamaram meu nome mais uma vez. Contemplem a origem do poder cósmico."',
     quoteEn:

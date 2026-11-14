@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
 
 /// Easter Egg: Ancient Precursor Cryo-Pod drifting in deep space.
 /// Rescuing it triggers a 5s chronostasis field, grants scrap/XP,

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/components/space_station.dart';
-import 'package:asteroids/game/components/cargo_wreck.dart';
-import 'package:asteroids/game/components/cosmic_nebula.dart';
+import 'package:void_protocol/game/components/space_station.dart';
+import 'package:void_protocol/game/components/cargo_wreck.dart';
+import 'package:void_protocol/game/components/cosmic_nebula.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

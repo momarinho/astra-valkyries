@@ -1,12 +1,12 @@
 {
-    "name": "asteroids",
-    "short_name": "asteroids",
+    "name": "Void Protocol",
+    "short_name": "Void Protocol",
     "start_url": ".",
-    "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "display": "fullscreen",
+    "background_color": "#05070E",
+    "theme_color": "#00E5FF",
+    "description": "Void Protocol — 60 FPS Space Action-Roguelite & Bullet Heaven.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

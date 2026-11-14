@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/drop.dart';
-import 'package:asteroids/game/components/xp_orb.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/drop.dart';
+import 'package:void_protocol/game/components/xp_orb.dart';
 
 /// Interactive Point of Interest (POI): Abandoned Research Relay Station.
 /// When the player navigates within the transmission perimeter (~240px)

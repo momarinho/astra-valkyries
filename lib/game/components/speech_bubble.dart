@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 enum SpeechTrigger {
   hyperspaceJump,

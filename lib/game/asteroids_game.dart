@@ -6,7 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/constants.dart';
+import 'package:void_protocol/constants.dart';
 import 'components/player.dart';
 import 'components/asteroid_field.dart';
 import 'components/particle.dart';
@@ -63,8 +63,8 @@ import 'affinity_system.dart';
 import 'sector.dart';
 import 'ending_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/services/api_service.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/services/api_service.dart';
+import 'package:void_protocol/services/localization_service.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -1254,11 +1254,47 @@ class AsteroidsGame extends FlameGame
   double sfxVolume = 1.0;
   double bgmVolume = 0.8;
 
-  // Sprint 52: Zoom Dinâmico de Câmera de Combate
+  // Sprint 52: Zoom Dinâmico de Câmera de Combate & Viewport Responsivo (Mobile/Desktop)
   double targetCameraZoom = 1.0;
+  double _baseViewportZoom = 1.0;
+  double visibleWorldWidth = GameConstants.screenWidth;
+  double visibleWorldHeight = GameConstants.screenHeight;
+
+  double get visibleHalfWidth => visibleWorldWidth * 0.5 + 60.0;
+  double get visibleHalfHeight => visibleWorldHeight * 0.5 + 60.0;
+
+  static double computeResponsiveCameraZoom(double width, double height) {
+    if (width <= 0 || height <= 0) return 1.0;
+    if (height > width) {
+      // Portrait mobile: mantém ~740 unidades visíveis na horizontal em tela cheia
+      return (width / 740.0).clamp(0.42, 1.5);
+    }
+    // Landscape mobile & Desktop: base 1280x720 mantendo visibilidade mínima de 960px no eixo X
+    double zoom = height / GameConstants.screenHeight;
+    if (width / zoom < 960.0) {
+      zoom = width / 960.0;
+    }
+    return zoom.clamp(0.45, 2.0);
+  }
+
+  void _updateResponsiveCamera(double width, double height, {bool immediate = false}) {
+    if (width <= 0 || height <= 0) return;
+    _baseViewportZoom = computeResponsiveCameraZoom(width, height);
+    final desiredZoom = (_baseViewportZoom * targetCameraZoom).clamp(0.35, 2.2);
+    visibleWorldWidth = (width / desiredZoom).clamp(600.0, 3200.0);
+    visibleWorldHeight = (height / desiredZoom).clamp(500.0, 3200.0);
+    if (immediate) {
+      camera.viewfinder.zoom = desiredZoom;
+    }
+  }
 
   void setCameraZoom(double zoom) {
     targetCameraZoom = zoom.clamp(0.8, 1.5);
+    if (hasLayout && size.x > 0 && size.y > 0) {
+      final desiredZoom = (_baseViewportZoom * targetCameraZoom).clamp(0.35, 2.2);
+      visibleWorldWidth = (size.x / desiredZoom).clamp(600.0, 3200.0);
+      visibleWorldHeight = (size.y / desiredZoom).clamp(500.0, 3200.0);
+    }
   }
 
   double get effectiveBgmVolume => (bgmVolume * masterVolume).clamp(0.0, 1.0);
@@ -1322,13 +1358,14 @@ class AsteroidsGame extends FlameGame
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Lock camera resolution to 1280x720 (matching Pygame coordinates)
-    camera.viewport = FixedResolutionViewport(resolution: Vector2(1280, 720));
+    // Responsive full-bleed viewport covering portrait & landscape screens with zero black bars
+    camera.viewport = MaxViewport();
     camera.viewfinder.position = Vector2(
       GameConstants.sectorWidth / 2,
       GameConstants.sectorHeight / 2,
     );
     camera.viewfinder.anchor = Anchor.center;
+    _updateResponsiveCamera(size.x, size.y, immediate: true);
 
     // Setup FlameAudio asset folder configuration and silence native warning spam on Linux
     try {
@@ -1972,6 +2009,12 @@ class AsteroidsGame extends FlameGame
   }
 
   @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    _updateResponsiveCamera(size.x, size.y, immediate: true);
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
     // Sprint 57: Scaled Hit-Stop visceral impact freeze (Hades Standard)
@@ -2010,9 +2053,10 @@ class AsteroidsGame extends FlameGame
     }
 
     // Sprint 52: Interpolação suave do Zoom Dinâmico de Câmera
-    if ((camera.viewfinder.zoom - targetCameraZoom).abs() > 0.001) {
+    final desiredCameraZoom = (_baseViewportZoom * targetCameraZoom).clamp(0.35, 2.2);
+    if ((camera.viewfinder.zoom - desiredCameraZoom).abs() > 0.001) {
       camera.viewfinder.zoom +=
-          (targetCameraZoom - camera.viewfinder.zoom) *
+          (desiredCameraZoom - camera.viewfinder.zoom) *
           (dt * 3.5).clamp(0.0, 1.0);
     }
 

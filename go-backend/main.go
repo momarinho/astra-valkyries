@@ -95,7 +95,7 @@ func main() {
 	r := setupRouter(webDir)
 
 	port := getEnv("PORT", "8080")
-	log.Printf("Astra Valkyries backend listening on :%s (db=%s)", port, dbPath)
+	log.Printf("Void Protocol backend listening on :%s (db=%s)", port, dbPath)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
@@ -123,7 +123,7 @@ func CORSMiddleware() gin.HandlerFunc {
 func handleHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "healthy",
-		"service": "astra-valkyries-api",
+		"service": "void-protocol-api",
 	})
 }
 
@@ -277,7 +277,7 @@ func handleLiveLeaderboard(c *gin.Context) {
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="refresh" content="5">
-<title>Astra Valkyries // Live Global Leaderboard</title>
+<title>Void Protocol // Live Global Leaderboard</title>
 <style>
   body { background: #070b14; color: #f1f5f9; font-family: 'Courier New', monospace; margin: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; }
   h1 { color: #00e5ff; letter-spacing: 3px; margin-bottom: 4px; text-shadow: 0 0 12px #00e5ff88; text-align: center; }
@@ -293,11 +293,11 @@ func handleLiveLeaderboard(c *gin.Context) {
 </style>
 </head>
 <body>
-  <h1>ASTRA VALKYRIES</h1>
+  <h1>VOID PROTOCOL</h1>
   <p class="subtitle">LIVE GLOBAL LEADERBOARD • TOP SORTIE PILOTS</p>
   <table>
     <thead>
-      <tr><th>RANK</th><th>CALLSIGN</th><th>VALKYRIE</th><th style="text-align:right">SCORE</th></tr>
+      <tr><th>RANK</th><th>CALLSIGN</th><th>PILOT</th><th style="text-align:right">SCORE</th></tr>
     </thead>
     <tbody>`)
 
@@ -307,7 +307,7 @@ func handleLiveLeaderboard(c *gin.Context) {
 		for i, s := range scores {
 			pilot := s.Scientist
 			if pilot == "" {
-				pilot = "Valkyrie"
+				pilot = "Vanguard"
 			}
 			sb.WriteString(fmt.Sprintf(
 				`<tr><td>#%d</td><td><strong>%s</strong></td><td><span class="badge">%s</span></td><td style="text-align:right; font-weight:bold;">%d</td></tr>`,
@@ -320,7 +320,7 @@ func handleLiveLeaderboard(c *gin.Context) {
 	}
 
 	sb.WriteString(`</tbody></table>
-  <p class="refresh-hint">Auto-refreshes every 5s • Astra Valkyries Telemetry API</p>
+  <p class="refresh-hint">Auto-refreshes every 5s • Void Protocol Telemetry API</p>
 </body>
 </html>`)
 

@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/dreadnought_leviathan.dart';
-import 'package:asteroids/game/components/floating_text.dart';
-import 'package:asteroids/game/components/advanced_weapons.dart';
-import 'package:asteroids/game/weapons.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/ui/game_over_overlay.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/dreadnought_leviathan.dart';
+import 'package:void_protocol/game/components/floating_text.dart';
+import 'package:void_protocol/game/components/advanced_weapons.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/ui/game_over_overlay.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/game.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/components/asteroid_field.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/scientist.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/components/asteroid_field.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/scientist.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

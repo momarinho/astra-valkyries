@@ -1,15 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/weapons.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/services/achievement_service.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/ui/hud_overlay.dart';
-import 'package:asteroids/ui/pause_overlay.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/services/achievement_service.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/ui/hud_overlay.dart';
+import 'package:void_protocol/ui/pause_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

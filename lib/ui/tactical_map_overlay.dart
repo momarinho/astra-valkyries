@@ -2,10 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/components.dart' show Vector2;
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/map/sector_map_data.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/map/sector_map_data.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 /// Holograma do Mapa Tático em Tela Cheia (Estilo Dead Cells / Metroidvania).
 /// Permite à piloto inspecionar o setor proceduralmente gerado,

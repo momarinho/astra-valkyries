@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/glow.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/glow.dart';
 
 /// Nó de sinalizador luminoso de emergência em megaestrutura abandonada
 class EmergencyBeaconNode {
@@ -192,8 +192,8 @@ class DistantMegastructureBackdropComponent extends Component
       );
     }
 
-    final width = GameConstants.screenWidth;
-    final height = GameConstants.screenHeight;
+    final width = game.visibleWorldWidth;
+    final height = game.visibleWorldHeight;
 
     // Viewport bounds
     final viewLeft = camPos.x - width / 2;

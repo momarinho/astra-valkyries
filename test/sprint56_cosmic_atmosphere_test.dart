@@ -3,15 +3,15 @@ import 'dart:ui' show PictureRecorder;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/sector.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/kinetic_space_dust.dart';
-import 'package:asteroids/game/components/distant_megastructure.dart';
-import 'package:asteroids/game/components/procedural_cosmic_nebula.dart';
-import 'package:asteroids/game/components/space_time_warp_grid.dart';
-import 'package:asteroids/game/components/singularity_vortex.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/sector.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/kinetic_space_dust.dart';
+import 'package:void_protocol/game/components/distant_megastructure.dart';
+import 'package:void_protocol/game/components/procedural_cosmic_nebula.dart';
+import 'package:void_protocol/game/components/space_time_warp_grid.dart';
+import 'package:void_protocol/game/components/singularity_vortex.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

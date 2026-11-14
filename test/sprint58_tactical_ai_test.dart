@@ -2,13 +2,13 @@ import 'dart:ui' show PictureRecorder;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/components.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/asteroid.dart';
-import 'package:asteroids/game/components/asteroid_field.dart';
-import 'package:asteroids/game/components/dreadnought_leviathan.dart';
-import 'package:asteroids/game/components/enemy_ship.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/components/proximity_mine.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/asteroid.dart';
+import 'package:void_protocol/game/components/asteroid_field.dart';
+import 'package:void_protocol/game/components/dreadnought_leviathan.dart';
+import 'package:void_protocol/game/components/enemy_ship.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/components/proximity_mine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,7 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class StageClearOverlay extends StatelessWidget {
   final AsteroidsGame game;
@@ -21,16 +22,20 @@ class StageClearOverlay extends StatelessWidget {
     final livesBonus = levelManager.livesBonus;
     final totalEarned = levelManager.bonusCredits;
     final totalCredits = game.credits;
+    final layout = ResponsiveLayout.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Center(
-        child: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
-            child: Container(
-              width: 500,
-              padding: const EdgeInsets.all(30.0),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(layout.isCompact ? 12.0 : 20.0),
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                child: Container(
+                  width: layout.clampWidth(500),
+                  padding: EdgeInsets.all(layout.isCompact ? 18.0 : 30.0),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(20),
@@ -106,7 +111,10 @@ class StageClearOverlay extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.greenAccent,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 18.0, horizontal: 50.0),
+                      padding: EdgeInsets.symmetric(
+                        vertical: layout.isCompact ? 14.0 : 18.0,
+                        horizontal: layout.isCompact ? 24.0 : 50.0,
+                      ),
                       elevation: 8,
                       shadowColor: Colors.greenAccent,
                       shape: RoundedRectangleBorder(
@@ -118,12 +126,15 @@ class StageClearOverlay extends StatelessWidget {
                       children: [
                         const Icon(Icons.shopping_cart, size: 22),
                         const SizedBox(width: 8),
-                        Text(
-                          I18n.select(pt: 'ENTRAR NA OFICINA', en: 'ENTER UPGRADE SHOP'),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
+                        Flexible(
+                          child: Text(
+                            I18n.select(pt: 'ENTRAR NA OFICINA', en: 'ENTER UPGRADE SHOP'),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: layout.isCompact ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
                       ],
@@ -158,6 +169,8 @@ class StageClearOverlay extends StatelessWidget {
             ),
           ),
         ),
+        ),
+        ),
       ),
     );
   }
@@ -166,14 +179,18 @@ class StageClearOverlay extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            letterSpacing: 1.2,
-            color: Colors.white70,
+        Expanded(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              letterSpacing: 1.2,
+              color: Colors.white70,
+            ),
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: TextStyle(

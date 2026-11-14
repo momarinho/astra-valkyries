@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/components/player.dart';
-import 'package:asteroids/game/weapons.dart';
-import 'package:asteroids/services/localization_service.dart';
-import 'package:asteroids/services/secret_grimoire_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/components/player.dart';
+import 'package:void_protocol/game/weapons.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/services/secret_grimoire_service.dart';
 
 enum PerkType { newWeapon, upgradeWeapon, passive, evolution }
 

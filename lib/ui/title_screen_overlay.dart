@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/game/valkyrie.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/game/valkyrie.dart';
+import 'package:void_protocol/services/localization_service.dart';
+import 'package:void_protocol/ui/responsive_ui.dart';
 
 class TitleScreenOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -33,10 +34,10 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
 
   final List<String> _bootLogs = const [
     '[OK] INITIALIZING FLAME 2D ENGINE & NEBULA SHADERS...',
-    '[OK] PRE-CACHING VALKYRIE HOLOGRAPHIC PORTRAITS...',
+    '[OK] PRE-CACHING SQUADRON HOLOGRAPHIC PORTRAITS...',
     '[OK] SYNCHRONIZING PROCEDURAL SECTOR RADAR & BOSS LAIRS...',
     '[OK] CALIBRATING WEAPON SYNERGY GRIMOIRE & AUDIO MIXER...',
-    '[OK] ASTRA VALKYRIES // VOID PROTOCOL READY.',
+    '[OK] AEGIS COMMAND // VOID PROTOCOL READY.',
   ];
 
   @override
@@ -215,14 +216,15 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
   // PHASE 1: TACTICAL BOOT & LOADING SCREEN
   // ---------------------------------------------------------------------------
   Widget _buildBootLoadingView() {
+    final layout = ResponsiveLayout.of(context);
     final visibleLogs = (_bootProgress * _bootLogs.length).ceil().clamp(1, _bootLogs.length);
     final pct = (_bootProgress * 100).toInt();
 
     return Container(
       key: const ValueKey('boot_loading_view'),
       constraints: const BoxConstraints(maxWidth: 560),
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(28),
+      margin: EdgeInsets.symmetric(horizontal: layout.isPhone ? 12 : 24),
+      padding: EdgeInsets.all(layout.isPhone ? 16 : 28),
       decoration: BoxDecoration(
         color: const Color(0xFF080D18).withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(18),
@@ -330,6 +332,8 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
   // PHASE 2: MAIN TITLE SCREEN & MENU
   // ---------------------------------------------------------------------------
   Widget _buildMainTitleMenu(BuildContext context) {
+    final layout = ResponsiveLayout.of(context);
+    final isCompact = layout.isPhone;
     final game = widget.game;
     final valkyries = Valkyrie.roster;
 
@@ -362,7 +366,10 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
 
     return SingleChildScrollView(
       key: const ValueKey('main_title_menu'),
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 14 : 28,
+        vertical: isCompact ? 10 : 16,
+      ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1080),
         child: Column(
@@ -370,7 +377,10 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
           children: [
             // Top Command Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              padding: EdgeInsets.symmetric(
+                horizontal: isCompact ? 10 : 14,
+                vertical: isCompact ? 4 : 5,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
@@ -378,18 +388,19 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                   color: const Color(0xFF00E5FF).withValues(alpha: 0.45),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'AEGIS VANGUARD COMMAND • ROGUELITE SPACE SHOOTER',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Orbitron',
-                  fontSize: 10.5,
+                  fontSize: isCompact ? 8.5 : 10.5,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
-                  color: Color(0xFF00E5FF),
+                  letterSpacing: isCompact ? 1.2 : 2.0,
+                  color: const Color(0xFF00E5FF),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: isCompact ? 8 : 12),
 
             // Main Game Title Logo
             FittedBox(
@@ -402,15 +413,15 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                     Color(0xFFFFD700),
                   ],
                 ).createShader(bounds),
-                child: const Text(
-                  'ASTRA VALKYRIES',
+                child: Text(
+                  'VOID PROTOCOL',
                   style: TextStyle(
                     fontFamily: 'Orbitron',
-                    fontSize: 52,
+                    fontSize: isCompact ? 34 : 52,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 6.0,
+                    letterSpacing: isCompact ? 3.5 : 6.0,
                     color: Colors.white,
-                    shadows: [
+                    shadows: const [
                       Shadow(
                         color: Color(0xAA00E5FF),
                         blurRadius: 24,
@@ -420,29 +431,29 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                 ),
               ),
             ),
-            const Text(
-              'V O I D   P R O T O C O L',
+            Text(
+              'A E G I S   V A N G U A R D',
               style: TextStyle(
                 fontFamily: 'Rajdhani',
-                fontSize: 18,
+                fontSize: isCompact ? 13 : 18,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 8.0,
-                color: Color(0xFFFFD700),
+                letterSpacing: isCompact ? 4.5 : 8.0,
+                color: const Color(0xFFFFD700),
               ),
             ),
 
-            const SizedBox(height: 22),
+            SizedBox(height: isCompact ? 12 : 22),
 
-            // Center Content: Left Menu Buttons + Right Valkyrie Squadron Showcase
+            // Center Content: Left Menu Buttons + Right Squadron Showcase
             LayoutBuilder(
               builder: (context, constraints) {
                 final isWide = constraints.maxWidth > 740;
                 if (!isWide) {
                   return Column(
                     children: [
-                      _buildMenuButtonsList(menuItems),
-                      const SizedBox(height: 16),
-                      _buildValkyrieTrioShowcase(valkyries),
+                      _buildMenuButtonsList(menuItems, compact: isCompact),
+                      SizedBox(height: isCompact ? 10 : 16),
+                      _buildValkyrieTrioShowcase(valkyries, compact: isCompact, narrow: constraints.maxWidth < 430),
                     ],
                   );
                 }
@@ -451,19 +462,19 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                   children: [
                     Expanded(
                       flex: 5,
-                      child: _buildMenuButtonsList(menuItems),
+                      child: _buildMenuButtonsList(menuItems, compact: isCompact),
                     ),
                     const SizedBox(width: 24),
                     Expanded(
                       flex: 5,
-                      child: _buildValkyrieTrioShowcase(valkyries),
+                      child: _buildValkyrieTrioShowcase(valkyries, compact: isCompact, narrow: false),
                     ),
                   ],
                 );
               },
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: isCompact ? 12 : 20),
 
             // Bottom Telemetry & Controls Bar
             AnimatedBuilder(
@@ -501,8 +512,9 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
   }
 
   Widget _buildMenuButtonsList(
-    List<({String title, String subtitle, IconData icon, Color color})> items,
-  ) {
+    List<({String title, String subtitle, IconData icon, Color color})> items, {
+    bool compact = false,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -511,7 +523,7 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
         final isSelected = _selectedMenuIndex == index;
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: compact ? 8 : 10),
           child: MouseRegion(
             onEnter: (_) {
               if (_selectedMenuIndex != index) {
@@ -525,7 +537,10 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 160),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 12 : 16,
+                  vertical: compact ? 8 : 12,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? item.color.withValues(alpha: 0.18)
@@ -547,16 +562,16 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                 child: Row(
                   children: [
                     Container(
-                      width: 38,
-                      height: 38,
+                      width: compact ? 32 : 38,
+                      height: compact ? 32 : 38,
                       decoration: BoxDecoration(
                         color: item.color.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(9),
                         border: Border.all(color: item.color.withValues(alpha: 0.6)),
                       ),
-                      child: Icon(item.icon, color: item.color, size: 20),
+                      child: Icon(item.icon, color: item.color, size: compact ? 18 : 20),
                     ),
-                    const SizedBox(width: 14),
+                    SizedBox(width: compact ? 10 : 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,9 +580,9 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                             isSelected ? '► ${item.title}' : item.title,
                             style: TextStyle(
                               fontFamily: 'Orbitron',
-                              fontSize: 12.5,
+                              fontSize: compact ? 11.0 : 12.5,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
+                              letterSpacing: 1.0,
                               color: isSelected ? Colors.white : Colors.white70,
                             ),
                           ),
@@ -576,7 +591,7 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
                             item.subtitle,
                             style: TextStyle(
                               fontFamily: 'Rajdhani',
-                              fontSize: 12,
+                              fontSize: compact ? 11.0 : 12.0,
                               color: isSelected ? item.color : Colors.white54,
                             ),
                           ),
@@ -615,14 +630,18 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
               children: [
                 const Icon(Icons.language_rounded, size: 16, color: Color(0xFF64FFDA)),
                 const SizedBox(width: 8),
-                Text(
-                  '${I18n.t('title.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
-                  style: const TextStyle(
-                    fontFamily: 'Rajdhani',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF64FFDA),
-                    letterSpacing: 0.8,
+                Flexible(
+                  child: Text(
+                    '${I18n.t('title.language')}: ${I18n.currentLocale.flag} ${I18n.currentLocale.label}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64FFDA),
+                      letterSpacing: 0.8,
+                    ),
                   ),
                 ),
               ],
@@ -634,9 +653,107 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
     );
   }
 
-  Widget _buildValkyrieTrioShowcase(List<Valkyrie> valkyries) {
+  Widget _buildValkyrieTrioShowcase(
+    List<Valkyrie> valkyries, {
+    bool compact = false,
+    bool narrow = false,
+  }) {
+    final cardHeight = compact ? (narrow ? 120.0 : 140.0) : 210.0;
+
+    Widget buildPilotCard(Valkyrie v) {
+      final isCurrent = widget.game.selectedValkyrie.id == v.id;
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            widget.game.selectedValkyrie = v;
+          });
+          widget.game.playSfx('menu_select.wav');
+        },
+        child: Container(
+          height: cardHeight,
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCurrent ? v.primaryColor : v.primaryColor.withValues(alpha: 0.35),
+              width: isCurrent ? 2.2 : 1.0,
+            ),
+            boxShadow: isCurrent
+                ? [
+                    BoxShadow(
+                      color: v.primaryColor.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  v.hangarFullBodyAsset,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, _, _) => Container(
+                    color: Colors.black54,
+                    child: Icon(Icons.person, color: v.primaryColor, size: compact ? 32 : 42),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.92),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          v.name.split(' ').first.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: compact ? 9.5 : 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: v.primaryColor,
+                          ),
+                        ),
+                        Text(
+                          v.callsign,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Rajdhani',
+                            fontSize: compact ? 9.0 : 10.0,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(compact ? 10 : 14),
       decoration: BoxDecoration(
         color: const Color(0xFF0B101D).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
@@ -647,109 +764,35 @@ class _TitleScreenOverlayState extends State<TitleScreenOverlay>
         children: [
           Text(
             I18n.select(
-              pt: 'ESQUADRÃO ASTRA VALKYRIES // UNIDADES ATIVAS',
-              en: 'ASTRA VALKYRIE SQUADRON // ACTIVE UNITS',
+              pt: 'ESQUADRÃO VANGUARD // UNIDADES ATIVAS',
+              en: 'VANGUARD SQUADRON // ACTIVE UNITS',
             ),
-            style: const TextStyle(
+            textAlign: TextAlign.center,
+            style: TextStyle(
               fontFamily: 'Orbitron',
-              fontSize: 10.5,
+              fontSize: compact ? 9.5 : 10.5,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.5,
               color: Colors.white70,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: valkyries.map((v) {
-              final isCurrent = widget.game.selectedValkyrie.id == v.id;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      widget.game.selectedValkyrie = v;
-                    });
-                    widget.game.playSfx('menu_select.wav');
-                  },
-                  child: Container(
-                    height: 210,
-                    margin: const EdgeInsets.symmetric(horizontal: 5),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isCurrent ? v.primaryColor : v.primaryColor.withValues(alpha: 0.35),
-                        width: isCurrent ? 2.2 : 1.0,
-                      ),
-                      boxShadow: isCurrent
-                          ? [
-                              BoxShadow(
-                                color: v.primaryColor.withValues(alpha: 0.35),
-                                blurRadius: 12,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.asset(
-                            v.hangarFullBodyAsset,
-                            fit: BoxFit.cover,
-                            alignment: Alignment.topCenter,
-                            errorBuilder: (_, _, _) => Container(
-                              color: Colors.black54,
-                              child: Icon(Icons.person, color: v.primaryColor, size: 42),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.92),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    v.name.split(' ').first.toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: 'Orbitron',
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: v.primaryColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    v.callsign,
-                                    style: const TextStyle(
-                                      fontFamily: 'Rajdhani',
-                                      fontSize: 10,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+          SizedBox(height: compact ? 6 : 12),
+          if (narrow && valkyries.length > 2)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: valkyries.take(2).map((v) => Expanded(child: buildPilotCard(v))).toList(),
                 ),
-              );
-            }).toList(),
-          ),
+                Row(
+                  children: valkyries.skip(2).map((v) => Expanded(child: buildPilotCard(v))).toList(),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: valkyries.map((v) => Expanded(child: buildPilotCard(v))).toList(),
+            ),
         ],
       ),
     );

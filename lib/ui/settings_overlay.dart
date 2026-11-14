@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:asteroids/game/asteroids_game.dart';
-import 'package:asteroids/services/localization_service.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
+import 'package:void_protocol/services/localization_service.dart';
 
 class SettingsOverlay extends StatefulWidget {
   final AsteroidsGame game;
@@ -29,13 +29,15 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
       },
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
-              child: Container(
-                width: MediaQuery.of(context).size.width > 580 ? 580 : MediaQuery.of(context).size.width * 0.92,
-                padding: const EdgeInsets.all(22.0),
+        body: SafeArea(
+          child: Center(
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                child: Container(
+                  width: MediaQuery.of(context).size.width > 580 ? 580 : MediaQuery.of(context).size.width * 0.94,
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 14.0 : 22.0),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(20),
@@ -412,6 +414,7 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -429,21 +432,28 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 11.5,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(icon, color: color, size: 18),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 11.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Text(
               '${(value * 100).round()}%',
               style: TextStyle(
@@ -611,13 +621,17 @@ class _SettingsOverlayState extends State<SettingsOverlay> {
                         size: 18,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        I18n.t('settings.show_fps'),
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.bold,
-                          color: isEnabled ? const Color(0xFF00E676) : Colors.white,
+                      Expanded(
+                        child: Text(
+                          I18n.t('settings.show_fps'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.bold,
+                            color: isEnabled ? const Color(0xFF00E676) : Colors.white,
+                          ),
                         ),
                       ),
                     ],

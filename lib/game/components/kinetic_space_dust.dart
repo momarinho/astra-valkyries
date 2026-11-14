@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 /// Mote individual de poeira cósmica cinética
 class SpaceDustMote {
@@ -145,6 +145,10 @@ class KineticSpaceDustComponent extends Component
 
     final width = GameConstants.screenWidth;
     final height = GameConstants.screenHeight;
+    final viewW = game.visibleWorldWidth;
+    final viewH = game.visibleWorldHeight;
+    final scaleX = viewW / width;
+    final scaleY = viewH / height;
 
     Vector2 camPos;
     try {
@@ -154,7 +158,7 @@ class KineticSpaceDustComponent extends Component
     }
 
     canvas.save();
-    canvas.translate(camPos.x - width / 2, camPos.y - height / 2);
+    canvas.translate(camPos.x - viewW / 2, camPos.y - viewH / 2);
 
     // Obtém velocidade da nave para estiramento cinético
     double pvx = 0.0;
@@ -173,6 +177,8 @@ class KineticSpaceDustComponent extends Component
 
     for (int i = 0; i < motes.length; i++) {
       final mote = motes[i];
+      final mx = mote.x * scaleX;
+      final my = mote.y * scaleY;
 
       // Cintilação suave
       final twinkle =
@@ -201,17 +207,17 @@ class KineticSpaceDustComponent extends Component
         _streakPaint.strokeWidth = mote.size * 0.95;
 
         canvas.drawLine(
-          Offset(mote.x, mote.y),
-          Offset(mote.x + streakX, mote.y + streakY),
+          Offset(mx, my),
+          Offset(mx + streakX, my + streakY),
           _streakPaint,
         );
 
         // Ponto brilhante na cabeça do traço
         _motePaint.color = Colors.white.withValues(alpha: alpha);
-        canvas.drawCircle(Offset(mote.x, mote.y), mote.size * 0.6, _motePaint);
+        canvas.drawCircle(Offset(mx, my), mote.size * 0.6, _motePaint);
       } else {
         // Em baixa velocidade: partícula cósmica esférica suave com micro-halo aditivo
-        final center = Offset(mote.x, mote.y);
+        final center = Offset(mx, my);
 
         if (mote.depth > 0.7) {
           _haloPaint.color = starColor.withValues(alpha: alpha * 0.22);

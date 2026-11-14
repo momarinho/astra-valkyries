@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:asteroids/constants.dart';
-import 'package:asteroids/game/asteroids_game.dart';
+import 'package:void_protocol/constants.dart';
+import 'package:void_protocol/game/asteroids_game.dart';
 
 /// Renders the spatial navigation grid and hazardous outer perimeter
 /// of the expanded 4800x4800 space sector.
@@ -48,8 +48,8 @@ class SectorBoundaryComponent extends Component with HasGameReference<AsteroidsG
 
     // Viewport bounds for culling
     final camPos = game.camera.viewfinder.position;
-    final viewHalfW = GameConstants.screenWidth * 0.75;
-    final viewHalfH = GameConstants.screenHeight * 0.75;
+    final viewHalfW = game.visibleWorldWidth * 0.65;
+    final viewHalfH = game.visibleWorldHeight * 0.65;
     final viewLeft = camPos.x - viewHalfW;
     final viewRight = camPos.x + viewHalfW;
     final viewTop = camPos.y - viewHalfH;
